@@ -5,7 +5,7 @@
 // ─────────────────────────────────────────────────────────────────
 
 const FIREBASE_CONFIG = {
-  apiKey:            "AIzaSyBIVODImEwRJeGHk1SEeYf8ZcPfBW4UDZc",
+  apiKey:            "AIzaSyDeKWOhyJ59chQEcXEsKAipFJDsxJQITvk",
   authDomain:        "pocket-money-85878.firebaseapp.com",
   projectId:         "pocket-money-85878",
   storageBucket:     "pocket-money-85878.firebasestorage.app",
