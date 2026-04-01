@@ -15,5 +15,4 @@ jobs:
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          workingDirectory: pocket-money-v3/pwa-v3
           command: pages deploy dist --project-name=moneysteps --commit-dirty=true
