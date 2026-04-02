@@ -1,0 +1,12 @@
+PRAGMA foreign_keys = OFF;
+DROP TABLE IF EXISTS ledger_status_log;
+DROP TABLE IF EXISTS currency_snapshots;
+DROP TABLE IF EXISTS family_governance_log;
+DROP TABLE IF EXISTS ledger;
+DROP TABLE IF EXISTS chores;
+DROP TABLE IF EXISTS family_roles;
+DROP TABLE IF EXISTS users;
+DROP TABLE IF EXISTS families;
+DROP TABLE IF EXISTS bilingual_labels;
+DROP TABLE IF EXISTS d1_migrations;
+PRAGMA foreign_keys = ON;
