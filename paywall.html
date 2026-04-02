@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MoneySteps — Upgrade</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --green:#2E7A33; --green-l:#EEF7EE; --green-b:#B8D9B8;
+      --red:#B91C1C;   --red-l:#FEF2F2;   --red-b:#FECACA;
+      --teal:#0F766E;  --teal-l:#F0FDFA;  --teal-b:#99D4CC;
+      --gray:#5F5E5A;  --gray-l:#F1EFE8;  --border:#D3D1C7;
+      --white:#fff; --text:#1C1C1A; --muted:#6b6a66; --bg:#F5F4F0; --card:#fff;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --white:#1e1e1c; --bg:#111110; --text:#e8e8e4; --muted:#b8b6b0;
+        --border:#2e2e2b; --card:#1a1a18; --gray-l:#1e1e1c;
+        --teal:#2dd4bf; --teal-l:#0d2926; --teal-b:#1a4a45;
+      }
+    }
+
+    body {
+      font-family: 'Manrope', -apple-system, 'Segoe UI', sans-serif;
+      background: var(--bg); color: var(--text);
+      min-height: 100vh; padding-bottom: 56px; font-size: 16px; line-height: 1.5;
+    }
+
+    /* ── Header ── */
+    .header { text-align: center; padding: 48px 24px 28px; max-width: 560px; margin: 0 auto; }
+    .eval-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: var(--teal-l); color: var(--teal);
+      border: 1px solid var(--teal-b); border-radius: 99px;
+      padding: 5px 14px; font-size: 12px; font-weight: 700;
+      letter-spacing: .06em; text-transform: uppercase; margin-bottom: 18px;
+    }
+    .header h1 { font-size: 27px; font-weight: 800; line-height: 1.2; margin-bottom: 10px; }
+    .header p  { font-size: 15px; color: var(--muted); }
+
+    /* ── Trial stats ── */
+    .stats { display: flex; gap: 10px; max-width: 560px; margin: 0 auto 28px; padding: 0 20px; }
+    .stat  {
+      flex: 1; background: var(--card); border: 1px solid var(--border);
+      border-radius: 12px; padding: 14px 12px; text-align: center;
+    }
+    .stat-val { font-size: 22px; font-weight: 800; color: var(--teal); font-variant-numeric: tabular-nums; }
+    .stat-lbl { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; margin-top: 2px; }
+
+    /* ── Currency toggle ── */
+    .currency-wrap { display: flex; justify-content: center; margin-bottom: 20px; }
+    .cur-btn {
+      padding: 9px 22px; font-size: 14px; font-weight: 700; font-family: inherit;
+      cursor: pointer; border: 1.5px solid var(--border); background: var(--card); color: var(--muted); transition: all .15s;
+    }
+    .cur-btn:first-child { border-radius: 99px 0 0 99px; border-right: none; }
+    .cur-btn:last-child  { border-radius: 0 99px 99px 0; }
+    .cur-btn.active { background: var(--teal); color: #fff; border-color: var(--teal); }
+
+    /* ── Founder badge ── */
+    .founder { display: none; text-align: center; margin-bottom: 16px; }
+    .founder.visible { display: block; }
+    .founder span {
+      display: inline-block;
+      background: linear-gradient(135deg,#fef3c7,#fde68a);
+      color: #92400e; border: 1px solid #fcd34d;
+      border-radius: 99px; padding: 5px 16px;
+      font-size: 12px; font-weight: 700;
+    }
+
+    /* ── Cards ── */
+    .cards { display: flex; flex-direction: column; gap: 16px; max-width: 560px; margin: 0 auto; padding: 0 20px; }
+
+    .plan {
+      position: relative; background: var(--card);
+      border: 1.5px solid var(--border); border-radius: 16px; padding: 24px;
+      backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    }
+    .plan.featured { border-color: var(--teal); box-shadow: 0 0 0 1px var(--teal), 0 8px 32px rgba(15,118,110,.10); }
+
+    .plan-tag {
+      position: absolute; top: -12px; left: 50%; transform: translateX(-50%);
+      background: var(--teal); color: #fff;
+      font-size: 11px; font-weight: 800; letter-spacing: .07em; text-transform: uppercase;
+      padding: 4px 14px; border-radius: 99px; white-space: nowrap;
+    }
+    .plan-name  { font-size: 12px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 8px; }
+    .plan-name.mt { margin-top: 10px; }
+    .price-row  { display: flex; align-items: baseline; gap: 8px; margin-bottom: 4px; }
+    .price      { font-size: 34px; font-weight: 800; font-variant-numeric: tabular-nums; }
+    .price-was  { font-size: 18px; font-weight: 600; color: var(--muted); text-decoration: line-through; font-variant-numeric: tabular-nums; }
+    .cadence    { font-size: 13px; color: var(--muted); margin-bottom: 16px; }
+
+    .features      { list-style: none; display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
+    .features li   { display: flex; align-items: flex-start; gap: 8px; font-size: 14px; }
+    .features li::before { content: '✓'; color: var(--teal); font-weight: 800; flex-shrink: 0; }
+
+    .btn-buy {
+      width: 100%; padding: 15px; border-radius: 12px; border: none;
+      font-family: inherit; font-size: 15px; font-weight: 700;
+      cursor: pointer; transition: opacity .15s, transform .1s;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .btn-buy:active  { transform: scale(.98); }
+    .btn-buy:disabled { opacity: .5; cursor: not-allowed; }
+    .btn-buy.primary   { background: var(--teal); color: #fff; }
+    .btn-buy.secondary { background: var(--teal-l); color: var(--teal); border: 1.5px solid var(--teal-b); }
+
+    .spinner {
+      width: 18px; height: 18px; border: 2.5px solid rgba(255,255,255,.35);
+      border-top-color: #fff; border-radius: 50%;
+      animation: spin .6s linear infinite; display: none;
+    }
+    .btn-buy.loading .spinner { display: block; }
+    .btn-buy.loading .lbl     { display: none; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── PLN notice ── */
+    .pln-notice { display: none; max-width: 560px; margin: 12px auto 0; padding: 0 20px; }
+    .pln-notice.visible { display: block; }
+    .pln-notice-inner {
+      background: var(--gray-l); border: 1px solid var(--border); border-radius: 10px;
+      padding: 11px 14px; font-size: 12px; color: var(--muted); line-height: 1.5;
+    }
+
+    /* ── Trust strip ── */
+    .trust {
+      max-width: 560px; margin: 28px auto 0; padding: 0 20px;
+      display: flex; flex-wrap: wrap; gap: 12px; justify-content: center;
+    }
+    .trust-item { display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--muted); font-weight: 600; }
+
+    /* ── Logout ── */
+    .logout-wrap { text-align: center; margin-top: 28px; }
+    .btn-logout {
+      background: none; border: none; font-family: inherit;
+      font-size: 13px; color: var(--muted); cursor: pointer;
+      text-decoration: underline; text-underline-offset: 3px;
+    }
+    .btn-logout:hover { color: var(--red); }
+
+    /* ── Toast ── */
+    .toast {
+      position: fixed; bottom: 24px; left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: var(--red); color: #fff;
+      padding: 12px 20px; border-radius: 10px;
+      font-size: 14px; font-weight: 600; transition: transform .3s;
+      z-index: 999; white-space: nowrap;
+    }
+    .toast.show { transform: translateX(-50%) translateY(0); }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <div class="eval-badge">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+      14-Day Evaluation Complete
+    </div>
+    <h1>Ready to lock in the progress?</h1>
+    <p>Your financial coaching record is secure. Choose a plan to keep it that way.</p>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><div class="stat-val" id="stat-entries">—</div><div class="stat-lbl">Transactions</div></div>
+    <div class="stat"><div class="stat-val" id="stat-value">—</div><div class="stat-lbl">Value Managed</div></div>
+    <div class="stat"><div class="stat-val" id="stat-days">14</div><div class="stat-lbl">Days Evaluated</div></div>
+  </div>
+
+  <div class="currency-wrap">
+    <button class="cur-btn active" id="btn-gbp" onclick="setCurrency('GBP')">£ GBP</button>
+    <button class="cur-btn" id="btn-pln" onclick="setCurrency('PLN')">zł PLN</button>
+  </div>
+
+  <div class="founder" id="founder-badge">
+    <span>🇵🇱 Founder's Launch Price — First 1,000 Families</span>
+  </div>
+
+  <div class="cards">
+
+    <!-- Essential -->
+    <div class="plan">
+      <div class="plan-name">Essential — Lifetime Truth Engine</div>
+      <div class="price-row">
+        <span class="price" id="price-essential">£34.99</span>
+        <span class="price-was" id="strike-essential" style="display:none"></span>
+      </div>
+      <div class="cadence">One-time payment. Yours forever.</div>
+      <ul class="features">
+        <li>Immutable ledger with SHA-256 audit trail</li>
+        <li>Court-admissible PDF financial reports</li>
+        <li>Mutual-consent governance (both parents)</li>
+        <li>Unlimited chores, allowances &amp; payments</li>
+        <li>Full GDPR data export</li>
+      </ul>
+      <button class="btn-buy secondary" id="buy-essential" onclick="startCheckout('LIFETIME')">
+        <span class="lbl">Get Lifetime Access</span><div class="spinner"></div>
+      </button>
+    </div>
+
+    <!-- Pro Coach Bundle -->
+    <div class="plan featured">
+      <div class="plan-tag">Most Popular — Financial Autonomy</div>
+      <div class="plan-name mt">Pro Coach Bundle</div>
+      <div class="price-row">
+        <span class="price" id="price-pro">£44.98</span>
+        <span class="price-was" id="strike-pro" style="display:none"></span>
+      </div>
+      <div class="cadence" id="cadence-pro">Year 1 · Lifetime Ledger + 12 months AI Coaching (£19.99/yr thereafter)</div>
+      <ul class="features">
+        <li>Everything in Essential, forever</li>
+        <li>AI Coach — trigger-based financial nudges</li>
+        <li>Spending velocity &amp; delayed gratification alerts</li>
+        <li>Inactivity &amp; opportunity cost coaching</li>
+        <li>Independence Score tracking</li>
+        <li>Parent Scouting Reports (consistency &amp; discipline)</li>
+      </ul>
+      <button class="btn-buy primary" id="buy-pro" onclick="startCheckout('AI_ANNUAL')">
+        <span class="lbl">Start Pro Bundle</span><div class="spinner"></div>
+      </button>
+    </div>
+
+  </div>
+
+  <div class="pln-notice" id="pln-notice">
+    <div class="pln-notice-inner">
+      🇵🇱 Polish pricing requires a PL-issued payment method (P24 or Polish debit/credit card). UK cards cannot be used to pay PLN prices.
+    </div>
+  </div>
+
+  <div class="trust">
+    <div class="trust-item">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      Audit-ready data
+    </div>
+    <div class="trust-item">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+      SHA-256 verified
+    </div>
+    <div class="trust-item">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      GDPR compliant
+    </div>
+    <div class="trust-item">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+      Secured by Stripe
+    </div>
+  </div>
+
+  <div class="logout-wrap">
+    <button class="btn-logout" onclick="handleLogout()">Sign out</button>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const API = 'https://moneysteps-api.darren-savery.workers.dev';
+
+    const PRICES = {
+      GBP: {
+        essential: { display: '£34.99', strike: null },
+        pro:       { display: '£44.98', strike: null,
+                     cadence: 'Year 1 · Lifetime Ledger + 12 months AI Coaching (£19.99/yr thereafter)' },
+      },
+      PLN: {
+        essential: { display: '99 zł',  strike: '129 zł' },
+        pro:       { display: '139 zł', strike: '159 zł',
+                     cadence: 'Rok 1 · Dożywotnia Księga + 12 miesięcy AI Coaching (139 zł/rok potem)' },
+      },
+    };
+
+    let currency = detectCurrency();
+
+    function detectCurrency() {
+      const saved = sessionStorage.getItem('ms_currency');
+      if (saved === 'GBP' || saved === 'PLN') return saved;
+      return (navigator.language || '').startsWith('pl') ? 'PLN' : 'GBP';
+    }
+
+    function setCurrency(c) {
+      currency = c;
+      sessionStorage.setItem('ms_currency', c);
+      document.getElementById('btn-gbp').classList.toggle('active', c === 'GBP');
+      document.getElementById('btn-pln').classList.toggle('active', c === 'PLN');
+      document.getElementById('pln-notice').classList.toggle('visible', c === 'PLN');
+      document.getElementById('founder-badge').classList.toggle('visible', c === 'PLN');
+      renderPrices();
+    }
+
+    function renderPrices() {
+      const p = PRICES[currency];
+
+      document.getElementById('price-essential').textContent = p.essential.display;
+      const se = document.getElementById('strike-essential');
+      se.textContent = p.essential.strike || '';
+      se.style.display = p.essential.strike ? '' : 'none';
+
+      document.getElementById('price-pro').textContent = p.pro.display;
+      const sp = document.getElementById('strike-pro');
+      sp.textContent = p.pro.strike || '';
+      sp.style.display = p.pro.strike ? '' : 'none';
+
+      document.getElementById('cadence-pro').textContent = p.pro.cadence;
+    }
+
+    async function loadTrialStats() {
+      const token = getToken();
+      if (!token) return;
+      try {
+        const familyId = getFamilyId(token);
+        const [statusRes, ledgerRes] = await Promise.all([
+          fetch(`${API}/api/trial/status`, { headers: { Authorization: `Bearer ${token}` } }),
+          fetch(`${API}/api/ledger?family_id=${familyId}&limit=200`, { headers: { Authorization: `Bearer ${token}` } }),
+        ]);
+        if (statusRes.ok) {
+          const s = await statusRes.json();
+          if (s.days_remaining !== null) {
+            document.getElementById('stat-days').textContent = Math.max(0, 14 - (s.days_remaining || 0));
+          }
+        }
+        if (ledgerRes.ok) {
+          const data = await ledgerRes.json();
+          const entries = data.entries || [];
+          document.getElementById('stat-entries').textContent = entries.length;
+          const total = entries.reduce((sum, e) => sum + (e.amount || 0), 0);
+          document.getElementById('stat-value').textContent =
+            currency === 'PLN' ? (total / 100).toFixed(2) + ' zł' : '£' + (total / 100).toFixed(2);
+        }
+      } catch (_) { /* stats are decorative — fail silently */ }
+    }
+
+    async function startCheckout(paymentType) {
+      const token = getToken();
+      if (!token) { showToast('Please log in to continue.'); return; }
+
+      const btnId = paymentType === 'LIFETIME' ? 'buy-essential' : 'buy-pro';
+      const btn = document.getElementById(btnId);
+      btn.disabled = true;
+      btn.classList.add('loading');
+
+      try {
+        const res = await fetch(`${API}/api/stripe/create-checkout`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ payment_type: paymentType, currency }),
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.error || 'Could not start checkout.');
+        }
+        const { url } = await res.json();
+        window.location.href = url;
+      } catch (e) {
+        showToast(e.message || 'Something went wrong. Please try again.');
+        btn.disabled = false;
+        btn.classList.remove('loading');
+      }
+    }
+
+    function getToken() {
+      return localStorage.getItem('ms_token') ||
+             (document.cookie.match(/(?:^|;\s*)token=([^;]+)/) || [])[1] || '';
+    }
+
+    function getFamilyId(token) {
+      try { return JSON.parse(atob(token.split('.')[1])).family_id || ''; }
+      catch (_) { return ''; }
+    }
+
+    async function handleLogout() {
+      const token = getToken();
+      if (token) {
+        await fetch(`${API}/auth/logout`, {
+          method: 'POST', headers: { Authorization: `Bearer ${token}` },
+        }).catch(() => {});
+      }
+      localStorage.removeItem('ms_token');
+      document.cookie = 'token=; Max-Age=0; path=/';
+      window.location.href = '/';
+    }
+
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 4000);
+    }
+
+    // Init
+    setCurrency(currency);
+    loadTrialStats();
+  </script>
+</body>
+</html>

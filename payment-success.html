@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MoneySteps — Payment Confirmed</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --green:#2E7A33; --green-l:#EEF7EE; --green-b:#B8D9B8;
+      --teal:#0F766E;  --teal-l:#F0FDFA;  --teal-b:#99D4CC;
+      --border:#D3D1C7; --white:#fff;
+      --text:#1C1C1A;  --muted:#6b6a66;   --bg:#F5F4F0; --card:#fff;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --white:#1e1e1c; --bg:#111110; --text:#e8e8e4; --muted:#b8b6b0;
+        --border:#2e2e2b; --card:#1a1a18;
+        --teal:#2dd4bf; --teal-l:#0d2926; --teal-b:#1a4a45;
+        --green:#4CAF50; --green-l:#162508; --green-b:#2a4a0d;
+      }
+    }
+
+    body {
+      font-family: 'Manrope', -apple-system, 'Segoe UI', sans-serif;
+      background: var(--bg); color: var(--text);
+      min-height: 100vh; display: flex; align-items: center; justify-content: center;
+      padding: 32px 20px;
+    }
+
+    .container { max-width: 480px; width: 100%; text-align: center; }
+
+    /* ── Animated tick ── */
+    .tick-wrap {
+      width: 80px; height: 80px; margin: 0 auto 28px;
+      background: var(--green-l); border: 2px solid var(--green-b);
+      border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    }
+    .tick-wrap svg { animation: pop .4s cubic-bezier(.175,.885,.32,1.275) both; }
+    @keyframes pop {
+      0%   { transform: scale(0); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    h1 { font-size: 26px; font-weight: 800; margin-bottom: 10px; }
+    .subtitle { font-size: 15px; color: var(--muted); margin-bottom: 32px; line-height: 1.5; }
+
+    /* ── Receipt card ── */
+    .receipt {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 16px; padding: 20px 24px; margin-bottom: 28px;
+      text-align: left;
+    }
+    .receipt-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 14px;
+    }
+    .receipt-row:last-child { border-bottom: none; }
+    .receipt-row .lbl { color: var(--muted); font-weight: 500; }
+    .receipt-row .val { font-weight: 700; font-variant-numeric: tabular-nums; }
+    .receipt-row .val.green { color: var(--green); }
+    .receipt-row .val.teal  { color: var(--teal);  }
+
+    /* ── What's unlocked ── */
+    .unlocked {
+      background: var(--teal-l); border: 1px solid var(--teal-b);
+      border-radius: 14px; padding: 18px 20px; margin-bottom: 28px; text-align: left;
+    }
+    .unlocked-title {
+      font-size: 12px; font-weight: 700; color: var(--teal);
+      text-transform: uppercase; letter-spacing: .06em; margin-bottom: 12px;
+    }
+    .unlocked-list { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+    .unlocked-list li { display: flex; align-items: flex-start; gap: 8px; font-size: 14px; }
+    .unlocked-list li::before { content: '✓'; color: var(--teal); font-weight: 800; flex-shrink: 0; }
+
+    /* ── Dashboard exit — secondary/outline ── */
+    .btn-secondary {
+      display: block; width: 100%; padding: 14px;
+      background: transparent; color: var(--muted);
+      border: 1.5px solid var(--border); border-radius: 12px;
+      font-family: inherit; font-size: 14px; font-weight: 600;
+      cursor: pointer; text-decoration: none;
+      transition: border-color .15s, color .15s;
+    }
+
+    /* ── CTA hierarchy: upsell = primary, dashboard = secondary ── */
+    .btn-primary {
+      display: block; width: 100%; padding: 15px;
+      background: linear-gradient(135deg, #0F766E, #0d9488);
+      color: #fff; border: none; border-radius: 12px;
+      font-family: inherit; font-size: 15px; font-weight: 700;
+      cursor: pointer; text-decoration: none;
+      transition: opacity .15s, transform .1s; margin-bottom: 12px;
+      box-shadow: 0 4px 14px rgba(15,118,110,.3);
+    }
+    .btn-primary:active { transform: scale(.98); }
+
+    /* ── Locked upsell — animated glow border ── */
+    @keyframes glow {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(202,163,32,.0), 0 0 12px 2px rgba(202,163,32,.08); }
+      50%       { box-shadow: 0 0 0 2px rgba(202,163,32,.18), 0 0 20px 4px rgba(202,163,32,.14); }
+    }
+    .locked {
+      background: linear-gradient(160deg, rgba(254,243,199,.25) 0%, var(--card) 60%);
+      border: 1.5px solid #e9c84a44;
+      border-radius: 14px; padding: 18px 20px; margin-bottom: 20px; text-align: left;
+      animation: glow 3s ease-in-out infinite;
+    }
+    @media (prefers-color-scheme: dark) {
+      .locked { background: linear-gradient(160deg, rgba(120,90,10,.18) 0%, var(--card) 60%); }
+    }
+    .locked-title {
+      font-size: 12px; font-weight: 700; color: #92400e;
+      text-transform: uppercase; letter-spacing: .06em; margin-bottom: 12px;
+      display: flex; align-items: center; gap: 6px;
+    }
+    @media (prefers-color-scheme: dark) { .locked-title { color: #fbbf24; } }
+    .locked-list { list-style: none; display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; }
+    .locked-list li { display: flex; align-items: flex-start; gap: 8px; font-size: 14px; color: var(--text); line-height: 1.5; }
+    .locked-list li::before { content: '🔒'; font-size: 11px; flex-shrink: 0; margin-top: 3px; }
+    .locked-list li b { font-weight: 700; display: block; margin-bottom: 1px; }
+    .locked-price-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding-top: 14px; border-top: 1px solid #e9c84a44; gap: 12px;
+    }
+    .locked-price { font-size: 13px; color: var(--muted); }
+    .locked-price strong { color: var(--text); font-size: 15px; }
+    .btn-upsell {
+      padding: 11px 20px;
+      background: linear-gradient(135deg, #d97706, #b45309);
+      color: #fff; border: none; border-radius: 10px;
+      font-family: inherit; font-size: 13px; font-weight: 800;
+      cursor: pointer; white-space: nowrap;
+      box-shadow: 0 3px 10px rgba(180,83,9,.35);
+      transition: opacity .15s, transform .1s;
+    }
+    .btn-upsell:active { transform: scale(.97); }
+    .btn-upsell:disabled { opacity: .5; cursor: not-allowed; box-shadow: none; }
+
+    /* ── Tooltip ── */
+    .tip-wrap { position: relative; display: inline-flex; align-items: center; margin-left: 5px; cursor: help; vertical-align: middle; }
+    .tip-icon {
+      width: 15px; height: 15px; border-radius: 50%;
+      background: #e9c84a44; color: #92400e;
+      font-size: 9px; font-weight: 800;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+      border: 1px solid #e9c84a88;
+    }
+    @media (prefers-color-scheme: dark) { .tip-icon { color: #fbbf24; } }
+    .tip-bubble {
+      display: none; position: absolute; bottom: calc(100% + 10px); left: 50%;
+      transform: translateX(-50%); width: 240px;
+      background: #1c1917; color: #e8e8e4;
+      font-size: 12px; font-weight: 500; line-height: 1.5;
+      padding: 12px 14px; border-radius: 11px; z-index: 20;
+      pointer-events: none; border: 1px solid #333;
+    }
+    .tip-bubble .nudge-label {
+      display: block; font-size: 10px; font-weight: 800; color: #2dd4bf;
+      text-transform: uppercase; letter-spacing: .06em; margin-bottom: 5px;
+    }
+    .tip-bubble::after {
+      content: ''; position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
+      border: 7px solid transparent; border-top-color: #1c1917;
+    }
+    .tip-wrap:hover .tip-bubble,
+    .tip-wrap:focus .tip-bubble { display: block; }
+
+    /* ── Social proof — footnote style ── */
+    .social-proof {
+      display: flex; align-items: flex-start; gap: 9px;
+      padding-top: 14px; border-top: 1px solid #e9c84a44; margin-top: 4px;
+      font-size: 11px; color: var(--muted); line-height: 1.6;
+      font-style: italic; text-align: left;
+    }
+    .social-proof svg { flex-shrink: 0; margin-top: 2px; color: var(--teal); }
+    .social-proof strong { font-style: normal; color: var(--text); }
+
+    /* ── Loading state ── */
+    .loading-wrap {
+      display: flex; flex-direction: column; align-items: center;
+      gap: 16px; padding: 40px 0;
+    }
+    .spinner {
+      width: 36px; height: 36px;
+      border: 3px solid var(--border); border-top-color: var(--teal);
+      border-radius: 50%; animation: spin .7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-wrap p { font-size: 14px; color: var(--muted); }
+  </style>
+</head>
+<body>
+  <div class="container" id="app">
+    <div class="loading-wrap">
+      <div class="spinner"></div>
+      <p>Confirming your payment…</p>
+    </div>
+  </div>
+
+  <script>
+    const API = 'https://moneysteps-api.darren-savery.workers.dev';
+
+    const PLAN_LABELS = {
+      LIFETIME:  { name: 'Lifetime Truth Engine', amount: { GBP: '£34.99', PLN: '99.00 zł' } },
+      AI_ANNUAL: { name: 'Pro Coach Bundle',       amount: { GBP: '£44.98', PLN: '139.00 zł' } },
+    };
+
+    const FEATURES = {
+      LIFETIME: [
+        'Immutable ledger with SHA-256 audit trail',
+        'Court-admissible PDF financial reports',
+        'Mutual-consent governance',
+        'Unlimited chores, allowances & payments',
+        'Full GDPR data export',
+      ],
+      AI_ANNUAL: [
+        'Everything in Lifetime, forever',
+        'AI Coach — trigger-based financial nudges',
+        'Spending velocity & delayed gratification alerts',
+        'Independence Score tracking',
+        'Parent Scouting Reports',
+      ],
+    };
+
+    function getToken() {
+      return localStorage.getItem('ms_token') ||
+             (document.cookie.match(/(?:^|;\s*)token=([^;]+)/) || [])[1] || '';
+    }
+
+    async function init() {
+      // Poll /api/trial/status until has_lifetime_license or ai_subscription_active is true.
+      // Stripe webhook delivery is near-instant but can take a few seconds.
+      const token = getToken();
+      const params = new URLSearchParams(location.search);
+      const sessionId = params.get('session_id');
+
+      let status = null;
+      let attempts = 0;
+
+      while (attempts < 3) {
+        try {
+          const res = await fetch(`${API}/api/trial/status`, {
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
+          });
+          if (res.ok) {
+            status = await res.json();
+            if (status.has_lifetime_license || status.ai_subscription_active) break;
+          }
+        } catch (_) {}
+        attempts++;
+        await new Promise(r => setTimeout(r, 1500));
+      }
+
+      // Falls back to LIFETIME for preview/offline rendering
+      const paymentType = status?.ai_subscription_active && !status?.has_lifetime_license
+        ? 'AI_ANNUAL' : 'LIFETIME';
+      const currency    = sessionStorage.getItem('ms_currency') || 'GBP';
+      render(paymentType, currency, sessionId);
+    }
+
+    function render(paymentType, currency, sessionId) {
+      const plan     = PLAN_LABELS[paymentType] || PLAN_LABELS.LIFETIME;
+      const features = FEATURES[paymentType]    || FEATURES.LIFETIME;
+      const amount   = plan.amount[currency]    || plan.amount.GBP;
+      const now      = new Date().toLocaleDateString(
+        currency === 'PLN' ? 'pl-PL' : 'en-GB',
+        { day: 'numeric', month: 'long', year: 'numeric' }
+      );
+
+      document.getElementById('app').innerHTML = `
+        <div class="tick-wrap">
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none"
+               stroke="#2E7A33" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
+        </div>
+
+        <h1>Payment Confirmed</h1>
+        <p class="subtitle">
+          Your MoneySteps account is now fully unlocked.<br>
+          A receipt has been sent to your email by Stripe.
+        </p>
+
+        <div class="receipt">
+          <div class="receipt-row">
+            <span class="lbl">Plan</span>
+            <span class="val teal">${plan.name}</span>
+          </div>
+          <div class="receipt-row">
+            <span class="lbl">Amount paid</span>
+            <span class="val">${amount}</span>
+          </div>
+          <div class="receipt-row">
+            <span class="lbl">Date</span>
+            <span class="val">${now}</span>
+          </div>
+          <div class="receipt-row">
+            <span class="lbl">Status</span>
+            <span class="val green">✓ Complete</span>
+          </div>
+          ${sessionId ? `
+          <div class="receipt-row">
+            <span class="lbl">Reference</span>
+            <span class="val" style="font-size:11px;color:var(--muted)">${sessionId.slice(0, 24)}…</span>
+          </div>` : ''}
+        </div>
+
+        <div class="unlocked">
+          <div class="unlocked-title">What's now unlocked</div>
+          <ul class="unlocked-list">
+            ${features.map(f => `<li>${f}</li>`).join('')}
+          </ul>
+        </div>
+
+        ${paymentType === 'LIFETIME' ? `
+        <div class="locked">
+          <div class="locked-title">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            You have the data. The intelligence is still locked.
+          </div>
+          <ul class="locked-list">
+            <li><span><b>${currency === 'PLN' ? 'Neutralny Arbiter' : 'Automate Parent-Child Friction'}</b>The AI is the neutral third party your family didn't know it needed. It delivers the challenge, the boundary, and the coaching conversation — so the relationship stays intact.</span><span class="tip-wrap" tabindex="0"><span class="tip-icon">?</span><span class="tip-bubble"><span class="nudge-label">AI Coach — Live Nudge</span>"You haven't logged a chore in 3 days. Your Bike Goal is slipping. Want to get back on track today?"</span></span></li>
+            <li><span><b>Impulse Control Training</b>Spending Velocity alerts fire the moment a pattern turns risky. The AI walks them through the decision in real time, building the pause-and-think habit that lasts well beyond childhood.</span><span class="tip-wrap" tabindex="0"><span class="tip-icon">?</span><span class="tip-bubble"><span class="nudge-label">AI Coach — Spending Alert</span>"Whoa! You've spent 70% of your weekly budget in 24 hours. At this rate, you'll miss your Save Goal for the new bike. Still want to proceed?"</span></span></li>
+            <li><span><b>The Intelligence Report</b>One weekly summary. Discipline score, consistency trend, Independence Benchmark — everything you need to parent with confidence, without interrogating your child for answers.</span><span class="tip-wrap" tabindex="0"><span class="tip-icon">?</span><span class="tip-bubble"><span class="nudge-label">Weekly Report Preview</span>"Discipline: 4/5. Saving rate: 40%. Independence Benchmark: High. Logged 3 transactions without prompting. Trend: improving."</span></span></li>
+            <li><span><b>Active Risk Mitigation</b>The AI identifies high-stakes traps — loot boxes, fake giveaways, BNPL schemes — and delivers a micro-lesson exactly when it lands hardest.</span><span class="tip-wrap" tabindex="0"><span class="tip-icon">?</span><span class="tip-bubble"><span class="nudge-label">Value Alert</span>"This Loot Box has a 0.01% success rate. Statistically it's a loss. Want to see a better way to spend ${currency === 'PLN' ? '50 zł' : '£5'}?"</span></span></li>
+            <li><span><b>Continuous Skill Building</b>The Coach doesn't wait for problems. It surfaces quiet wins, flags emerging habits, and builds your child's financial vocabulary through the decisions they're already making every day.</span><span class="tip-wrap" tabindex="0"><span class="tip-icon">?</span><span class="tip-bubble"><span class="nudge-label">Skill Insight</span>"Jamie has made 3 value-conscious decisions this week, choosing to save over spend. Financial vocabulary: developing. Keep going."</span></span></li>
+          </ul>
+          <div class="social-proof">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            <span>Digital intervention tools increase financial initiative in children by up to <strong>223%</strong> vs. traditional learning methods. <em>— OECD Financial Literacy Benchmarks (2025/2026)</em></span>
+          </div>
+          <div class="locked-price-row">
+            <div class="locked-price">${currency === 'PLN' ? 'Dodaj AI Coaching' : 'Add AI Coaching'}<br><strong>${currency === 'PLN' ? '139 zł / rok' : '£19.99 / year'}</strong></div>
+            <button class="btn-upsell" id="btn-upsell" onclick="addAiCoach('${currency}')">${currency === 'PLN' ? 'Odblokuj AI Coach' : 'Unlock AI Coach'} →</button>
+          </div>
+        </div>` : ''}
+
+        <a href="/" class="btn-primary">${paymentType === 'LIFETIME' ? 'Continue to Dashboard' : 'Go to Dashboard'}</a>
+        <a href="mailto:support@moneysteps.app" class="btn-secondary">Contact Support</a>
+      `;
+    }
+
+    async function addAiCoach(currency) {
+      const token = getToken();
+      if (!token) { location.href = '/paywall.html'; return; }
+      const btn = document.getElementById('btn-upsell');
+      if (btn) { btn.disabled = true; btn.textContent = 'Redirecting…'; }
+      try {
+        const res = await fetch(`${API}/api/stripe/create-checkout`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ payment_type: 'AI_ANNUAL', currency }),
+        });
+        if (!res.ok) throw new Error();
+        const { url } = await res.json();
+        window.location.href = url;
+      } catch (_) {
+        if (btn) { btn.disabled = false; btn.textContent = 'Unlock AI Coach'; }
+      }
+    }
+
+    init();
+  </script>
+</body>
+</html>

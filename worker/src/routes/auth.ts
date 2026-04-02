@@ -30,6 +30,48 @@ const PIN_LENGTH         = 4;
 //
 // Body: { family_id, display_name, email, password?, locale? }
 // ----------------------------------------------------------------
+// ----------------------------------------------------------------
+// POST /auth/create-family
+// Creates a new family + first parent account atomically.
+// Body: { display_name, email, password?, locale? }
+// Returns: { family_id, user_id, email }
+// ----------------------------------------------------------------
+export async function handleCreateFamily(request: Request, env: Env): Promise<Response> {
+  const body = await parseBody(request);
+  if (!body) return error('Invalid JSON body');
+
+  const { display_name, email, password, locale } = body;
+  if (!display_name || typeof display_name !== 'string') return error('display_name required');
+  if (!email        || typeof email        !== 'string') return error('email required');
+
+  const normEmail = (email as string).toLowerCase().trim();
+  if (!isValidEmail(normEmail)) return error('Invalid email address');
+
+  const existing = await env.DB
+    .prepare('SELECT id FROM users WHERE email = ?').bind(normEmail).first();
+  if (existing) return error('Email already registered', 409);
+
+  const familyId     = nanoid();
+  const userId       = nanoid();
+  const passwordHash = password ? await hashPassword(password as string) : null;
+  const userLocale   = (locale === 'pl' ? 'pl' : 'en');
+
+  await env.DB.batch([
+    env.DB.prepare(`INSERT INTO families (id, verify_mode) VALUES (?, 'amicable')`)
+      .bind(familyId),
+    env.DB.prepare(`
+      INSERT INTO users (id, family_id, display_name, email, locale, password_hash, email_verified)
+      VALUES (?,?,?,?,?,?,0)
+    `).bind(userId, familyId, display_name, normEmail, userLocale, passwordHash),
+    env.DB.prepare(`INSERT INTO family_roles (user_id, family_id, role) VALUES (?,?,'parent')`)
+      .bind(userId, familyId),
+  ]);
+
+  return json({ family_id: familyId, user_id: userId, email: normEmail }, 201);
+}
+
+// ----------------------------------------------------------------
+// POST /auth/register
 export async function handleRegister(request: Request, env: Env): Promise<Response> {
   const body = await parseBody(request);
   if (!body) return error('Invalid JSON body');

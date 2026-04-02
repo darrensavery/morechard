@@ -35,8 +35,9 @@
   --purple:#5B21B6;--purple-l:#F5F3FF;--purple-b:#DDD6FE;
   --teal:#0F766E;--teal-l:#F0FDFA;--teal-b:#99D4CC;
   --gray:#5F5E5A;--gray-l:#F1EFE8;--border:#D3D1C7;
-  --white:#fff;--text:#1C1C1A;--muted:#888780;--bg:#F5F4F0;
+  --white:#fff;--text:#1C1C1A;--muted:#6b6a66;--bg:#F5F4F0;
 }
+input,button,select,textarea{font-family:'Manrope',-apple-system,'Segoe UI',sans-serif}
 body{font-family:'Manrope',-apple-system,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding-bottom:env(safe-area-inset-bottom);font-size:17px;line-height:1.45}
 
 .header{background:var(--white);border-bottom:1px solid var(--border);padding:15px 18px;padding-top:calc(15px + env(safe-area-inset-top));display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 1px 4px rgba(0,0,0,.05)}
@@ -117,8 +118,9 @@ body{font-family:'Manrope',-apple-system,'Segoe UI',sans-serif;background:var(--
 .chore-freq{font-size:12px;color:var(--muted)}
 .chore-price{font-size:18px;font-weight:800;color:var(--green);min-width:40px;text-align:right;font-variant-numeric:tabular-nums}
 .chore-price.mum{color:var(--purple)}
-.done-btn{background:var(--green-l);color:var(--green);border:1px solid var(--green-b);border-radius:10px;padding:10px 14px;font-size:13px;font-weight:600;cursor:pointer;white-space:normal;transition:background .15s,border-color .15s,transform .12s;text-align:center;flex-shrink:0;max-width:80px;line-height:1.3}
-.done-btn:hover{background:#D4EDD4;border-color:var(--green-b)}
+.done-btn{background:var(--teal-l);color:var(--teal);border:1px solid var(--teal-b);border-radius:10px;padding:10px 14px;font-size:13px;font-weight:600;cursor:pointer;white-space:normal;transition:background .15s,border-color .15s,transform .12s;text-align:center;flex-shrink:0;max-width:80px;line-height:1.3}
+.done-btn:hover{background:var(--teal-b);border-color:var(--teal)}
+.done-btn:hover{background:var(--teal-b);border-color:var(--teal)}
 .done-btn:active{animation:btnPop .22s ease-out}
 .done-btn.mum{background:var(--purple-l);color:var(--purple);border-color:var(--purple-b)}
 .done-btn.mum:hover{background:var(--purple-b);border-color:var(--purple)}
@@ -132,7 +134,7 @@ body{font-family:'Manrope',-apple-system,'Segoe UI',sans-serif;background:var(--
 /* ── Modals ─────────────────────────────────────────────────────────── */
 .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:300;align-items:center;justify-content:center;padding:16px}
 .modal-overlay.show{display:flex}
-.modal{background:var(--white);border-radius:18px;padding:24px;width:100%;max-width:520px;box-shadow:0 8px 40px rgba(0,0,0,.25);max-height:92vh;overflow-y:auto;position:relative}
+.modal{background:var(--white);border-radius:18px;padding:24px;width:100%;max-width:520px;box-shadow:0 8px 40px rgba(0,0,0,.25);max-height:92vh;overflow-y:auto;position:relative;font-family:'Manrope',-apple-system,'Segoe UI',sans-serif}
 .modal-close{position:absolute;top:14px;right:14px;width:30px;height:30px;border-radius:50%;background:var(--gray-l);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--muted);transition:background .15s,color .15s;flex-shrink:0}
 .modal-close:hover{background:var(--border);color:var(--text)}
 .modal-title{font-size:19px;font-weight:800;margin-bottom:4px}
@@ -143,8 +145,8 @@ body{font-family:'Manrope',-apple-system,'Segoe UI',sans-serif;background:var(--
 .modal textarea{resize:none;min-height:76px}
 .modal-btns{display:flex;gap:8px;margin-top:16px}
 @keyframes btnPop{0%{transform:scale(.95)}55%{transform:scale(1.03)}100%{transform:scale(1)}}
-.btn-primary{flex:1;background:var(--green);color:white;border:none;border-radius:10px;padding:14px 18px;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit;transition:background .15s}
-.btn-primary:hover{background:var(--green-m)}
+.btn-primary{flex:1;background:var(--teal-l);color:var(--teal);border:1px solid var(--teal-b);border-radius:10px;padding:14px 18px;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit;transition:background .15s,color .15s}
+.btn-primary:hover{background:var(--teal-b);border-color:var(--teal)}
 .btn-primary:active{animation:btnPop .22s ease-out}
 .btn-secondary{padding:13px 18px;background:transparent;border:1.5px solid var(--border);border-radius:10px;font-size:15px;cursor:pointer;color:var(--muted);font-weight:500;font-family:inherit;transition:background .15s,border-color .15s,color .15s}
 .btn-secondary:hover{background:var(--gray-l);border-color:var(--gray);color:var(--text)}
@@ -167,9 +169,13 @@ body{font-family:'Manrope',-apple-system,'Segoe UI',sans-serif;background:var(--
 .h-price.rejected{color:var(--red);text-decoration:line-through}.h-price.suggestion{color:var(--blue)}
 
 /* ── Boss tabs — NO scrollbar ───────────────────────────────────────── */
-.inner-tabs{display:flex;border-bottom:1.5px solid var(--border);margin-bottom:18px}
+.tabs-scroll-wrap{display:flex;align-items:stretch;margin:-18px -14px 18px;border-bottom:1.5px solid var(--border)}
+.tabs-arrow{flex-shrink:0;background:var(--white);border:none;border-bottom:none;font-size:22px;color:var(--muted);cursor:pointer;transition:color .15s;padding:0 10px;display:flex;align-items:center}
+.tabs-arrow:hover{color:var(--text)}
+.tabs-arrow[disabled]{opacity:.15;cursor:default}
+.inner-tabs{flex:1;display:flex;justify-content:center;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;border-bottom:none;margin-bottom:0}
 .inner-tabs::-webkit-scrollbar{display:none}
-.inner-tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 2px 10px;font-size:10px;font-weight:600;letter-spacing:.2px;cursor:pointer;border:none;background:none;color:var(--muted);border-bottom:2.5px solid transparent;margin-bottom:-2px;font-family:inherit;transition:color .15s;min-width:0;line-height:1.2;white-space:normal;overflow:hidden;word-break:break-word;text-align:center}
+.inner-tab{flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 14px 10px;font-size:12px;font-weight:600;letter-spacing:.2px;cursor:pointer;border:none;background:none;color:var(--muted);border-bottom:2.5px solid transparent;margin-bottom:-2px;font-family:inherit;transition:color .15s;white-space:nowrap;text-align:center}
 .inner-tab .tab-icon{flex-shrink:0;display:block}
 .inner-tab svg.tab-icon{overflow:visible}
 .inner-tab:hover{color:var(--text)}
@@ -214,8 +220,8 @@ body{font-family:'Manrope',-apple-system,'Segoe UI',sans-serif;background:var(--
 .pending-tag{font-size:12px;font-weight:700;padding:3px 9px;border-radius:20px;display:inline-block;margin-bottom:8px}
 .pending-tag.completion{background:var(--amber-l);color:var(--amber)}.pending-tag.suggestion{background:var(--blue-l);color:var(--blue)}
 .review-btns{display:flex;gap:8px}
-.btn-approve{flex:1;background:var(--green-l);color:var(--green);border:1px solid var(--green-b);border-radius:9px;padding:12px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;transition:background .15s,color .15s}
-.btn-approve:hover{background:var(--green);color:white}
+.btn-approve{flex:1;background:var(--teal-l);color:var(--teal);border:1px solid var(--teal-b);border-radius:9px;padding:12px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;transition:background .15s,color .15s}
+.btn-approve:hover{background:var(--teal-b);border-color:var(--teal)}
 .btn-approve:active{animation:btnPop .22s ease-out}
 .btn-reject{flex:1;background:var(--red-l);color:var(--red);border:1px solid var(--red-b);border-radius:9px;padding:12px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;transition:background .15s,color .15s}
 .btn-reject:hover{background:var(--red);color:white}
@@ -268,16 +274,16 @@ body{font-family:'Manrope',-apple-system,'Segoe UI',sans-serif;background:var(--
 /* ── Settings ───────────────────────────────────────────────────────── */
 .settings-card{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:12px}
 .settings-card h3{font-size:15px;font-weight:700;margin-bottom:12px}
-.settings-card input[type=text],.settings-card input[type=number]{width:100%;border:1px solid var(--border);border-radius:9px;padding:11px 13px;font-size:15px;background:var(--bg);color:var(--text);margin-bottom:10px}
+.settings-card input[type=text],.settings-card input[type=number]{width:100%;border:1px solid var(--border);border-radius:9px;padding:11px 13px;font-size:15px;background:var(--bg);color:var(--text);margin-bottom:10px;font-family:inherit}
 .settings-card input:focus{outline:none;border-color:var(--green-m)}
 .notif-status{font-size:14px;color:var(--muted);margin-bottom:10px;padding:11px;background:var(--gray-l);border-radius:9px;line-height:1.5}
 .notif-status.ok{background:var(--green-l);color:var(--green)}
 .notif-status.warn{background:var(--amber-l);color:var(--amber)}
 /* ── Settings group nav ─────────────────────────────────────────────── */
 .settings-nav-grid{display:flex;flex-direction:column;gap:10px;margin-bottom:4px}
-.settings-nav-tile{display:flex;align-items:center;gap:14px;background:var(--white);border:1px solid var(--border);border-radius:14px;padding:16px 18px;cursor:pointer;transition:all .15s;text-align:left;width:100%}
+.settings-nav-tile{display:flex;align-items:center;gap:14px;background:var(--white);border:1px solid var(--border);border-radius:14px;padding:16px 18px;cursor:pointer;transition:all .15s;text-align:left;width:100%;font-family:inherit}
 .settings-nav-tile:hover{border-color:var(--border);box-shadow:0 3px 10px rgba(0,0,0,.06);transform:translateY(-1px)}
-.settings-nav-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.settings-nav-icon{width:46px;height:46px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .settings-nav-icon.green{background:var(--green-l)}
 .settings-nav-icon.blue{background:var(--blue-l)}
 .settings-nav-icon.amber{background:var(--amber-l)}
@@ -285,10 +291,10 @@ body{font-family:'Manrope',-apple-system,'Segoe UI',sans-serif;background:var(--
 .settings-nav-icon.purple{background:var(--purple-l)}
 .settings-nav-icon.teal{background:var(--teal-l)}
 .settings-nav-label{flex:1;min-width:0;overflow:hidden}
-.settings-nav-label strong{display:block;font-size:15px;font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.settings-nav-label span{font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block}
+.settings-nav-label strong{display:block;font-size:17px;font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.settings-nav-label span{font-size:14px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block}
 .settings-nav-arrow{color:var(--muted);opacity:.5}
-.settings-back-btn{display:flex;align-items:center;gap:6px;background:none;border:none;font-size:14px;font-weight:700;color:var(--muted);cursor:pointer;padding:0;margin-bottom:16px}
+.settings-back-btn{display:flex;align-items:center;gap:6px;background:none;border:none;font-size:14px;font-weight:700;color:var(--muted);cursor:pointer;padding:0;margin-bottom:16px;font-family:inherit}
 .settings-back-btn:hover{color:var(--text)}
 .settings-group-title{font-size:18px;font-weight:800;margin-bottom:16px;color:var(--text)}
 
@@ -327,9 +333,9 @@ body{font-family:'Manrope',-apple-system,'Segoe UI',sans-serif;background:var(--
 
 /* ── Dark mode variables ─────────────────────────────────────────────── */
 html[data-theme="dark"] {
-  --white:#1e1e1c;--bg:#111110;--text:#e8e8e4;--muted:#9a9891;--border:#2e2e2b;
+  --white:#1e1e1c;--bg:#111110;--text:#e8e8e4;--muted:#b8b6b0;--border:#2e2e2b;
   --gray:#b0aea8;--gray-l:#252522;
-  --green:#3D8B40;--green-l:#162508;--green-m:#4CAF50;--green-b:#2a4a0d;
+  --green:#4CAF50;--green-l:#162508;--green-m:#4CAF50;--green-b:#2a4a0d;
   --amber-l:#2e1e05;--amber-b:#6b4500;
   --red-l:#2e0d0d;--red-b:#6b1515;
   --blue-l:#0a1a2e;--blue-b:#0d2e5a;
@@ -338,9 +344,9 @@ html[data-theme="dark"] {
 }
 @media (prefers-color-scheme: dark) {
   html[data-theme="system"] {
-    --white:#1e1e1c;--bg:#111110;--text:#e8e8e4;--muted:#9a9891;--border:#2e2e2b;
+    --white:#1e1e1c;--bg:#111110;--text:#e8e8e4;--muted:#b8b6b0;--border:#2e2e2b;
     --gray:#b0aea8;--gray-l:#252522;
-    --green:#3D8B40;--green-l:#162508;--green-m:#4CAF50;--green-b:#2a4a0d;
+    --green:#4CAF50;--green-l:#162508;--green-m:#4CAF50;--green-b:#2a4a0d;
     --amber-l:#2e1e05;--amber-b:#6b4500;
     --red-l:#2e0d0d;--red-b:#6b1515;
     --blue-l:#0a1a2e;--blue-b:#0d2e5a;
@@ -483,7 +489,7 @@ html[data-theme="system"] .pin-box:focus{background:var(--green-l)}
 .goal-progress-section{margin-bottom:8px}
 .goal-card{background:var(--white);border:1px solid var(--border);border-radius:14px;padding:14px 16px;margin-bottom:8px}
 .goal-card-header{display:flex;align-items:center;gap:10px;margin-bottom:10px}
-.goal-card-emoji{font-size:22px;flex-shrink:0}
+.goal-card-emoji{flex-shrink:0;display:flex;align-items:center}
 .goal-card-name{font-size:14px;font-weight:800;color:var(--text)}
 .goal-card-sub{font-size:11px;color:var(--muted);margin-top:1px}
 .goal-card-pct{font-size:14px;font-weight:800;color:var(--green)}
@@ -496,13 +502,13 @@ html[data-theme="system"] .pin-box:focus{background:var(--green-l)}
 .goal-tag.deadline{background:#FEF3C7;color:#92400E}
 .goal-tag.complete{background:#D1FAE5;color:#065F46}
 .goal-item{display:flex;align-items:center;gap:10px;background:var(--white);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:8px}
-.goal-item-emoji{font-size:18px;flex-shrink:0}
+.goal-item-emoji{flex-shrink:0;display:flex;align-items:center}
 .goal-item-info{flex:1;min-width:0}
 .goal-item-name{font-size:14px;font-weight:700;color:var(--text)}
 .goal-item-detail{font-size:11px;color:var(--muted);margin-top:2px}
 .goal-item-actions{display:flex;gap:6px;flex-shrink:0}
 .goal-item-btn{background:none;border:1px solid var(--border);border-radius:8px;padding:5px 8px;cursor:pointer;font-size:12px;color:var(--muted);line-height:1}
-.goal-item-btn:hover{border-color:var(--green);color:var(--green)}
+.goal-item-btn:hover{border-color:var(--teal);color:var(--teal)}
 .goal-item-btn.del:hover{border-color:var(--red);color:var(--red)}
 .alloc-bar-wrap{margin-top:10px}
 .alloc-bar-label{font-size:11px;font-weight:700;color:var(--muted);margin-bottom:5px;display:flex;justify-content:space-between}
@@ -548,8 +554,11 @@ html[data-theme="system"] .pin-box:focus{background:var(--green-l)}
 .sub-cat-btn .scat-emoji{font-size:18px;flex-shrink:0}
 .sub-cat-btn.selected{background:var(--blue-l);border-color:var(--blue-b);color:var(--blue)}
 .goal-cat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:4px}
-.goal-cat-btn{background:var(--gray-l);border:1.5px solid var(--border);border-radius:10px;padding:8px 4px;font-size:12px;font-weight:600;cursor:pointer;color:var(--text);text-align:center;transition:background .15s,border-color .15s;line-height:1.3}
-.goal-cat-btn .cat-emoji{display:block;font-size:20px;margin-bottom:2px}
+.goal-cat-btn{background:var(--gray-l);border:1.5px solid var(--border);border-radius:10px;padding:8px 4px;font-size:12px;font-weight:600;cursor:pointer;color:var(--text);text-align:center;transition:background .15s,border-color .15s,box-shadow .15s,transform .1s;line-height:1.3}
+.goal-cat-btn:hover{background:var(--white);border-color:var(--green-m);box-shadow:0 2px 8px rgba(0,0,0,.07);transform:translateY(-1px)}
+.goal-cat-btn:hover .cat-icon{background:var(--green-l);color:var(--green)}
+.goal-cat-btn .cat-icon{display:flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:10px;margin:0 auto 4px;background:var(--gray-l);color:var(--muted)}
+.goal-cat-btn.selected .cat-icon{background:var(--green-l);color:var(--green)}
 .goal-cat-btn.selected{background:var(--green-l);border-color:var(--green-m);color:var(--green)}
 .status-badge.spent{background:var(--red-l);color:var(--red)}
 .h-price.spent{color:var(--red)}
@@ -572,15 +581,15 @@ html[data-theme="system"] .pin-box:focus{background:var(--green-l)}
 .notes-indicator-btn:hover{background:var(--blue,#3b6fd4);color:#fff}
 
 /* ── Avatar system ───────────────────────────────────────────────────── */
-.avatar-ring{border-radius:50%;overflow:hidden;flex-shrink:0;display:inline-flex;align-items:center;justify-content:center}
-.header-avatar{border-radius:50%;overflow:hidden;flex-shrink:0;cursor:pointer;border:2px solid transparent;transition:border-color .15s}
-.header-avatar:hover{border-color:var(--border)}
+.avatar-ring{border-radius:50%;overflow:hidden;flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;border:2px solid rgba(0,0,0,.18);box-shadow:0 1px 4px rgba(0,0,0,.15)}
+.header-avatar{border-radius:50%;overflow:hidden;flex-shrink:0;cursor:pointer;border:2px solid rgba(0,0,0,.18);box-shadow:0 1px 4px rgba(0,0,0,.15);transition:box-shadow .15s}
+.header-avatar:hover{box-shadow:0 2px 8px rgba(0,0,0,.22)}
 .avatar-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:16px;max-height:62vh;overflow-y:auto;padding-bottom:4px}
 .avatar-opt{background:var(--gray-l);border:3px solid transparent;border-radius:14px;padding:8px 4px 5px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;transition:all .15s}
 .avatar-opt:hover{border-color:var(--border);background:var(--gray-l)}
 .avatar-opt.selected{border-color:var(--green);background:var(--green-l)}
 .avatar-opt-name{font-size:10px;font-weight:700;color:var(--muted);text-align:center;line-height:1.2}
-.tile-avatar{width:52px;height:52px;border-radius:50%;overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.tile-avatar{width:52px;height:52px;border-radius:50%;overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center;border:2px solid rgba(0,0,0,.18);box-shadow:0 1px 4px rgba(0,0,0,.15)}
 
 /* ── Plan week button on chore card ──────────────────────────────────── */
 .plan-week-btn{background:var(--gray-l);border:1px solid var(--border);border-radius:9px;padding:11px 10px;cursor:pointer;color:var(--muted);flex-shrink:0;transition:all .15s;line-height:1;display:flex;align-items:center}
@@ -599,6 +608,50 @@ html[data-theme="system"] .pin-box:focus{background:var(--green-l)}
 .plan-day-btn.selected .plan-day-label{color:var(--teal)}
 .plan-day-num{font-size:14px;font-weight:800;color:var(--text);margin-top:2px}
 .plan-day-tick{font-size:12px;color:var(--teal);margin-top:2px;min-height:15px}
+
+/* ── Family dashboard ────────────────────────────────────────────────── */
+.dash-child-card{background:var(--white);border:1px solid var(--border);border-radius:16px;padding:18px;margin-bottom:12px}
+.dash-child-header{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.dash-child-name{font-size:16px;font-weight:800}
+.dash-child-meta{font-size:12px;color:var(--muted);margin-top:1px}
+.dash-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+.dash-stat{background:var(--bg);border-radius:10px;padding:10px 8px;text-align:center}
+.dash-stat-val{font-size:18px;font-weight:800;font-variant-numeric:tabular-nums;color:var(--text)}
+.dash-stat-lbl{font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-top:2px}
+.dash-goal-bar-track{background:var(--bg);border-radius:99px;height:7px;margin-top:8px;overflow:hidden}
+.dash-goal-bar-fill{background:var(--teal);height:100%;border-radius:99px;transition:width .6s}
+/* TrialCountdown */
+.trial-banner{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px 16px;margin-bottom:16px;display:flex;flex-direction:column;gap:8px}
+.trial-banner-row{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.trial-banner-label{font-size:12px;font-weight:600;color:var(--muted);letter-spacing:.04em;text-transform:uppercase}
+.trial-banner-days{font-size:13px;font-weight:600;color:var(--text);font-variant-numeric:tabular-nums}
+.trial-bar-track{height:8px;background:var(--border);border-radius:99px;overflow:hidden}
+.trial-bar-fill{height:100%;border-radius:99px;transition:width .6s;background:var(--teal)}
+.trial-bar-fill.urgent{background:var(--red)}
+.trial-standby{font-size:13px;color:var(--muted);font-style:italic}
+.dash-pending-badge{display:inline-flex;align-items:center;gap:4px;background:var(--amber-l);color:var(--amber);border:1px solid var(--amber-b);border-radius:20px;font-size:12px;font-weight:700;padding:3px 10px;margin-left:auto}
+
+/* ── Auth form ───────────────────────────────────────────────────────── */
+.auth-card{background:var(--white);border:1px solid var(--border);border-radius:20px;padding:28px 24px;margin-top:8px}
+.auth-card-icon{width:52px;height:52px;border-radius:14px;background:var(--green-l);display:flex;align-items:center;justify-content:center;margin:0 auto 16px}
+.auth-card-title{font-size:19px;font-weight:800;text-align:center;margin-bottom:4px}
+.auth-card-sub{font-size:13px;color:var(--muted);text-align:center;margin-bottom:24px}
+.auth-field{margin-bottom:14px}
+.auth-field label{display:block;font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+.auth-field input:not(.auth-invite-input){width:100%;border:1.5px solid var(--border);border-radius:11px;padding:13px 14px;font-size:15px;background:var(--bg);color:var(--text);font-family:inherit;box-sizing:border-box;transition:border-color .15s}
+.auth-field input:not(.auth-invite-input):focus{outline:none;border-color:var(--green-m);background:var(--white)}
+.auth-field input::placeholder{color:var(--muted);opacity:.7}
+.auth-divider{display:flex;align-items:center;gap:12px;margin:20px 0}
+.auth-divider-line{flex:1;height:1px;background:var(--border)}
+.auth-divider-text{font-size:12px;color:var(--muted);font-weight:600}
+.auth-submit{width:100%;padding:14px;border-radius:11px;border:none;background:var(--teal);color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;transition:opacity .15s;margin-top:4px}
+.auth-submit:hover{opacity:.88}
+.auth-submit:active{opacity:.75}
+.auth-back{display:flex;align-items:center;justify-content:center;gap:5px;margin-top:16px;font-size:14px;color:var(--muted);background:none;border:none;cursor:pointer;font-family:inherit;width:100%}
+.auth-back:hover{color:var(--text)}
+.auth-invite-input{width:100%;border:1.5px solid var(--border);border-radius:11px;padding:16px 14px;font-size:26px;font-weight:800;letter-spacing:8px;text-align:center;text-transform:uppercase;background:var(--bg);color:var(--text);font-family:inherit;box-sizing:border-box;transition:border-color .15s}
+.auth-invite-input:focus{outline:none;border-color:var(--teal);background:var(--white)}
+.auth-card.join .auth-card-icon{background:var(--teal-l)}
 </style>
 </head>
 <body>
@@ -636,21 +689,46 @@ html[data-theme="system"] .pin-box:focus{background:var(--green-l)}
     </div>
     <!-- Create panel -->
     <div id="auth-create-panel" style="display:none">
-      <div style="font-size:16px;font-weight:700;margin-bottom:16px">Create your family</div>
-      <input id="auth-email" type="email" class="input-field" placeholder="Your email" style="margin-bottom:10px">
-      <input id="auth-password" type="password" class="input-field" placeholder="Password (min 6 chars)" style="margin-bottom:10px">
-      <input id="auth-family-name" type="text" class="input-field" placeholder="Family name (e.g. The Smiths)" style="margin-bottom:16px">
-      <div class="pin-err" id="auth-err"></div>
-      <button class="btn-primary" onclick="createFamily()" style="width:100%">Create family</button>
-      <button class="back-link" onclick="showAuthPanel('main')" style="margin-top:12px">← Back</button>
+      <div class="auth-card">
+        <div class="auth-card-icon"><i data-lucide="house-plus" width="26" height="26" style="color:var(--green)" class="lucide"></i></div>
+        <div class="auth-card-title">Create your family</div>
+        <div class="auth-card-sub">Set up a new MoneySteps account for your family</div>
+        <button class="btn-google" onclick="signInWithGoogle()" style="display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:13px;border-radius:11px;border:1.5px solid var(--border);background:var(--white);font-size:15px;font-weight:600;cursor:pointer;margin-bottom:4px;font-family:inherit">
+          <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.08 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-3.59-13.46-8.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+          Continue with Google
+        </button>
+        <div class="auth-divider"><div class="auth-divider-line"></div><div class="auth-divider-text">or sign up with email</div><div class="auth-divider-line"></div></div>
+        <div class="auth-field">
+          <label for="auth-family-name">Family name</label>
+          <input id="auth-family-name" type="text" placeholder="e.g. The Smiths" autocomplete="off">
+        </div>
+        <div class="auth-field">
+          <label for="auth-email">Email address</label>
+          <input id="auth-email" type="email" placeholder="you@example.com" autocomplete="email">
+        </div>
+        <div class="auth-field">
+          <label for="auth-password">Password</label>
+          <input id="auth-password" type="password" placeholder="Minimum 8 characters" autocomplete="new-password">
+        </div>
+        <div class="pin-err" id="auth-err"></div>
+        <button class="auth-submit" onclick="createFamily()">Create family</button>
+      </div>
+      <button class="auth-back" onclick="showAuthPanel('main')"><i data-lucide="arrow-left" width="14" height="14" class="lucide"></i> Back to options</button>
     </div>
     <!-- Join panel -->
     <div id="auth-join-panel" style="display:none">
-      <div style="font-size:16px;font-weight:700;margin-bottom:16px">Join a family</div>
-      <input id="auth-invite-code" type="text" class="input-field" placeholder="6-character invite code" maxlength="6" style="margin-bottom:10px;text-transform:uppercase;letter-spacing:4px;font-size:20px;text-align:center">
-      <div class="pin-err" id="auth-join-err"></div>
-      <button class="btn-primary" onclick="joinFamily()" style="width:100%">Join family</button>
-      <button class="back-link" onclick="showAuthPanel('main')" style="margin-top:12px">← Back</button>
+      <div class="auth-card join">
+        <div class="auth-card-icon"><i data-lucide="user-round-plus" width="26" height="26" style="color:var(--teal)" class="lucide"></i></div>
+        <div class="auth-card-title">Join a family</div>
+        <div class="auth-card-sub">Enter the 6-character code from a parent</div>
+        <div class="auth-field">
+          <label for="auth-invite-code">Invite code</label>
+          <input id="auth-invite-code" type="text" class="auth-invite-input" placeholder="ABC123" maxlength="6">
+        </div>
+        <div class="pin-err" id="auth-join-err"></div>
+        <button class="auth-submit" onclick="joinFamily()">Join family</button>
+      </div>
+      <button class="auth-back" onclick="showAuthPanel('main')"><i data-lucide="arrow-left" width="14" height="14" class="lucide"></i> Back to options</button>
     </div>
   </div>
 </div>
@@ -661,7 +739,8 @@ html[data-theme="system"] .pin-box:focus{background:var(--green-l)}
 <div class="header">
   <div class="header-title"><span class="sync-dot" id="sync-dot"></span><i data-lucide="coins" width="22" height="22" class="lucide"></i> MoneySteps</div>
   <div class="header-right">
-    <button class="header-avatar" id="header-avatar" onclick="openAvatarPicker()" title="Change avatar" style="display:none;width:36px;height:36px;background:none;border:2px solid var(--border);padding:0"></button>
+    <button class="header-avatar" id="header-avatar" onclick="openAvatarPicker()" title="Change avatar" style="display:none;width:36px;height:36px;background:none;padding:0"></button>
+    <button class="lock-btn" id="boss-settings-btn" onclick="openBossSettings()" style="display:none" title="Settings"><i data-lucide="settings" width="18" height="18" class="lucide"></i></button>
     <button class="lock-btn" id="logan-settings-btn" onclick="openLoganSettings()" style="display:none" title="Settings"><i data-lucide="settings" width="18" height="18" class="lucide"></i></button>
     <button class="lock-btn" id="lock-btn" onclick="lockSession()" style="display:none" title="Lock"><i data-lucide="lock" width="18" height="18" class="lucide"></i></button>
   </div>
@@ -714,9 +793,11 @@ html[data-theme="system"] .pin-box:focus{background:var(--green-l)}
     </button>
   </div>
   <div class="inner-tabs">
-    <button class="inner-tab active" id="ltab-earn" onclick="loganTab('earn')" data-i18n="tabs.earnings">Earnings</button>
-    <button class="inner-tab" id="ltab-spend" onclick="loganTab('spend')" data-i18n="tabs.spending">Spending</button>
-    <button class="inner-tab" id="ltab-balance" onclick="loganTab('balance')" data-i18n="tabs.balance">Balance</button>
+    <button class="inner-tab active" id="ltab-earn" onclick="loganTab('earn')"><i data-lucide="briefcase" width="16" height="16" class="lucide tab-icon"></i><span data-i18n="tabs.earnings">Earnings</span></button>
+    <button class="inner-tab" id="ltab-goals" onclick="loganTab('goals')"><i data-lucide="target" width="16" height="16" class="lucide tab-icon"></i><span>Goals</span></button>
+    <button class="inner-tab" id="ltab-spend" onclick="loganTab('spend')"><i data-lucide="shopping-bag" width="16" height="16" class="lucide tab-icon"></i><span data-i18n="tabs.spending">Spending</span></button>
+    <button class="inner-tab" id="ltab-balance" onclick="loganTab('balance')"><i data-lucide="piggy-bank" width="16" height="16" class="lucide tab-icon"></i><span data-i18n="tabs.balance">Balance</span></button>
+    <button class="inner-tab" id="ltab-stats" onclick="loganTab('stats')"><i data-lucide="trophy" width="16" height="16" class="lucide tab-icon"></i><span>Stats</span></button>
   </div>
 
   <!-- ── Earnings tab ─────────────────────────────────── -->
@@ -754,6 +835,22 @@ html[data-theme="system"] .pin-box:focus{background:var(--green-l)}
     <div id="logan-earn-history"><div class="loading">Loading…</div></div>
   </div>
 
+  <!-- ── Goals tab ──────────────────────────────────────── -->
+  <div id="logan-tab-goals" style="display:none">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <div style="font-size:16px;font-weight:800">My Goals</div>
+      <button id="add-goal-btn" onclick="openGoalEditor(null)" style="padding:7px 14px;background:var(--teal);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">+ Add goal</button>
+    </div>
+    <div id="goals-list"></div>
+    <div id="goals-alloc-wrap" style="display:none">
+      <div class="alloc-bar-wrap">
+        <div class="alloc-bar-label"><span>Auto-save allocation</span><span id="alloc-total-pct">0%</span></div>
+        <div class="alloc-bar-track"><div class="alloc-bar-fill" id="alloc-bar-fill" style="width:0%"></div></div>
+      </div>
+    </div>
+    <div id="goals-tab-content"></div>
+  </div>
+
   <!-- ── Spending tab ─────────────────────────────────── -->
   <div id="logan-tab-spend" style="display:none">
     <div style="display:flex;gap:8px;margin-bottom:16px">
@@ -770,21 +867,31 @@ html[data-theme="system"] .pin-box:focus{background:var(--green-l)}
     <div id="goals-progress-section"></div>
     <div id="balance-card" style="display:none"></div>
   </div>
+  <div id="logan-tab-stats" style="display:none">
+    <div id="stats-content"></div>
+  </div>
 </div>
 
 <!-- BOSS VIEW -->
 <div id="boss-view" class="content" style="display:none">
   <div id="boss-child-selector" class="boss-child-sel" style="display:none"></div>
-  <div class="inner-tabs">
-    <button class="inner-tab active" id="btab-pending" onclick="bossTab('pending')"><i data-lucide="check-circle" width="16" height="16" class="lucide tab-icon"></i><span data-i18n="tabs.approvals">Approvals</span><span id="pending-count"></span></button>
-    <button class="inner-tab" id="btab-payments" onclick="bossTab('payments')"><i data-lucide="banknote" width="16" height="16" class="lucide tab-icon"></i><span data-i18n="tabs.payments">Payments</span></button>
-    <button class="inner-tab" id="btab-jobs" onclick="bossTab('jobs')"><i data-lucide="layers" width="16" height="16" class="lucide tab-icon"></i><span data-i18n="tabs.jobs">Jobs</span></button>
-    <button class="inner-tab" id="btab-summary" onclick="bossTab('summary')"><i data-lucide="bar-chart-2" width="16" height="16" class="lucide tab-icon"></i><span data-i18n="tabs.monthly">Monthly</span></button>
-    <button class="inner-tab" id="btab-insights" onclick="bossTab('insights')"><i data-lucide="sparkles" width="16" height="16" class="lucide tab-icon"></i><span data-i18n="tabs.insights">Insights</span></button>
-    <button class="inner-tab" id="btab-activity" onclick="bossTab('activity')"><i data-lucide="activity" width="16" height="16" class="lucide tab-icon"></i><span data-i18n="tabs.logins">Logins</span></button>
-    <button class="inner-tab" id="btab-settings" onclick="bossTab('settings')"><i data-lucide="settings" width="16" height="16" class="lucide tab-icon"></i><span data-i18n="tabs.settings">Settings</span></button>
+  <div class="tabs-scroll-wrap">
+    <button class="tabs-arrow tabs-arrow-left" id="boss-tabs-left" onclick="scrollBossTabs(-1)">‹</button>
+    <div class="inner-tabs" id="boss-tabs-scroll">
+      <button class="inner-tab active" id="btab-dashboard" onclick="bossTab('dashboard')" style="white-space:nowrap"><i data-lucide="layout-dashboard" width="16" height="16" class="lucide tab-icon"></i><span>Dashboard</span></button>
+      <button class="inner-tab" id="btab-pending" onclick="bossTab('pending')"><i data-lucide="check-circle" width="16" height="16" class="lucide tab-icon"></i><span data-i18n="tabs.approvals">Approvals</span><span id="pending-count"></span></button>
+      <button class="inner-tab" id="btab-payments" onclick="bossTab('payments')"><i data-lucide="banknote" width="16" height="16" class="lucide tab-icon"></i><span data-i18n="tabs.payments">Payments</span></button>
+      <button class="inner-tab" id="btab-jobs" onclick="bossTab('jobs')"><i data-lucide="layers" width="16" height="16" class="lucide tab-icon"></i><span data-i18n="tabs.jobs">Jobs</span></button>
+      <button class="inner-tab" id="btab-summary" onclick="bossTab('summary')"><i data-lucide="bar-chart-2" width="16" height="16" class="lucide tab-icon"></i><span data-i18n="tabs.monthly">Monthly</span></button>
+      <button class="inner-tab" id="btab-insights" onclick="bossTab('insights')"><i data-lucide="sparkles" width="16" height="16" class="lucide tab-icon"></i><span data-i18n="tabs.insights">Insights</span></button>
+      <button class="inner-tab" id="btab-activity" onclick="bossTab('activity')"><i data-lucide="activity" width="16" height="16" class="lucide tab-icon"></i><span data-i18n="tabs.logins">Logins</span></button>
+
+    </div>
+    <button class="tabs-arrow tabs-arrow-right" id="boss-tabs-right" onclick="scrollBossTabs(1)">›</button>
   </div>
-  <div id="boss-pending"></div>
+  <div id="trial-countdown"></div>
+  <div id="boss-dashboard"></div>
+  <div id="boss-pending" style="display:none"></div>
   <div id="boss-payments" style="display:none"></div>
   <div id="boss-jobs" style="display:none"></div>
   <div id="boss-summary" style="display:none"></div>
@@ -841,7 +948,20 @@ html[data-theme="system"] .pin-box:focus{background:var(--green-l)}
       <div class="settings-card" style="border:1.5px dashed var(--teal-b);background:var(--teal-l)">
         <h3 style="color:var(--teal)">Add a child</h3>
         <p style="font-size:13px;color:var(--muted);margin-bottom:12px">Create a new child account. They'll choose their name and PIN.</p>
-        <button class="btn-primary" onclick="openAddChildModal()" style="background:var(--teal);max-width:200px;padding:10px 16px;font-size:14px">+ Add child account</button>
+        <button class="btn-primary" onclick="openAddChildModal()" style="background:var(--teal);color:#fff;max-width:200px;padding:10px 16px;font-size:14px">+ Add child account</button>
+      </div>
+    </div>
+
+    <!-- Group: Child Goals (boss managing a specific child's goals) -->
+    <div id="boss-settings-childgoals" style="display:none">
+      <button class="settings-back-btn" onclick="showBossSettingsGroup('children')"><i data-lucide="arrow-left" width="15" height="15" class="lucide"></i> Manage Children</button>
+      <div class="settings-group-title" id="boss-childgoals-title">Goals</div>
+      <div class="settings-card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+          <h3 style="margin:0">Savings goals</h3>
+          <button id="boss-add-goal-btn" onclick="openGoalEditor(null)" style="padding:7px 12px;background:var(--green);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer">+ Add goal</button>
+        </div>
+        <div id="boss-goals-list"></div>
       </div>
     </div>
 
@@ -947,16 +1067,7 @@ html[data-theme="system"] .pin-box:focus{background:var(--green-l)}
       </div>
       <div class="settings-card">
         <h3>Goal match rate</h3>
-        <p style="font-size:13px;color:var(--muted);margin-bottom:10px">Match a percentage of what <span class="logan-name-label">Logan</span> earns toward their savings goal. They'll see your contribution on the progress bar.</p>
-        <select id="match-rate-select" style="width:100%;border:1px solid var(--border);border-radius:9px;padding:11px 13px;font-size:15px;font-family:inherit;color:var(--text);background:var(--bg);cursor:pointer;margin-bottom:10px">
-          <option value="0">No match</option>
-          <option value="10">10% match — earn £10, I add £1</option>
-          <option value="25">25% match — earn £10, I add £2.50</option>
-          <option value="50">50% match — earn £10, I add £5</option>
-          <option value="100">100% match — pound for pound</option>
-        </select>
-        <button class="btn-primary" onclick="saveMatchRate()" style="max-width:160px;padding:10px 16px;font-size:14px">Save</button>
-        <div id="match-rate-status" style="margin-top:10px;font-size:13px;color:var(--muted)"></div>
+        <p style="font-size:13px;color:var(--muted)">Match rates are set per goal. Go to <strong>Manage Children</strong>, tap the <strong>Goals</strong> button next to a child, then edit a goal to set its match rate.</p>
       </div>
     </div>
 
@@ -1022,7 +1133,7 @@ html[data-theme="system"] .pin-box:focus{background:var(--green-l)}
   <div class="modal">
     <button class="modal-close" onclick="closeModal('modal-add-child')"><i data-lucide="x" width="16" height="16" class="lucide"></i></button>
     <div class="modal-title">Add child account</div>
-    <p style="font-size:13px;color:var(--muted);margin:6px 0 16px">Set up a new child profile. They can update their name and avatar after logging in.</p>
+    <p style="font-size:13px;color:var(--muted);margin:6px 0 16px">Set a name and PIN for the child. Once saved, you'll get a 6-digit invite code to share with them so they can join on their device.</p>
     <span class="modal-label">Child's name</span>
     <input type="text" id="new-child-name" placeholder="e.g. Alex, Jamie…" maxlength="30">
     <span class="modal-label">4-digit PIN</span>
@@ -1161,11 +1272,6 @@ html[data-theme="system"] .pin-box:focus{background:var(--green-l)}
           <div class="settings-nav-label"><strong>Appearance</strong><span>Avatar, theme</span></div>
           <i data-lucide="chevron-right" width="18" height="18" class="lucide settings-nav-arrow"></i>
         </button>
-        <button class="settings-nav-tile" onclick="showLoganSettingsGroup('goals')">
-          <div class="settings-nav-icon amber"><i data-lucide="target" width="20" height="20" style="color:var(--amber)" class="lucide"></i></div>
-          <div class="settings-nav-label"><strong>Goals &amp; Achievements</strong><span>Savings goal, stats</span></div>
-          <i data-lucide="chevron-right" width="18" height="18" class="lucide settings-nav-arrow"></i>
-        </button>
         <button class="settings-nav-tile" onclick="showLoganSettingsGroup('security')">
           <div class="settings-nav-icon blue"><i data-lucide="lock" width="20" height="20" style="color:var(--blue)" class="lucide"></i></div>
           <div class="settings-nav-label"><strong>Login &amp; Security</strong><span>Notifications, PIN, sign out</span></div>
@@ -1195,28 +1301,6 @@ html[data-theme="system"] .pin-box:focus{background:var(--green-l)}
       </div>
     </div>
 
-    <!-- Group: Goals & Achievements -->
-    <div id="logan-settings-goals" style="display:none;margin-top:16px">
-      <button class="settings-back-btn" onclick="showLoganSettingsHome()"><i data-lucide="arrow-left" width="15" height="15" class="lucide"></i> Settings</button>
-      <div class="settings-group-title">Goals &amp; Achievements</div>
-      <div class="settings-card">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
-          <h3 style="margin:0">Savings goals</h3>
-          <button id="add-goal-btn" onclick="openGoalEditor(null)" style="padding:7px 12px;background:var(--green);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer">+ Add goal</button>
-        </div>
-        <div id="goals-list"><!-- rendered by renderGoalSettings() --></div>
-        <div id="goals-alloc-wrap" style="display:none">
-          <div class="alloc-bar-wrap">
-            <div class="alloc-bar-label"><span>Auto-save allocation</span><span id="alloc-total-pct">0%</span></div>
-            <div class="alloc-bar-track"><div class="alloc-bar-fill" id="alloc-bar-fill" style="width:0%"></div></div>
-          </div>
-        </div>
-      </div>
-      <div class="settings-card">
-        <h3>Your achievements</h3>
-        <button onclick="openLoganStats()" class="btn-primary" style="max-width:160px;padding:10px 16px;font-size:14px">View stats ✨</button>
-      </div>
-    </div>
 
     <!-- Group: Login & Security -->
     <div id="logan-settings-security" style="display:none;margin-top:16px">
@@ -1357,15 +1441,6 @@ html[data-theme="system"] .pin-box:focus{background:var(--green-l)}
   </div>
 </div>
 
-<!-- LOGAN STATS MODAL -->
-<div class="modal-overlay" id="modal-logan-stats">
-  <div class="modal">
-    <button class="modal-close" onclick="closeModal('modal-logan-stats')"><i data-lucide="x" width="16" height="16" class="lucide"></i></button>
-    <div class="modal-title">Your achievements ✨</div>
-    <div id="stats-content"></div>
-  </div>
-</div>
-
 <!-- GOAL EDITOR MODAL -->
 <div class="modal-overlay" id="modal-goal-editor">
   <div class="modal">
@@ -1385,6 +1460,15 @@ html[data-theme="system"] .pin-box:focus{background:var(--green-l)}
       <span id="goal-editor-alloc-disp" style="font-size:18px;font-weight:800;color:var(--green);min-width:42px;text-align:right">0%</span>
     </div>
     <div id="goal-editor-alloc-hint" style="font-size:12px;color:var(--muted);margin-bottom:10px;min-height:16px"></div>
+    <div id="goal-editor-match-section">
+      <span class="modal-label" style="color:var(--text)">Parent match rate <span style="font-weight:400;color:var(--muted)">— % of earnings matched by parent</span></span>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
+        <input type="range" id="goal-editor-match" min="0" max="100" step="5" value="0" oninput="document.getElementById('goal-editor-match-disp').textContent=this.value+'%'" style="flex:1">
+        <span id="goal-editor-match-disp" style="font-size:18px;font-weight:800;color:var(--teal);min-width:42px;text-align:right">0%</span>
+      </div>
+      <span class="modal-label" style="color:var(--text)">Match from date <span style="font-weight:400;color:var(--muted)">(optional)</span></span>
+      <input type="date" id="goal-editor-matchfrom" style="margin-bottom:10px">
+    </div>
     <input type="hidden" id="goal-editor-id">
     <div class="modal-btns">
       <button class="btn-primary" id="goal-editor-save-btn" onclick="saveGoalEdit()">Save goal</button>
@@ -1447,6 +1531,9 @@ if (!isConfigured) {
 
 // ── Auth screen helpers ────────────────────────────────────────────────
 function showAuthScreen(){
+  // Check for Google redirect result first — if returning from Google sign-in,
+  // handleGoogleRedirect will take over and we don't want to flash the auth screen.
+  handleGoogleRedirect();
   document.getElementById('auth-screen').style.display = '';
   document.getElementById('app').style.display = 'none';
   showAuthPanel('main');
@@ -1463,36 +1550,58 @@ function showAuthPanel(which){
 }
 
 async function signInWithGoogle(){
-  var errEl = document.getElementById('auth-err');
+  var errEl = document.getElementById('auth-sub');
   try{
     var provider = new firebase.auth.GoogleAuthProvider();
-    var cred = await auth.signInWithPopup(provider);
-    var user = cred.user;
-    // Family doc is always stored at user.uid
-    var fid = user.uid;
-    var existing = await db.collection('families').doc(fid).get();
-    if(!existing.exists){
-      // New Google user — create family using their UID
-      fid = user.uid;
-      var fname = (user.displayName||'').split(' ').slice(-1)[0]||'My Family';
-      await db.collection('families').doc(fid).set({
-        ownerUid: fid,
-        familyName: fname + ' Family',
-        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-      });
+    // Use redirect (not popup) to avoid referer-blocked errors on localhost
+    await auth.signInWithRedirect(provider);
+    // Page will reload — result handled in handleGoogleRedirect() below
+  }catch(e){
+    errEl.textContent = e.message || authErrMsg(e);
+  }
+}
+
+async function handleGoogleRedirect(){
+  try{
+    var result = await auth.getRedirectResult();
+    if(!result || !result.user) return; // no redirect in progress
+    var idToken = await result.user.getIdToken();
+    var res = await fetch('https://moneysteps-api.darren-savery.workers.dev/auth/exchange', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({id_token: idToken})
+    });
+    if(!res.ok){
+      var err = await res.json().catch(function(){return {};});
+      throw new Error(err.error || 'Exchange failed');
     }
-    localStorage.setItem('familyId', fid);
-    initCollections(fid);
+    var data = await res.json();
+    localStorage.setItem('ms_token', data.token);
+    localStorage.setItem('ms_family_id', data.family_id);
+    await auth.signOut();
     document.getElementById('auth-screen').style.display = 'none';
     document.getElementById('app').style.display = '';
     init();
   }catch(e){
-    if(e.code !== 'auth/popup-closed-by-user'){
-      document.getElementById('auth-sub').textContent = e.message||'Google sign-in failed.';
-    }
+    var errEl = document.getElementById('auth-sub');
+    if(errEl) errEl.textContent = e.message || authErrMsg(e);
   }
 }
 
+function authErrMsg(e){
+  var map={
+    'auth/invalid-email':'Please enter a valid email address.',
+    'auth/email-already-in-use':'An account with this email already exists.',
+    'auth/weak-password':'Password must be at least 8 characters.',
+    'auth/user-not-found':'No account found with that email.',
+    'auth/wrong-password':'Incorrect password.',
+    'auth/too-many-requests':'Too many attempts. Please try again later.',
+    'auth/network-request-failed':'Network error. Check your connection and try again.',
+    'auth/popup-closed-by-user':'Sign-in was cancelled.',
+    'auth/cancelled-popup-request':'Sign-in was cancelled.'
+  };
+  return map[e.code]||'Something went wrong. Please try again.';
+}
 async function createFamily(){
   var email  = document.getElementById('auth-email').value.trim();
   var pass   = document.getElementById('auth-password').value;
@@ -1500,7 +1609,7 @@ async function createFamily(){
   var errEl  = document.getElementById('auth-err');
   errEl.textContent = '';
   if(!email||!pass||!fname){ errEl.textContent='Please fill in all fields.'; return; }
-  if(pass.length<6){ errEl.textContent='Password must be at least 6 characters.'; return; }
+  if(pass.length<8){ errEl.textContent='Password must be at least 8 characters.'; return; }
   try{
     var cred = await auth.createUserWithEmailAndPassword(email, pass);
     var fid  = cred.user.uid;
@@ -1515,7 +1624,7 @@ async function createFamily(){
     document.getElementById('app').style.display = '';
     init();
   }catch(e){
-    errEl.textContent = e.message||'Something went wrong.';
+    errEl.textContent = authErrMsg(e);
   }
 }
 
@@ -1525,16 +1634,15 @@ async function joinFamily(){
   errEl.textContent = '';
   if(code.length!==6){ errEl.textContent='Enter the 6-character code from your parent.'; return; }
   try{
+    var anonCred = await auth.signInAnonymously();
+    var anonUid = anonCred.user.uid;
     var snap = await db.collection('inviteCodes').doc(code).get();
     if(!snap.exists){ errEl.textContent='Code not found. Ask a parent for a new one.'; return; }
     var data = snap.data();
     if(data.expiresAt && data.expiresAt.toDate() < new Date()){ errEl.textContent='Code has expired. Ask a parent for a new one.'; return; }
     var fid = data.familyId;
-    // Sign in anonymously so Firestore rules can identify the device
-    var anonCred = await auth.signInAnonymously();
-    var anonUid = anonCred.user.uid;
-    // Register membership so rules allow access to this family
-    await db.collection('memberships').doc(anonUid + '_' + fid).set({
+    var membershipId = anonUid + '_' + fid;
+    await db.collection('memberships').doc(membershipId).set({
       familyId: fid,
       uid: anonUid,
       joinedAt: firebase.firestore.FieldValue.serverTimestamp()
@@ -1545,7 +1653,7 @@ async function joinFamily(){
     document.getElementById('app').style.display = '';
     init();
   }catch(e){
-    errEl.textContent = e.message||'Something went wrong.';
+    errEl.textContent = authErrMsg(e);
   }
 }
 
@@ -1633,11 +1741,11 @@ var AVATARS=[
 function avatarSVG(id,size){
   var av=null;for(var i=0;i<AVATARS.length;i++){if(AVATARS[i].id===id){av=AVATARS[i];break;}}
   if(!av)return'';
-  return'<svg viewBox="0 0 100 100" width="'+size+'" height="'+size+'" style="display:block;border-radius:50%"><circle cx="50" cy="50" r="50" fill="'+av.bg+'"/>'+av.body+'</svg>';
+  return'<svg viewBox="0 0 100 100" width="'+size+'" height="'+size+'" style="display:block;border-radius:50%;box-shadow:0 0 0 1.5px rgba(0,0,0,.35),0 1px 4px rgba(0,0,0,.15)"><circle cx="50" cy="50" r="50" fill="'+av.bg+'"/>'+av.body+'</svg>';
 }
 function defaultAvatarSVG(who,size){
   var bg=who==='dad'?'#3B6D11':who==='mum'?'#534AB7':'#0F6E56';
-  return'<svg viewBox="0 0 100 100" width="'+size+'" height="'+size+'" style="display:block;border-radius:50%"><circle cx="50" cy="50" r="50" fill="'+bg+'"/><circle cx="50" cy="38" r="20" fill="rgba(255,255,255,.9)"/><ellipse cx="50" cy="82" rx="28" ry="22" fill="rgba(255,255,255,.9)"/></svg>';
+  return'<svg viewBox="0 0 100 100" width="'+size+'" height="'+size+'" style="display:block;border-radius:50%;box-shadow:0 0 0 1.5px rgba(0,0,0,.35),0 1px 4px rgba(0,0,0,.15)"><circle cx="50" cy="50" r="50" fill="'+bg+'"/><circle cx="50" cy="38" r="20" fill="rgba(255,255,255,.9)"/><ellipse cx="50" cy="82" rx="28" ry="22" fill="rgba(255,255,255,.9)"/></svg>';
 }
 function getAvatarHTML(who,size){
   var cfg=isChildSession(who)?config.children[who]:config[who];
@@ -1764,6 +1872,11 @@ function showView(id){
   ['landing-view','pin-view','logan-view','boss-view'].forEach(function(v){
     document.getElementById(v).style.display=v===id?'':'none';
   });
+  if(id==='boss-view'){
+    setTimeout(updateBossTabArrows,50);
+    var sc=document.getElementById('boss-tabs-scroll');
+    if(sc) sc.onscroll=updateBossTabArrows;
+  }
 }
 
 // ── Earn period toggle ─────────────────────────────────────────────────
@@ -1779,7 +1892,7 @@ function setEarnPeriod(p){
 // ── Streak counter ─────────────────────────────────────────────────────
 function calcStreak(){
   var days={};
-  completions.forEach(function(c){
+  completions.filter(function(c){return c.status==='approved';}).forEach(function(c){
     var d=c.submittedAt&&c.submittedAt.toDate?c.submittedAt.toDate():new Date(c.submittedAt||0);
     days[d.toDateString()]=true;
   });
@@ -1814,30 +1927,44 @@ async function bulkApprove(){
   await batch.commit();
   var total=pc.reduce(function(s,c){return s+c.price;},0);
   toast('✓ All '+pc.length+' jobs approved — '+cur()+total+' earned!');
+  await checkStreakAward();
 }
 
 // ── Export CSV ─────────────────────────────────────────────────────────
 function csvEsc(s){return'"'+(s||'').replace(/"/g,'""')+'"';}
-function exportSummaryCSV(){
-  var rows=['Month,Job,Status,Amount'];
-  completions.filter(function(c){return c.parent===currentSession;})
-    .slice().sort(function(a,b){
-      var ta=a.submittedAt&&a.submittedAt.toDate?a.submittedAt.toDate():new Date(a.submittedAt||0);
-      var tb=b.submittedAt&&b.submittedAt.toDate?b.submittedAt.toDate():new Date(b.submittedAt||0);
-      return tb-ta;
-    }).forEach(function(c){
-      rows.push([csvEsc(fmtMonth(c.month||'')),csvEsc(c.choreName||''),c.status,cur()+c.price].join(','));
-    });
-  var csv=rows.join('\n');
-  if(navigator.clipboard&&navigator.clipboard.writeText){
-    navigator.clipboard.writeText(csv).then(function(){toast('Summary copied to clipboard ✓');});
-  } else {
-    var a=document.createElement('a');
-    a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
-    a.download='pocket-money-summary.csv';a.click();
-    toast('CSV downloaded ✓');
-  }
+function fmtDateStr(ts){
+  if(!ts)return'';
+  var d=ts.toDate?ts.toDate():new Date(ts);
+  return d.toLocaleDateString('en-GB');
 }
+function exportPaymentsCSV(){
+  var rows=['Date,Child,Type,Description,Amount'];
+  var cids=Object.keys(config.children||{});
+  // Completions (approved earnings)
+  completions.filter(function(c){return c.status==='approved'&&c.parent===currentSession;})
+    .forEach(function(c){
+      rows.push([fmtDateStr(c.submittedAt),csvEsc(childName(c.childId)),'Earning',csvEsc(c.choreName||''),cur()+c.price].join(','));
+    });
+  // Payouts (cash payments to child)
+  payouts.filter(function(p){return p.parent===currentSession;})
+    .forEach(function(p){
+      rows.push([fmtDateStr(p.paidAt),csvEsc(childName(p.childId)),'Cash payout',csvEsc(p.note||'Cash payment'),'-'+cur()+p.amount].join(','));
+    });
+  // Spending
+  spending.forEach(function(p){
+    rows.push([fmtDateStr(p.spentAt),csvEsc(childName(p.childId)),'Spending',csvEsc(p.name||''),'-'+cur()+p.amount.toFixed(2)].join(','));
+  });
+  // Sort by date descending
+  var header=rows.shift();
+  rows.sort(function(a,b){return b.localeCompare(a);});
+  rows.unshift(header);
+  var csv=rows.join('\n');
+  var a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+  a.download='moneysteps-export.csv';a.click();
+  toast('CSV downloaded ✓');
+}
+function exportSummaryCSV(){exportPaymentsCSV();}
 
 // ── Save Logan's display name ──────────────────────────────────────────
 async function saveChildName(){
@@ -1866,7 +1993,7 @@ function checkApproveParam(){
   if(currentSession===forParent){
     setTimeout(function(){
       reviewCompletion(completionId,'approved');
-      bossTab('pending');
+      bossTab('dashboard');
     },1200);
     toast('Approving chore…');
   }
@@ -2021,6 +2148,7 @@ function startListeners(){
     if(isChildSession(currentSession)) renderLogan();
     if(currentSession==='dad'||currentSession==='mum') renderManageJobs();
     setOnline(true);
+    autoScheduleRecurring();
   },function(){setOnline(false);});
 
   completionsColl.orderBy('submittedAt','desc').onSnapshot(function(snap){
@@ -2034,12 +2162,13 @@ function startListeners(){
   payoutsColl.orderBy('paidAt','desc').limit(50).onSnapshot(function(snap){
     payouts=snap.docs.map(function(d){return Object.assign({id:d.id},d.data());});
     if(isChildSession(currentSession)) renderLogan();
-    if(currentSession==='dad'||currentSession==='mum'){renderPending();renderPayments();}
+    if(currentSession==='dad'||currentSession==='mum'){renderDashboard();renderPending();renderPayments();}
   });
 
   plansColl.where('weekStart','==',getWeekStart()).onSnapshot(function(snap){
     plans=snap.docs.map(function(d){return Object.assign({id:d.id},d.data());});
     if(isChildSession(currentSession)) renderWeekPlan();
+    autoScheduleRecurring();
   });
 
   spendingColl.orderBy('spentAt','desc').limit(100).onSnapshot(function(snap){
@@ -2113,8 +2242,9 @@ function restoreSession(){
     document.getElementById('logan-settings-btn').style.display='';
     showView('logan-view');
   } else {
+    document.getElementById('boss-settings-btn').style.display='';
     document.getElementById('parent-name-input').value=pname(saved);
-    bossTab('pending');
+    bossTab('dashboard');
     checkNotifStatus();
     showView('boss-view');
     applyIcons();
@@ -2124,7 +2254,7 @@ function restoreSession(){
 async function init(){
   loadTheme();
   applyIcons();
-  try{await db.enablePersistence({synchronizeTabs:true});}catch(e){}
+  try{db.settings({cacheSizeBytes:firebase.firestore.CACHE_SIZE_UNLIMITED});await db.enablePersistence({synchronizeTabs:true});}catch(e){}
   await seedChoresIfNeeded();
   await loadConfig();
   startListeners();
@@ -2142,6 +2272,7 @@ function showLanding(){
   if(ha)ha.style.display='none';
   document.getElementById('lock-btn').style.display='none';
   document.getElementById('logan-settings-btn').style.display='none';
+  document.getElementById('boss-settings-btn').style.display='none';
   showView('landing-view');
 }
 
@@ -2194,8 +2325,9 @@ function checkPin(){
       renderLogan();
       showView('logan-view');
     } else {
+      document.getElementById('boss-settings-btn').style.display='';
       document.getElementById('parent-name-input').value=pname(pendingLogin);
-      bossTab('pending');
+      bossTab('dashboard');
       renderBoss();
       checkNotifStatus();
       showView('boss-view');
@@ -2284,10 +2416,12 @@ function setHouse(parent){
 }
 function loganTab(t){
   currentLoganTab=t;
-  ['earn','spend','balance'].forEach(function(x){
+  ['earn','goals','spend','balance','stats'].forEach(function(x){
     document.getElementById('ltab-'+x).classList.toggle('active',x===t);
     document.getElementById('logan-tab-'+x).style.display=x===t?'':'none';
   });
+  if(t==='goals') renderGoalSettings();
+  if(t==='stats') renderLoganStats();
 }
 
 // ── Due date / recurrence helpers ────────────────────────────────────────
@@ -2447,6 +2581,54 @@ async function saveModel(){
   toast('Model set to: '+labels[type]+' ✓');
 }
 
+async function saveStreakAward(){
+  var days=parseInt(document.getElementById('streak-award-days').value)||0;
+  var amount=parseFloat(document.getElementById('streak-award-amount').value)||0;
+  if(days<2){toast('Enter a streak of at least 2 days');return;}
+  if(amount<=0){toast('Enter a bonus amount');return;}
+  childCfg().streakAward={days:days,amount:amount};
+  await saveConfig();
+  renderPayments();
+  toast('Streak award saved ✓');
+}
+async function clearStreakAward(){
+  childCfg().streakAward=null;
+  await saveConfig();
+  renderPayments();
+  toast('Streak award removed');
+}
+async function checkStreakAward(){
+  var sa=childCfg()&&childCfg().streakAward;
+  if(!sa||!sa.days||!sa.amount)return;
+  var streak=calcStreak();
+  if(streak>0&&streak%sa.days===0){
+    var childId=activeChildId();
+    // Check if we already paid a streak award for this exact streak milestone today
+    var today=new Date().toDateString();
+    var alreadyPaid=completions.some(function(c){
+      if(c.type!=='streakAward'||c.childId!==childId)return false;
+      var d=c.submittedAt&&c.submittedAt.toDate?c.submittedAt.toDate():new Date(c.submittedAt||0);
+      return d.toDateString()===today&&c.streakMilestone===streak;
+    });
+    if(alreadyPaid)return;
+    try{
+      await completionsColl.add({
+        type:'streakAward',
+        choreName:streak+'-day streak bonus! 🔥',
+        price:sa.amount,
+        status:'approved',
+        parent:currentSession,
+        childId:childId,
+        streakMilestone:streak,
+        submittedAt:firebase.firestore.FieldValue.serverTimestamp(),
+        month:nowMonth()
+      });
+      sendPushTo(childId,{title:'🔥 Streak bonus!',body:'You earned '+cur()+sa.amount.toFixed(2)+' for a '+streak+'-day streak!',tag:'bonus'});
+      toast('🔥 '+streak+'-day streak! Bonus of '+cur()+sa.amount.toFixed(2)+' awarded!');
+    }catch(e){console.error('Streak award error',e);}
+  }
+}
+
 function renderLogan(){
   // If account was locked while Logan is logged in, boot them out
   if(isLoganLocked()){lockSession();toast('Your account has been locked. Please speak to your parent.');return;}
@@ -2531,12 +2713,13 @@ function renderLogan(){
   var sb=document.getElementById('streak-badge');
   if(sb){sb.style.display=streak>0?'':'none';var st=document.getElementById('streak-text');if(st)st.textContent=streak+' day'+(streak!==1?'s':'')+' streak';}
 
-  // Savings goal progress
-  var goal=childCfg()&&childCfg().goal;
+  // Savings goal progress — use top goal from goals[] with per-goal matchRate
+  var _goals=childCfg()&&childCfg().goals||[];
+  var goal=_goals.length>0?_goals[0]:(childCfg()&&childCfg().goal);
   var gs=document.getElementById('goal-section');
   if(gs&&goal&&goal.name&&goal.amount>0){
     var allApproved=completions.filter(function(c){return c.status==='approved'&&forChild(c);}).reduce(function(s,c){return s+c.price;},0);
-    // Match calculation
+    // Match calculation — per-goal rate
     var matchRate=goal.matchRate||0;
     var matchFrom=goal.matchFrom||0;
     var matchPaid=completions.filter(function(c){return c.type==='goalMatch'&&forChild(c);}).reduce(function(s,c){return s+c.price;},0);
@@ -2554,8 +2737,9 @@ function renderLogan(){
     var pct=Math.min(100,Math.round(combined/goal.amount*100));
     var matchPendingPct=Math.min(100-pct,Math.round(matchPending/goal.amount*100));
     var remaining=Math.max(0,goal.amount-combined-matchPending);
-    var catEmoji=(GOAL_CATEGORIES.find(function(c){return c.id===goal.category;})||{emoji:'⭐'}).emoji;
-    document.getElementById('goal-name-disp').textContent=catEmoji+' '+goal.name;
+    var goalNameEl=document.getElementById('goal-name-disp');
+    goalNameEl.innerHTML=goalCatIcon(goal.category)+'<span style="margin-left:8px">'+esc(goal.name)+'</span>';
+    lucide.createIcons();
     document.getElementById('goal-bar-fill').style.width=pct+'%';
     var bmEl=document.getElementById('goal-bar-match');
     if(bmEl){bmEl.style.width=matchPendingPct>0?matchPendingPct+'%':'0%';bmEl.style.display=matchPendingPct>0?'':'none';}
@@ -2804,40 +2988,169 @@ async function submitSuggestion(){
 }
 
 // ── Boss view ──────────────────────────────────────────────────────────
+function scrollBossTabs(dir){
+  var el=document.getElementById('boss-tabs-scroll');
+  if(el) el.scrollBy({left:dir*120,behavior:'smooth'});
+  setTimeout(updateBossTabArrows,200);
+}
+function updateBossTabArrows(){
+  var el=document.getElementById('boss-tabs-scroll');
+  var l=document.getElementById('boss-tabs-left');
+  var r=document.getElementById('boss-tabs-right');
+  if(!el||!l||!r) return;
+  l.disabled=el.scrollLeft<=0;
+  r.disabled=el.scrollLeft+el.clientWidth>=el.scrollWidth-2;
+}
 function bossTab(t){
   applyIcons();
-  ['pending','payments','jobs','summary','insights','activity','settings'].forEach(function(x){
-    document.getElementById('btab-'+x).classList.toggle('active',x===t);
+  ['dashboard','pending','payments','jobs','summary','insights','activity'].forEach(function(x){
+    var btn=document.getElementById('btab-'+x);
+    if(btn) btn.classList.toggle('active',x===t);
     document.getElementById('boss-'+x).style.display=x===t?'':'none';
   });
-  if(t==='insights'){renderInsights();}
-  if(t==='settings'){
-    showBossSettingsHome();
-    document.getElementById('parent-name-input').value=pname(currentSession);
-    document.getElementById('child-name-input').value=loganName();
-    checkNotifStatus();
-    // Populate message textarea with current message for this parent
-    var msgEl=document.getElementById('parent-message-input');
-    if(msgEl){
-      var curMsg=config.messages&&config.messages[currentSession];
-      msgEl.value=(curMsg&&curMsg.text)||'';
-    }
-    // Update "Logan" label in message card
-    document.querySelectorAll('.logan-name-label').forEach(function(el){el.textContent=loganName();});
-    // Set currency select to current value
-    var cs=document.getElementById('currency-select');
-    if(cs) cs.value=config.currency||'£';
-    var sh=document.getElementById('split-homes-toggle');
-    if(sh) sh.checked=!!config.splitHomes;
-    // Populate model UI
-    renderModelSettings();
-    // Set match rate select and status
-    var mrs=document.getElementById('match-rate-select');
-    if(mrs) mrs.value=String(childCfg().goal&&childCfg().goal.matchRate||0);
-    renderMatchRateStatus();
-  }
+  document.getElementById('boss-settings').style.display='none';
+  if(t==='insights') renderInsights();
+  if(t==='dashboard') renderDashboard();
 }
-function renderBoss(){renderPending();renderPayments();renderManageJobs();renderSummary();renderActivity();renderInsights();renderMatchRateStatus();}
+function openBossSettings(){
+  // Hide all boss tab panels, show settings panel
+  ['dashboard','pending','payments','jobs','summary','insights','activity'].forEach(function(x){
+    var btn=document.getElementById('btab-'+x);
+    if(btn) btn.classList.remove('active');
+    document.getElementById('boss-'+x).style.display='none';
+  });
+  document.getElementById('boss-settings').style.display='';
+  showBossSettingsHome();
+  document.getElementById('parent-name-input').value=pname(currentSession);
+  document.getElementById('child-name-input').value=loganName();
+  checkNotifStatus();
+  var msgEl=document.getElementById('parent-message-input');
+  if(msgEl){
+    var curMsg=config.messages&&config.messages[currentSession];
+    msgEl.value=(curMsg&&curMsg.text)||'';
+  }
+  document.querySelectorAll('.logan-name-label').forEach(function(el){el.textContent=loganName();});
+  var cs=document.getElementById('currency-select');
+  if(cs) cs.value=config.currency||'£';
+  var sh=document.getElementById('split-homes-toggle');
+  if(sh) sh.checked=!!config.splitHomes;
+  renderModelSettings();
+  var mrs=document.getElementById('match-rate-select');
+  if(mrs) mrs.value=String(childCfg().goal&&childCfg().goal.matchRate||0);
+  renderMatchRateStatus();
+  applyIcons();
+}
+// ── TrialCountdown ──────────────────────────────────────────────
+// Fetches /api/trial/status and renders the progress bar banner.
+// Called from renderBoss(). Fails silently if the endpoint is unavailable
+// (e.g. during local offline dev).
+async function renderTrialCountdown(){
+  var el=document.getElementById('trial-countdown');
+  if(!el) return;
+  el.innerHTML='';
+
+  var status=null;
+  try{
+    var token=localStorage.getItem('ms_token')||'';
+    var res=await fetch('/api/trial/status',{headers:{Authorization:'Bearer '+token}});
+    if(res.ok) status=await res.json();
+  }catch(e){ return; }
+
+  if(!status) return;
+
+  // Licensed families — no banner needed
+  if(status.has_lifetime_license||status.ai_subscription_active) return;
+
+  var html='';
+  if(!status.is_activated){
+    // Trial not yet started
+    html='<div class="trial-banner">'+
+      '<div class="trial-banner-row">'+
+        '<span class="trial-banner-label">Coaching Evaluation</span>'+
+      '</div>'+
+      '<div class="trial-standby">Evaluation On Standby — Log a chore to start your 14-day evaluation.</div>'+
+    '</div>';
+  } else if(status.is_expired){
+    html='<div class="trial-banner" style="border-color:var(--red)">'+
+      '<div class="trial-banner-row">'+
+        '<span class="trial-banner-label" style="color:var(--red)">Trial Ended</span>'+
+        '<a href="/paywall" style="font-size:13px;font-weight:600;color:var(--teal);text-decoration:none">Upgrade →</a>'+
+      '</div>'+
+      '<div class="trial-bar-track"><div class="trial-bar-fill urgent" style="width:100%"></div></div>'+
+    '</div>';
+  } else {
+    var days=status.days_remaining!=null?status.days_remaining:14;
+    var pct=Math.round((1-(days/14))*100);
+    var urgent=days<=3;
+    html='<div class="trial-banner">'+
+      '<div class="trial-banner-row">'+
+        '<span class="trial-banner-label">Coaching Evaluation</span>'+
+        '<span class="trial-banner-days">'+days+' day'+(days!==1?'s':'')+' remaining</span>'+
+      '</div>'+
+      '<div class="trial-bar-track">'+
+        '<div class="trial-bar-fill'+(urgent?' urgent':'')+'" style="width:'+pct+'%"></div>'+
+      '</div>'+
+    '</div>';
+  }
+  el.innerHTML=html;
+}
+
+function renderDashboard(){
+  var el=document.getElementById('boss-dashboard');
+  if(!el) return;
+  var cids=Object.keys(config.children||{});
+  if(!cids.length){
+    el.innerHTML='<div class="empty-state"><div class="icon">'+icon('users',36,'color:var(--muted)')+'</div><p>No children added yet</p></div>';
+    return;
+  }
+  var cards=cids.map(function(cid){
+    var cfg=config.children[cid]||{};
+    var name=childName(cid);
+    // Balance
+    var modelType=getModel().type;
+    var isAllowanceOnly=modelType==='allowance';
+    var earned=isAllowanceOnly?0:completions.filter(function(c){return c.status==='approved'&&c.childId===cid;}).reduce(function(s,c){return s+c.price;},0);
+    var paid=payouts.filter(function(p){return p.childId===cid;}).reduce(function(s,p){return s+p.amount;},0);
+    var spent=spending.filter(function(p){return p.childId===cid;}).reduce(function(s,p){return s+p.amount;},0);
+    var balance=earned-paid-spent;
+    // Pending count
+    var pending=completions.filter(function(c){return c.status==='pending'&&c.childId===cid&&c.parent===currentSession;}).length;
+    // Top goal
+    var goals=cfg.goals||[];
+    var topGoal=goals.length?goals[0]:null;
+    var goalPct=topGoal?Math.min(100,Math.round(Math.max(0,balance)/topGoal.amount*100)):0;
+    // Stats
+    var thisMonth=nowMonth();
+    var monthEarned=completions.filter(function(c){return c.status==='approved'&&c.childId===cid&&c.month===thisMonth;}).reduce(function(s,c){return s+c.price;},0);
+    var monthSpent=spending.filter(function(p){return p.childId===cid;}).filter(function(p){
+      var d=p.spentAt&&p.spentAt.toDate?p.spentAt.toDate():new Date(p.spentAt||0);
+      return d.toISOString().slice(0,7)===thisMonth;
+    }).reduce(function(s,p){return s+p.amount;},0);
+    var pendingBadge=pending?'<span class="dash-pending-badge">'+icon('clock',11,'color:inherit;vertical-align:-1px')+' '+pending+' pending</span>':'';
+    var goalHtml=topGoal?
+      '<div style="font-size:12px;color:var(--muted);margin-top:10px">'+icon('target',11,'color:var(--teal);vertical-align:-1px')+' Goal: <strong style="color:var(--text)">'+esc(topGoal.name)+'</strong> — '+cur()+Math.max(0,balance).toFixed(2)+' / '+cur()+topGoal.amount+' ('+goalPct+'%)'+
+      '<div class="dash-goal-bar-track"><div class="dash-goal-bar-fill" style="width:'+goalPct+'%"></div></div></div>':'';
+    return'<div class="dash-child-card">'+
+      '<div class="dash-child-header">'+
+        '<div>'+getAvatarHTML(cid,44)+'</div>'+
+        '<div style="flex:1;min-width:0">'+
+          '<div class="dash-child-name">'+esc(name)+'</div>'+
+          '<div class="dash-child-meta">'+goals.length+' goal'+(goals.length!==1?'s':'')+'</div>'+
+        '</div>'+
+        pendingBadge+
+      '</div>'+
+      '<div class="dash-stats">'+
+        '<div class="dash-stat"><div class="dash-stat-val" style="color:'+(balance<0?'var(--red)':'var(--teal)')+'">'+cur()+Math.abs(balance).toFixed(2)+'</div><div class="dash-stat-lbl">Balance</div></div>'+
+        '<div class="dash-stat"><div class="dash-stat-val" style="color:var(--green)">'+cur()+monthEarned.toFixed(2)+'</div><div class="dash-stat-lbl">Earned this month</div></div>'+
+        '<div class="dash-stat"><div class="dash-stat-val" style="color:var(--red)">'+cur()+monthSpent.toFixed(2)+'</div><div class="dash-stat-lbl">Spent this month</div></div>'+
+      '</div>'+
+      goalHtml+
+    '</div>';
+  }).join('');
+  el.innerHTML='<div class="section-label" style="margin-top:4px">Family overview</div>'+cards;
+  applyIcons();
+}
+function renderBoss(){renderTrialCountdown();renderDashboard();renderPending();renderPayments();renderManageJobs();renderSummary();renderActivity();renderInsights();renderMatchRateStatus();}
 
 // ── Parent Insights ─────────────────────────────────────────────────────────
 function renderInsights(){
@@ -2900,7 +3213,14 @@ function renderInsights(){
           set_goal:'Set a savings goal →',
           review_spending:'Review spending →'
         };
-        actionBtn='<button class="insights-notif-action" onclick="bossTab(\'settings\')">'+(actionLabels[n.suggestedAction]||n.suggestedAction)+'</button>';
+        var actionFns={
+          set_goal:'openBossSettings();showChildGoals(\''+activeChildId()+'\')',
+          add_match:'openBossSettings();showBossSettingsGroup(\'pocketmoney\')',
+          loosen_controls:'openBossSettings();showBossSettingsGroup(\'parental\')',
+          review_spending:'bossTab(\'payments\')'
+        };
+        var actionFn=actionFns[n.suggestedAction]||'openBossSettings()';
+        actionBtn='<button class="insights-notif-action" onclick="'+actionFn+'">'+(actionLabels[n.suggestedAction]||n.suggestedAction)+'</button>';
       }
       notifHtml+='<div class="insights-notif priority-'+n.priority+'">'+
         '<div class="insights-notif-short">'+esc(short)+'</div>'+
@@ -2932,7 +3252,7 @@ function renderPending(){
   var total=pc.length+ps.length;
   document.getElementById('pending-count').textContent=total?'('+total+')':'';
   var el=document.getElementById('boss-pending');
-  var bulkBtn=pc.length>1?'<button onclick="bulkApprove()" style="width:100%;background:var(--green-l);color:var(--green);border:1.5px solid var(--green-b);border-radius:10px;padding:11px;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:12px">✓ Approve all '+pc.length+' job completions</button>':'';
+  var bulkBtn=pc.length>1?'<button onclick="bulkApprove()" style="width:100%;background:var(--teal-l);color:var(--teal);border:1.5px solid var(--teal-b);border-radius:10px;padding:11px;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:12px">✓ Approve all '+pc.length+' job completions</button>':'';
   var pendingHtml=!total?
     '<div class="empty-state"><div class="icon">'+icon('check-circle',36,'color:var(--green)')+'</div><p>All caught up — nothing to review</p></div>':
     bulkBtn+
@@ -2999,6 +3319,7 @@ function renderPayments(){
   // Goal match section
   var goalMatchHtml='';
   var goal=childCfg()&&childCfg().goal;
+  var _pg=childCfg()&&(childCfg().goals||[]);goal=_pg.length>0?_pg[0]:(childCfg()&&childCfg().goal);
   if(goal&&goal.name&&goal.matchRate>0){
     var m=calcMatchPending();
     var matchItems=completions.filter(function(c){return c.type==='goalMatch'&&forChild(c);});
@@ -3018,7 +3339,40 @@ function renderPayments(){
       (m.matchPending?cur()+m.matchPending.toFixed(2)+' pending':'All paid up ✓')+'</div>'+
       matchHistHtml+payMatchBtn;
   }
-  el.innerHTML=addBonusBtn+payBtn+payoutsHtml+bonusHtml+goalMatchHtml+spendingHtml;
+  // Streak award section
+  var sa=childCfg()&&childCfg().streakAward;
+  var streakItems=completions.filter(function(c){return c.type==='streakAward'&&forChild(c);});
+  var streakHistHtml=streakItems.length?
+    streakItems.map(function(c){
+      return'<div class="payout-card">'+
+        '<div><div style="font-size:14px;font-weight:600">'+icon('flame',13,'color:var(--red);vertical-align:-1px;margin-right:3px')+esc(c.choreName||'Streak bonus')+'</div>'+
+        '<div style="font-size:12px;color:var(--muted)">'+fmtDate(c.submittedAt)+'</div></div>'+
+        '<div class="payout-amount" style="color:var(--red)">+'+cur()+c.price.toFixed(2)+'</div></div>';
+    }).join(''):'<div style="font-size:13px;color:var(--muted);padding:4px 0">No streak bonuses awarded yet</div>';
+  var streakConfigHtml=
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0 6px">'+
+      '<div><div style="font-size:12px;color:var(--muted);margin-bottom:4px">Days in a row</div>'+
+        '<input type="number" id="streak-award-days" min="2" max="365" placeholder="e.g. 7" value="'+(sa&&sa.days?sa.days:'')+'" style="width:100%;border:1px solid var(--border);border-radius:9px;padding:8px 10px;font-size:14px;background:var(--bg);color:var(--text);font-family:inherit"></div>'+
+      '<div><div style="font-size:12px;color:var(--muted);margin-bottom:4px">Bonus ('+cur()+')</div>'+
+        '<input type="number" id="streak-award-amount" min="0.01" step="0.01" placeholder="e.g. 2.00" value="'+(sa&&sa.amount?sa.amount:'')+'" style="width:100%;border:1px solid var(--border);border-radius:9px;padding:8px 10px;font-size:14px;background:var(--bg);color:var(--text);font-family:inherit"></div>'+
+    '</div>'+
+    (sa&&sa.days?'<div style="font-size:13px;font-weight:600;color:var(--green);background:var(--green-l);border-radius:8px;padding:7px 10px;margin-bottom:8px">Active: '+cur()+sa.amount.toFixed(2)+' every '+sa.days+' days</div>':'')+
+    '<div style="display:flex;gap:8px">'+
+      '<button onclick="saveStreakAward()" style="flex:1;background:var(--green-l);color:var(--green);border:1.5px solid var(--green-b);border-radius:10px;padding:9px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">'+icon('save',13,'color:var(--green);vertical-align:-2px')+' Save</button>'+
+      (sa&&sa.days?'<button onclick="clearStreakAward()" style="padding:9px 14px;border:1.5px solid var(--border);border-radius:10px;background:none;color:var(--muted);font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">Remove</button>':'')+
+    '</div>';
+  var streakAwardHtml=
+    '<div class="settings-card" style="margin-top:20px">'+
+      '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">'+
+        icon('flame',16,'color:var(--red);vertical-align:-2px')+
+        '<strong style="font-size:15px">Streak award</strong>'+
+      '</div>'+
+      '<div style="font-size:13px;color:var(--muted);margin-bottom:10px">Automatically award a bonus when '+loganName()+' completes chores <em>X</em> days in a row.</div>'+
+      streakConfigHtml+
+      (streakItems.length?'<div class="section-label" style="margin-top:14px;margin-bottom:6px">History</div>'+streakHistHtml:'')+
+    '</div>';
+  var exportBtn='<button onclick="exportPaymentsCSV()" style="width:100%;background:var(--gray-l);color:var(--muted);border:1px solid var(--border);border-radius:10px;padding:10px;font-size:13px;font-weight:600;cursor:pointer;margin-top:20px">'+icon('download',14,'color:inherit;vertical-align:-2px')+' Export to CSV</button>';
+  el.innerHTML=addBonusBtn+payBtn+payoutsHtml+bonusHtml+goalMatchHtml+streakAwardHtml+spendingHtml+exportBtn;
   applyIcons();
 }
 
@@ -3029,6 +3383,7 @@ async function reviewCompletion(id,status){
     toast(status==='approved'?'✓ Approved — '+cur()+(c?c.price:'?')+' earned!':'Rejected');
     if(status==='approved'&&c){
       sendPushTo(activeChildId(),{title:'✅ Job approved!',body:cur()+c.price+' earned for '+esc(c.choreName||'your job')+'  great work!',tag:'approval'});
+      await checkStreakAward();
     }
   }catch(e){toast('Error: '+e.message);}
 }
@@ -3511,12 +3866,14 @@ function renderChildrenList(){
   el.innerHTML=ids.map(function(cid){
     var name=childName(cid);
     var locked=isChildLockedById(cid);
+    var goalCount=(config.children[cid]&&config.children[cid].goals&&config.children[cid].goals.length)||0;
     return '<div class="settings-card" style="margin-bottom:10px">'+
       '<div style="display:flex;align-items:center;gap:12px">'+
       '<div>'+getAvatarHTML(cid,40)+'</div>'+
       '<div style="flex:1"><div style="font-size:15px;font-weight:700">'+name+'</div>'+
       '<div style="font-size:12px;color:var(--muted)">ID: '+cid+(locked?' · 🔒 Locked':'')+'</div></div>'+
-      '<button onclick="removeChild(\''+cid+'\')" style="background:var(--red-l);color:var(--red);border:1px solid var(--red-b);border-radius:8px;padding:6px 12px;font-size:13px;font-weight:700;cursor:pointer">Remove</button>'+
+      '<button onclick="showChildGoals(\''+cid+'\')" style="background:var(--teal-l);color:var(--teal);border:1px solid var(--teal-b);border-radius:8px;padding:6px 12px;font-size:13px;font-weight:700;cursor:pointer">Goals'+(goalCount?' ('+goalCount+')':'')+'</button>'+
+      '<button onclick="confirmRemoveChild(\''+cid+'\')" style="background:var(--red-l);color:var(--red);border:1px solid var(--red-b);border-radius:8px;padding:6px 12px;font-size:13px;font-weight:700;cursor:pointer" id="child-card-remove-'+cid+'">Remove</button>'+
       '</div></div>';
   }).join('');
 }
@@ -3541,12 +3898,30 @@ async function saveNewChild(){
   closeModal('modal-add-child');
   renderChildrenList();
   updateLabels();
-  toast(name+' added ✓');
+  toast(name+' added ✓ — share the invite code with them');
+  currentBossChild=cid;
+  showInviteCode();
 }
 
-async function removeChild(cid){
+function confirmRemoveChild(cid){
   var name=childName(cid);
-  if(!confirm('Remove '+name+'\'s account? This cannot be undone.')) return;
+  var btn=document.getElementById('child-card-remove-'+cid);
+  if(!btn)return;
+  var card=btn.closest('.settings-card');
+  if(!card)return;
+  if(card.querySelector('.remove-confirm'))return;
+  var bar=document.createElement('div');
+  bar.className='remove-confirm';
+  bar.style.cssText='margin-top:10px;padding:10px 12px;background:var(--red-l);border:1px solid var(--red-b);border-radius:10px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap';
+  bar.innerHTML='<span style="font-size:13px;font-weight:600;color:var(--red)">Remove '+esc(name)+'? This cannot be undone.</span>'+
+    '<div style="display:flex;gap:6px">'+
+      '<button onclick="doRemoveChild(\''+cid+'\')" style="background:var(--red);color:#fff;border:none;border-radius:8px;padding:6px 14px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">Yes, remove</button>'+
+      '<button onclick="this.closest(\'.remove-confirm\').remove()" style="background:none;border:1.5px solid var(--border);border-radius:8px;padding:6px 12px;font-size:13px;font-weight:600;cursor:pointer;color:var(--muted);font-family:inherit">Cancel</button>'+
+    '</div>';
+  card.appendChild(bar);
+}
+async function doRemoveChild(cid){
+  var name=childName(cid);
   delete config.children[cid];
   if(currentBossChild===cid) currentBossChild=firstChildId();
   await saveConfig();
@@ -3558,31 +3933,37 @@ async function removeChild(cid){
 // ── Settings navigation ────────────────────────────────────────────────
 function showBossSettingsHome(){
   document.getElementById('boss-settings-home').style.display='';
-  ['profile','pocketmoney','parental','security','language','children'].forEach(function(g){
+  ['profile','pocketmoney','parental','security','language','children','childgoals'].forEach(function(g){
     document.getElementById('boss-settings-'+g).style.display='none';
   });
 }
 function showBossSettingsGroup(group){
   document.getElementById('boss-settings-home').style.display='none';
-  ['profile','pocketmoney','parental','security','language','children'].forEach(function(g){
+  ['profile','pocketmoney','parental','security','language','children','childgoals'].forEach(function(g){
     document.getElementById('boss-settings-'+g).style.display=g===group?'':'none';
   });
   if(group==='language') renderLangGrid();
   if(group==='children') renderChildrenList();
+  if(group==='childgoals') renderBossGoalSettings();
   lucide.createIcons();
+}
+function showChildGoals(cid){
+  currentBossChild=cid;
+  var title=document.getElementById('boss-childgoals-title');
+  if(title) title.textContent=childName(cid)+"\u2019s Goals";
+  showBossSettingsGroup('childgoals');
 }
 function showLoganSettingsHome(){
   document.getElementById('logan-settings-home').style.display='';
-  ['appearance','goals','security'].forEach(function(g){
+  ['appearance','security'].forEach(function(g){
     document.getElementById('logan-settings-'+g).style.display='none';
   });
 }
 function showLoganSettingsGroup(group){
   document.getElementById('logan-settings-home').style.display='none';
-  ['appearance','goals','security'].forEach(function(g){
+  ['appearance','security'].forEach(function(g){
     document.getElementById('logan-settings-'+g).style.display=g===group?'':'none';
   });
-  if(group==='goals') renderGoalSettings();
   lucide.createIcons();
 }
 
@@ -3694,7 +4075,8 @@ async function resetChildPin(){
 
 // ── Savings goal ───────────────────────────────────────────────────────
 function calcMatchPending(){
-  var goal=childCfg()&&childCfg().goal;
+  var _goals=childCfg()&&childCfg().goals||[];
+  var goal=_goals.length>0?_goals[0]:(childCfg()&&childCfg().goal);
   if(!goal||!goal.matchRate)return{matchPending:0,matchPaid:0,matchOwed:0,jobEarnings:0};
   var matchFrom=goal.matchFrom||0;
   var jobEarnings=completions.filter(function(c){
@@ -3750,26 +4132,28 @@ async function payGoalMatch(){
   }catch(e){toast('Error: '+e.message);}
 }
 var GOAL_CATEGORIES=[
-  {id:'gaming',    emoji:'🎮', label:'Gaming'},
-  {id:'fashion',   emoji:'👟', label:'Clothes / Shoes'},
-  {id:'tech',      emoji:'📱', label:'Tech / Gadgets'},
-  {id:'music',     emoji:'🎵', label:'Music'},
-  {id:'sport',     emoji:'⚽', label:'Sport / Fitness'},
-  {id:'travel',    emoji:'✈️', label:'Days out / Travel'},
-  {id:'food',      emoji:'🍕', label:'Food / Treats'},
-  {id:'beauty',    emoji:'💄', label:'Beauty / Self-care'},
-  {id:'books',     emoji:'📚', label:'Books / Learning'},
-  {id:'art',       emoji:'🎨', label:'Art / Creative'},
-  {id:'social',    emoji:'🎉', label:'Events / Social'},
-  {id:'other',     emoji:'⭐', label:'Other'}
+  {id:'gaming',    icon:'gamepad-2',  label:'Gaming'},
+  {id:'fashion',   icon:'shirt',      label:'Clothes / Shoes'},
+  {id:'tech',      icon:'smartphone', label:'Tech / Gadgets'},
+  {id:'music',     icon:'music',      label:'Music'},
+  {id:'sport',     icon:'dumbbell',   label:'Sport / Fitness'},
+  {id:'travel',    icon:'plane',      label:'Days out / Travel'},
+  {id:'food',      icon:'utensils',   label:'Food / Treats'},
+  {id:'beauty',    icon:'sparkles',   label:'Beauty / Self-care'},
+  {id:'books',     icon:'book-open',  label:'Books / Learning'},
+  {id:'art',       icon:'palette',    label:'Art / Creative'},
+  {id:'social',    icon:'users',      label:'Events / Social'},
+  {id:'other',     icon:'star',       label:'Other'}
 ];
 function renderGoalCatGrid(selectedId){
   var grid=document.getElementById('goal-cat-grid');
   if(!grid)return;
   grid.innerHTML=GOAL_CATEGORIES.map(function(c){
     return'<button type="button" class="goal-cat-btn'+(c.id===selectedId?' selected':'')+'" onclick="selectGoalCat(\''+c.id+'\')">'+
-      '<span class="cat-emoji">'+c.emoji+'</span>'+c.label+'</button>';
+      '<span class="cat-icon"><i data-lucide="'+c.icon+'" width="18" height="18" class="lucide"></i></span>'+
+      c.label+'</button>';
   }).join('');
+  lucide.createIcons();
 }
 function selectGoalCat(id){
   document.querySelectorAll('.goal-cat-btn').forEach(function(b){b.classList.remove('selected');});
@@ -3807,10 +4191,11 @@ async function clearGoal(){
 }
 
 // ── Multi-goal system ────────────────────────────────────────────────────────
-function goalCatEmoji(catId){
-  var cat=(GOAL_CATEGORIES||[]).find(function(c){return c.id===catId;});
-  return cat?cat.emoji:'⭐';
+function goalCatIcon(catId){
+  var cat=(GOAL_CATEGORIES||[]).find(function(c){return c.id===catId;})||{icon:'star'};
+  return'<span style="display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:9px;background:var(--gray-l);flex-shrink:0"><i data-lucide="'+cat.icon+'" width="16" height="16" style="color:var(--muted)" class="lucide"></i></span>';
 }
+function goalCatEmoji(catId){ return goalCatIcon(catId); }
 function goalDaysLeft(deadline){
   if(!deadline) return null;
   var ms=new Date(deadline)-new Date();
@@ -3831,11 +4216,13 @@ function renderGoalSettings(){
   listEl.innerHTML=goals.map(function(g,i){
     var emoji=goalCatEmoji(g.category);
     var detail=cur()+g.amount+(g.deadline?' · due '+new Date(g.deadline).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}):'')+(g.allocPct?' · auto-save '+g.allocPct+'%':'');
+    var matchBadge=g.matchRate?'<span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;color:var(--teal);background:var(--teal-l);border-radius:6px;padding:2px 7px;margin-top:4px">🤝 '+g.matchRate+'% parent match</span>':'';
     return'<div class="goal-item">'+
       '<div class="goal-item-emoji">'+emoji+'</div>'+
       '<div class="goal-item-info">'+
         '<div class="goal-item-name">'+esc(g.name)+'</div>'+
         '<div class="goal-item-detail">'+esc(detail)+'</div>'+
+        matchBadge+
       '</div>'+
       '<div class="goal-item-actions">'+
         (i>0?'<button class="goal-item-btn" onclick="moveGoal(\''+g.id+'\',-1)" title="Move up">↑</button>':'')+
@@ -3856,6 +4243,60 @@ function renderGoalSettings(){
     if(pctEl) pctEl.textContent=totalAlloc+'%';
   }
   if(addBtn) addBtn.style.display=goals.length>=5?'none':'';
+  lucide.createIcons();
+}
+function renderBossGoalSettings(){
+  var goals=childCfg().goals||[];
+  var listEl=document.getElementById('boss-goals-list');
+  var addBtn=document.getElementById('boss-add-goal-btn');
+  if(!listEl) return;
+  if(!goals.length){
+    listEl.innerHTML='<div style="text-align:center;padding:18px 0;color:var(--muted);font-size:13px">No goals yet — add one to start saving</div>';
+    if(addBtn) addBtn.style.display='';
+    return;
+  }
+  listEl.innerHTML=goals.map(function(g,i){
+    var emoji=goalCatEmoji(g.category);
+    var matchInfo=g.matchRate?(' · '+g.matchRate+'% match'):'';
+    var detail=cur()+g.amount+(g.deadline?' · due '+new Date(g.deadline).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}):'')+matchInfo;
+    return'<div class="goal-item">'+
+      '<div class="goal-item-emoji">'+emoji+'</div>'+
+      '<div class="goal-item-info">'+
+        '<div class="goal-item-name">'+esc(g.name)+'</div>'+
+        '<div class="goal-item-detail">'+esc(detail)+'</div>'+
+      '</div>'+
+      '<div class="goal-item-actions">'+
+        (i>0?'<button class="goal-item-btn" onclick="moveGoalBoss(\''+g.id+'\',-1)" title="Move up">↑</button>':'')+
+        (i<goals.length-1?'<button class="goal-item-btn" onclick="moveGoalBoss(\''+g.id+'\',1)" title="Move down">↓</button>':'')+
+        '<button class="goal-item-btn" onclick="openGoalEditor(\''+g.id+'\')">Edit</button>'+
+        '<button class="goal-item-btn del" onclick="deleteGoalBoss(\''+g.id+'\')">✕</button>'+
+      '</div>'+
+    '</div>';
+  }).join('');
+  if(addBtn) addBtn.style.display=goals.length>=5?'none':'';
+  lucide.createIcons();
+}
+async function moveGoalBoss(goalId,dir){
+  var goals=childCfg().goals||[];
+  var i=goals.findIndex(function(g){return g.id===goalId;});
+  if(i<0) return;
+  var j=i+dir;
+  if(j<0||j>=goals.length) return;
+  var tmp=goals[i]; goals[i]=goals[j]; goals[j]=tmp;
+  childCfg().goals=goals;
+  await saveConfig();
+  renderBossGoalSettings();
+}
+async function deleteGoalBoss(goalId){
+  var goals=childCfg().goals||[];
+  var g=goals.find(function(x){return x.id===goalId;});
+  if(!g||!confirm('Delete goal "'+g.name+'"?')) return;
+  childCfg().goals=goals.filter(function(x){return x.id!==goalId;});
+  await saveConfig();
+  renderBossGoalSettings();
+  renderGoalSettings();
+  renderLogan();
+  toast('Goal deleted');
 }
 function openGoalEditor(goalId){
   var goals=childCfg().goals||[];
@@ -3869,14 +4310,22 @@ function openGoalEditor(goalId){
   var alloc=g.allocPct||0;
   document.getElementById('goal-editor-alloc').value=alloc;
   document.getElementById('goal-editor-alloc-disp').textContent=alloc+'%';
+  var matchRate=g.matchRate||0;
+  document.getElementById('goal-editor-match').value=matchRate;
+  document.getElementById('goal-editor-match-disp').textContent=matchRate+'%';
+  document.getElementById('goal-editor-matchfrom').value=g.matchFrom||'';
+  var isBoss=(currentSession==='dad'||currentSession==='mum');
+  document.getElementById('goal-editor-match-section').style.display=isBoss?'':'none';
   // render category grid in editor
   var grid=document.getElementById('goal-editor-cat-grid');
   if(grid){
     grid.innerHTML=(GOAL_CATEGORIES||[]).map(function(cat){
       var sel=(g.category||'other')===cat.id?' selected':'';
       return'<button type="button" class="goal-cat-btn'+sel+'" onclick="selectEditorCat(\''+cat.id+'\')">'+
-        '<span class="cat-emoji">'+cat.emoji+'</span>'+cat.label+'</button>';
+        '<span class="cat-icon"><i data-lucide="'+cat.icon+'" width="18" height="18" class="lucide"></i></span>'+
+        cat.label+'</button>';
     }).join('');
+    lucide.createIcons();
   }
   updateAllocDisplay();
   openModal('modal-goal-editor');
@@ -3915,17 +4364,21 @@ async function saveGoalEdit(){
   var amount=parseFloat(document.getElementById('goal-editor-amount').value)||0;
   var deadline=document.getElementById('goal-editor-deadline').value||'';
   var allocPct=parseInt(document.getElementById('goal-editor-alloc').value)||0;
-  var cat=selectedEditorCat();
+  var isBoss=(currentSession==='dad'||currentSession==='mum');
   var editId=document.getElementById('goal-editor-id').value;
+  var existingGoal=editId?(childCfg().goals||[]).find(function(g){return g.id===editId;}):null;
+  var matchRate=isBoss?parseInt(document.getElementById('goal-editor-match').value)||0:(existingGoal?existingGoal.matchRate||0:0);
+  var matchFrom=isBoss?document.getElementById('goal-editor-matchfrom').value||'':(existingGoal?existingGoal.matchFrom||'':'');
+  var cat=selectedEditorCat();
   if(!name){toast('Please enter a goal name');return;}
   if(amount<1){toast('Please enter a target amount');return;}
   if(!childCfg().goals) childCfg().goals=[];
   if(editId){
     var idx=childCfg().goals.findIndex(function(g){return g.id===editId;});
-    if(idx>=0) childCfg().goals[idx]={id:editId,name:name,amount:amount,category:cat,deadline:deadline,allocPct:allocPct};
+    if(idx>=0) childCfg().goals[idx]={id:editId,name:name,amount:amount,category:cat,deadline:deadline,allocPct:allocPct,matchRate:matchRate,matchFrom:matchFrom};
   } else {
     if(childCfg().goals.length>=5){toast('Maximum 5 goals');return;}
-    childCfg().goals.push({id:'g_'+Date.now(),name:name,amount:amount,category:cat,deadline:deadline,allocPct:allocPct});
+    childCfg().goals.push({id:'g_'+Date.now(),name:name,amount:amount,category:cat,deadline:deadline,allocPct:allocPct,matchRate:matchRate,matchFrom:matchFrom});
   }
   var btn=document.getElementById('goal-editor-save-btn');
   btn.disabled=true;btn.textContent='Saving…';
@@ -3933,6 +4386,7 @@ async function saveGoalEdit(){
     await saveConfig();
     closeModal('modal-goal-editor');
     renderGoalSettings();
+    renderBossGoalSettings();
     renderLogan();
     toast((editId?'Goal updated':'Goal added')+' ✓');
   }catch(e){toast('Error: '+e.message);}
@@ -3943,17 +4397,18 @@ async function deleteGoal(goalId){
   childCfg().goals=(childCfg().goals||[]).filter(function(g){return g.id!==goalId;});
   await saveConfig();
   renderGoalSettings();
+  renderBossGoalSettings();
   renderLogan();
   toast('Goal removed');
 }
-function moveGoal(goalId,dir){
+async function moveGoal(goalId,dir){
   var goals=childCfg().goals||[];
   var idx=goals.findIndex(function(g){return g.id===goalId;});
   var newIdx=idx+dir;
   if(newIdx<0||newIdx>=goals.length) return;
   var tmp=goals[idx];goals[idx]=goals[newIdx];goals[newIdx]=tmp;
   childCfg().goals=goals;
-  saveConfig();
+  await saveConfig();
   renderGoalSettings();
   renderLogan();
 }
@@ -4037,6 +4492,59 @@ function renderGoalsProgress(available){
     '<span class="free-to-spend-amt">'+cur()+free.toFixed(2)+'</span>'+
   '</div>':'';
   el.innerHTML='<div class="goal-progress-section">'+freeRow+cards+'</div>';
+  lucide.createIcons();
+}
+function renderGoalsTab(){
+  var el=document.getElementById('goals-tab-content');
+  if(!el) return;
+  var goals=childCfg().goals||[];
+  if(!goals.length){
+    el.innerHTML='<div style="text-align:center;padding:40px 0;color:var(--muted);font-size:14px">No goals yet — ask a parent to set one up!</div>';
+    return;
+  }
+  // reuse the same available balance calculation as renderLogan
+  var modelType=getModel().type;
+  var isAllowanceOnly=modelType==='allowance';
+  var earned=isAllowanceOnly?0:completions.filter(function(c){return c.status==='approved';}).reduce(function(s,c){return s+c.price;},0);
+  var allowanceAccrued=calcAllowanceAccrued();
+  var paid=payouts.reduce(function(s,p){return s+p.amount;},0);
+  var spent=spending.reduce(function(s,p){return s+p.amount;},0);
+  var subAccrued=calcTotalSubAccrued();
+  var bal=Math.max(0,earned+allowanceAccrued-paid-spent-subAccrued);
+  var totalEarmarked=0;
+  var cards=goals.map(function(g){
+    var earmarked=g.allocPct?Math.min(g.amount,bal*g.allocPct/100):0;
+    totalEarmarked+=earmarked;
+    var pct=Math.min(100,Math.round(earmarked/g.amount*100));
+    var full=pct>=100;
+    var emoji=goalCatEmoji(g.category);
+    var days=goalDaysLeft(g.deadline);
+    var tags='';
+    if(full) tags+='<span class="goal-tag complete">✓ Reached!</span>';
+    else if(g.allocPct>0) tags+='<span class="goal-tag alloc">↗ Auto-saving '+g.allocPct+'%</span>';
+    if(g.matchRate>0) tags+='<span class="goal-tag" style="background:var(--teal-l);color:var(--teal)">🤝 '+g.matchRate+'% match</span>';
+    if(days!==null) tags+='<span class="goal-tag deadline">'+(days<=0?'Past due':days+' day'+(days!==1?'s':'')+' left')+'</span>';
+    return'<div class="goal-card">'+
+      '<div class="goal-card-header">'+
+        '<div class="goal-card-emoji">'+emoji+'</div>'+
+        '<div style="flex:1;min-width:0">'+
+          '<div class="goal-card-name">'+esc(g.name)+'</div>'+
+          '<div class="goal-card-sub">Target: '+cur()+g.amount.toFixed(2)+'</div>'+
+        '</div>'+
+        '<div class="goal-card-pct">'+pct+'%</div>'+
+      '</div>'+
+      '<div class="goal-bar-track"><div class="goal-bar-fill'+(full?' full':'')+'" style="width:'+pct+'%"></div></div>'+
+      '<div class="goal-bar-labels">'+
+        '<span>'+cur()+earmarked.toFixed(2)+' earmarked</span>'+
+        '<span>'+cur()+Math.max(0,g.amount-earmarked).toFixed(2)+' to go</span>'+
+      '</div>'+
+      tags+
+    '</div>';
+  }).join('');
+  var free=Math.max(0,bal-totalEarmarked);
+  var freeRow=bal>0?'<div class="free-to-spend-row"><span class="free-to-spend-label">Free to spend</span><span class="free-to-spend-amt">'+cur()+free.toFixed(2)+'</span></div>':'';
+  el.innerHTML='<div class="goal-progress-section">'+cards+freeRow+'</div>';
+  lucide.createIcons();
 }
 
 // ── Bonus payment ──────────────────────────────────────────────────────
@@ -4146,7 +4654,92 @@ function getWeekStart(){
   var d=new Date();d.setHours(0,0,0,0);
   var dow=d.getDay(); // 0=Sun
   d.setDate(d.getDate()+(dow===0?-6:1-dow));
-  return d.toISOString().slice(0,10);
+  var mm=String(d.getMonth()+1).padStart(2,'0');
+  var dd=String(d.getDate()).padStart(2,'0');
+  return d.getFullYear()+'-'+mm+'-'+dd;
+}
+
+var _autoSchedRunning=false;
+var _autoSchedTimer=null;
+function autoScheduleRecurring(){
+  if(_autoSchedTimer) clearTimeout(_autoSchedTimer);
+  _autoSchedTimer=setTimeout(_doAutoSchedule, 800);
+}
+async function _doAutoSchedule(){
+  if(_autoSchedRunning) return;
+  var ws=getWeekStart();
+  var wsParts=ws.split('-');
+  var weekStart=new Date(+wsParts[0],+wsParts[1]-1,+wsParts[2]);
+  var cids=Object.keys(config.children||{});
+  if(!cids.length) return;
+  // Collect recurring chores (those with a recurrence value)
+  var recurring=chores.filter(function(ch){
+    return !ch.archived&&(freqToRecurrence(ch.freq)||ch.recurrence);
+  });
+  if(!recurring.length) return;
+  // For bi-weekly/fortnightly, determine if this is an "on" week using dueDate as anchor
+  function isBiWeeklyOn(ch){
+    if(!ch.dueDate) return true; // no anchor, always on
+    var anchor=new Date(ch.dueDate+'T00:00:00');
+    // Find the Monday of the anchor's week
+    var anchorDow=anchor.getDay();
+    var anchorMon=new Date(anchor);
+    anchorMon.setDate(anchor.getDate()+(anchorDow===0?-6:1-anchorDow));
+    var diffWeeks=Math.round((weekStart-anchorMon)/604800000);
+    return diffWeeks%2===0;
+  }
+  // Which day of week (0=Mon..6=Sun) does this chore prefer?
+  function preferredDow(ch){
+    if(ch.dueDate){
+      var d=new Date(ch.dueDate+'T00:00:00');
+      var dow=d.getDay(); // 0=Sun
+      return dow===0?6:dow-1; // convert to Mon=0
+    }
+    return 0; // default Monday
+  }
+  // Days to plan for this chore this week
+  function daysForChore(ch){
+    var rec=freqToRecurrence(ch.freq)||ch.recurrence||'';
+    if(rec==='daily') return [0,1,2,3,4,5,6];
+    if(rec==='weekly') return [preferredDow(ch)];
+    if(rec==='bi-weekly') return isBiWeeklyOn(ch)?[preferredDow(ch)]:[];
+    if(rec==='monthly'||rec==='bi-monthly'||rec==='quarterly'){
+      // Only add if next due date falls within this week
+      var next=nextDueDate(ch);
+      if(!next) return [];
+      var diffDays=Math.round((next-weekStart)/86400000);
+      if(diffDays>=0&&diffDays<7) return [diffDays];
+      return [];
+    }
+    return [];
+  }
+  _autoSchedRunning=true;
+  try{
+    var batch=db.batch();
+    var writes=0;
+    recurring.forEach(function(ch){
+      var days=daysForChore(ch);
+      cids.forEach(function(cid){
+        days.forEach(function(dow){
+          var alreadyPlanned=plans.some(function(p){
+            return p.choreId===ch.id&&p.weekStart===ws&&p.dayOfWeek===dow&&p.childId===cid;
+          });
+          if(!alreadyPlanned&&writes<490){
+            var ref=plansColl.doc();
+            batch.set(ref,{
+              choreId:ch.id,choreName:ch.name,price:ch.price,
+              parent:ch.parent,childId:cid,dayOfWeek:dow,weekStart:ws,
+              auto:true,addedAt:firebase.firestore.FieldValue.serverTimestamp()
+            });
+            writes++;
+          }
+        });
+      });
+    });
+    if(writes>0) await batch.commit();
+  }catch(e){console.warn('autoScheduleRecurring:',e);}
+  _autoSchedRunning=false;
+  _autoSchedTimer=null;
 }
 
 function renderWeekPlan(){
@@ -4159,7 +4752,7 @@ function renderWeekPlan(){
 
   var dayNames=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
   var today=new Date();today.setHours(0,0,0,0);
-  var startDate=new Date(ws+'T00:00:00');
+  var wsp=ws.split('-');var startDate=new Date(+wsp[0],+wsp[1]-1,+wsp[2]);
 
   var cols=dayNames.map(function(dn,i){
     var dd=new Date(startDate);dd.setDate(dd.getDate()+i);
@@ -4182,7 +4775,7 @@ function renderWeekPlan(){
     }).join('');
 
     var hasTasks=dayPlans.length>0;
-    var dateStr=dd.toISOString().slice(0,10);
+    var dateStr=dd.getFullYear()+'-'+String(dd.getMonth()+1).padStart(2,'0')+'-'+String(dd.getDate()).padStart(2,'0');
     return'<div class="week-day'+(isToday?' today':'')+(isPast&&!isToday?' past':'')+(hasTasks?' has-tasks':'')+'" '+(hasTasks?'onclick="openDayModal(\''+dateStr+'\')" role="button" tabindex="0"':'')+'>'+
       '<div class="week-day-name">'+dn+'</div>'+
       '<div class="week-day-date">'+dd.getDate()+'</div>'+
@@ -4211,7 +4804,7 @@ function openPlanModal(choreId){
 
   var dayNames=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
   var today=new Date();today.setHours(0,0,0,0);
-  var startDate=new Date(ws+'T00:00:00');
+  var wsp=ws.split('-');var startDate=new Date(+wsp[0],+wsp[1]-1,+wsp[2]);
 
   var html=dayNames.map(function(dn,i){
     var dd=new Date(startDate);dd.setDate(dd.getDate()+i);
@@ -4261,7 +4854,7 @@ async function removePlan(planId){
 }
 
 function openDayModal(dateStr){
-  var dd=new Date(dateStr+'T00:00:00');
+  var p=dateStr.split('-');var dd=new Date(+p[0],+p[1]-1,+p[2]);
   var dayEnd=new Date(dd);dayEnd.setDate(dayEnd.getDate()+1);
   var dayNames=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
   var dow=((dd.getDay()+6)%7); // Mon=0
@@ -4650,14 +5243,18 @@ function calcBestStreak(){
   });
   return best;
 }
-function statBox(emoji,label,value){
-  return'<div style="background:var(--gray-l);border-radius:12px;padding:14px;text-align:center">'+
-    '<div style="font-size:22px;margin-bottom:4px">'+emoji+'</div>'+
+function statBox(icon,iconColor,iconBg,label,value){
+  return'<div style="background:var(--gray-l);border-radius:12px;padding:14px;text-align:center;font-family:\'Manrope\',sans-serif">'+
+    '<div style="display:flex;align-items:center;justify-content:center;margin-bottom:8px">'+
+      '<span style="display:inline-flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:11px;background:'+iconBg+'">'+
+        '<i data-lucide="'+icon+'" width="20" height="20" style="color:'+iconColor+'" class="lucide"></i>'+
+      '</span>'+
+    '</div>'+
     '<div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">'+label+'</div>'+
     '<div style="font-size:16px;font-weight:800;color:var(--text)">'+esc(String(value))+'</div>'+
   '</div>';
 }
-function openLoganStats(){
+function renderLoganStats(){
   var appr=completions.filter(function(c){return c.status==='approved';});
   var jobsDone=appr.filter(function(c){return c.type!=='bonus';}).length;
   var totalEarned=appr.reduce(function(s,c){return s+c.price;},0);
@@ -4676,25 +5273,33 @@ function openLoganStats(){
   var paidOut=payouts.reduce(function(s,p){return s+p.amount;},0);
   var balance=totalEarned-paidOut;
   var el=document.getElementById('stats-content');
-  if(el){
-    el.innerHTML='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px">'+
-      statBox('💰','Total earned',cur()+totalEarned)+
-      statBox('✅','Jobs done',jobsDone)+
-      statBox('🔥','Current streak',curStreak+(curStreak!==1?' days':' day'))+
-      statBox('🏆','Best streak',bestStreak+(bestStreak!==1?' days':' day'))+
-      (bestMonth?statBox('📅','Best month',fmtMonth(bestMonth)):'')+
-      (bestMonth?statBox('💷','Best month '+cur(),cur()+bestAmt):'')+
+  if(!el) return;
+  el.innerHTML=
+    '<div class="settings-card">'+
+    '<div style="font-size:18px;font-weight:800;margin-bottom:16px">Your achievements</div>'+
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'+
+      statBox('coins','var(--amber)','var(--amber-l)','Total earned',cur()+totalEarned)+
+      statBox('briefcase','var(--blue)','var(--blue-l)','Jobs done',jobsDone)+
+      statBox('flame','var(--red)','var(--red-l)','Current streak',curStreak+(curStreak!==1?' days':' day'))+
+      statBox('trophy','var(--amber)','var(--amber-l)','Best streak',bestStreak+(bestStreak!==1?' days':' day'))+
+      (bestMonth?statBox('calendar','var(--teal)','var(--teal-l)','Best month',fmtMonth(bestMonth)):'')+
+      (bestMonth?statBox('trending-up','var(--green)','var(--green-l)','Best month '+cur(),cur()+bestAmt):'')+
       (topJob?'<div style="background:var(--gray-l);border-radius:12px;padding:14px;text-align:center;grid-column:span 2">'+
-        '<div style="font-size:22px;margin-bottom:4px">⭐</div>'+
+        '<div style="display:flex;align-items:center;justify-content:center;margin-bottom:8px">'+
+          '<span style="display:inline-flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:11px;background:var(--amber-l)">'+
+            '<i data-lucide="star" width="20" height="20" style="color:var(--amber)" class="lucide"></i>'+
+          '</span>'+
+        '</div>'+
         '<div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Top job</div>'+
         '<div style="font-size:16px;font-weight:800;color:var(--text)">'+esc(topJob)+'</div>'+
         '<div style="font-size:12px;color:var(--muted);margin-top:2px">Done '+topCount+(topCount!==1?' times':' time')+'</div>'+
       '</div>':'')+
-      (paidOut>0?statBox('💸','Balance owed',cur()+Math.max(0,balance)):'')+
+      (paidOut>0?statBox('banknote','var(--purple)','var(--purple-l)','Balance owed',cur()+Math.max(0,balance)):'')+
+    '</div>'+
     '</div>';
-  }
-  openModal('modal-logan-stats');
+  lucide.createIcons();
 }
+function openLoganStats(){ loganTab('stats'); }
 
 // ── Parent → Logan messages ────────────────────────────────────────────
 async function saveParentMessage(){
@@ -4824,7 +5429,7 @@ async function sendPushTo(who,payload){
   var sub=isChildSession(who)?(childCfg(who)&&childCfg(who).pushSub):(config[who]&&config[who].pushSub);
   if(!sub)return;
   try{
-    var res=await fetch('/.netlify/functions/send-push',{
+    var res=await fetch('/api/send-push',{
       method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({subscription:sub,payload:payload})
     });
@@ -4842,7 +5447,7 @@ function urlBase64ToUint8Array(b){
   return Uint8Array.from(Array.from(raw).map(function(c){return c.charCodeAt(0);}));
 }
 
-['modal-log','modal-suggest','modal-job','modal-bonus','modal-reject','modal-job-history','modal-payout','modal-logan-stats','modal-plan','modal-day-plan'].forEach(function(id){
+['modal-log','modal-suggest','modal-job','modal-bonus','modal-reject','modal-job-history','modal-payout','modal-plan','modal-day-plan'].forEach(function(id){
   document.getElementById(id).addEventListener('click',function(e){if(e.target===this)closeModal(id);});
 });
 </script>

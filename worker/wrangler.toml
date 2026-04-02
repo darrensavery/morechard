@@ -11,6 +11,7 @@ database_id = "5e8b4cd3-4807-43e4-bd84-4969da6e402c"
 [vars]
 ENVIRONMENT = "development"
 APP_URL = "https://moneysteps.pages.dev"
+FIREBASE_PROJECT_ID = "pocket-money-85878"
 
 # Secrets — set via: wrangler secret put JWT_SECRET
 #                    wrangler secret put RESEND_API_KEY

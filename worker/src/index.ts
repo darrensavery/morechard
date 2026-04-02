@@ -42,6 +42,7 @@ import {
   handleGovernanceGet,
 } from './routes/governance.js';
 import {
+  handleCreateFamily,
   handleRegister,
   handleLogin,
   handleMagicLinkRequest,
@@ -54,6 +55,7 @@ import {
 import { requireAuth, requireRole, requireFamilyMatch } from './lib/middleware.js';
 import { checkTrialStatus, getTrialStatus } from './lib/trial.js';
 import { handleCreateCheckout, handleStripeWebhook } from './routes/stripe.js';
+import { handleExchange } from './routes/exchange.js';
 import { json, error } from './lib/response.js';
 import { JwtPayload } from './lib/jwt.js';
 
@@ -94,7 +96,9 @@ async function route(request: Request, env: Env, method: string, path: string): 
   // ── Public ──────────────────────────────────────────────────
   if (path === '/api/health') return json({ ok: true });
 
-  if (path === '/auth/register'    && method === 'POST') return handleRegister(request, env);
+  if (path === '/auth/exchange'      && method === 'POST') return handleExchange(request, env);
+  if (path === '/auth/create-family' && method === 'POST') return handleCreateFamily(request, env);
+  if (path === '/auth/register'      && method === 'POST') return handleRegister(request, env);
   if (path === '/auth/login'       && method === 'POST') return handleLogin(request, env);
   if (path === '/auth/magic-link'  && method === 'POST') return handleMagicLinkRequest(request, env);
   if (path === '/auth/verify'      && method === 'GET')  return handleMagicLinkVerify(request, env);

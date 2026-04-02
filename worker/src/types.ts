@@ -6,6 +6,7 @@ export interface Env {
   APP_URL: string;
   STRIPE_SECRET_KEY: string;
   STRIPE_WEBHOOK_SECRET: string;
+  FIREBASE_PROJECT_ID: string;
 }
 
 export type PaymentType = 'LIFETIME' | 'AI_ANNUAL';

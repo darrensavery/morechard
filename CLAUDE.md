@@ -84,3 +84,16 @@ which /docs/notebooklm files were consulted.
 - `pocket-money-v3/pwa-v3/index.html` — single-file app (~344KB)
 - `test-app.js` — Playwright test suite (repo root)
 - `pocket-money-v3/pwa-v3/start-server.bat` — local dev server (localhost:3000)
+
+## Common Commands
+
+### Daily save routine
+git add .
+git commit -m "describe what changed"
+git push
+
+### Start local server
+npm run dev
+
+### Deploy to Cloudflare
+wrangler deploy

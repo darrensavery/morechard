@@ -102,11 +102,19 @@
 
 ---
 
+## 10) Regional Pricing & Anti-Arbitrage (PPP Optimized)
+* **UK (GBP):** * Essential (Lifetime): **£34.99**
+    * Pro Coach Bundle (Yr 1): **£44.98** (£19.99/yr thereafter)
+* **Poland (PLN) - Introductory Launch Price:** * Essential (Lifetime): **99.00 PLN** (Regular: 129 PLN)
+    * Pro Coach Bundle (Yr 1): **139.00 PLN** (Regular: 159 PLN)
+* **The Guardrail:** * **Currency Lock:** Based on Payment Instrument (Card Issuing Country) or P24. 
+    * **No Arbitrage:** UK cards cannot pay PLN prices. VPNs alone are insufficient to bypass.
 
+## 10) Implementation Backlog (STRICT SCOPE)
 
-## 9) Implementation Backlog (STRICT SCOPE)
-
-3. **The 14-Day Lock:** Middleware for the trial countdown and the `/paywall` hard-lock.
-4. **The Coach Triggers:** Background logic to trigger AI nudges based on ledger inactivity or spending velocity.
-5. **Audit PDF Engine:** Generation of cryptographic "Financial & Developmental Health" reports.
-6. **Trial Logic & UI:** Middleware for the 'Active-Usage' 14-day countdown + Shadcn Progress Bar component on the Dashboard.
+1. **The 14-Day Lock:** Middleware for the trial countdown and the `/paywall` hard-lock.
+2. **The Coach Triggers:** Background logic to trigger AI nudges based on ledger inactivity or spending velocity.
+3. **Audit PDF Engine:** Generation of cryptographic "Financial & Developmental Health" reports.
+4. **Trial Logic & UI:** Middleware for the 'Active-Usage' 14-day countdown + Shadcn Progress Bar component on the Dashboard.
+5. **Multi-Currency Stripe:** Launch-price logic with 12-month AI discount.
+6. **The Guard:** Server-side validation of Card Country vs. Currency.
