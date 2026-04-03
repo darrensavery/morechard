@@ -43,7 +43,7 @@ export function Stage3ChildOnboarding({ data, onNext, onBack }: Props) {
         child_id:    result.child_id,
         display_name: name,
         invite_code: result.invite_code,
-        expires_at:  result.expires_at,
+        expires_at:  (result as { child_id: string; invite_code: string; expires_at?: number }).expires_at ?? 0,
       }
       setChildren(prev => [...prev, child])
       setJustAdded(child)

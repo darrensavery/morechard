@@ -13,7 +13,6 @@
 
 import { useState } from 'react'
 import { ShieldCheck } from 'lucide-react'
-import { Progress } from '@/components/ui/progress'
 import { Stage1ParentIdentity }     from './Stage1ParentIdentity'
 import { Stage2FamilyConstitution } from './Stage2FamilyConstitution'
 import { Stage3ChildOnboarding }    from './Stage3ChildOnboarding'
