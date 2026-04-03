@@ -10,6 +10,8 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  // Assets prefixed with /register/ so they don't clash with root index.html
+  base: '/register/',
   server: {
     port: 5173,
     proxy: {

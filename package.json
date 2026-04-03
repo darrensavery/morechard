@@ -1,4 +1,8 @@
 {
+  "scripts": {
+    "build": "cd app && npm install && npm run build",
+    "dev": "cd app && npm run dev"
+  },
   "devDependencies": {
     "playwright": "^1.58.2"
   }
