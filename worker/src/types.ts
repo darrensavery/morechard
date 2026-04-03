@@ -31,6 +31,8 @@ export interface TrialStatus {
 
 export type Currency = 'GBP' | 'PLN';
 export type VerifyMode = 'amicable' | 'standard';
+export type ParentingMode = 'single' | 'co-parenting';
+export type InviteRole = 'child' | 'co-parent';
 export type EntryType = 'credit' | 'reversal' | 'payment';
 export type VerificationStatus = 'pending' | 'verified_auto' | 'verified_manual' | 'disputed' | 'reversed';
 export type GovernanceStatus = 'pending' | 'confirmed' | 'rejected' | 'expired';

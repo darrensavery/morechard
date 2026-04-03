@@ -56,9 +56,15 @@ export async function handleCreateFamily(request: Request, env: Env): Promise<Re
   const passwordHash = password ? await hashPassword(password as string) : null;
   const userLocale   = (locale === 'pl' ? 'pl' : 'en');
 
+  // Accept new Stage-1/2 registration fields (default to safe values if absent)
+  const governance_mode  = (body['governance_mode']  === 'standard') ? 'standard'      : 'amicable';
+  const base_currency    = (body['base_currency']    === 'PLN')      ? 'PLN'           : 'GBP';
+  const parenting_mode   = (body['parenting_mode']   === 'co-parenting') ? 'co-parenting' : 'single';
+
   await env.DB.batch([
-    env.DB.prepare(`INSERT INTO families (id, verify_mode) VALUES (?, 'amicable')`)
-      .bind(familyId),
+    env.DB.prepare(
+      `INSERT INTO families (id, verify_mode, base_currency, parenting_mode) VALUES (?, ?, ?, ?)`
+    ).bind(familyId, governance_mode, base_currency, parenting_mode),
     env.DB.prepare(`
       INSERT INTO users (id, family_id, display_name, email, locale, password_hash, email_verified)
       VALUES (?,?,?,?,?,?,0)

@@ -922,9 +922,9 @@ html[data-theme="system"] .pin-box:focus{background:var(--green-l)}
           <div class="settings-nav-label"><strong data-i18n="settings.loginSecurity">Login &amp; Security</strong><span data-i18n="settings.loginSecurityDesc">Notifications, PIN, sign out</span></div>
           <i data-lucide="chevron-right" width="18" height="18" class="lucide settings-nav-arrow"></i>
         </button>
-        <button class="settings-nav-tile" onclick="showBossSettingsGroup('children')">
+        <button class="settings-nav-tile" onclick="showBossSettingsGroup('family')">
           <div class="settings-nav-icon" style="background:var(--teal-l)"><i data-lucide="users" width="20" height="20" style="color:var(--teal)" class="lucide"></i></div>
-          <div class="settings-nav-label"><strong>Manage Children</strong><span id="children-count-label">Add &amp; manage child accounts</span></div>
+          <div class="settings-nav-label"><strong>Family &amp; Governance</strong><span id="children-count-label">Children, invites, governance model</span></div>
           <i data-lucide="chevron-right" width="18" height="18" class="lucide settings-nav-arrow"></i>
         </button>
         <button class="settings-nav-tile" onclick="showBossSettingsGroup('language')">
@@ -932,29 +932,70 @@ html[data-theme="system"] .pin-box:focus{background:var(--green-l)}
           <div class="settings-nav-label"><strong data-i18n="settings.language">Language</strong><span id="current-lang-display">English 🇬🇧</span></div>
           <i data-lucide="chevron-right" width="18" height="18" class="lucide settings-nav-arrow"></i>
         </button>
-        <button class="settings-nav-tile" onclick="showInviteCode()">
-          <div class="settings-nav-icon" style="background:var(--teal-l)"><i data-lucide="share-2" width="20" height="20" style="color:var(--teal)" class="lucide"></i></div>
-          <div class="settings-nav-label"><strong>Invite to family</strong><span>Generate a code for another device</span></div>
-          <i data-lucide="chevron-right" width="18" height="18" class="lucide settings-nav-arrow"></i>
-        </button>
       </div>
     </div>
 
-    <!-- Group: Manage Children -->
-    <div id="boss-settings-children" style="display:none">
+    <!-- Group: Family & Governance (consolidated) -->
+    <div id="boss-settings-family" style="display:none">
       <button class="settings-back-btn" onclick="showBossSettingsHome()"><i data-lucide="arrow-left" width="15" height="15" class="lucide"></i> Settings</button>
-      <div class="settings-group-title">Manage Children</div>
-      <div id="children-list-cards"></div>
-      <div class="settings-card" style="border:1.5px dashed var(--teal-b);background:var(--teal-l)">
-        <h3 style="color:var(--teal)">Add a child</h3>
-        <p style="font-size:13px;color:var(--muted);margin-bottom:12px">Create a new child account. They'll choose their name and PIN.</p>
-        <button class="btn-primary" onclick="openAddChildModal()" style="background:var(--teal);color:#fff;max-width:200px;padding:10px 16px;font-size:14px">+ Add child account</button>
+      <div class="settings-group-title">Family &amp; Governance</div>
+
+      <!-- Section 1: Children -->
+      <div class="settings-card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+          <h3 style="margin:0">Children</h3>
+          <button onclick="openAddChildModal()" style="background:var(--teal);color:#fff;border:none;border-radius:9px;padding:7px 14px;font-size:13px;font-weight:700;cursor:pointer">+ Add child</button>
+        </div>
+        <div id="children-list-cards"></div>
+      </div>
+
+      <!-- Section 2: Child invite code -->
+      <div class="settings-card">
+        <h3>Child invite code</h3>
+        <p style="font-size:13px;color:var(--muted);margin:6px 0 14px">Generate a 6-digit code for a child to link their device. The code is single-use and expires in 72 hours.</p>
+        <div id="family-settings-child-code-display" style="display:none;text-align:center;margin-bottom:14px">
+          <div id="family-settings-child-code" style="font-size:38px;font-weight:800;letter-spacing:8px;color:var(--text);font-variant-numeric:tabular-nums;margin-bottom:6px"></div>
+          <p style="font-size:12px;color:var(--muted)">Share this code with the child — enter it on their device under "Join Family"</p>
+        </div>
+        <button class="btn-primary" onclick="generateAndShowChildCode()" style="max-width:220px;padding:10px 16px;font-size:14px">Generate child code</button>
+        <button id="copy-child-code-btn" onclick="copyFamilyCode('child')" style="display:none;max-width:160px;padding:10px 16px;font-size:14px;margin-left:8px;background:var(--green-l);color:var(--green);border:1px solid var(--green-b);border-radius:9px;font-weight:700;cursor:pointer">Copy code</button>
+      </div>
+
+      <!-- Section 3: Co-parent invite -->
+      <div class="settings-card">
+        <h3>Co-parent invite</h3>
+        <p style="font-size:13px;color:var(--muted);margin:6px 0 14px">Invite another parent to join as a Verified Custodian. They will need to verify their email. Code expires in 72 hours.</p>
+        <div id="family-settings-coparent-code-display" style="display:none;margin-bottom:14px">
+          <div style="text-align:center;margin-bottom:8px">
+            <div id="family-settings-coparent-code" style="font-size:38px;font-weight:800;letter-spacing:8px;color:var(--text);font-variant-numeric:tabular-nums"></div>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button onclick="shareCoParentViaApp('whatsapp')" style="flex:1;padding:9px;border-radius:9px;border:none;background:#25D366;color:#fff;font-size:13px;font-weight:700;cursor:pointer">WhatsApp</button>
+            <button onclick="shareCoParentViaApp('messenger')" style="flex:1;padding:9px;border-radius:9px;border:none;background:#0099FF;color:#fff;font-size:13px;font-weight:700;cursor:pointer">Messenger</button>
+            <button onclick="copyFamilyCode('coparent')" style="flex:1;padding:9px;border-radius:9px;border:1.5px solid var(--border);background:var(--white);font-size:13px;font-weight:700;cursor:pointer;color:var(--text)">Copy code</button>
+          </div>
+        </div>
+        <button class="btn-primary" onclick="generateAndShowCoParentCode()" style="max-width:240px;padding:10px 16px;font-size:14px">Generate co-parent code</button>
+      </div>
+
+      <!-- Section 4: Governance model -->
+      <div class="settings-card">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+          <h3 style="margin:0">Governance model</h3>
+          <button onclick="showGovernanceInfo()" style="background:none;border:none;cursor:pointer;padding:2px;color:var(--muted)" aria-label="About governance modes"><i data-lucide="info" width="15" height="15" class="lucide"></i></button>
+        </div>
+        <div id="governance-mode-display" style="font-size:14px;color:var(--muted);margin-bottom:14px">Loading…</div>
+        <p style="font-size:12px;color:var(--muted);margin-bottom:12px">Changing governance mode requires consent from both custodians and is permanently logged.</p>
+        <button class="btn-primary" onclick="openGovernanceRequest()" id="governance-change-btn" style="max-width:240px;padding:10px 16px;font-size:14px">Request governance change</button>
       </div>
     </div>
+
+    <!-- Keep old #boss-settings-children as an alias so any remaining JS calls still work -->
+    <div id="boss-settings-children" style="display:none"></div>
 
     <!-- Group: Child Goals (boss managing a specific child's goals) -->
     <div id="boss-settings-childgoals" style="display:none">
-      <button class="settings-back-btn" onclick="showBossSettingsGroup('children')"><i data-lucide="arrow-left" width="15" height="15" class="lucide"></i> Manage Children</button>
+      <button class="settings-back-btn" onclick="showBossSettingsGroup('family')"><i data-lucide="arrow-left" width="15" height="15" class="lucide"></i> Family &amp; Governance</button>
       <div class="settings-group-title" id="boss-childgoals-title">Goals</div>
       <div class="settings-card">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
@@ -3898,9 +3939,10 @@ async function saveNewChild(){
   closeModal('modal-add-child');
   renderChildrenList();
   updateLabels();
-  toast(name+' added ✓ — share the invite code with them');
+  toast(name+' added ✓');
   currentBossChild=cid;
-  showInviteCode();
+  // Route to consolidated Family & Governance settings to show invite code
+  showBossSettingsGroup('family');
 }
 
 function confirmRemoveChild(cid){
@@ -3933,19 +3975,103 @@ async function doRemoveChild(cid){
 // ── Settings navigation ────────────────────────────────────────────────
 function showBossSettingsHome(){
   document.getElementById('boss-settings-home').style.display='';
-  ['profile','pocketmoney','parental','security','language','children','childgoals'].forEach(function(g){
-    document.getElementById('boss-settings-'+g).style.display='none';
+  ['profile','pocketmoney','parental','security','language','children','childgoals','family'].forEach(function(g){
+    var el=document.getElementById('boss-settings-'+g);
+    if(el) el.style.display='none';
   });
 }
 function showBossSettingsGroup(group){
   document.getElementById('boss-settings-home').style.display='none';
-  ['profile','pocketmoney','parental','security','language','children','childgoals'].forEach(function(g){
-    document.getElementById('boss-settings-'+g).style.display=g===group?'':'none';
+  ['profile','pocketmoney','parental','security','language','children','childgoals','family'].forEach(function(g){
+    var el=document.getElementById('boss-settings-'+g);
+    if(el) el.style.display=g===group?'':'none';
   });
-  if(group==='language') renderLangGrid();
-  if(group==='children') renderChildrenList();
+  if(group==='language')  renderLangGrid();
+  if(group==='children')  renderChildrenList();
+  if(group==='family')    { renderChildrenList(); renderGovernanceModeDisplay(); }
   if(group==='childgoals') renderBossGoalSettings();
   lucide.createIcons();
+}
+
+// ── Family & Governance section helpers ──────────────────────────────────────
+
+var _familyChildCode    = null;
+var _familyCoParentCode = null;
+
+async function generateAndShowChildCode(){
+  try{
+    var token = localStorage.getItem('ms_token');
+    var res = await fetch('/auth/invite/generate',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({role:'child'})});
+    var data = await res.json();
+    if(!res.ok) throw new Error(data.error||'Failed');
+    _familyChildCode = data.code;
+    document.getElementById('family-settings-child-code').textContent = data.code;
+    document.getElementById('family-settings-child-code-display').style.display='';
+    document.getElementById('copy-child-code-btn').style.display='';
+    lucide.createIcons();
+    toast('Child invite code ready');
+  }catch(e){ toast('Error: '+e.message); }
+}
+
+async function generateAndShowCoParentCode(){
+  try{
+    var token = localStorage.getItem('ms_token');
+    var res = await fetch('/auth/invite/generate',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({role:'co-parent'})});
+    var data = await res.json();
+    if(!res.ok) throw new Error(data.error||'Failed');
+    _familyCoParentCode = data.code;
+    document.getElementById('family-settings-coparent-code').textContent = data.code;
+    document.getElementById('family-settings-coparent-code-display').style.display='';
+    lucide.createIcons();
+    toast('Co-parent invite code ready');
+  }catch(e){ toast('Error: '+e.message); }
+}
+
+function copyFamilyCode(type){
+  var code = type==='child' ? _familyChildCode : _familyCoParentCode;
+  if(!code){ toast('Generate a code first'); return; }
+  if(navigator.clipboard) navigator.clipboard.writeText(code).then(function(){ toast('Code copied!'); });
+  else toast(code);
+}
+
+function shareCoParentViaApp(app){
+  var code = _familyCoParentCode;
+  if(!code){ toast('Generate a code first'); return; }
+  var joinUrl = window.location.origin+'/join?code='+code;
+  var msg = "You've been invited to join a MoneySteps family record. Use code "+code+" or open: "+joinUrl;
+  var urls = {
+    whatsapp:'https://wa.me/?text='+encodeURIComponent(msg),
+    messenger:'https://www.facebook.com/dialog/send?link='+encodeURIComponent(joinUrl)
+  };
+  window.open(urls[app],'_blank','noopener');
+}
+
+function renderGovernanceModeDisplay(){
+  var el = document.getElementById('governance-mode-display');
+  if(!el) return;
+  try{
+    var token = localStorage.getItem('ms_token');
+    if(!token){ el.textContent='Sign in to view governance mode'; return; }
+    fetch('/auth/me',{headers:{'Authorization':'Bearer '+token}})
+      .then(function(r){ return r.json(); })
+      .then(function(d){
+        // family governance info isn't on /auth/me yet; show a static label
+        el.innerHTML = '<span style="display:inline-flex;align-items:center;gap:6px;font-weight:600">'
+          +'<i data-lucide="shield-check" width="14" height="14" class="lucide" style="color:var(--green)"></i>'
+          +'Amicable (Instant Approval)'
+          +'</span>'
+          +'<span style="font-size:12px;color:var(--muted);display:block;margin-top:3px">To change governance mode, use the button below.</span>';
+        lucide.createIcons();
+      }).catch(function(){ el.textContent='Could not load governance mode'; });
+  }catch(e){ el.textContent=''; }
+}
+
+function openGovernanceRequest(){
+  toast('Governance change request — available in the full app.');
+}
+
+function showGovernanceInfo(){
+  alert('Amicable: transactions are approved instantly, other parent is notified.\n\nStandard: every transaction requires formal second-parent approval before it enters the immutable ledger. Creates a court-admissible audit trail.');
 }
 function showChildGoals(cid){
   currentBossChild=cid;

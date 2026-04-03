@@ -27,6 +27,14 @@
  *   POST   /api/governance/:id/reject   Second parent rejects
  *   POST   /api/governance/expire       Expire stale requests (cron)
  *   GET    /api/governance              Fetch governance log
+ *
+ * Authenticated — parent only (invite + registration):
+ *   POST   /auth/invite/generate        Generate typed 6-char invite code
+ *   POST   /auth/child/add              Add child + auto-generate child invite code
+ *   POST   /auth/registration/save-step Persist mid-flow registration state
+ *
+ * Public — invite redemption:
+ *   POST   /auth/invite/redeem          Redeem invite code (child or co-parent)
  */
 
 import { Env } from './types.js';
@@ -56,6 +64,12 @@ import { requireAuth, requireRole, requireFamilyMatch } from './lib/middleware.j
 import { checkTrialStatus, getTrialStatus } from './lib/trial.js';
 import { handleCreateCheckout, handleStripeWebhook } from './routes/stripe.js';
 import { handleExchange } from './routes/exchange.js';
+import {
+  handleGenerateInvite,
+  handleRedeemInvite,
+  handleAddChild,
+  handleSaveRegistrationStep,
+} from './routes/invite.js';
 import { json, error } from './lib/response.js';
 import { JwtPayload } from './lib/jwt.js';
 
@@ -102,7 +116,8 @@ async function route(request: Request, env: Env, method: string, path: string): 
   if (path === '/auth/login'       && method === 'POST') return handleLogin(request, env);
   if (path === '/auth/magic-link'  && method === 'POST') return handleMagicLinkRequest(request, env);
   if (path === '/auth/verify'      && method === 'GET')  return handleMagicLinkVerify(request, env);
-  if (path === '/auth/child/login' && method === 'POST') return handleChildLogin(request, env);
+  if (path === '/auth/child/login'   && method === 'POST') return handleChildLogin(request, env);
+  if (path === '/auth/invite/redeem' && method === 'POST') return handleRedeemInvite(request, env);
 
   // Stripe webhook — public but signature-verified internally
   if (path === '/api/stripe/webhook' && method === 'POST') return handleStripeWebhook(request, env);
@@ -132,6 +147,11 @@ async function route(request: Request, env: Env, method: string, path: string): 
   if (path === '/auth/child/set-pin' && method === 'POST') {
     return withAuth(request, auth, env, handleSetChildPin);
   }
+
+  // Invite code generation + child onboarding + registration persistence
+  if (path === '/auth/invite/generate'        && method === 'POST') return withAuth(request, auth, env, handleGenerateInvite);
+  if (path === '/auth/child/add'               && method === 'POST') return withAuth(request, auth, env, handleAddChild);
+  if (path === '/auth/registration/save-step'  && method === 'POST') return withAuth(request, auth, env, handleSaveRegistrationStep);
 
   // Ledger
   if (path === '/api/ledger') {

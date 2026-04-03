@@ -1,0 +1,61 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    /* MoneySteps brand tokens */
+    --background: 0 0% 96%;        /* #F5F4F0 */
+    --foreground: 0 1% 11%;        /* #1C1C1A */
+
+    --card: 0 0% 100%;
+    --card-foreground: 0 1% 11%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 1% 11%;
+
+    --primary: 123 47% 33%;        /* #2E7A33 MoneySteps green */
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 60 5% 93%;        /* #F1EFE8 */
+    --secondary-foreground: 0 1% 11%;
+
+    --muted: 60 5% 93%;
+    --muted-foreground: 35 3% 42%; /* #6b6a66 */
+
+    --accent: 123 47% 33%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 72% 42%;      /* #B91C1C */
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 40 11% 82%;          /* #D3D1C7 */
+    --input: 40 11% 82%;
+    --ring: 123 47% 33%;
+
+    --radius: 0.75rem;
+
+    /* Fintech extras */
+    --amber: 38 93% 35%;
+    --amber-light: 47 96% 89%;
+    --teal: 175 74% 26%;
+    --teal-light: 166 85% 97%;
+  }
+}
+
+@layer base {
+  * {
+    box-sizing: border-box;
+    border-color: hsl(var(--border));
+  }
+  body {
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+    font-family: 'Manrope', -apple-system, 'Segoe UI', sans-serif;
+    font-size: 16px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  #root {
+    min-height: 100svh;
+  }
+}
