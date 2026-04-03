@@ -97,3 +97,50 @@ npm run dev
 
 ### Deploy to Cloudflare
 wrangler deploy
+
+---
+
+---
+
+## 📝 Live Roadmap & Task Tracking (8-Phase Master Plan)
+> **Claude Instruction:** Update this list after every successful implementation. 
+
+### **Phase 1: Core Foundation (The Truth Engine)**
+- [ ] Initialize Cloudflare D1 Schema (Families, Kids, Ledger)
+- [ ] Implement SHA-256 Hash Chain Logic in Worker for every transaction
+- [ ] Build '6-Digit Child Code' Generation & Verification Logic
+
+### **Phase 2: High-Integrity Onboarding**
+- [ ] Build 4-Stage Adaptive Registration Flow (UK/US/PL)
+- [ ] Implement Region-Aware UI (Currency & Terminology Logic)
+- [ ] Set up 'Better Auth' for secure Parent identity management
+
+### **Phase 3: The Transaction Loop (The "Sovereign" Ledger)**
+- [ ] Build 'Parent Job Create' API & UI
+- [ ] Build 'Child Mark Done' UI (Virtual Ledger interaction)
+- [ ] Implement Parent Approval -> Immutable Ledger Write
+
+### **Phase 4: Behavioral Education (The "Simulator" Logic)**
+- [ ] Build 'Goal Planning' Module (Visualizing long-term saving)
+- [ ] Implement 'Real-World' explainers for Ledger entries (e.g., Inflation/Interest)
+- [ ] Create Child 'Equity' Dashboard (Unified view of all virtual assets)
+
+### **Phase 5: The AI Mentor (Behavioral Nudging)**
+- [ ] Integrate AI Personality for Child ('Coaching' tone)
+- [ ] Implement AI 'Nudges' based on spending patterns
+- [ ] Build Parent 'Insights' AI (Summarizing child behavior for the week)
+
+### **Phase 6: Compliance & Legal (The "Audit" Factor)**
+- [ ] Build 'Court-Ready' PDF Audit Export for co-parents
+- [ ] Implement Ledger 'Seal' (Verification page for the PDF)
+- [ ] Finalize COPPA/GDPR-K Privacy Controls (Nicknames only)
+
+### **Phase 7: Monetization & Global Scale**
+- [ ] Integrate Stripe with PPP (Purchasing Power Parity) for GBP/USD/PLN
+- [ ] Build 'Lifetime License' vs. 'Subscription' Paywall logic
+- [ ] Implement US/UK/PL specific tax/invoice generation (Stripe Tax)
+
+### **Phase 8: Polish & Passive Automation**
+- [ ] Add Sentry Error Tracking (24/7 solo-dev monitoring)
+- [ ] Implement PostHog Session Replays (UX friction hunting)
+- [ ] Final PWA Optimization (Offline caching & Push notifications)

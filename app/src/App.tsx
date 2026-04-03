@@ -13,11 +13,11 @@ function RequireAuth({ children }: { children: React.ReactNode }) {
 
 export default function App() {
   return (
-    <BrowserRouter basename="/register">
+    <BrowserRouter>
       <Routes>
         <Route path="/" element={<LandingScreen />} />
         <Route path="/pin" element={<PinScreen />} />
-        <Route path="/signup" element={<RegistrationShell onComplete={() => { window.location.href = '/register/pin' }} />} />
+        <Route path="/register" element={<RegistrationShell onComplete={() => { window.location.href = '/pin' }} />} />
         <Route path="/parent" element={<RequireAuth><ParentDashboard /></RequireAuth>} />
         <Route path="/child" element={<RequireAuth><ChildDashboard /></RequireAuth>} />
         <Route path="*" element={<Navigate to="/" replace />} />

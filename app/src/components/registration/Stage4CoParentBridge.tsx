@@ -15,7 +15,7 @@ import { Input }                        from '@/components/ui/input'
 import { Label }                        from '@/components/ui/label'
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert'
 import { Badge }                        from '@/components/ui/badge'
-import { generateInviteCode }           from '@/lib/api'
+import { generateInvite }              from '@/lib/api'
 import { cn }                           from '@/lib/utils'
 import type { RegistrationState }       from './RegistrationShell'
 
@@ -45,7 +45,7 @@ export function Stage4CoParentBridge({ data, onNext, onBack }: Props) {
     setLoading(true)
     setError('')
     try {
-      const result = await generateInviteCode('co-parent')
+      const result = await generateInvite('co-parent')
       setCode(result.code)
       setExpiresAt(result.expires_at)
       return result.code

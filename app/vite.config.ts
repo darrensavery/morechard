@@ -10,7 +10,7 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
-  base: '/register/',
+  base: '/',
   build: {
     // Output to repo root /dist so Cloudflare Pages finds it
     outDir: path.resolve(__dirname, '../dist'),

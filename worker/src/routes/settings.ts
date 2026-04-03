@@ -1,0 +1,280 @@
+/**
+ * Settings routes
+ *
+ * GET    /api/settings               Get user settings (avatar, theme, locale)
+ * PATCH  /api/settings               Update settings
+ * GET    /api/family                 Get family config (children list, currency, mode)
+ * PATCH  /api/family                 Update family config
+ * GET    /api/children               List children in the family
+ * POST   /api/account-lock           Parent locks a child's account
+ * DELETE /api/account-lock/:child_id Parent unlocks
+ * POST   /api/parent-message         Parent sends a message to child
+ * GET    /api/parent-message?child_id=  Get active message for a child
+ */
+
+import { Env } from '../types.js';
+import { json, error } from '../lib/response.js';
+import { JwtPayload } from '../lib/jwt.js';
+
+type AuthedRequest = Request & { auth: JwtPayload };
+
+// ----------------------------------------------------------------
+// GET /api/settings
+// ----------------------------------------------------------------
+export async function handleSettingsGet(request: Request, env: Env): Promise<Response> {
+  const auth = (request as AuthedRequest).auth;
+
+  const settings = await env.DB
+    .prepare('SELECT * FROM user_settings WHERE user_id = ?')
+    .bind(auth.sub).first();
+
+  if (!settings) {
+    // Auto-create defaults on first access
+    const now = Math.floor(Date.now() / 1000);
+    await env.DB
+      .prepare(`INSERT INTO user_settings (user_id, avatar_id, theme, locale, updated_at)
+                VALUES (?,?,?,?,?) ON CONFLICT(user_id) DO NOTHING`)
+      .bind(auth.sub, 'bot', 'system', 'en', now).run();
+    return json({ user_id: auth.sub, avatar_id: 'bot', theme: 'system', locale: 'en' });
+  }
+  return json(settings);
+}
+
+// ----------------------------------------------------------------
+// PATCH /api/settings
+// Body: { avatar_id?, theme?, locale? }
+// ----------------------------------------------------------------
+export async function handleSettingsUpdate(request: Request, env: Env): Promise<Response> {
+  const auth = (request as AuthedRequest).auth;
+  const body = await parseBody(request);
+  if (!body) return error('Invalid JSON');
+
+  const VALID_THEMES  = ['light','dark','system'];
+  const VALID_LOCALES = ['en','pl'];
+  const VALID_AVATARS = [
+    'ninja','astro','samurai','punk','reaper','knight','witch','pirate',
+    'wolf','fox','owl','bear','shark','lion','eagle','cat',
+    'bot','mech','alien','cyborg','android','ufo','circuit',
+    'flame','galaxy','crystal','bolt','vortex','skull','crown','shield','target',
+  ];
+
+  const updates: string[] = [];
+  const values: unknown[] = [];
+
+  if ('avatar_id' in body) {
+    if (!VALID_AVATARS.includes(body.avatar_id as string)) return error('Invalid avatar_id');
+    updates.push('avatar_id = ?'); values.push(body.avatar_id);
+  }
+  if ('theme' in body) {
+    if (!VALID_THEMES.includes(body.theme as string)) return error('Invalid theme');
+    updates.push('theme = ?'); values.push(body.theme);
+  }
+  if ('locale' in body) {
+    if (!VALID_LOCALES.includes(body.locale as string)) return error('Invalid locale');
+    updates.push('locale = ?'); values.push(body.locale);
+    // Also update user locale
+    await env.DB.prepare('UPDATE users SET locale = ? WHERE id = ?')
+      .bind(body.locale, auth.sub).run();
+  }
+
+  if (updates.length === 0) return error('No valid fields to update');
+
+  const now = Math.floor(Date.now() / 1000);
+  updates.push('updated_at = ?'); values.push(now);
+  values.push(auth.sub);
+
+  await env.DB
+    .prepare(`INSERT INTO user_settings (user_id, avatar_id, theme, locale, updated_at)
+              VALUES (?, COALESCE(?,?), COALESCE(?,?), COALESCE(?,?), ?)
+              ON CONFLICT(user_id) DO UPDATE SET ${updates.join(', ')}`)
+    .bind(auth.sub, body.avatar_id ?? null, 'bot', body.theme ?? null, 'system',
+      body.locale ?? null, 'en', now, ...values).run()
+    .catch(async () => {
+      // Fallback plain update if row exists
+      await env.DB
+        .prepare(`UPDATE user_settings SET ${updates.join(', ')} WHERE user_id = ?`)
+        .bind(...values).run();
+    });
+
+  return json({ ok: true });
+}
+
+// ----------------------------------------------------------------
+// GET /api/family
+// ----------------------------------------------------------------
+export async function handleFamilyGet(request: Request, env: Env): Promise<Response> {
+  const auth = (request as AuthedRequest).auth;
+
+  const family = await env.DB
+    .prepare('SELECT * FROM families WHERE id = ?')
+    .bind(auth.family_id).first();
+  if (!family) return error('Family not found', 404);
+  return json(family);
+}
+
+// ----------------------------------------------------------------
+// PATCH /api/family
+// Body: { name?, base_currency?, parenting_mode?, verify_mode? }
+// ----------------------------------------------------------------
+export async function handleFamilyUpdate(request: Request, env: Env): Promise<Response> {
+  const auth = (request as AuthedRequest).auth;
+  if (auth.role !== 'parent') return error('Only parents can update family settings', 403);
+
+  const body = await parseBody(request);
+  if (!body) return error('Invalid JSON');
+
+  const updates: string[] = [];
+  const values: unknown[] = [];
+
+  if ('base_currency' in body) {
+    if (!['GBP','PLN'].includes(body.base_currency as string)) return error('Invalid base_currency');
+    updates.push('base_currency = ?'); values.push(body.base_currency);
+  }
+  if ('parenting_mode' in body) {
+    if (!['single','co-parenting'].includes(body.parenting_mode as string)) return error('Invalid parenting_mode');
+    updates.push('parenting_mode = ?'); values.push(body.parenting_mode);
+  }
+  if ('verify_mode' in body) {
+    if (!['amicable','standard'].includes(body.verify_mode as string)) return error('Invalid verify_mode');
+    updates.push('verify_mode = ?'); values.push(body.verify_mode);
+  }
+
+  if (updates.length === 0) return error('No valid fields to update');
+  values.push(auth.family_id);
+
+  await env.DB
+    .prepare(`UPDATE families SET ${updates.join(', ')} WHERE id = ?`)
+    .bind(...values).run();
+
+  return json({ ok: true });
+}
+
+// ----------------------------------------------------------------
+// GET /api/children
+// ----------------------------------------------------------------
+export async function handleChildrenList(request: Request, env: Env): Promise<Response> {
+  const auth = (request as AuthedRequest).auth;
+
+  const { results } = await env.DB.prepare(`
+    SELECT u.id, u.display_name, u.created_at,
+           us.avatar_id,
+           al.locked_until
+    FROM users u
+    JOIN family_roles fr ON fr.user_id = u.id
+    LEFT JOIN user_settings us ON us.user_id = u.id
+    LEFT JOIN account_locks al ON al.user_id = u.id AND al.locked_until > ?
+    WHERE fr.family_id = ? AND fr.role = 'child'
+    ORDER BY u.created_at ASC
+  `).bind(Math.floor(Date.now() / 1000), auth.family_id).all();
+
+  return json({ children: results });
+}
+
+// ----------------------------------------------------------------
+// POST /api/account-lock
+// Body: { child_id, duration_seconds }
+// ----------------------------------------------------------------
+export async function handleAccountLock(request: Request, env: Env): Promise<Response> {
+  const auth = (request as AuthedRequest).auth;
+  if (auth.role !== 'parent') return error('Only parents can lock accounts', 403);
+
+  const body = await parseBody(request);
+  if (!body) return error('Invalid JSON');
+
+  const { child_id, duration_seconds } = body;
+  if (!child_id || typeof child_id !== 'string') return error('child_id required');
+  if (!Number.isInteger(duration_seconds) || (duration_seconds as number) <= 0)
+    return error('duration_seconds must be a positive integer');
+
+  // Max 1 week
+  const maxDuration = 7 * 24 * 3600;
+  const duration = Math.min(duration_seconds as number, maxDuration);
+
+  const now = Math.floor(Date.now() / 1000);
+
+  await env.DB.prepare(`
+    INSERT INTO account_locks (user_id, locked_by, locked_until, created_at)
+    VALUES (?,?,?,?)
+    ON CONFLICT(user_id) DO UPDATE SET locked_by = ?, locked_until = ?, created_at = ?
+  `).bind(child_id, auth.sub, now + duration, now, auth.sub, now + duration, now).run();
+
+  return json({ ok: true, locked_until: now + duration });
+}
+
+// ----------------------------------------------------------------
+// DELETE /api/account-lock/:child_id
+// ----------------------------------------------------------------
+export async function handleAccountUnlock(
+  request: Request, env: Env, childId: string,
+): Promise<Response> {
+  const auth = (request as AuthedRequest).auth;
+  if (auth.role !== 'parent') return error('Only parents can unlock accounts', 403);
+
+  const lock = await env.DB
+    .prepare(`SELECT al.user_id FROM account_locks al
+              JOIN family_roles fr ON fr.user_id = al.user_id
+              WHERE al.user_id = ? AND fr.family_id = ?`)
+    .bind(childId, auth.family_id).first();
+  if (!lock) return error('No lock found', 404);
+
+  await env.DB.prepare('DELETE FROM account_locks WHERE user_id = ?').bind(childId).run();
+  return json({ ok: true });
+}
+
+// ----------------------------------------------------------------
+// POST /api/parent-message
+// Body: { child_id, message }
+// ----------------------------------------------------------------
+export async function handleParentMessageSet(request: Request, env: Env): Promise<Response> {
+  const auth = (request as AuthedRequest).auth;
+  if (auth.role !== 'parent') return error('Only parents can send messages', 403);
+
+  const body = await parseBody(request);
+  if (!body) return error('Invalid JSON');
+
+  const { child_id, message } = body;
+  if (!child_id || typeof child_id !== 'string') return error('child_id required');
+  if (!message  || typeof message  !== 'string') return error('message required');
+  if ((message as string).trim().length > 280) return error('Message too long (max 280 chars)');
+
+  const now = Math.floor(Date.now() / 1000);
+  const expiresAt = now + 7 * 24 * 3600; // 7 days
+
+  await env.DB.prepare(`
+    INSERT INTO parent_messages (family_id, from_user, to_child, message, expires_at, created_at)
+    VALUES (?,?,?,?,?,?)
+    ON CONFLICT(from_user, to_child) DO UPDATE
+    SET message = ?, expires_at = ?, created_at = ?
+  `).bind(
+    auth.family_id, auth.sub, child_id,
+    (message as string).trim(), expiresAt, now,
+    (message as string).trim(), expiresAt, now,
+  ).run();
+
+  return json({ ok: true, expires_at: expiresAt });
+}
+
+// ----------------------------------------------------------------
+// GET /api/parent-message?child_id=
+// ----------------------------------------------------------------
+export async function handleParentMessageGet(request: Request, env: Env): Promise<Response> {
+  const auth = (request as AuthedRequest).auth;
+  const url = new URL(request.url);
+  const child_id = auth.role === 'child' ? auth.sub : url.searchParams.get('child_id');
+  if (!child_id) return error('child_id required');
+
+  const now = Math.floor(Date.now() / 1000);
+  const msg = await env.DB.prepare(`
+    SELECT pm.*, u.display_name AS from_name
+    FROM parent_messages pm JOIN users u ON u.id = pm.from_user
+    WHERE pm.family_id = ? AND pm.to_child = ? AND pm.expires_at > ?
+    ORDER BY pm.created_at DESC LIMIT 2
+  `).bind(auth.family_id, child_id, now).all();
+
+  return json({ messages: msg.results });
+}
+
+async function parseBody(request: Request): Promise<Record<string, unknown> | null> {
+  try { return await request.json() as Record<string, unknown>; }
+  catch { return null; }
+}

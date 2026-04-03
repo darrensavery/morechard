@@ -38,6 +38,39 @@
  */
 
 import { Env } from './types.js';
+import {
+  handleChoreCreate, handleChoreList, handleChoreUpdate,
+  handleChoreArchive, handleChoreRestore, handleChoreSubmit,
+} from './routes/chores.js';
+import {
+  handleCompletionList, handleCompletionHistory,
+  handleCompletionApprove, handleCompletionReject,
+  handleCompletionRate, handleApproveAll,
+} from './routes/completions.js';
+import {
+  handleGoalList, handleGoalCreate, handleGoalUpdate,
+  handleGoalDelete, handleGoalReorder,
+} from './routes/goals.js';
+import {
+  handleSpendingCreate, handleSpendingList,
+  handlePayoutCreate, handlePayoutList,
+  handleBonusCreate, handleBonusList,
+  handleSubscriptionCreate, handleSubscriptionList,
+  handleSubscriptionUpdate, handleSubscriptionCancel,
+  handleBalance,
+} from './routes/finance.js';
+import { handlePlanList, handlePlanCreate, handlePlanDelete } from './routes/plans.js';
+import {
+  handleSuggestionCreate, handleSuggestionList,
+  handleSuggestionApprove, handleSuggestionReject,
+} from './routes/suggestions.js';
+import {
+  handleSettingsGet, handleSettingsUpdate,
+  handleFamilyGet, handleFamilyUpdate,
+  handleChildrenList,
+  handleAccountLock, handleAccountUnlock,
+  handleParentMessageSet, handleParentMessageGet,
+} from './routes/settings.js';
 import { handleLedgerPost, handleLedgerGet, handleLedgerDispute } from './routes/ledger.js';
 import { handleLedgerVerify } from './routes/verify.js';
 import { handleRaiseDispute } from './routes/raise-dispute.js';
@@ -130,6 +163,54 @@ async function route(request: Request, env: Env, method: string, path: string): 
   if (path === '/auth/me'     && method === 'GET')  return withAuth(request, auth, env, handleMe);
   if (path === '/auth/logout' && method === 'POST') return withAuth(request, auth, env, handleLogout);
 
+  // Settings (any role — children can update their own avatar/theme)
+  if (path === '/api/settings' && method === 'GET')   return withAuth(request, auth, env, handleSettingsGet);
+  if (path === '/api/settings' && method === 'PATCH')  return withAuth(request, auth, env, handleSettingsUpdate);
+
+  // Family info (read — any authenticated role)
+  if (path === '/api/family'   && method === 'GET')   return withAuth(request, auth, env, handleFamilyGet);
+  if (path === '/api/children' && method === 'GET')   return withAuth(request, auth, env, handleChildrenList);
+
+  // Chores — children can list & submit
+  if (path === '/api/chores' && method === 'GET')     return withAuth(request, auth, env, handleChoreList);
+  const choreSubmitMatch = path.match(/^\/api\/chores\/([^/]+)\/submit$/);
+  if (choreSubmitMatch && method === 'POST') return withAuth(request, auth, env, (req, e) => handleChoreSubmit(req, e, choreSubmitMatch[1]));
+
+  // Completions — children can list their own & rate
+  if (path === '/api/completions'         && method === 'GET')  return withAuth(request, auth, env, handleCompletionList);
+  if (path === '/api/completions/history' && method === 'GET')  return withAuth(request, auth, env, handleCompletionHistory);
+  const compRateMatch = path.match(/^\/api\/completions\/([^/]+)\/rate$/);
+  if (compRateMatch && method === 'POST') return withAuth(request, auth, env, (req, e) => handleCompletionRate(req, e, compRateMatch[1]));
+
+  // Goals — children & parents can read; parents can write
+  if (path === '/api/goals' && method === 'GET')      return withAuth(request, auth, env, handleGoalList);
+
+  // Plans — both roles
+  if (path === '/api/plans' && method === 'GET')      return withAuth(request, auth, env, handlePlanList);
+  if (path === '/api/plans' && method === 'POST')     return withAuth(request, auth, env, handlePlanCreate);
+  const planDeleteMatch = path.match(/^\/api\/plans\/([^/]+)$/);
+  if (planDeleteMatch && method === 'DELETE') return withAuth(request, auth, env, (req, e) => handlePlanDelete(req, e, planDeleteMatch[1]));
+
+  // Suggestions — children create, both roles can read
+  if (path === '/api/suggestions' && method === 'GET')  return withAuth(request, auth, env, handleSuggestionList);
+  if (path === '/api/suggestions' && method === 'POST') return withAuth(request, auth, env, handleSuggestionCreate);
+
+  // Balance — any role
+  if (path === '/api/balance' && method === 'GET')    return withAuth(request, auth, env, handleBalance);
+
+  // Spending — child logs, both read
+  if (path === '/api/spending' && method === 'GET')   return withAuth(request, auth, env, handleSpendingList);
+  if (path === '/api/spending' && method === 'POST')  return withAuth(request, auth, env, handleSpendingCreate);
+
+  // Payouts — both read
+  if (path === '/api/payouts'  && method === 'GET')   return withAuth(request, auth, env, handlePayoutList);
+
+  // Subscriptions — both read
+  if (path === '/api/subscriptions' && method === 'GET') return withAuth(request, auth, env, handleSubscriptionList);
+
+  // Parent message — child reads
+  if (path === '/api/parent-message' && method === 'GET') return withAuth(request, auth, env, handleParentMessageGet);
+
   // ── Trial / paywall gate (all authenticated routes) ──────────
   const trialBlock = await checkTrialStatus(request, env, auth.family_id);
   if (trialBlock) return trialBlock;
@@ -147,6 +228,55 @@ async function route(request: Request, env: Env, method: string, path: string): 
   if (path === '/auth/child/set-pin' && method === 'POST') {
     return withAuth(request, auth, env, handleSetChildPin);
   }
+
+  // Family write (parent only)
+  if (path === '/api/family' && method === 'PATCH') return withAuth(request, auth, env, handleFamilyUpdate);
+
+  // Chores write (parent only)
+  if (path === '/api/chores' && method === 'POST')  return withAuth(request, auth, env, handleChoreCreate);
+  const choreIdMatch = path.match(/^\/api\/chores\/([^/]+)$/);
+  if (choreIdMatch && method === 'PATCH')  return withAuth(request, auth, env, (req, e) => handleChoreUpdate(req, e, choreIdMatch[1]));
+  if (choreIdMatch && method === 'DELETE') return withAuth(request, auth, env, (req, e) => handleChoreArchive(req, e, choreIdMatch[1]));
+  const choreRestoreMatch = path.match(/^\/api\/chores\/([^/]+)\/restore$/);
+  if (choreRestoreMatch && method === 'POST') return withAuth(request, auth, env, (req, e) => handleChoreRestore(req, e, choreRestoreMatch[1]));
+
+  // Completions — parent approval
+  const compApproveMatch = path.match(/^\/api\/completions\/([^/]+)\/approve$/);
+  if (compApproveMatch && method === 'POST') return withAuth(request, auth, env, (req, e) => handleCompletionApprove(req, e, compApproveMatch[1]));
+  const compRejectMatch = path.match(/^\/api\/completions\/([^/]+)\/reject$/);
+  if (compRejectMatch && method === 'POST') return withAuth(request, auth, env, (req, e) => handleCompletionReject(req, e, compRejectMatch[1]));
+  if (path === '/api/completions/approve-all' && method === 'POST') return withAuth(request, auth, env, handleApproveAll);
+
+  // Goals write (parent only)
+  if (path === '/api/goals' && method === 'POST') return withAuth(request, auth, env, handleGoalCreate);
+  const goalIdMatch = path.match(/^\/api\/goals\/([^/]+)$/);
+  if (goalIdMatch && method === 'PATCH')  return withAuth(request, auth, env, (req, e) => handleGoalUpdate(req, e, goalIdMatch[1]));
+  if (goalIdMatch && method === 'DELETE') return withAuth(request, auth, env, (req, e) => handleGoalDelete(req, e, goalIdMatch[1]));
+  const goalReorderMatch = path.match(/^\/api\/goals\/([^/]+)\/reorder$/);
+  if (goalReorderMatch && method === 'POST') return withAuth(request, auth, env, (req, e) => handleGoalReorder(req, e, goalReorderMatch[1]));
+
+  // Finance write — parent only
+  if (path === '/api/payouts' && method === 'POST')        return withAuth(request, auth, env, handlePayoutCreate);
+  if (path === '/api/bonus'   && method === 'POST')        return withAuth(request, auth, env, handleBonusCreate);
+  if (path === '/api/bonus'   && method === 'GET')         return withAuth(request, auth, env, handleBonusList);
+  if (path === '/api/subscriptions' && method === 'POST')  return withAuth(request, auth, env, handleSubscriptionCreate);
+  const subIdMatch = path.match(/^\/api\/subscriptions\/([^/]+)$/);
+  if (subIdMatch && method === 'PATCH')  return withAuth(request, auth, env, (req, e) => handleSubscriptionUpdate(req, e, subIdMatch[1]));
+  if (subIdMatch && method === 'DELETE') return withAuth(request, auth, env, (req, e) => handleSubscriptionCancel(req, e, subIdMatch[1]));
+
+  // Suggestions — parent approves/rejects
+  const sugApproveMatch = path.match(/^\/api\/suggestions\/([^/]+)\/approve$/);
+  if (sugApproveMatch && method === 'POST') return withAuth(request, auth, env, (req, e) => handleSuggestionApprove(req, e, sugApproveMatch[1]));
+  const sugRejectMatch = path.match(/^\/api\/suggestions\/([^/]+)\/reject$/);
+  if (sugRejectMatch && method === 'POST') return withAuth(request, auth, env, (req, e) => handleSuggestionReject(req, e, sugRejectMatch[1]));
+
+  // Account lock/unlock
+  if (path === '/api/account-lock' && method === 'POST') return withAuth(request, auth, env, handleAccountLock);
+  const unlockMatch = path.match(/^\/api\/account-lock\/([^/]+)$/);
+  if (unlockMatch && method === 'DELETE') return withAuth(request, auth, env, (req, e) => handleAccountUnlock(req, e, unlockMatch[1]));
+
+  // Parent message
+  if (path === '/api/parent-message' && method === 'POST') return withAuth(request, auth, env, handleParentMessageSet);
 
   // Invite code generation + child onboarding + registration persistence
   if (path === '/auth/invite/generate'        && method === 'POST') return withAuth(request, auth, env, handleGenerateInvite);

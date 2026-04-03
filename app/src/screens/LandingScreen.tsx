@@ -2,10 +2,12 @@ import { useNavigate } from 'react-router-dom'
 
 type Tile = {
   role: 'dad' | 'mum' | 'child'
-  icon: string
+  initials: string
   name: string
   description: string
-  colorClass: string
+  avatarBg: string
+  avatarText: string
+  nameColor: string
   borderClass: string
   hoverBgClass: string
 }
@@ -13,32 +15,61 @@ type Tile = {
 const tiles: Tile[] = [
   {
     role: 'dad',
-    icon: '👨‍💼',
+    initials: 'D',
     name: 'Dad',
     description: 'Manage chores, approve earnings & set goals',
-    colorClass: 'text-green-800',
+    avatarBg: 'bg-green-100',
+    avatarText: 'text-green-800',
+    nameColor: 'text-green-800',
     borderClass: 'border-gray-200',
     hoverBgClass: 'hover:bg-green-50 hover:border-green-300',
   },
   {
     role: 'mum',
-    icon: '👩‍💼',
+    initials: 'M',
     name: 'Mum',
     description: 'Manage chores, approve earnings & set goals',
-    colorClass: 'text-purple-800',
+    avatarBg: 'bg-purple-100',
+    avatarText: 'text-purple-800',
+    nameColor: 'text-purple-800',
     borderClass: 'border-gray-200',
     hoverBgClass: 'hover:bg-purple-50 hover:border-purple-300',
   },
   {
     role: 'child',
-    icon: '⭐',
+    initials: 'A',
     name: 'My Account',
     description: 'Check earnings, progress & savings goals',
-    colorClass: 'text-teal-800',
+    avatarBg: 'bg-teal-100',
+    avatarText: 'text-teal-800',
+    nameColor: 'text-teal-800',
     borderClass: 'border-teal-300',
     hoverBgClass: 'hover:bg-teal-50 hover:border-teal-400',
   },
 ]
+
+// Avatar: shows photo if available, otherwise initials
+function Avatar({ src, initials, bgClass, textClass }: {
+  src?: string
+  initials: string
+  bgClass: string
+  textClass: string
+}) {
+  if (src) {
+    return (
+      <img
+        src={src}
+        alt=""
+        className="w-[52px] h-[52px] rounded-full object-cover shrink-0 border border-[#D3D1C7]"
+      />
+    )
+  }
+  return (
+    <div className={`w-[52px] h-[52px] rounded-full flex items-center justify-center shrink-0 ${bgClass}`}>
+      <span className={`text-[20px] font-extrabold ${textClass}`}>{initials}</span>
+    </div>
+  )
+}
 
 export function LandingScreen() {
   const navigate = useNavigate()
@@ -47,18 +78,12 @@ export function LandingScreen() {
     const token = localStorage.getItem('ms_token')
 
     if (!token) {
-      // No account — send to registration
       navigate('/signup')
       return
     }
 
-    // Navigate by role
-    if (tile.role === 'child') {
-      navigate('/pin?role=child')
-    } else {
-      navigate('/pin?role=parent')
-    }
     localStorage.setItem('ms_login_role', tile.role)
+    navigate(tile.role === 'child' ? '/pin?role=child' : '/pin?role=parent')
   }
 
   return (
@@ -90,11 +115,13 @@ export function LandingScreen() {
                 ${tile.borderClass} ${tile.hoverBgClass}
               `}
             >
-              <span className="w-[52px] h-[52px] rounded-xl bg-gray-50 flex items-center justify-center text-2xl shrink-0">
-                {tile.icon}
-              </span>
+              <Avatar
+                initials={tile.initials}
+                bgClass={tile.avatarBg}
+                textClass={tile.avatarText}
+              />
               <div className="flex-1 min-w-0">
-                <div className={`text-[16px] font-bold ${tile.colorClass}`}>{tile.name}</div>
+                <div className={`text-[16px] font-bold ${tile.nameColor}`}>{tile.name}</div>
                 <div className="text-[13px] text-[#6b6a66] mt-0.5 leading-snug">{tile.description}</div>
               </div>
               <svg className="text-[#6b6a66] shrink-0" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
