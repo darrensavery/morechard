@@ -10,6 +10,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useNavigate }                  from 'react-router-dom'
 import { Users }                        from 'lucide-react'
 import { track }                        from '@/lib/analytics'
+import { FullLogo, BrandMark }          from '@/components/ui/Logo'
 
 type TreeSize = 'sm' | 'md' | 'lg'
 
@@ -26,12 +27,11 @@ export function LandingGate() {
   const navigate = useNavigate()
 
   return (
-    <div className="h-svh bg-[#F5F4F0] flex flex-col overflow-y-auto">
+    <div className="h-svh bg-[var(--color-bg)] flex flex-col overflow-y-auto">
 
       {/* Header */}
-      <header className="sticky top-0 bg-white/80 backdrop-blur border-b border-[#D3D1C7] px-4 py-3 flex items-center gap-2.5">
-        <div className="w-8 h-8 rounded-xl bg-teal-600 flex items-center justify-center text-white text-sm font-bold shrink-0">M</div>
-        <span className="text-[17px] font-extrabold text-[#1C1C1A] tracking-tight">Morechard</span>
+      <header className="sticky top-0 bg-[var(--color-surface)]/80 backdrop-blur border-b border-[var(--color-border)] px-4 py-3 flex items-center">
+        <FullLogo iconSize={28} />
       </header>
 
       {/* Main — true centre with equal flex space above and below */}
@@ -40,23 +40,15 @@ export function LandingGate() {
         {/* All content in a single compact column */}
         <div className="flex flex-col items-center gap-6 w-full py-4">
 
-          {/* Orchard illustration */}
-          <div className="relative flex items-end justify-center gap-3 h-32">
-            <Tree size="sm" swayOffset={0}   />
-            <Tree size="lg" swayOffset={3}   />
-            <Tree size="md" swayOffset={1.5} />
-            <div className="absolute bottom-0 left-[-12px] right-[-12px] h-px bg-[#D3D1C7]" />
-          </div>
+          {/* Brand mark — large hero version */}
+          <BrandMark size={120} />
 
           {/* Text */}
           <div className="text-center space-y-3">
-            <p className="text-[11px] font-semibold text-teal-700 bg-teal-50 border border-teal-200 rounded-full px-3 py-1 tracking-widest uppercase inline-block">
-              Welcome to the Orchard
-            </p>
-            <h1 className="text-[32px] font-extrabold text-[#1C1C1A] tracking-tight leading-[1.1]">
+            <h1 className="text-[32px] font-extrabold text-[var(--color-text)] tracking-tight leading-[1.1]">
               Grow your family's<br />financial future
             </h1>
-            <p className="text-[15px] text-[#6b6a66] leading-relaxed max-w-[300px] mx-auto">
+            <p className="text-[15px] text-[var(--color-text-muted)] leading-relaxed max-w-[300px] mx-auto">
               Chores, pocket money, and savings goals — with a transparent record both parents can trust.
             </p>
           </div>
@@ -66,12 +58,12 @@ export function LandingGate() {
             <button
               onClick={() => { track.registrationStarted(); navigate('/register') }}
               className="
-                w-full h-14 rounded-2xl bg-teal-600 text-white
+                w-full h-14 rounded-2xl bg-[var(--brand-primary)] text-white
                 font-semibold text-[15px] tracking-tight
                 flex items-center justify-center gap-2.5
-                hover:bg-teal-700 active:scale-[0.98]
+                hover:opacity-90 active:scale-[0.98]
                 transition-all duration-150 shadow-md hover:shadow-lg
-                focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 focus-visible:ring-offset-2
+                focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-2
               "
             >
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -84,20 +76,20 @@ export function LandingGate() {
             <button
               onClick={() => { track.joinStarted(); navigate('/join') }}
               className="
-                w-full h-14 rounded-2xl bg-white text-[#1C1C1A]
+                w-full h-14 rounded-2xl bg-[var(--color-surface)] text-[var(--color-text)]
                 font-semibold text-[15px]
                 flex items-center justify-center gap-2.5
-                border-2 border-[#D3D1C7]
-                hover:border-teal-400 hover:bg-teal-50/40
+                border-2 border-[var(--color-border)]
+                hover:border-[var(--brand-primary)] hover:bg-[color-mix(in_srgb,var(--brand-primary)_5%,transparent)]
                 active:scale-[0.98] transition-all duration-150
-                focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 focus-visible:ring-offset-2
+                focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-2
               "
             >
               <Users size={18} strokeWidth={2.5} />
               Join your Family
             </button>
 
-            <p className="text-center text-[11px] text-[#9b9a96]">
+            <p className="text-center text-[11px] text-[var(--color-text-muted)]">
               🔒 Private by design — your data stays on your device and is never sold.
             </p>
           </div>
