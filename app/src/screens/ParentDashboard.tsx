@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import type { ChildRecord } from '../lib/api'
-import { getFamilyId, getChildren, getCompletions } from '../lib/api'
+import { getChildren, getCompletions } from '../lib/api'
+import { getDeviceIdentity } from '../lib/deviceIdentity'
 import { AvatarSVG } from '../lib/avatars'
 import { JobsTab }     from '../components/dashboard/JobsTab'
 import { PendingTab }  from '../components/dashboard/PendingTab'
@@ -13,7 +14,7 @@ type Tab = 'jobs' | 'pending' | 'history' | 'insights' | 'settings'
 
 export function ParentDashboard() {
   const navigate   = useNavigate()
-  const familyId   = getFamilyId()
+  const familyId   = getDeviceIdentity()?.family_id ?? ''
 
   const [tab,        setTab]        = useState<Tab>('jobs')
   const [children,   setChildren]   = useState<ChildRecord[]>([])
@@ -72,7 +73,7 @@ export function ParentDashboard() {
             <span className="text-[17px] font-extrabold text-[#1C1C1A] tracking-tight">MoneySteps</span>
           </div>
           <div className="flex items-center gap-3">
-            <span className="text-[13px] text-[#6b6a66]">Parent</span>
+            <span className="text-[13px] text-[#6b6a66]">{getDeviceIdentity()?.display_name ?? 'Parent'}</span>
             <button
               onClick={handleLock}
               className="w-8 h-8 rounded-lg border border-[#D3D1C7] flex items-center justify-center text-[#6b6a66] hover:bg-gray-50 cursor-pointer"
@@ -143,14 +144,26 @@ export function ParentDashboard() {
             {tab === 'insights' && <InsightsTab familyId={familyId} child={activeChild} />}
             {tab === 'settings' && <ParentSettingsTab familyId={familyId} onChildrenChange={setChildren} />}
           </>
+        ) : tab === 'settings' ? (
+          <ParentSettingsTab familyId={familyId} onChildrenChange={setChildren} />
         ) : (
-          <div className="flex flex-col items-center justify-center py-16 gap-4">
-            <p className="text-[15px] text-[#6b6a66]">No children yet.</p>
+          <div className="flex flex-col items-center justify-center py-16 px-4 text-center gap-5">
+            <div className="w-20 h-20 rounded-3xl bg-teal-50 border-2 border-teal-100 flex items-center justify-center text-4xl">
+              👧
+            </div>
+            <div>
+              <h2 className="text-[18px] font-extrabold text-[#1C1C1A] tracking-tight mb-1.5">
+                Add your first child
+              </h2>
+              <p className="text-[13px] text-[#6b6a66] leading-relaxed max-w-[260px] mx-auto">
+                Once you add a child, you can set up chores, track their pocket money, and watch their savings grow.
+              </p>
+            </div>
             <button
               onClick={() => setTab('settings')}
-              className="bg-teal-600 text-white font-semibold px-5 py-2.5 rounded-xl cursor-pointer hover:bg-teal-700 transition-colors"
+              className="h-12 px-6 bg-teal-600 text-white font-semibold text-[14px] rounded-2xl cursor-pointer hover:bg-teal-700 active:scale-[0.98] transition-all shadow-md"
             >
-              Add a child
+              Add a child →
             </button>
           </div>
         )}

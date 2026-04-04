@@ -241,7 +241,7 @@ export async function handleSaveRegistrationStep(request: Request, env: Env): Pr
   if (!body) return error('Invalid JSON body');
 
   const step = body['step'] as number | undefined;
-  const data = body['data'] as Record<string, unknown> | undefined;
+  const data = (body['step_data'] ?? body['data']) as Record<string, unknown> | undefined;
 
   if (!step || step < 1 || step > 4) return error('step must be 1–4');
   if (!data || typeof data !== 'object') return error('data must be an object');

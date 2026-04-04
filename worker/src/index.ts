@@ -37,6 +37,7 @@
  *   POST   /auth/invite/redeem          Redeem invite code (child or co-parent)
  */
 
+import * as Sentry from '@sentry/cloudflare';
 import { Env } from './types.js';
 import {
   handleChoreCreate, handleChoreList, handleChoreUpdate,
@@ -106,7 +107,12 @@ import {
 import { json, error } from './lib/response.js';
 import { JwtPayload } from './lib/jwt.js';
 
-export default {
+export default Sentry.withSentry(
+  (env: Env) => ({
+    dsn: 'https://5c98bed7630910cc4fd178677dda8b33@o4511158328295424.ingest.de.sentry.io/4511158333997136',
+    tracesSampleRate: 1.0,
+  }),
+  {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url    = new URL(request.url);
     const path   = url.pathname;
@@ -121,6 +127,7 @@ export default {
       response = await route(request, env, method, path);
     } catch (err) {
       console.error(err);
+      Sentry.captureException(err);
       response = error('Internal server error', 500);
     }
 
@@ -135,7 +142,8 @@ export default {
       .prepare(`UPDATE family_governance_log SET status = 'expired' WHERE status = 'pending' AND expires_at < ?`)
       .bind(now).run();
   },
-} satisfies ExportedHandler<Env>;
+} satisfies ExportedHandler<Env>,
+);
 
 // ----------------------------------------------------------------
 async function route(request: Request, env: Env, method: string, path: string): Promise<Response> {

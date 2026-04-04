@@ -22,7 +22,15 @@ export function clearToken(): void {
 }
 
 export function getFamilyId(): string {
-  return localStorage.getItem('ms_family_id') ?? '';
+  if (localStorage.getItem('ms_family_id')) {
+    return localStorage.getItem('ms_family_id')!;
+  }
+  // Fall back to device identity (set during registration)
+  try {
+    const raw = localStorage.getItem('ms_device_identity');
+    if (raw) return (JSON.parse(raw) as { family_id?: string }).family_id ?? '';
+  } catch { /* ignore */ }
+  return '';
 }
 
 export function getUserId(): string {

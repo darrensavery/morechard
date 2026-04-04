@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { clearDeviceIdentity } from '../../lib/deviceIdentity'
 import type { ChildRecord } from '../../lib/api'
 import {
   getChildren, addChild, generateInvite,
@@ -217,6 +218,28 @@ export function ParentSettingsTab({ familyId, onChildrenChange }: Props) {
             {genningInvite ? 'Generating…' : 'Generate invite code'}
           </button>
         )}
+      </section>
+
+      {/* Log out */}
+      <section className="bg-white border border-[#D3D1C7] rounded-xl p-4">
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <p className="text-[14px] font-semibold text-[#1C1C1A]">Log out</p>
+            <p className="text-[12px] text-[#9b9a96] mt-0.5 leading-snug">
+              Your family's data stays safe. You'll need to log back in to use the app on this phone.
+            </p>
+          </div>
+          <button
+            onClick={() => {
+              if (!window.confirm('Log out? Your family\'s data stays safe.')) return
+              clearDeviceIdentity()
+              window.location.href = '/'
+            }}
+            className="shrink-0 px-4 py-2 rounded-xl border-2 border-[#D3D1C7] text-[#6b6a66] text-[13px] font-semibold hover:bg-gray-50 active:scale-[0.98] transition-all cursor-pointer"
+          >
+            Log out
+          </button>
+        </div>
       </section>
     </div>
   )

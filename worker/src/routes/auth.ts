@@ -63,8 +63,8 @@ export async function handleCreateFamily(request: Request, env: Env): Promise<Re
 
   await env.DB.batch([
     env.DB.prepare(
-      `INSERT INTO families (id, verify_mode, base_currency, parenting_mode) VALUES (?, ?, ?, ?)`
-    ).bind(familyId, governance_mode, base_currency, parenting_mode),
+      `INSERT INTO families (id, name, currency, verify_mode, base_currency, parenting_mode) VALUES (?, ?, ?, ?, ?, ?)`
+    ).bind(familyId, display_name, base_currency, governance_mode, base_currency, parenting_mode),
     env.DB.prepare(`
       INSERT INTO users (id, family_id, display_name, email, locale, password_hash, email_verified)
       VALUES (?,?,?,?,?,?,0)

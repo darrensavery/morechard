@@ -238,7 +238,7 @@ export function Stage1ParentIdentity({ data, onNext }: Props) {
           'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 focus-visible:ring-offset-2',
         )}
       >
-        Continue — Family Constitution
+        Continue
       </button>
 
     </div>

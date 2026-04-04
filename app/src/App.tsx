@@ -1,26 +1,72 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { RegistrationShell } from './components/registration/RegistrationShell'
-import { LandingScreen } from './screens/LandingScreen'
-import { PinScreen } from './screens/PinScreen'
+import { LandingGate } from './screens/LandingGate'
+import { LockScreen } from './screens/LockScreen'
 import { ParentDashboard } from './screens/ParentDashboard'
 import { ChildDashboard } from './screens/ChildDashboard'
+import { JoinFamilyScreen } from './screens/JoinFamilyScreen'
+import { getDeviceIdentity, setDeviceIdentity, toInitials } from './lib/deviceIdentity'
+import * as Sentry from '@sentry/react'
 
-function RequireAuth({ children }: { children: React.ReactNode }) {
+/** Root — cold start shows landing page, returning user goes to lock screen. */
+function RootGate() {
+  const identity = getDeviceIdentity()
+  return identity ? <Navigate to="/lock" replace /> : <LandingGate />
+}
+
+/** Guard dashboards — needs identity + session token, otherwise send to lock. */
+function RequireSession({ children }: { children: React.ReactNode }) {
+  const identity = getDeviceIdentity()
+  if (!identity) return <Navigate to="/" replace />
   const token = localStorage.getItem('ms_token')
-  if (!token) return <Navigate to="/" replace />
+  if (!token) return <Navigate to="/lock" replace />
   return <>{children}</>
 }
 
 export default function App() {
+  function handleRegistrationComplete(
+    familyId: string,
+    _token: string,
+    displayName: string,
+    userId: string,
+    authMethod: 'biometrics' | 'pin' | null,
+    pin: string | null,
+  ) {
+    setDeviceIdentity({
+      user_id:       userId,
+      family_id:     familyId,
+      display_name:  displayName,
+      role:          'parent',
+      initials:      toInitials(displayName),
+      registered_at: new Date().toISOString(),
+      auth_method:   authMethod ?? 'none',
+      pin:           pin ?? undefined,
+    })
+    Sentry.setUser({ id: userId })
+    Sentry.setTag('auth_method', authMethod ?? 'none')
+    // Token stored by RegistrationShell — go straight to dashboard
+    window.location.href = '/parent'
+  }
+
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<LandingScreen />} />
-        <Route path="/pin" element={<PinScreen />} />
-        <Route path="/register" element={<RegistrationShell onComplete={() => { window.location.href = '/pin' }} />} />
-        <Route path="/parent" element={<RequireAuth><ParentDashboard /></RequireAuth>} />
-        <Route path="/child" element={<RequireAuth><ChildDashboard /></RequireAuth>} />
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="/"         element={<RootGate />} />
+        <Route path="/lock"     element={<LockScreen />} />
+        <Route path="/join"     element={<JoinFamilyScreen />} />
+        <Route
+          path="/register"
+          element={
+            <RegistrationShell
+              onComplete={(familyId, token, displayName, userId, authMethod, pin) =>
+                handleRegistrationComplete(familyId, token, displayName, userId, authMethod, pin)
+              }
+            />
+          }
+        />
+        <Route path="/parent" element={<RequireSession><ParentDashboard /></RequireSession>} />
+        <Route path="/child"  element={<RequireSession><ChildDashboard /></RequireSession>} />
+        <Route path="*"       element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
   )
