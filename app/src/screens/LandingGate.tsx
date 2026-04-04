@@ -26,7 +26,7 @@ export function LandingGate() {
   const navigate = useNavigate()
 
   return (
-    <div className="min-h-svh bg-[#F5F4F0] flex flex-col">
+    <div className="h-svh bg-[#F5F4F0] flex flex-col overflow-y-auto">
 
       {/* Header */}
       <header className="sticky top-0 bg-white/80 backdrop-blur border-b border-[#D3D1C7] px-4 py-3 flex items-center gap-2.5">
@@ -38,7 +38,7 @@ export function LandingGate() {
       <main className="flex-1 flex flex-col items-center justify-center px-5 max-w-md mx-auto w-full">
 
         {/* All content in a single compact column */}
-        <div className="flex flex-col items-center gap-6 w-full py-8">
+        <div className="flex flex-col items-center gap-6 w-full py-4">
 
           {/* Orchard illustration */}
           <div className="relative flex items-end justify-center gap-3 h-32">
