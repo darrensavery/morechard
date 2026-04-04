@@ -182,7 +182,7 @@ export async function handleMagicLinkRequest(request: Request, env: Env): Promis
     .run();
 
   // Send via Resend
-  const appUrl  = env.APP_URL ?? 'https://moneysteps.pages.dev';
+  const appUrl  = env.APP_URL ?? 'https://morechard.pages.dev';
   const link    = `${appUrl}/auth/verify?token=${rawToken}`;
 
   await sendMagicLinkEmail(normEmail, user.display_name, link, env);
@@ -379,13 +379,13 @@ async function sendMagicLinkEmail(
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      from: 'MoneySteps <onboarding@resend.dev>',
+      from: 'Morechard <onboarding@resend.dev>',
       to,
-      subject: 'Your MoneySteps sign-in link',
+      subject: 'Your Morechard sign-in link',
       html: `
         <p>Hi ${escHtml(name)},</p>
-        <p>Click the link below to sign in to MoneySteps. This link expires in 15 minutes and can only be used once.</p>
-        <p><a href="${link}" style="background:#16a34a;color:#fff;padding:12px 24px;border-radius:6px;text-decoration:none;display:inline-block;">Sign in to MoneySteps</a></p>
+        <p>Click the link below to sign in to Morechard. This link expires in 15 minutes and can only be used once.</p>
+        <p><a href="${link}" style="background:#16a34a;color:#fff;padding:12px 24px;border-radius:6px;text-decoration:none;display:inline-block;">Sign in to Morechard</a></p>
         <p style="color:#666;font-size:12px;">If you didn't request this, you can safely ignore this email.</p>
         <p style="color:#666;font-size:12px;">Link: ${link}</p>
       `,

@@ -1,14 +1,14 @@
 {
-  "name": "moneysteps-worker",
+  "name": "morechard-worker",
   "version": "0.1.0",
   "private": true,
   "scripts": {
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
-    "db:migrate": "wrangler d1 migrations apply moneysteps",
-    "db:migrate:local": "wrangler d1 migrations apply moneysteps --local",
-    "db:seed": "wrangler d1 execute moneysteps --local --file=./seed.sql",
-    "db:reset": "wrangler d1 execute moneysteps --local --file=./reset.sql"
+    "db:migrate": "wrangler d1 migrations apply morechard",
+    "db:migrate:local": "wrangler d1 migrations apply morechard --local",
+    "db:seed": "wrangler d1 execute morechard --local --file=./seed.sql",
+    "db:reset": "wrangler d1 execute morechard --local --file=./reset.sql"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20240909.0",

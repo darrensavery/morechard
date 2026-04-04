@@ -34,7 +34,7 @@ export function WelcomeNudge({ data, onFinish }: Props) {
         colour: 'from-slate-700 to-slate-900',
       }
     : {
-        name:   'MoneySteps Coach',
+        name:   'Morechard Coach',
         title:  'Your Family Financial Mentor',
         badge:  'AI • Evaluation Mode',
         colour: 'from-primary to-green-700',
@@ -48,7 +48,7 @@ export function WelcomeNudge({ data, onFinish }: Props) {
         'Wszystkie dane są zapisywane w niezmienialnym rejestrze Cloudflare. Twoja rodzinna dokumentacja finansowa zaczyna się teraz.',
       ]
     : [
-        `Welcome to MoneySteps, ${data.display_name?.split(' ')[0] ?? 'there'}.`,
+        `Welcome to Morechard, ${data.display_name?.split(' ')[0] ?? 'there'}.`,
         "Your family record is now established. Here's how the 14-day Coaching Evaluation works: the countdown doesn't begin today. It starts the moment your first real entry is added to the ledger — a chore, an allowance, or a purchase. This ensures we're evaluating active usage, not just account creation.",
         "During the evaluation, I'll be monitoring your family's financial patterns and preparing personalised coaching insights for each child. You'll see a progress bar on your dashboard.",
         "At the end of Day 14 post-activation, you can choose to continue with a lifetime licence or an annual AI subscription. There's no read-only mode — your data is always yours to export.",

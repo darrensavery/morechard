@@ -1,4 +1,4 @@
-# NotebookLM Knowledge Base Index (MoneySteps)
+# NotebookLM Knowledge Base Index (Morechard)
 
 Use this folder as the source of truth for decisions, requirements, and brand/voice.
 

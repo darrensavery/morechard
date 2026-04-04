@@ -1,5 +1,5 @@
 Project summary:
-MoneySteps is a fintech Progressive Web App (PWA) designed for separated and co-parenting families. It functions as a "Truth Engine" that provides legal-grade, audit-ready financial records and a behavioral AI coach to de-escalate conflict between parents while teaching financial literacy and independence to children.
+Morechard is a fintech Progressive Web App (PWA) designed for separated and co-parenting families. It functions as a "Truth Engine" that provides legal-grade, audit-ready financial records and a behavioral AI coach to de-escalate conflict between parents while teaching financial literacy and independence to children.
 Core requirements:
 Immutable ledger where transactions are never deleted and errors require reversal entries.
 Cryptographic hashing (SHA-256) for every ledger row, incorporating the previous row's hash.

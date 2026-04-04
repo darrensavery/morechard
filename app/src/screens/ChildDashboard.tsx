@@ -14,7 +14,7 @@ export function ChildDashboard() {
         <div className="max-w-[560px] mx-auto px-3.5 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="w-[7px] h-[7px] rounded-full bg-green-500 shrink-0" />
-            <span className="text-[17px] font-extrabold text-[#1C1C1A] tracking-tight">MoneySteps</span>
+            <span className="text-[17px] font-extrabold text-[#1C1C1A] tracking-tight">Morechard</span>
           </div>
           <button
             onClick={() => navigate('/')}

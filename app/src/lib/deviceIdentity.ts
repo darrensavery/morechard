@@ -1,7 +1,7 @@
 /**
  * Device Identity — who owns this phone/device.
  *
- * Storage key: ms_device_identity (localStorage)
+ * Storage key: mc_device_identity (localStorage)
  *
  * Written once at the end of registration or join flow.
  * Stays until the user explicitly logs out ("Log Out").
@@ -23,7 +23,7 @@ export interface DeviceIdentity {
   pin?:          string
 }
 
-const STORAGE_KEY = 'ms_device_identity'
+const STORAGE_KEY = 'mc_device_identity'
 
 export function getDeviceIdentity(): DeviceIdentity | null {
   try {
@@ -47,7 +47,7 @@ export function updateDeviceIdentity(patch: Partial<DeviceIdentity>): void {
 
 export function clearDeviceIdentity(): void {
   localStorage.removeItem(STORAGE_KEY)
-  localStorage.removeItem('ms_token')
+  localStorage.removeItem('mc_token')
 }
 
 /** Derive two-letter initials from a display name. */

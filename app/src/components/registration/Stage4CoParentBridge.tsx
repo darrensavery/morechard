@@ -79,7 +79,7 @@ export function Stage4CoParentBridge({ data, onNext, onBack }: Props) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('ms_token')}`,
+          Authorization: `Bearer ${localStorage.getItem('mc_token')}`,
         },
         body: JSON.stringify({ email, code: c, role: 'co-parent' }),
       })
@@ -104,11 +104,11 @@ export function Stage4CoParentBridge({ data, onNext, onBack }: Props) {
   function shareViaApp(app: 'whatsapp' | 'messenger' | 'email') {
     const c = code ?? ''
     const joinUrl = `${window.location.origin}/join?code=${c}`
-    const message = `You've been invited to join a MoneySteps family record. Use code ${c} or open: ${joinUrl}`
+    const message = `You've been invited to join a Morechard family record. Use code ${c} or open: ${joinUrl}`
     const urls: Record<typeof app, string> = {
       whatsapp:  `https://wa.me/?text=${encodeURIComponent(message)}`,
       messenger: `https://www.facebook.com/dialog/send?link=${encodeURIComponent(joinUrl)}`,
-      email:     `mailto:?subject=${encodeURIComponent('Join our MoneySteps family')}&body=${encodeURIComponent(message)}`,
+      email:     `mailto:?subject=${encodeURIComponent('Join our Morechard family')}&body=${encodeURIComponent(message)}`,
     }
     window.open(urls[app], '_blank', 'noopener')
   }

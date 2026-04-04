@@ -6,6 +6,7 @@ import { ParentDashboard } from './screens/ParentDashboard'
 import { ChildDashboard } from './screens/ChildDashboard'
 import { JoinFamilyScreen } from './screens/JoinFamilyScreen'
 import { getDeviceIdentity, setDeviceIdentity, toInitials } from './lib/deviceIdentity'
+import { analytics, track } from './lib/analytics'
 import * as Sentry from '@sentry/react'
 
 /** Root — cold start shows landing page, returning user goes to lock screen. */
@@ -18,7 +19,7 @@ function RootGate() {
 function RequireSession({ children }: { children: React.ReactNode }) {
   const identity = getDeviceIdentity()
   if (!identity) return <Navigate to="/" replace />
-  const token = localStorage.getItem('ms_token')
+  const token = localStorage.getItem('mc_token')
   if (!token) return <Navigate to="/lock" replace />
   return <>{children}</>
 }
@@ -44,6 +45,12 @@ export default function App() {
     })
     Sentry.setUser({ id: userId })
     Sentry.setTag('auth_method', authMethod ?? 'none')
+    analytics.identify(userId, { role: 'parent', family_id: familyId })
+    track.registrationCompleted({
+      auth_method:     authMethod ?? 'none',
+      parenting_mode:  'unknown',   // RegistrationShell can pass this when ready
+      currency:        'unknown',
+    })
     // Token stored by RegistrationShell — go straight to dashboard
     window.location.href = '/parent'
   }

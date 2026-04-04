@@ -2,7 +2,7 @@
 
 @layer base {
   :root {
-    /* MoneySteps brand tokens */
+    /* Morechard brand tokens */
     --background: 0 0% 96%;        /* #F5F4F0 */
     --foreground: 0 1% 11%;        /* #1C1C1A */
 
@@ -12,7 +12,7 @@
     --popover: 0 0% 100%;
     --popover-foreground: 0 1% 11%;
 
-    --primary: 123 47% 33%;        /* #2E7A33 MoneySteps green */
+    --primary: 123 47% 33%;        /* #2E7A33 Morechard green */
     --primary-foreground: 0 0% 100%;
 
     --secondary: 60 5% 93%;        /* #F1EFE8 */
@@ -58,4 +58,18 @@
   #root {
     min-height: 100svh;
   }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  15%       { transform: translateX(-6px); }
+  30%       { transform: translateX(6px); }
+  45%       { transform: translateX(-5px); }
+  60%       { transform: translateX(5px); }
+  75%       { transform: translateX(-3px); }
+  90%       { transform: translateX(3px); }
+}
+
+.animate-shake {
+  animation: shake 0.55s ease-in-out;
 }

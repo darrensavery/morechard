@@ -1,5 +1,5 @@
 /**
- * Stripe integration — MoneySteps
+ * Stripe integration — Morechard
  *
  * POST /api/stripe/create-checkout  — create a Stripe Checkout session (authenticated)
  * POST /api/stripe/webhook          — receive Stripe events (public, signature-verified)
@@ -22,8 +22,8 @@ import { JwtPayload } from '../lib/jwt.js';
 // Product catalogue (amounts in pence)
 // ----------------------------------------------------------------
 const PRODUCTS: Record<PaymentType, { amount: number; currency: string; label: string }> = {
-  LIFETIME:  { amount: 3499, currency: 'gbp', label: 'MoneySteps Lifetime Tracker' },
-  AI_ANNUAL: { amount: 1999, currency: 'gbp', label: 'MoneySteps AI Coach — Annual' },
+  LIFETIME:  { amount: 3499, currency: 'gbp', label: 'Morechard Lifetime Tracker' },
+  AI_ANNUAL: { amount: 1999, currency: 'gbp', label: 'Morechard AI Coach — Annual' },
 };
 
 // ----------------------------------------------------------------

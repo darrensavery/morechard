@@ -3,7 +3,7 @@ FROM NOTEBOOKLM — BRAND BOOK EXPORT
 **1) Brand Essence**
 - **Brand mission (1 sentence):** To change the trajectory of family finance by modernising the financial relationship between co-parenting households.
 - **Brand promise (1 sentence):** Providing legal-grade, audit-ready financial records and neutral mediation to ensure family stability and literacy.
-- **Positioning statement (1–2 sentences):** MoneySteps is a "Truth Engine" that occupies the "Family Stability & Literacy" category, moving away from simple "Allowance Apps" to serve the high-friction niche of separated families.
+- **Positioning statement (1–2 sentences):** Morechard is a "Truth Engine" that occupies the "Family Stability & Literacy" category, moving away from simple "Allowance Apps" to serve the high-friction niche of separated families.
 - **Brand values (5 bullets max):**
     - Financial Integrity
     - Behavioral Coaching
@@ -59,9 +59,9 @@ FROM NOTEBOOKLM — BRAND BOOK EXPORT
 
 **6) Copy Examples (copy-ready)**
 - **App Store short description:** The "Truth Engine" for co-parenting: legal-grade financial records and AI-powered mediation for separated families.
-- **App Store full description (150–250 words):** MoneySteps is a premium Fintech tool designed specifically for the unique challenges of separated and co-parenting households. Far more than a simple allowance app, MoneySteps functions as a "Truth Engine," providing legal-grade, audit-ready financial records that can be used in mediation or court. Our immutable ledger utilizes cryptographic SHA-256 hashing to ensure data integrity, while the AI-powered Tone Meter scans communications to de-escalate conflict and suggest business-neutral rewrites. 
+- **App Store full description (150–250 words):** Morechard is a premium Fintech tool designed specifically for the unique challenges of separated and co-parenting households. Far more than a simple allowance app, Morechard functions as a "Truth Engine," providing legal-grade, audit-ready financial records that can be used in mediation or court. Our immutable ledger utilizes cryptographic SHA-256 hashing to ensure data integrity, while the AI-powered Tone Meter scans communications to de-escalate conflict and suggest business-neutral rewrites. 
 
-For children and adolescents aged 10-16, MoneySteps serves as a behavioral mentor, using "Process Language" to teach financial independence and accountability. The app aligns with national financial education standards in both the UK and Poland, offering bilingual support and a dual-ledger system that respects the privacy of individual households. With a £34.99 lifetime license, families avoid subscription fatigue while gaining access to court-admissible PDF reports and a behavioral AI coach that flags digital risks like loot boxes and debt spirals. Build a foundation of financial peace and literacy without the friction of two-home management.
+For children and adolescents aged 10-16, Morechard serves as a behavioral mentor, using "Process Language" to teach financial independence and accountability. The app aligns with national financial education standards in both the UK and Poland, offering bilingual support and a dual-ledger system that respects the privacy of individual households. With a £34.99 lifetime license, families avoid subscription fatigue while gaining access to court-admissible PDF reports and a behavioral AI coach that flags digital risks like loot boxes and debt spirals. Build a foundation of financial peace and literacy without the friction of two-home management.
 - **Website hero headline + subhead:** Change the trajectory of your family’s finance. / A premium truth engine for co-parents to manage chores, money, and communication without the friction.
 - **3 feature blurbs:** 
     - **The Truth Engine:** Immutable, hashed records for legal peace of mind.

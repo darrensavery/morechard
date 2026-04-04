@@ -14,6 +14,7 @@ import { useNavigate } from 'react-router-dom'
 import { Lock } from 'lucide-react'
 import { getDeviceIdentity, clearDeviceIdentity } from '@/lib/deviceIdentity'
 import { challengeBiometrics, hasBiometricCredential } from '@/lib/biometrics'
+import { analytics, track } from '@/lib/analytics'
 import * as Sentry from '@sentry/react'
 
 const PIN_LENGTH = 4
@@ -30,10 +31,12 @@ export function LockScreen() {
 
   const destination = identity?.role === 'child' ? '/child' : '/parent'
 
-  const unlock = useCallback(() => {
+  const unlock = useCallback((authMethod: 'biometrics' | 'pin' | 'none') => {
     Sentry.setUser({ id: identity?.user_id })
+    analytics.identify(identity?.user_id ?? '', { role: identity?.role ?? '' })
+    track.lockScreenUnlocked({ auth_method: authMethod })
     navigate(destination, { replace: true })
-  }, [navigate, destination, identity?.user_id])
+  }, [navigate, destination, identity?.user_id, identity?.role])
 
   const runBiometrics = useCallback(async () => {
     if (bioRunning) return
@@ -43,7 +46,7 @@ export function LockScreen() {
     if (result.ok) {
       Sentry.setTag('auth_method', 'biometrics')
       if ('vibrate' in navigator) navigator.vibrate([10, 50, 10])
-      unlock()
+      unlock('biometrics')
     }
     // On denial/error — do nothing, user can tap the button or use PIN
   }, [bioRunning, unlock])
@@ -52,7 +55,7 @@ export function LockScreen() {
     if (!identity) { navigate('/', { replace: true }); return }
 
     // No security set — pass straight through
-    if (identity.auth_method === 'none') { unlock(); return }
+    if (identity.auth_method === 'none') { unlock('none'); return }
 
     // Biometrics → auto-challenge on mount
     if (identity.auth_method === 'biometrics' && hasBiometricCredential()) {
@@ -101,12 +104,12 @@ export function LockScreen() {
       return
     }
     Sentry.setTag('auth_method', 'pin')
-    unlock()
+    unlock('pin')
   }
 
   function handleLogout() {
     if (!window.confirm(
-      `Log out of ${identity.display_name}'s account?\n\nYour family's data stays safe — you'll need to log back in to use MoneySteps on this phone.`
+      `Log out of ${identity.display_name}'s account?\n\nYour family's data stays safe — you'll need to log back in to use Morechard on this phone.`
     )) return
     clearDeviceIdentity()
     navigate('/', { replace: true })
@@ -121,7 +124,7 @@ export function LockScreen() {
       {/* Header */}
       <header className="sticky top-0 bg-white border-b border-[#D3D1C7] shadow-[0_1px_4px_rgba(0,0,0,.05)] px-4 py-3 flex items-center gap-2.5">
         <div className="w-8 h-8 rounded-xl bg-teal-600 flex items-center justify-center text-white text-sm font-bold">M</div>
-        <span className="text-[17px] font-extrabold text-[#1C1C1A] tracking-tight">MoneySteps</span>
+        <span className="text-[17px] font-extrabold text-[#1C1C1A] tracking-tight">Morechard</span>
         <div className="ml-auto">
           <Lock size={16} className="text-[#9b9a96]" />
         </div>

@@ -51,7 +51,7 @@ export function PinScreen() {
     if (pin.length < PIN_LENGTH) return
     setSubmitting(true)
     try {
-      const storedPin = localStorage.getItem(`ms_pin_${role}`)
+      const storedPin = localStorage.getItem(`mc_pin_${role}`)
       if (storedPin && storedPin !== pin) {
         setError('Incorrect PIN. Try again.')
         setDigits(Array(PIN_LENGTH).fill(''))
@@ -61,7 +61,7 @@ export function PinScreen() {
       }
       // No pin stored yet — first time, accept any 4-digit pin
       if (!storedPin) {
-        localStorage.setItem(`ms_pin_${role}`, pin)
+        localStorage.setItem(`mc_pin_${role}`, pin)
       }
       navigate(role === 'child' ? '/child' : '/parent')
     } catch {
@@ -74,7 +74,7 @@ export function PinScreen() {
     <div className="min-h-svh bg-[#F5F4F0] flex flex-col">
       <header className="sticky top-0 bg-white border-b border-[#D3D1C7] shadow-[0_1px_4px_rgba(0,0,0,.05)] px-4 py-3 flex items-center gap-2.5">
         <div className="w-8 h-8 rounded-lg bg-teal-600 flex items-center justify-center text-white text-sm font-bold">M</div>
-        <span className="text-[17px] font-extrabold text-[#1C1C1A] tracking-tight">MoneySteps</span>
+        <span className="text-[17px] font-extrabold text-[#1C1C1A] tracking-tight">Morechard</span>
       </header>
 
       <main className="flex-1 flex flex-col items-center justify-center px-6 pb-12">

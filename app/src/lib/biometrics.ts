@@ -38,7 +38,7 @@ export async function registerBiometrics(userId: string, displayName: string): P
     const credential = await navigator.credentials.create({
       publicKey: {
         challenge,
-        rp: { name: 'MoneySteps', id: window.location.hostname },
+        rp: { name: 'Morechard', id: window.location.hostname },
         user: {
           id: userIdBytes,
           name: displayName,
@@ -60,7 +60,7 @@ export async function registerBiometrics(userId: string, displayName: string): P
     if (!credential) return { ok: false, reason: 'denied' }
 
     // Store credential ID so we can issue a challenge on next unlock
-    localStorage.setItem('ms_biometric_id', credential.id)
+    localStorage.setItem('mc_biometric_id', credential.id)
     return { ok: true, method: 'biometrics' }
 
   } catch (err) {
@@ -79,7 +79,7 @@ export async function registerBiometrics(userId: string, displayName: string): P
  */
 export async function challengeBiometrics(): Promise<BiometricResult> {
   try {
-    const credId = localStorage.getItem('ms_biometric_id')
+    const credId = localStorage.getItem('mc_biometric_id')
     if (!credId) return { ok: false, reason: 'unavailable' }
 
     const available = await isBiometricsAvailable()
@@ -112,11 +112,11 @@ export async function challengeBiometrics(): Promise<BiometricResult> {
 }
 
 export function hasBiometricCredential(): boolean {
-  return !!localStorage.getItem('ms_biometric_id')
+  return !!localStorage.getItem('mc_biometric_id')
 }
 
 export function clearBiometricCredential(): void {
-  localStorage.removeItem('ms_biometric_id')
+  localStorage.removeItem('mc_biometric_id')
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────

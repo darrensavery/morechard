@@ -1,44 +1,44 @@
 /**
- * MoneySteps API client
+ * Morechard API client
  * All requests go through the Cloudflare Worker at /api or /auth.
- * JWT is stored in localStorage under 'ms_token'.
+ * JWT is stored in localStorage under 'mc_token'.
  */
 
 const BASE = '';
 
 export function getToken(): string | null {
-  return localStorage.getItem('ms_token');
+  return localStorage.getItem('mc_token');
 }
 
 export function setToken(token: string): void {
-  localStorage.setItem('ms_token', token);
+  localStorage.setItem('mc_token', token);
 }
 
 export function clearToken(): void {
-  localStorage.removeItem('ms_token');
-  localStorage.removeItem('ms_family_id');
-  localStorage.removeItem('ms_user_id');
-  localStorage.removeItem('ms_role');
+  localStorage.removeItem('mc_token');
+  localStorage.removeItem('mc_family_id');
+  localStorage.removeItem('mc_user_id');
+  localStorage.removeItem('mc_role');
 }
 
 export function getFamilyId(): string {
-  if (localStorage.getItem('ms_family_id')) {
-    return localStorage.getItem('ms_family_id')!;
+  if (localStorage.getItem('mc_family_id')) {
+    return localStorage.getItem('mc_family_id')!;
   }
   // Fall back to device identity (set during registration)
   try {
-    const raw = localStorage.getItem('ms_device_identity');
+    const raw = localStorage.getItem('mc_device_identity');
     if (raw) return (JSON.parse(raw) as { family_id?: string }).family_id ?? '';
   } catch { /* ignore */ }
   return '';
 }
 
 export function getUserId(): string {
-  return localStorage.getItem('ms_user_id') ?? '';
+  return localStorage.getItem('mc_user_id') ?? '';
 }
 
 export function getRole(): 'parent' | 'child' | null {
-  return localStorage.getItem('ms_role') as 'parent' | 'child' | null;
+  return localStorage.getItem('mc_role') as 'parent' | 'child' | null;
 }
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {

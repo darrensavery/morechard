@@ -75,14 +75,14 @@ export function LandingScreen() {
   const navigate = useNavigate()
 
   function handleTileClick(tile: Tile) {
-    const token = localStorage.getItem('ms_token')
+    const token = localStorage.getItem('mc_token')
 
     if (!token) {
       navigate('/signup')
       return
     }
 
-    localStorage.setItem('ms_login_role', tile.role)
+    localStorage.setItem('mc_login_role', tile.role)
     navigate(tile.role === 'child' ? '/pin?role=child' : '/pin?role=parent')
   }
 
@@ -91,7 +91,7 @@ export function LandingScreen() {
       {/* Header */}
       <header className="sticky top-0 bg-white border-b border-[#D3D1C7] shadow-[0_1px_4px_rgba(0,0,0,.05)] px-4 py-3 flex items-center gap-2.5">
         <div className="w-8 h-8 rounded-lg bg-teal-600 flex items-center justify-center text-white text-sm font-bold">M</div>
-        <span className="text-[17px] font-extrabold text-[#1C1C1A] tracking-tight">MoneySteps</span>
+        <span className="text-[17px] font-extrabold text-[#1C1C1A] tracking-tight">Morechard</span>
       </header>
 
       {/* Body */}
@@ -134,7 +134,7 @@ export function LandingScreen() {
         {/* New account link */}
         <div className="mt-8 text-center">
           <p className="text-[13px] text-[#6b6a66]">
-            New to MoneySteps?{' '}
+            New to Morechard?{' '}
             <button
               onClick={() => navigate('/signup')}
               className="text-teal-700 font-semibold underline underline-offset-2 cursor-pointer"

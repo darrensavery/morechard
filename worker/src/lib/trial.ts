@@ -1,5 +1,5 @@
 /**
- * Trial & License middleware — MoneySteps
+ * Trial & License middleware — Morechard
  *
  * checkTrialStatus  — called on every authenticated write request.
  *   1. If first ledger entry has occurred and trial not yet activated:

@@ -100,7 +100,7 @@ export function RegistrationShell({ onComplete }: Props) {
           })
 
           const loginResult = await login(merged.email!, merged.password!)
-          localStorage.setItem('ms_token', loginResult.token)
+          localStorage.setItem('mc_token', loginResult.token)
 
           merged.family_id = familyResult.family_id
           merged.user_id   = familyResult.user_id
@@ -163,7 +163,7 @@ export function RegistrationShell({ onComplete }: Props) {
   function handleNudgeDismiss() {
     onComplete(
       state.family_id!,
-      localStorage.getItem('ms_token')!,
+      localStorage.getItem('mc_token')!,
       state.display_name!,
       state.user_id!,
       authMethod,
@@ -246,7 +246,7 @@ function RegistrationLayout({ step, totalSteps, progress, children }: {
               <div className="rounded-xl bg-teal-600 p-1.5">
                 <ShieldCheck size={15} className="text-white" strokeWidth={2.5} />
               </div>
-              <span className="font-extrabold text-sm text-gray-900 tracking-tight">MoneySteps</span>
+              <span className="font-extrabold text-sm text-gray-900 tracking-tight">Morechard</span>
             </div>
             {step !== null && (
               <div className="text-right">

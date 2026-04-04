@@ -1,7 +1,7 @@
-# MoneySteps PWA — Claude Code Context
+# Morechard PWA — Claude Code Context
 
 ## Project Overview
-MoneySteps is a family pocket money PWA.
+Morechard is a family pocket money PWA.
 Parents manage chores, goals, approvals, and payments.
 Children track earnings, savings goals, and progress.
 
@@ -41,7 +41,7 @@ If the knowledge base does not specify something:
 ## Strategic Tech Direction (IMPORTANT)
 
 ### Current Direction
-MoneySteps is evolving away from Firebase toward a **Cloudflare‑native stack**
+Morechard is evolving away from Firebase toward a **Cloudflare‑native stack**
 to take advantage of:
 
 - Cloudflare Pages + Functions
@@ -60,6 +60,11 @@ to take advantage of:
 If a storage or data-model decision is required:
 - Default to Cloudflare D1 + SQL
 - Ask before proposing Firebase-based solutions
+
+### SPA Routing
+Use 404.html (copied from index.html at build) for Cloudflare Pages SPA routing.
+Do NOT use _redirects — Cloudflare's linter flags `/* /index.html 200` as an
+infinite loop warning.
 
 ---
 
@@ -84,6 +89,10 @@ which /docs/notebooklm files were consulted.
 - `pocket-money-v3/pwa-v3/index.html` — single-file app (~344KB)
 - `test-app.js` — Playwright test suite (repo root)
 - `pocket-money-v3/pwa-v3/start-server.bat` — local dev server (localhost:3000)
+- `app/src/lib/deviceIdentity.ts` — Device identity model (one device = one user)
+- `app/src/lib/biometrics.ts` — WebAuthn biometric wrapper (Face ID / Touch ID)
+- `app/src/screens/LockScreen.tsx` — Auto-challenges biometrics on app open
+- `app/src/components/registration/Stage3SecureApp.tsx` — Biometric + PIN setup
 
 ## Common Commands
 

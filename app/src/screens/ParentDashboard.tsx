@@ -70,7 +70,7 @@ export function ParentDashboard() {
         <div className="max-w-[560px] mx-auto px-3.5 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className={`w-[7px] h-[7px] rounded-full shrink-0 ${online ? 'bg-green-500' : 'bg-amber-500'}`} />
-            <span className="text-[17px] font-extrabold text-[#1C1C1A] tracking-tight">MoneySteps</span>
+            <span className="text-[17px] font-extrabold text-[#1C1C1A] tracking-tight">Morechard</span>
           </div>
           <div className="flex items-center gap-3">
             <span className="text-[13px] text-[#6b6a66]">{getDeviceIdentity()?.display_name ?? 'Parent'}</span>

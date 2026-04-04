@@ -1,8 +1,20 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import * as Sentry from '@sentry/react'
+import { initAnalytics } from './lib/analytics'
 import './index.css'
 import App from './App.tsx'
+
+initAnalytics()
+
+// TEMP: posthog connectivity test — remove after confirming event arrives
+import('posthog-js').then(({ default: posthog }) => {
+  posthog.init('phc_zf5uHwc5ZCvCJtxHts6AGaqBPw5x2zLHJFYsL6ftvtj3', {
+    api_host: 'https://eu.i.posthog.com',
+    person_profiles: 'identified_only',
+  })
+  posthog.capture('posthog_test_ping', { source: 'morechard_dev_check' })
+})
 
 Sentry.init({
   // Replace with your real DSN from sentry.io — safe to leave empty in dev

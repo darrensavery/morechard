@@ -1,5 +1,5 @@
 /**
- * MoneySteps — Cloudflare Worker API
+ * Morechard — Cloudflare Worker API
  *
  * Public routes (no auth required):
  *   POST   /auth/register               Create parent account
@@ -34,6 +34,7 @@
  *   POST   /auth/registration/save-step Persist mid-flow registration state
  *
  * Public — invite redemption:
+ *   POST   /auth/invite/peek            Validate code without redeeming → { role }
  *   POST   /auth/invite/redeem          Redeem invite code (child or co-parent)
  */
 
@@ -100,6 +101,7 @@ import { handleCreateCheckout, handleStripeWebhook } from './routes/stripe.js';
 import { handleExchange } from './routes/exchange.js';
 import {
   handleGenerateInvite,
+  handlePeekInvite,
   handleRedeemInvite,
   handleAddChild,
   handleSaveRegistrationStep,
@@ -158,6 +160,7 @@ async function route(request: Request, env: Env, method: string, path: string): 
   if (path === '/auth/magic-link'  && method === 'POST') return handleMagicLinkRequest(request, env);
   if (path === '/auth/verify'      && method === 'GET')  return handleMagicLinkVerify(request, env);
   if (path === '/auth/child/login'   && method === 'POST') return handleChildLogin(request, env);
+  if (path === '/auth/invite/peek'   && method === 'POST') return handlePeekInvite(request, env);
   if (path === '/auth/invite/redeem' && method === 'POST') return handleRedeemInvite(request, env);
 
   // Stripe webhook — public but signature-verified internally

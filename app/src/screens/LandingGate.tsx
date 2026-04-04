@@ -8,6 +8,7 @@
 
 import { useNavigate } from 'react-router-dom'
 import { Smile, Users } from 'lucide-react'
+import { track } from '@/lib/analytics'
 
 export function LandingGate() {
   const navigate = useNavigate()
@@ -18,7 +19,7 @@ export function LandingGate() {
       {/* Header */}
       <header className="sticky top-0 bg-white border-b border-[#D3D1C7] shadow-[0_1px_4px_rgba(0,0,0,.05)] px-4 py-3 flex items-center gap-2.5">
         <div className="w-8 h-8 rounded-xl bg-teal-600 flex items-center justify-center text-white text-sm font-bold">M</div>
-        <span className="text-[17px] font-extrabold text-[#1C1C1A] tracking-tight">MoneySteps</span>
+        <span className="text-[17px] font-extrabold text-[#1C1C1A] tracking-tight">Morechard</span>
       </header>
 
       <main className="flex-1 flex flex-col items-center justify-center px-5 py-12 max-w-md mx-auto w-full">
@@ -35,7 +36,7 @@ export function LandingGate() {
 
         <div className="text-center mb-10">
           <h1 className="text-[28px] font-extrabold text-[#1C1C1A] tracking-tight leading-tight mb-3">
-            Welcome to<br />MoneySteps
+            Welcome to<br />Morechard
           </h1>
           <p className="text-[14px] text-[#6b6a66] leading-relaxed max-w-xs mx-auto">
             Track chores, pocket money, and savings goals — with a fair record
@@ -45,7 +46,7 @@ export function LandingGate() {
 
         <div className="w-full space-y-3">
           <button
-            onClick={() => navigate('/register')}
+            onClick={() => { track.registrationStarted(); navigate('/register') }}
             className="
               w-full h-14 rounded-2xl bg-teal-600 text-white
               font-semibold text-[15px]
@@ -60,7 +61,7 @@ export function LandingGate() {
           </button>
 
           <button
-            onClick={() => navigate('/join')}
+            onClick={() => { track.joinStarted(); navigate('/join') }}
             className="
               w-full h-14 rounded-2xl bg-white text-[#1C1C1A]
               font-semibold text-[15px]

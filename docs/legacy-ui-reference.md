@@ -1,4 +1,4 @@
-# Legacy UI Reference — MoneySteps (index.html)
+# Legacy UI Reference — Morechard (index.html)
 
 Captured before migration to React. Use this as the design source of truth
 when rebuilding each screen as a React component.
@@ -73,7 +73,7 @@ Dark mode overrides the same tokens via `html[data-theme="dark"]`.
 - Back link: underlined, muted
 
 ### 3. Parent Dashboard — Header
-- Left: sync dot (7px circle, green=online/amber=offline) + "MoneySteps" title
+- Left: sync dot (7px circle, green=online/amber=offline) + "Morechard" title
 - Right: session label + lock button
 - Child selector: horizontal scroll pill buttons (teal active state)
 

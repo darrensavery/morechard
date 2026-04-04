@@ -157,7 +157,7 @@ export function Stage3SecureApp({ data, onNext, onBack }: Props) {
             Secure your App
           </h2>
           <p className="text-sm text-[#6b6a66] leading-relaxed">
-            Use Face ID or Touch ID so only you can open MoneySteps on this phone.
+            Use Face ID or Touch ID so only you can open Morechard on this phone.
           </p>
         </div>
 

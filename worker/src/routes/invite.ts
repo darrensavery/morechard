@@ -66,6 +66,33 @@ export async function handleGenerateInvite(request: Request, env: Env): Promise<
   return json({ code, role, expires_at: now + INVITE_TTL });
 }
 
+// ── POST /auth/invite/peek ───────────────────────────────────────────────────
+// Public route. Validates a code is active without redeeming it.
+// Returns { role } so the client can render the correct details form.
+export async function handlePeekInvite(request: Request, env: Env): Promise<Response> {
+  const body = await parseBody(request);
+  if (!body) return error('Invalid JSON body');
+
+  const code = (body['code'] as string | undefined)?.trim().toUpperCase();
+  if (!code || code.length !== 6) return error('code must be 6 characters');
+
+  const now = Math.floor(Date.now() / 1000);
+
+  const invite = await env.DB
+    .prepare(`
+      SELECT role, redeemed_at, expires_at
+      FROM invite_codes WHERE code = ?
+    `)
+    .bind(code)
+    .first<{ role: InviteRole; redeemed_at: number | null; expires_at: number }>();
+
+  if (!invite)              return error('Invalid invite code', 404);
+  if (invite.redeemed_at)   return error('Invite code already used', 409);
+  if (now > invite.expires_at) return error('Invite code has expired', 410);
+
+  return json({ role: invite.role });
+}
+
 // ── POST /auth/invite/redeem ─────────────────────────────────────────────────
 // Public route. Validates code, links the joiner to the family.
 //

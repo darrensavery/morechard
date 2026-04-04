@@ -5,7 +5,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "cmd /c start /min \"MoneySteps Server\" cmd /c \"cd /d \\\"e:\\Web-Video Design\\Claude\\Apps\\Pocket Money\\pocket-money-v3\\pwa-v3\\\" && npx serve . --listen 3000\"",
+            "command": "cmd /c start /min \"Morechard Server\" cmd /c \"cd /d \\\"e:\\Web-Video Design\\Claude\\Apps\\Pocket Money\\pocket-money-v3\\pwa-v3\\\" && npx serve . --listen 3000\"",
             "async": true,
             "statusMessage": "Starting dev server on localhost:3000..."
           }

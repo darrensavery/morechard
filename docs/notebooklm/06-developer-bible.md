@@ -1,7 +1,7 @@
-# MONEYSTEPS DEVELOPER BIBLE (V4.2)
+# MORECHARD DEVELOPER BIBLE (V4.2)
 
 ## 1) System Overview & Core Identity
-* **What the app does:** MoneySteps is a high-integrity "Truth Engine" and pocket money tracker for separated families. It provides legal-grade, immutable financial records and an AI Virtual Coach to educate children through real-world usage, reducing conflict by delegating "coaching" and "friction management" to a neutral third party.
+* **What the app does:** Morechard is a high-integrity "Truth Engine" and pocket money tracker for separated families. It provides legal-grade, immutable financial records and an AI Virtual Coach to educate children through real-world usage, reducing conflict by delegating "coaching" and "friction management" to a neutral third party.
 * **Core user roles:** Parent (Custodian/Observer), Child (Learner, Ages 10–16), and AI Mentor (Performance Coach/Neutral Arbiter).
 * **Core flows:**
     * Immutable transaction logging with cryptographic SHA-256 verification.
@@ -123,7 +123,7 @@
 5. **The 14-Day Lock:** Middleware for trial countdown and `/paywall` redirect.
 6. **The Migration Hook:** SQL utility for historical currency rebasing.
 
-# MONEYSTEPS DEVELOPER BIBLE (V4.3) - ADAPTIVE UX UPDATE
+# MORECHARD DEVELOPER BIBLE (V4.3) - ADAPTIVE UX UPDATE
 
 ## 12) Adaptive Onboarding & Tone-Switch Logic
 * **Objective:** Contextualize "Friction Points" (like Email Auth) based on the chosen Governance Mode to maximize conversion and trust.
@@ -166,8 +166,92 @@
 * **Logic:** Stripe Worker must verify `PaymentMethod.card.country == 'US'` to unlock USD pricing IDs.
 
 ## 16) The "Sovereign Ledger" Philosophy
-* **Core Rule:** MoneySteps is a **Record of Ownership**, not a **Transfer of Funds**.
+* **Core Rule:** Morechard is a **Record of Ownership**, not a **Transfer of Funds**.
 * **AI Instruction:** The Mentor must refer to the balance as "Your Total Equity" or "Available Funds." It should never imply the app *is* a bank account.
 * **The "Settlement" Nudge:** When a large purchase is logged, the AI should nudge the child: *"You've logged this spend. Make sure you've settled the physical payment with your Parent Custodian."*
 * **The "Audit" Value:** For co-parents, the value isn't "Moving Money"—it's "Knowing the Balance." No more "How much do I owe him for the grass cutting?" texts.
+
+---
+
+## 17) Brand Identity — The Orchard Layer
+
+### 17.1) Brand Name
+**Morechard** (formerly MoneySteps). The name evokes an orchard — growth, nature, seasons, harvest.
+
+### 17.2) The Core Rule
+Functional UI (buttons, headers, navigation, form labels) must remain plain English.
+Orchard metaphors appear **only** in: Empty States, Loading Screens, Notifications, Success Celebrations, and AI tip introductions.
+They are a charming coat of paint — never a replacement for clarity.
+
+**Never replace** the words "Money", "Pounds", "Zloty", "£", "zł", "$" with a metaphor.
+
+---
+
+### 17.3) Empty State Copy
+
+**Empty Tasks screen**
+- Headline: `Your plot is ready.`
+- Body: `No chores have been planted yet. Add the first one and watch things grow.`
+
+**Zero Savings screen**
+- Headline: `The grove is quiet for now.`
+- Body: `Every big harvest starts with a single seed. Set a savings goal to get growing.`
+
+---
+
+### 17.4) Loading Messages (rotate randomly, max 40 chars)
+1. `Checking the soil…`
+2. `Letting the roots settle…`
+3. `Sunlight reaching the grove…`
+4. `Counting what's in the ground…`
+5. `Your orchard is waking up…`
+
+---
+
+### 17.5) Success & Celebration
+
+**Big savings goal reached ("Harvest" moment)**
+- Headline: `Harvest time. 🌿`
+- Body: `You saved every penny and reached your goal — that's £[X] grown from nothing. Well done.`
+
+**Task completion animation**
+- A single SVG leaf (~20px) rises from the ticked checkbox, drifts upward ~40px with a gentle arc, fades out over ~600ms.
+- Runs once only. No sound. No bounce. Invisible unless you're watching for it.
+
+---
+
+### 17.6) AI "Head Gardener" Tip Template
+
+```
+The Head Gardener has a suggestion.
+[Tip in plain language — always numbers-first. E.g., "Setting aside £2 a week means you'd reach your goal 3 weeks earlier."]
+Want to give it a try?
+```
+
+**Rules:**
+- Intro line is always identical — it becomes a recognisable signal.
+- Tip body is always plain English, numbers first. No metaphor inside the tip.
+- CTA is always a soft question. Never "Tap here."
+
+---
+
+### 17.7) Allowance Day Push Notification
+
+```
+🌧 Your allowance has arrived.
+£[X] landed in your account — a fresh start for the week. Open the app to see it grow.
+```
+
+---
+
+### 17.8) Orchard Language Usage Table
+
+| Context               | Orchard language       | Plain language                        |
+|-----------------------|------------------------|---------------------------------------|
+| Empty states          | ✅ One metaphor line   | ✅ Functional subtext always follows  |
+| Loading screens       | ✅ Full metaphor       | —                                     |
+| Success/celebrations  | ✅ Headline word only  | ✅ Numbers and facts in body          |
+| Buttons & nav         | ❌ Never               | ✅ Always                             |
+| AI tips               | ✅ Intro line only     | ✅ Tip content always plain           |
+| Push notifications    | ✅ One word/phrase     | ✅ Amount in first sentence           |
 
