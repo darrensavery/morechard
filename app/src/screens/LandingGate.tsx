@@ -111,58 +111,49 @@ export function LandingGate() {
 
 // ── Tree ──────────────────────────────────────────────────────────────────────
 
-const TREE_CONFIG: Record<TreeSize, {
-  totalH:    number   // total SVG height
-  trunkH:    number
-  trunkW:    number
-  layers:    { y: number; w: number; h: number }[]  // triangle layers
-  scale:     number   // overall scale factor
+// Apple tree dimensions per size
+const TREE_CFG: Record<TreeSize, {
+  svgW:    number
+  svgH:    number
+  cx:      number   // canopy centre x
+  cy:      number   // canopy centre y
+  rx:      number   // canopy x-radius
+  ry:      number   // canopy y-radius
+  trunkW:  number
+  trunkH:  number
+  apples:  { x: number; y: number; r: number }[]
 }> = {
   sm: {
-    totalH: 64, trunkH: 14, trunkW: 6, scale: 0.78,
-    layers: [
-      { y: 0,  w: 28, h: 18 },
-      { y: 12, w: 34, h: 20 },
-      { y: 24, w: 38, h: 20 },
-    ],
+    svgW: 44, svgH: 64, cx: 22, cy: 26, rx: 18, ry: 16, trunkW: 6, trunkH: 16,
+    apples: [{ x: 15, y: 22, r: 2.2 }, { x: 27, y: 18, r: 2 }, { x: 24, y: 30, r: 1.8 }],
   },
   md: {
-    totalH: 80, trunkH: 18, trunkW: 7, scale: 0.9,
-    layers: [
-      { y: 0,  w: 32, h: 20 },
-      { y: 14, w: 40, h: 22 },
-      { y: 28, w: 46, h: 22 },
-    ],
+    svgW: 54, svgH: 80, cx: 27, cy: 32, rx: 22, ry: 20, trunkW: 8, trunkH: 20,
+    apples: [{ x: 18, y: 27, r: 2.5 }, { x: 32, y: 22, r: 2.2 }, { x: 30, y: 38, r: 2.2 }, { x: 20, y: 38, r: 2 }],
   },
   lg: {
-    totalH: 96, trunkH: 22, trunkW: 9, scale: 1,
-    layers: [
-      { y: 0,  w: 36, h: 24 },
-      { y: 16, w: 46, h: 26 },
-      { y: 32, w: 54, h: 26 },
-    ],
+    svgW: 66, svgH: 96, cx: 33, cy: 38, rx: 28, ry: 25, trunkW: 10, trunkH: 24,
+    apples: [{ x: 22, y: 32, r: 3 }, { x: 40, y: 26, r: 2.8 }, { x: 44, y: 42, r: 2.5 }, { x: 24, y: 46, r: 2.8 }, { x: 34, y: 50, r: 2.5 }],
   },
-}
-
-// Canopy top is where the first layer starts (y=0), but leaves should
-// fall from within the canopy. We define canopyTop as the pixel offset
-// from the top of the Tree div to the top of the lowest layer (most leaves).
-function canopyMidY(cfg: typeof TREE_CONFIG[TreeSize]) {
-  const lowestLayer = cfg.layers[cfg.layers.length - 1]
-  return (lowestLayer.y + lowestLayer.h * 0.4) * cfg.scale
 }
 
 function Tree({ size, swayOffset }: { size: TreeSize; swayOffset: number }) {
-  const cfg = TREE_CONFIG[size]
-  const svgW = cfg.layers[cfg.layers.length - 1].w * cfg.scale + 4
-  const svgH = cfg.totalH
+  const cfg    = TREE_CFG[size]
+  const svgW   = cfg.svgW
+  const svgH   = cfg.svgH
+
+  // Canopy bottom y — where trunk meets canopy
+  const canopyBottomY = cfg.cy + cfg.ry
+  const trunkX        = cfg.cx - cfg.trunkW / 2
+  const trunkY        = canopyBottomY - 2   // overlap 2px so no gap
+  // Leaf fall starts from canopy mid-area
+  const leafStartY    = cfg.cy + cfg.ry * 0.2
 
   const [swaying, setSwaying] = useState(false)
   const [leaves,  setLeaves]  = useState<Leaf[]>([])
   const timerRef = useRef<ReturnType<typeof setTimeout>>(undefined)
   const leafId   = useRef(0)
 
-  // Breeze every 10s, staggered
   useEffect(() => {
     const trigger = () => {
       setSwaying(true)
@@ -177,7 +168,7 @@ function Tree({ size, swayOffset }: { size: TreeSize; swayOffset: number }) {
     const count = Math.random() > 0.4 ? 2 : 1
     const newLeaves: Leaf[] = Array.from({ length: count }, (_, i) => ({
       id:    leafId.current++,
-      x:     (Math.random() - 0.5) * svgW * 0.5,
+      x:     (Math.random() - 0.5) * cfg.rx * 1.2,
       delay: i * 140,
       drift: (Math.random() - 0.5) * 2,
     }))
@@ -190,19 +181,6 @@ function Tree({ size, swayOffset }: { size: TreeSize; swayOffset: number }) {
     setLeaves(prev => prev.filter(l => l.id !== id))
   }
 
-  // Triangle points for each canopy layer
-  function triangle(layer: { y: number; w: number; h: number }, scale: number) {
-    const cx = svgW / 2
-    const top = layer.y * scale
-    const bot = (layer.y + layer.h) * scale
-    const hw  = (layer.w / 2) * scale
-    return `${cx},${top} ${cx - hw},${bot} ${cx + hw},${bot}`
-  }
-
-  const trunkX = svgW / 2 - (cfg.trunkW * cfg.scale) / 2
-  const trunkY = (cfg.totalH - cfg.trunkH * cfg.scale)
-  const leafStartY = canopyMidY(cfg)
-
   return (
     <div
       className="relative flex-shrink-0 cursor-pointer select-none"
@@ -214,11 +192,10 @@ function Tree({ size, swayOffset }: { size: TreeSize; swayOffset: number }) {
       }}
       onMouseEnter={handleMouseEnter}
     >
-      {/* Leaves — positioned relative to this div, starting at mid-canopy */}
       {leaves.map(leaf => (
         <FallingLeaf
           key={leaf.id}
-          startX={svgW / 2 + leaf.x}
+          startX={cfg.cx + leaf.x}
           startY={leafStartY}
           drift={leaf.drift}
           delay={leaf.delay}
@@ -227,26 +204,35 @@ function Tree({ size, swayOffset }: { size: TreeSize; swayOffset: number }) {
       ))}
 
       <svg width={svgW} height={svgH} viewBox={`0 0 ${svgW} ${svgH}`} overflow="visible">
-        {/* Canopy layers — back to front, darkening slightly */}
-        {cfg.layers.map((layer, i) => (
-          <polygon
-            key={i}
-            points={triangle(layer, cfg.scale)}
-            fill={i === 0 ? '#6ee7b7' : i === 1 ? '#34d399' : '#10b981'}
-            stroke="#059669"
-            strokeWidth="0.8"
-            strokeLinejoin="round"
-          />
-        ))}
-        {/* Trunk */}
+        {/* Trunk — drawn first so canopy overlaps the top of it */}
         <rect
-          x={trunkX}
-          y={trunkY}
-          width={cfg.trunkW * cfg.scale}
-          height={cfg.trunkH * cfg.scale}
-          rx="2"
-          fill="#92613a"
+          x={trunkX} y={trunkY}
+          width={cfg.trunkW} height={cfg.trunkH + 2}
+          rx="2" fill="#92613a"
         />
+        {/* Canopy shadow / depth — slightly larger, darker ellipse behind */}
+        <ellipse cx={cfg.cx + 1} cy={cfg.cy + 2} rx={cfg.rx} ry={cfg.ry} fill="#059669" opacity="0.35" />
+        {/* Main canopy */}
+        <ellipse cx={cfg.cx} cy={cfg.cy} rx={cfg.rx} ry={cfg.ry} fill="#34d399" />
+        {/* Highlight lobe — upper-left bright patch */}
+        <ellipse
+          cx={cfg.cx - cfg.rx * 0.25}
+          cy={cfg.cy - cfg.ry * 0.3}
+          rx={cfg.rx * 0.55}
+          ry={cfg.ry * 0.45}
+          fill="#6ee7b7"
+          opacity="0.55"
+        />
+        {/* Apples */}
+        {cfg.apples.map((a, i) => (
+          <g key={i}>
+            <circle cx={a.x} cy={a.y} r={a.r} fill="#ef4444" />
+            {/* tiny stalk */}
+            <line x1={a.x} y1={a.y - a.r} x2={a.x} y2={a.y - a.r - 2} stroke="#92613a" strokeWidth="0.8" strokeLinecap="round" />
+          </g>
+        ))}
+        {/* Canopy outline */}
+        <ellipse cx={cfg.cx} cy={cfg.cy} rx={cfg.rx} ry={cfg.ry} fill="none" stroke="#059669" strokeWidth="1" />
       </svg>
     </div>
   )
