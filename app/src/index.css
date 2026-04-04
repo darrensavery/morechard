@@ -60,6 +60,12 @@
   }
 }
 
+@keyframes treeSway {
+  0%, 100% { transform: rotate(0deg);     transform-origin: bottom center; }
+  25%       { transform: rotate(1.5deg);  transform-origin: bottom center; }
+  75%       { transform: rotate(-1.5deg); transform-origin: bottom center; }
+}
+
 @keyframes shake {
   0%, 100% { transform: translateX(0); }
   15%       { transform: translateX(-6px); }
