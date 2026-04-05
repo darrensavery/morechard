@@ -49,13 +49,14 @@ function MagicLinkVerifyScreen() {
   function handleWelcomeDone() {
     if (!identity) return
     setDeviceIdentity({
-      user_id:       identity.user_id,
-      family_id:     identity.family_id,
-      display_name:  identity.display_name,
-      role:          'parent',
-      initials:      toInitials(identity.display_name),
-      registered_at: new Date().toISOString(),
-      auth_method:   'none',
+      user_id:        identity.user_id,
+      family_id:      identity.family_id,
+      display_name:   identity.display_name,
+      role:           'parent',
+      parenting_role: 'LEAD_PARENT',
+      initials:       toInitials(identity.display_name),
+      registered_at:  new Date().toISOString(),
+      auth_method:    'none',
     })
     Sentry.setUser({ id: identity.user_id })
     analytics.identify(identity.user_id, { role: 'parent', family_id: identity.family_id })
@@ -129,14 +130,15 @@ export default function App() {
     pin: string | null,
   ) {
     setDeviceIdentity({
-      user_id:       userId,
-      family_id:     familyId,
-      display_name:  displayName,
-      role:          'parent',
-      initials:      toInitials(displayName),
-      registered_at: new Date().toISOString(),
-      auth_method:   authMethod ?? 'none',
-      pin:           pin ?? undefined,
+      user_id:        userId,
+      family_id:      familyId,
+      display_name:   displayName,
+      role:           'parent',
+      parenting_role: 'LEAD_PARENT',
+      initials:       toInitials(displayName),
+      registered_at:  new Date().toISOString(),
+      auth_method:    authMethod ?? 'none',
+      pin:            pin ?? undefined,
     })
     Sentry.setUser({ id: userId })
     Sentry.setTag('auth_method', authMethod ?? 'none')

@@ -1,6 +1,75 @@
-import { useState, useEffect, useCallback } from 'react'
+/**
+ * ParentSettingsTab — Morechard Parental Control Centre
+ *
+ * ┌─────────────────────────────────────────────────────────────────┐
+ * │  ORCHARD ROADMAP — SETTINGS ARCHITECTURE                        │
+ * │                                                                 │
+ * │  Status tags:                                                   │
+ * │    [Planned]    Not yet built — shows Coming Soon toast         │
+ * │    [UI Shell]   Navigation exists, no underlying logic          │
+ * │    [Functional] Fully coded and connected                       │
+ * │                                                                 │
+ * │  1. Account & Profile          [UI Shell]                       │
+ * │     • Display Name             [Planned]                        │
+ * │     • Email Management         [Planned]                        │
+ * │     • Delete Account *         [Planned]  (LEAD_PARENT only)    │
+ * │                                                                 │
+ * │  2. Manage Family              [UI Shell]                       │
+ * │     • Children list            [Functional]                     │
+ * │       ↳ Child Profile sub-menu [UI Shell]                       │
+ * │         – Display Name         [Planned]                        │
+ * │         – Reset PIN            [Planned]                        │
+ * │         – Orchard Theme        [Functional]  (teen_mode toggle) │
+ * │         – Experience Level     [Functional]  (teen_mode toggle) │
+ * │         – Harvest Status       [Planned]                        │
+ * │         – Approval Mode        [Planned]                        │
+ * │         – Safety Net           [Planned]                        │
+ * │         – Growth Path          [Functional]                     │
+ * │         – Uproot Profile *     [Planned]  (LEAD_PARENT only)    │
+ * │     • Co-parenting             [UI Shell]                       │
+ * │       – Invite Co-Parent       [Functional]                     │
+ * │       – Remove Co-Parent *     [Planned]  (LEAD_PARENT only)    │
+ * │     • Global Orchard Rules     [UI Shell]  (read-only CO_PARENT)│
+ * │       – Harvest Day            [Planned]                        │
+ * │       – Global Overdraft       [Planned]                        │
+ * │                                                                 │
+ * │  3. Security & Access          [Planned]                        │
+ * │     • PIN Management           [Planned]                        │
+ * │     • Active Sessions          [Planned]                        │
+ * │                                                                 │
+ * │  4. Appearance & Display       [Functional]                     │
+ * │     • App Mode (Light/Dark)    [Functional]                     │
+ * │     • Language                 [Planned]                        │
+ * │                                                                 │
+ * │  5. Billing & Subscriptions    [Planned]  (LEAD_PARENT only)    │
+ * │     • Trial Status             [Planned]                        │
+ * │     • Plan Management          [Planned]                        │
+ * │     • Payment History          [Planned]                        │
+ * │                                                                 │
+ * │  6. Data & Exports             [Planned]                        │
+ * │     • Download Ledger          [Planned]                        │
+ * │     • Data Pruning *           [Planned]  (LEAD_PARENT only)    │
+ * │                                                                 │
+ * │  7. Referrals                  [Planned]                        │
+ * │     • Share the Grove          [Planned]                        │
+ * │                                                                 │
+ * │  8. About & Support            [UI Shell]                       │
+ * │     • Version Info             [UI Shell]                       │
+ * │     • Privacy Policy           [UI Shell]                       │
+ * │     • Terms of Use             [UI Shell]                       │
+ * │     • Support Desk             [UI Shell]                       │
+ * └─────────────────────────────────────────────────────────────────┘
+ */
+
+import { useState, useEffect, useCallback, type FormEvent } from 'react'
+import {
+  User, Users, Shield, Palette, CreditCard, Database,
+  Gift, Info, ChevronRight, ChevronLeft, Lock,
+  TreePine, Eye, Calendar, AlertTriangle, LogOut,
+  X, Check,
+} from 'lucide-react'
 import { track } from '../../lib/analytics'
-import { clearDeviceIdentity } from '../../lib/deviceIdentity'
+import { clearDeviceIdentity, getDeviceIdentity } from '../../lib/deviceIdentity'
 import type { ChildRecord, ChildGrowthSettings } from '../../lib/api'
 import {
   getChildren, addChild, generateInvite,
@@ -10,8 +79,26 @@ import {
 } from '../../lib/api'
 import { AvatarSVG, AVATARS, AVATAR_CATEGORIES } from '../../lib/avatars'
 import { ThemePicker } from '../../lib/theme'
+import { cn } from '../../lib/utils'
 
-// ── Growth Path config ────────────────────────────────────────────────────────
+// ── Types ─────────────────────────────────────────────────────────────────────
+
+type TopSection =
+  | 'account'
+  | 'family'
+  | 'security'
+  | 'appearance'
+  | 'billing'
+  | 'data'
+  | 'referrals'
+  | 'about'
+
+type View =
+  | { type: 'menu' }
+  | { type: 'section'; section: TopSection }
+  | { type: 'child'; childId: string }
+
+// ── Growth Path config (preserved from original) ─────────────────────────────
 
 const GROWTH_PATHS = [
   {
@@ -43,40 +130,159 @@ const FREQ_LABELS: Record<string, string> = {
   MONTHLY:   'Monthly',
 }
 
+// ── Props ─────────────────────────────────────────────────────────────────────
+
 interface Props {
-  familyId: string
+  familyId:         string
   onChildrenChange: (children: ChildRecord[]) => void
 }
 
+// ── Toast ─────────────────────────────────────────────────────────────────────
+
+function useToast() {
+  const [toast, setToast] = useState<string | null>(null)
+
+  function showToast(msg: string) {
+    setToast(msg)
+    setTimeout(() => setToast(null), 3000)
+  }
+
+  return { toast, showToast }
+}
+
+function Toast({ message }: { message: string }) {
+  return (
+    <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl bg-[var(--color-text)] text-white text-[13px] font-semibold shadow-xl max-w-xs text-center animate-fade-in-up">
+      🌱 {message}
+    </div>
+  )
+}
+
+// ── Row atoms ─────────────────────────────────────────────────────────────────
+
+function SettingsRow({
+  icon, label, description, onClick, destructive = false, disabled = false, badge,
+}: {
+  icon?: React.ReactNode
+  label: string
+  description?: string
+  onClick: () => void
+  destructive?: boolean
+  disabled?: boolean
+  badge?: string
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className={cn(
+        'w-full flex items-center gap-3 px-4 py-3.5 text-left transition-colors',
+        'border-b border-[var(--color-border)] last:border-0',
+        disabled
+          ? 'opacity-40 cursor-not-allowed'
+          : 'hover:bg-[var(--color-surface-alt)] active:bg-[var(--color-surface-alt)] cursor-pointer',
+      )}
+    >
+      {icon && (
+        <span className={cn(
+          'shrink-0 w-8 h-8 rounded-xl flex items-center justify-center',
+          destructive ? 'bg-red-50 text-red-500' : 'bg-[color-mix(in_srgb,var(--brand-primary)_10%,transparent)] text-[var(--brand-primary)]',
+        )}>
+          {icon}
+        </span>
+      )}
+      <div className="flex-1 min-w-0">
+        <p className={cn(
+          'text-[14px] font-semibold',
+          destructive ? 'text-red-600' : 'text-[var(--color-text)]',
+        )}>
+          {label}
+        </p>
+        {description && (
+          <p className="text-[12px] text-[var(--color-text-muted)] mt-0.5 leading-snug">{description}</p>
+        )}
+      </div>
+      {badge && (
+        <span className="shrink-0 text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">
+          {badge}
+        </span>
+      )}
+      <ChevronRight size={15} className="shrink-0 text-[var(--color-text-muted)]" />
+    </button>
+  )
+}
+
+function SectionCard({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl overflow-hidden">
+      {children}
+    </div>
+  )
+}
+
+function SectionHeader({ title, onBack }: { title: string; onBack: () => void }) {
+  return (
+    <div className="flex items-center gap-3 mb-4">
+      <button
+        type="button"
+        onClick={onBack}
+        className="w-8 h-8 rounded-xl flex items-center justify-center bg-[var(--color-surface)] border border-[var(--color-border)] hover:bg-[var(--color-surface-alt)] cursor-pointer transition-colors"
+      >
+        <ChevronLeft size={16} className="text-[var(--color-text-muted)]" />
+      </button>
+      <h2 className="text-[16px] font-bold text-[var(--color-text)]">{title}</h2>
+    </div>
+  )
+}
+
+function ReadOnlyBadge() {
+  return (
+    <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">
+      <Lock size={9} /> Read only
+    </span>
+  )
+}
+
+// ── Main component ────────────────────────────────────────────────────────────
+
 export function ParentSettingsTab({ familyId, onChildrenChange }: Props) {
-  const [children, setChildren]     = useState<ChildRecord[]>([])
-  const [family, setFamily]         = useState<Record<string, unknown>>({})
-  const [settings, setSettings]     = useState<{ avatar_id: string; theme: string; locale: string } | null>(null)
-  const [loading, setLoading]       = useState(true)
+  const identity        = getDeviceIdentity()
+  const isLead          = identity?.parenting_role !== 'CO_PARENT'  // default to lead if unset (existing accounts)
+
+  const [view,          setView]          = useState<View>({ type: 'menu' })
+  const [children,      setChildren]      = useState<ChildRecord[]>([])
+  const [family,        setFamily]        = useState<Record<string, unknown>>({})
+  const [settings,      setSettings]      = useState<{ avatar_id: string; theme: string; locale: string } | null>(null)
+  const [loading,       setLoading]       = useState(true)
 
   // Add child
-  const [showAddChild, setShowAddChild]     = useState(false)
-  const [newChildName, setNewChildName]     = useState('')
-  const [addingChild, setAddingChild]       = useState(false)
-  const [addChildResult, setAddChildResult] = useState<{ child_id: string; invite_code: string } | null>(null)
+  const [showAddChild,    setShowAddChild]    = useState(false)
+  const [newChildName,    setNewChildName]    = useState('')
+  const [addingChild,     setAddingChild]     = useState(false)
+  const [addChildResult,  setAddChildResult]  = useState<{ child_id: string; invite_code: string } | null>(null)
 
   // Avatar picker
   const [showAvatarPicker, setShowAvatarPicker] = useState(false)
-  const [savingAvatar, setSavingAvatar]         = useState(false)
+  const [savingAvatar,     setSavingAvatar]     = useState(false)
 
-  // Invite
-  const [inviteCode, setInviteCode]   = useState<string | null>(null)
-  const [inviteExpiry, setInviteExpiry] = useState<string | null>(null)
+  // Co-parent invite
+  const [inviteCode,    setInviteCode]    = useState<string | null>(null)
+  const [inviteExpiry,  setInviteExpiry]  = useState<string | null>(null)
   const [genningInvite, setGenningInvite] = useState(false)
 
-  // Per-child teen_mode toggles: Record<child_id, 0|1>
-  const [teenModes, setTeenModes]       = useState<Record<string, number>>({})
-  const [teenModeBusy, setTeenModeBusy] = useState<string | null>(null)
-
-  // Per-child growth path settings
+  // Per-child settings
+  const [teenModes,     setTeenModes]     = useState<Record<string, number>>({})
+  const [teenModeBusy,  setTeenModeBusy]  = useState<string | null>(null)
   const [growthSettings, setGrowthSettings] = useState<Record<string, ChildGrowthSettings>>({})
-  const [growthBusy, setGrowthBusy]         = useState<string | null>(null)
+  const [growthBusy,    setGrowthBusy]    = useState<string | null>(null)
   const [expandedGrowth, setExpandedGrowth] = useState<string | null>(null)
+
+  const { toast, showToast } = useToast()
+
+  function comingSoon() {
+    showToast('Coming Soon to the Orchard')
+  }
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -89,7 +295,6 @@ export function ParentSettingsTab({ familyId, onChildrenChange }: Props) {
     onChildrenChange(c)
     setFamily(f)
     setSettings(s)
-    // Load teen_mode + growth settings for each child in parallel
     const [modes, growths] = await Promise.all([
       Promise.all(
         c.map(child => getChildSettings(child.id).then(cs => [child.id, cs.teen_mode] as const).catch(() => [child.id, 0] as const))
@@ -107,7 +312,7 @@ export function ParentSettingsTab({ familyId, onChildrenChange }: Props) {
 
   useEffect(() => { load() }, [load])
 
-  async function handleAddChild(e: React.FormEvent<HTMLFormElement>) {
+  async function handleAddChild(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
     if (!newChildName.trim()) return
     setAddingChild(true)
@@ -177,283 +382,754 @@ export function ParentSettingsTab({ familyId, onChildrenChange }: Props) {
   if (loading) return <div className="py-10 text-center text-[14px] text-[var(--color-text-muted)]">Loading…</div>
 
   const myAvatar = settings?.avatar_id ?? 'bot'
+  const activeChild = view.type === 'child'
+    ? children.find(c => c.id === view.childId) ?? null
+    : null
 
-  return (
-    <div className="space-y-4">
-      {/* My account */}
-      <section className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl p-4">
-        <p className="text-[13px] font-bold text-[var(--color-text-muted)] uppercase tracking-wide mb-3">My account</p>
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => setShowAvatarPicker(true)}
-            className="relative cursor-pointer group"
-            title="Change avatar"
-          >
-            <AvatarSVG id={myAvatar} size={52} />
-            <span className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/20 rounded-full transition-colors text-white text-[18px] opacity-0 group-hover:opacity-100">✎</span>
-          </button>
-          <div>
-            <p className="text-[14px] font-semibold text-[var(--color-text)]">
-              {(family.display_name as string) ?? 'My family'}
-            </p>
-            <button
-              onClick={() => setShowAvatarPicker(true)}
-              className="text-[12px] font-semibold text-[var(--brand-primary)] hover:underline cursor-pointer"
-            >
-              Change avatar
-            </button>
-          </div>
+  // ── Views ───────────────────────────────────────────────────────────────────
+
+  // ── Child Profile sub-menu ──────────────────────────────────────────────────
+  if (view.type === 'child' && activeChild) {
+    const isTeen = teenModes[activeChild.id] === 1
+    const isBusy = teenModeBusy === activeChild.id
+    const g      = growthSettings[activeChild.id]
+
+    return (
+      <div className="space-y-4">
+        {toast && <Toast message={toast} />}
+
+        <SectionHeader
+          title={activeChild.display_name}
+          onBack={() => setView({ type: 'section', section: 'family' })}
+        />
+
+        {/* Identity & Security */}
+        <div>
+          <p className="text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wide px-1 mb-2">
+            Identity & Security
+          </p>
+          <SectionCard>
+            <SettingsRow
+              icon={<User size={15} />}
+              label="Display Name"
+              description="Edit this child's name"
+              onClick={comingSoon}
+            />
+            <SettingsRow
+              icon={<Lock size={15} />}
+              label="Reset PIN"
+              description="Generate a new 6-digit secret key"
+              onClick={comingSoon}
+            />
+          </SectionCard>
         </div>
-      </section>
 
-      {/* Avatar picker */}
-      {showAvatarPicker && (
-        <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl p-4">
-          <div className="flex items-center justify-between mb-3">
-            <p className="text-[15px] font-bold">Choose avatar</p>
-            <button onClick={() => setShowAvatarPicker(false)} className="text-[var(--color-text-muted)] hover:text-[var(--color-text)] cursor-pointer text-[20px] leading-none">×</button>
-          </div>
-          {AVATAR_CATEGORIES.map(cat => (
-            <div key={cat.id} className="mb-3">
-              <p className="text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wide mb-1.5">{cat.label}</p>
-              <div className="flex flex-wrap gap-2">
-                {AVATARS.filter(av => av.category === cat.id).map(av => (
-                  <button
-                    key={av.id}
-                    onClick={() => handleSetAvatar(av.id)}
-                    disabled={savingAvatar}
-                    className={`p-1.5 rounded-xl border-2 transition-colors cursor-pointer
-                      ${myAvatar === av.id ? 'border-[var(--brand-primary)] bg-[color-mix(in_srgb,var(--brand-primary)_8%,transparent)]' : 'border-transparent hover:border-[var(--color-border)]'}`}
-                    title={av.name}
-                  >
-                    <AvatarSVG id={av.id} size={40} />
-                  </button>
-                ))}
+        {/* Interface & Experience */}
+        <div>
+          <p className="text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wide px-1 mb-2">
+            Interface & Experience
+          </p>
+          <SectionCard>
+            {/* Orchard Theme — functional via teen_mode */}
+            <div className="px-4 py-3.5 border-b border-[var(--color-border)]">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3 min-w-0">
+                  <span className="shrink-0 w-8 h-8 rounded-xl flex items-center justify-center bg-[color-mix(in_srgb,var(--brand-primary)_10%,transparent)] text-[var(--brand-primary)]">
+                    <Eye size={15} />
+                  </span>
+                  <div className="min-w-0">
+                    <p className="text-[14px] font-semibold text-[var(--color-text)]">Orchard Theme</p>
+                    <p className="text-[12px] text-[var(--color-text-muted)] mt-0.5 leading-snug">
+                      {isTeen ? 'Professional (data-heavy)' : 'Visual Orchard (metaphorical)'}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  role="switch"
+                  aria-checked={isTeen}
+                  onClick={() => handleTeenModeToggle(activeChild.id)}
+                  disabled={isBusy}
+                  className={cn(
+                    'shrink-0 relative w-11 h-6 rounded-full transition-colors duration-200 cursor-pointer',
+                    'focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)]',
+                    'disabled:opacity-50',
+                    isTeen ? 'bg-[var(--brand-primary)]' : 'bg-[var(--color-border)]',
+                  )}
+                >
+                  <span className={cn(
+                    'absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200',
+                    isTeen ? 'translate-x-5' : 'translate-x-0',
+                  )} />
+                </button>
               </div>
             </div>
-          ))}
-        </div>
-      )}
 
-      {/* Children */}
-      <section className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl overflow-hidden">
-        <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--color-border)]">
-          <p className="text-[13px] font-bold text-[var(--color-text-muted)] uppercase tracking-wide">Children</p>
-          <button
-            onClick={() => setShowAddChild(v => !v)}
-            className="text-[13px] font-semibold text-[var(--brand-primary)] hover:underline cursor-pointer"
-          >
-            + Add child
-          </button>
+            <SettingsRow
+              icon={<TreePine size={15} />}
+              label="Experience Level"
+              description="Seedling View (under 12) or Professional View (12+)"
+              onClick={comingSoon}
+            />
+          </SectionCard>
         </div>
 
-        {children.map(child => {
-          const isTeen = teenModes[child.id] === 1
-          const isBusy = teenModeBusy === child.id
-          return (
-            <div key={child.id} className="px-4 py-3 border-b border-[var(--color-border)] last:border-0">
-              <div className="flex items-center gap-3">
-                <AvatarSVG id={child.avatar_id ?? 'bot'} size={36} />
-                <div className="flex-1 min-w-0">
-                  <p className="text-[14px] font-semibold text-[var(--color-text)]">{child.display_name}</p>
-                  {child.locked_until && child.locked_until > Date.now() / 1000 && (
-                    <p className="text-[12px] text-red-600 font-semibold">Locked</p>
-                  )}
-                </div>
-              </div>
+        {/* Orchard Rules (Individual) */}
+        <div>
+          <p className="text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wide px-1 mb-2">
+            Orchard Rules (Individual)
+          </p>
+          <SectionCard>
+            <SettingsRow
+              icon={<Check size={15} />}
+              label="Approval Mode"
+              description="Parental sign-off or self-reported (trust-based)"
+              onClick={comingSoon}
+            />
+            <SettingsRow
+              icon={<Calendar size={15} />}
+              label="Harvest Status"
+              description="Active or Paused — temporarily stop allowance flow"
+              onClick={comingSoon}
+            />
+            <SettingsRow
+              icon={<Shield size={15} />}
+              label="Safety Net"
+              description={`Overdraft limit for this child — currently £0`}
+              onClick={comingSoon}
+            />
 
-              {/* Growth Path */}
-              <div className="mt-2.5 pl-[52px]">
-                <button
-                  onClick={() => setExpandedGrowth(expandedGrowth === child.id ? null : child.id)}
-                  className="w-full flex items-center justify-between cursor-pointer group"
-                >
-                  <div className="text-left">
-                    <p className="text-[13px] font-semibold text-[var(--color-text)]">Growth Path</p>
+            {/* Growth Path — functional */}
+            <div className="px-4 py-3.5">
+              <button
+                onClick={() => setExpandedGrowth(expandedGrowth === activeChild.id ? null : activeChild.id)}
+                className="w-full flex items-center justify-between cursor-pointer group"
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <span className="shrink-0 w-8 h-8 rounded-xl flex items-center justify-center bg-[color-mix(in_srgb,var(--brand-primary)_10%,transparent)] text-[var(--brand-primary)]">
+                    <span className="text-[15px]">🌳</span>
+                  </span>
+                  <div className="text-left min-w-0">
+                    <p className="text-[14px] font-semibold text-[var(--color-text)]">Growth Path</p>
                     <p className="text-[12px] text-[var(--color-text-muted)] mt-0.5">
                       {(() => {
-                        const g = growthSettings[child.id]
                         const path = GROWTH_PATHS.find(p => p.mode === (g?.earnings_mode ?? 'HYBRID'))
                         return path ? `${path.icon} ${path.subtitle}` : '🌳 Allowance + Chores'
                       })()}
                     </p>
                   </div>
-                  <span className={`text-[var(--color-text-muted)] text-[12px] transition-transform duration-150 ${expandedGrowth === child.id ? 'rotate-180' : ''}`}>▾</span>
-                </button>
+                </div>
+                <span className={cn('text-[var(--color-text-muted)] text-[12px] transition-transform duration-150', expandedGrowth === activeChild.id ? 'rotate-180' : '')}>▾</span>
+              </button>
 
-                {expandedGrowth === child.id && (
-                  <div className="mt-2 space-y-1.5">
-                    {GROWTH_PATHS.map(path => {
-                      const g = growthSettings[child.id]
-                      const active = (g?.earnings_mode ?? 'HYBRID') === path.mode
-                      const busy = growthBusy === child.id
-                      return (
-                        <button
-                          key={path.mode}
-                          disabled={busy}
-                          onClick={() => handleGrowthUpdate(child.id, { earnings_mode: path.mode })}
-                          className={`w-full text-left rounded-xl border px-3 py-2.5 transition-colors cursor-pointer disabled:opacity-50
-                            ${active
-                              ? 'border-[var(--brand-primary)] bg-[color-mix(in_srgb,var(--brand-primary)_8%,transparent)]'
-                              : 'border-[var(--color-border)] hover:bg-[var(--color-surface-alt)]'
-                            }`}
-                        >
-                          <div className="flex items-center gap-2">
-                            <span className="text-[16px]">{path.icon}</span>
-                            <div className="min-w-0">
-                              <p className={`text-[13px] font-semibold ${active ? 'text-[var(--brand-primary)]' : 'text-[var(--color-text)]'}`}>
-                                {path.title}
-                              </p>
-                              <p className="text-[11px] text-[var(--color-text-muted)] leading-snug mt-0.5">{path.description}</p>
-                            </div>
-                            {active && <span className="ml-auto text-[var(--brand-primary)] text-[14px] shrink-0">✓</span>}
+              {expandedGrowth === activeChild.id && (
+                <div className="mt-3 space-y-1.5">
+                  {GROWTH_PATHS.map(path => {
+                    const active = (g?.earnings_mode ?? 'HYBRID') === path.mode
+                    const busy   = growthBusy === activeChild.id
+                    return (
+                      <button
+                        key={path.mode}
+                        disabled={busy}
+                        onClick={() => handleGrowthUpdate(activeChild.id, { earnings_mode: path.mode })}
+                        className={cn(
+                          'w-full text-left rounded-xl border px-3 py-2.5 transition-colors cursor-pointer disabled:opacity-50',
+                          active
+                            ? 'border-[var(--brand-primary)] bg-[color-mix(in_srgb,var(--brand-primary)_8%,transparent)]'
+                            : 'border-[var(--color-border)] hover:bg-[var(--color-surface-alt)]',
+                        )}
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className="text-[16px]">{path.icon}</span>
+                          <div className="min-w-0">
+                            <p className={cn('text-[13px] font-semibold', active ? 'text-[var(--brand-primary)]' : 'text-[var(--color-text)]')}>
+                              {path.title}
+                            </p>
+                            <p className="text-[11px] text-[var(--color-text-muted)] leading-snug mt-0.5">{path.description}</p>
                           </div>
-                        </button>
-                      )
-                    })}
+                          {active && <Check size={14} className="ml-auto text-[var(--brand-primary)] shrink-0" />}
+                        </div>
+                      </button>
+                    )
+                  })}
 
-                    {/* Allowance amount + frequency — only relevant when ALLOWANCE or HYBRID */}
-                    {(growthSettings[child.id]?.earnings_mode ?? 'HYBRID') !== 'CHORES' && (
-                      <div className="mt-2 grid grid-cols-2 gap-2">
-                        <div>
-                          <label className="text-[11px] font-semibold text-[var(--color-text-muted)] uppercase tracking-wide">Amount (pence)</label>
-                          <input
-                            type="number"
-                            min={0}
-                            step={50}
-                            defaultValue={growthSettings[child.id]?.allowance_amount ?? 0}
-                            onBlur={e => {
-                              const val = parseInt(e.target.value, 10)
-                              if (!isNaN(val) && val >= 0) handleGrowthUpdate(child.id, { allowance_amount: val })
-                            }}
-                            className="mt-1 w-full border border-[var(--color-border)] rounded-lg px-2 py-1.5 text-[13px] bg-[var(--color-surface)] text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]"
-                          />
-                          <p className="text-[10px] text-[var(--color-text-muted)] mt-0.5">500 = £5.00</p>
-                        </div>
-                        <div>
-                          <label className="text-[11px] font-semibold text-[var(--color-text-muted)] uppercase tracking-wide">Frequency</label>
-                          <select
-                            value={growthSettings[child.id]?.allowance_frequency ?? 'WEEKLY'}
-                            onChange={e => handleGrowthUpdate(child.id, { allowance_frequency: e.target.value as 'WEEKLY' | 'BI_WEEKLY' | 'MONTHLY' })}
-                            className="mt-1 w-full border border-[var(--color-border)] rounded-lg px-2 py-1.5 text-[13px] bg-[var(--color-surface)] text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] cursor-pointer"
-                          >
-                            {Object.entries(FREQ_LABELS).map(([val, label]) => (
-                              <option key={val} value={val}>{label}</option>
-                            ))}
-                          </select>
-                        </div>
+                  {(g?.earnings_mode ?? 'HYBRID') !== 'CHORES' && (
+                    <div className="mt-2 grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="text-[11px] font-semibold text-[var(--color-text-muted)] uppercase tracking-wide">Amount (pence)</label>
+                        <input
+                          type="number"
+                          min={0}
+                          step={50}
+                          defaultValue={g?.allowance_amount ?? 0}
+                          onBlur={e => {
+                            const val = parseInt(e.target.value, 10)
+                            if (!isNaN(val) && val >= 0) handleGrowthUpdate(activeChild.id, { allowance_amount: val })
+                          }}
+                          className="mt-1 w-full border border-[var(--color-border)] rounded-lg px-2 py-1.5 text-[13px] bg-[var(--color-surface)] text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]"
+                        />
+                        <p className="text-[10px] text-[var(--color-text-muted)] mt-0.5">500 = £5.00</p>
                       </div>
+                      <div>
+                        <label className="text-[11px] font-semibold text-[var(--color-text-muted)] uppercase tracking-wide">Frequency</label>
+                        <select
+                          value={g?.allowance_frequency ?? 'WEEKLY'}
+                          onChange={e => handleGrowthUpdate(activeChild.id, { allowance_frequency: e.target.value as 'WEEKLY' | 'BI_WEEKLY' | 'MONTHLY' })}
+                          className="mt-1 w-full border border-[var(--color-border)] rounded-lg px-2 py-1.5 text-[13px] bg-[var(--color-surface)] text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] cursor-pointer"
+                        >
+                          {Object.entries(FREQ_LABELS).map(([val, label]) => (
+                            <option key={val} value={val}>{label}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </SectionCard>
+        </div>
+
+        {/* Danger Zone — Lead Parent only */}
+        {isLead && (
+          <div>
+            <p className="text-[11px] font-bold text-red-400 uppercase tracking-wide px-1 mb-2">
+              Danger Zone
+            </p>
+            <SectionCard>
+              <SettingsRow
+                icon={<AlertTriangle size={15} />}
+                label="Uproot Profile"
+                description="Permanently delete this child's ledger and data"
+                onClick={comingSoon}
+                destructive
+              />
+            </SectionCard>
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  // ── Section views ───────────────────────────────────────────────────────────
+
+  if (view.type === 'section') {
+
+    // ── 1. Account & Profile ──────────────────────────────────────────────────
+    if (view.section === 'account') {
+      return (
+        <div className="space-y-4">
+          {toast && <Toast message={toast} />}
+          <SectionHeader title="Account & Profile" onBack={() => setView({ type: 'menu' })} />
+
+          {/* Avatar */}
+          <SectionCard>
+            <div className="px-4 py-3.5 flex items-center gap-3">
+              <button
+                onClick={() => setShowAvatarPicker(true)}
+                className="relative cursor-pointer group shrink-0"
+                title="Change avatar"
+              >
+                <AvatarSVG id={myAvatar} size={52} />
+                <span className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/20 rounded-full transition-colors text-white text-[18px] opacity-0 group-hover:opacity-100">✎</span>
+              </button>
+              <div>
+                <p className="text-[14px] font-semibold text-[var(--color-text)]">
+                  {(family.display_name as string) ?? identity?.display_name ?? 'My family'}
+                </p>
+                <button
+                  onClick={() => setShowAvatarPicker(true)}
+                  className="text-[12px] font-semibold text-[var(--brand-primary)] hover:underline cursor-pointer"
+                >
+                  Change avatar
+                </button>
+              </div>
+            </div>
+          </SectionCard>
+
+          {showAvatarPicker && (
+            <SectionCard>
+              <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--color-border)]">
+                <p className="text-[15px] font-bold">Choose avatar</p>
+                <button onClick={() => setShowAvatarPicker(false)} className="text-[var(--color-text-muted)] hover:text-[var(--color-text)] cursor-pointer">
+                  <X size={18} />
+                </button>
+              </div>
+              <div className="p-4 space-y-3">
+                {AVATAR_CATEGORIES.map(cat => (
+                  <div key={cat.id}>
+                    <p className="text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wide mb-1.5">{cat.label}</p>
+                    <div className="flex flex-wrap gap-2">
+                      {AVATARS.filter(av => av.category === cat.id).map(av => (
+                        <button
+                          key={av.id}
+                          onClick={() => handleSetAvatar(av.id)}
+                          disabled={savingAvatar}
+                          className={cn(
+                            'p-1.5 rounded-xl border-2 transition-colors cursor-pointer',
+                            myAvatar === av.id
+                              ? 'border-[var(--brand-primary)] bg-[color-mix(in_srgb,var(--brand-primary)_8%,transparent)]'
+                              : 'border-transparent hover:border-[var(--color-border)]',
+                          )}
+                          title={av.name}
+                        >
+                          <AvatarSVG id={av.id} size={40} />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </SectionCard>
+          )}
+
+          <SectionCard>
+            <SettingsRow
+              icon={<User size={15} />}
+              label="Display Name"
+              description="Update your name as shown in the app"
+              onClick={comingSoon}
+            />
+            <SettingsRow
+              icon={<Shield size={15} />}
+              label="Email Management"
+              description="Update or verify your email address"
+              onClick={comingSoon}
+            />
+          </SectionCard>
+
+          {/* Delete — Lead only */}
+          {isLead && (
+            <div>
+              <p className="text-[11px] font-bold text-red-400 uppercase tracking-wide px-1 mb-2">Danger Zone</p>
+              <SectionCard>
+                <SettingsRow
+                  icon={<AlertTriangle size={15} />}
+                  label="Uproot Orchard"
+                  description="Permanently delete your family account and all data"
+                  onClick={comingSoon}
+                  destructive
+                />
+              </SectionCard>
+            </div>
+          )}
+        </div>
+      )
+    }
+
+    // ── 2. Manage Family ─────────────────────────────────────────────────────
+    if (view.section === 'family') {
+      return (
+        <div className="space-y-4">
+          {toast && <Toast message={toast} />}
+          <SectionHeader title="Manage Family" onBack={() => setView({ type: 'menu' })} />
+
+          {/* Children */}
+          <div>
+            <div className="flex items-center justify-between px-1 mb-2">
+              <p className="text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wide">Children</p>
+              {isLead && (
+                <button
+                  onClick={() => setShowAddChild(v => !v)}
+                  className="text-[12px] font-semibold text-[var(--brand-primary)] hover:underline cursor-pointer"
+                >
+                  + Add child
+                </button>
+              )}
+            </div>
+            <SectionCard>
+              {children.length === 0 && !showAddChild && (
+                <p className="px-4 py-6 text-center text-[14px] text-[var(--color-text-muted)]">No children yet.</p>
+              )}
+              {children.map(child => (
+                <button
+                  key={child.id}
+                  type="button"
+                  onClick={() => setView({ type: 'child', childId: child.id })}
+                  className="w-full flex items-center gap-3 px-4 py-3.5 border-b border-[var(--color-border)] last:border-0 hover:bg-[var(--color-surface-alt)] active:bg-[var(--color-surface-alt)] cursor-pointer transition-colors text-left"
+                >
+                  <AvatarSVG id={child.avatar_id ?? 'bot'} size={36} />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[14px] font-semibold text-[var(--color-text)]">{child.display_name}</p>
+                    {child.locked_until && child.locked_until > Date.now() / 1000 && (
+                      <p className="text-[12px] text-red-600 font-semibold">Locked</p>
                     )}
                   </div>
+                  <ChevronRight size={15} className="shrink-0 text-[var(--color-text-muted)]" />
+                </button>
+              ))}
+
+              {showAddChild && isLead && (
+                <form onSubmit={handleAddChild} className="px-4 py-3 space-y-2.5 border-t border-[var(--color-border)] bg-[var(--color-surface-alt)]">
+                  {addChildResult && (
+                    <div className="bg-[color-mix(in_srgb,var(--brand-primary)_8%,transparent)] border border-[color-mix(in_srgb,var(--brand-primary)_25%,transparent)] rounded-lg p-3">
+                      <p className="text-[13px] font-semibold text-[var(--brand-primary)] mb-1">Child added!</p>
+                      <p className="text-[12px] text-[var(--color-text)]">Share this PIN code with them to log in:</p>
+                      <p className="text-[20px] font-extrabold text-[var(--brand-primary)] tracking-widest mt-1">{addChildResult.invite_code}</p>
+                    </div>
+                  )}
+                  <input
+                    required
+                    className="w-full border border-[var(--color-border)] rounded-lg px-3 py-2 text-[14px] bg-white focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]"
+                    placeholder="Child's name"
+                    value={newChildName}
+                    onChange={e => setNewChildName(e.target.value)}
+                  />
+                  <div className="flex gap-2">
+                    <button type="button" onClick={() => { setShowAddChild(false); setAddChildResult(null) }} className="flex-1 border border-[var(--color-border)] rounded-xl py-2.5 text-[14px] font-semibold text-[var(--color-text-muted)] bg-white cursor-pointer">Cancel</button>
+                    <button type="submit" disabled={addingChild} className="flex-1 bg-[var(--brand-primary)] text-white rounded-xl py-2.5 text-[14px] font-bold hover:opacity-90 disabled:opacity-50 cursor-pointer">
+                      {addingChild ? 'Adding…' : 'Add'}
+                    </button>
+                  </div>
+                </form>
+              )}
+            </SectionCard>
+          </div>
+
+          {/* Co-parenting */}
+          <div>
+            <p className="text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wide px-1 mb-2">Co-parenting</p>
+            <SectionCard>
+              {/* Invite co-parent — functional */}
+              <div className="px-4 py-3.5 border-b border-[var(--color-border)]">
+                <p className="text-[14px] font-semibold text-[var(--color-text)] mb-2">Invite a Co-Parent</p>
+                {inviteCode ? (
+                  <div className="space-y-1">
+                    <p className="text-[13px] text-[var(--color-text-muted)]">Share this code (expires {inviteExpiry}):</p>
+                    <p className="text-[22px] font-extrabold tracking-widest text-[var(--color-text)]">{inviteCode}</p>
+                    <button onClick={() => setInviteCode(null)} className="text-[12px] text-[var(--color-text-muted)] hover:underline cursor-pointer">Clear</button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={handleGenerateInvite}
+                    disabled={genningInvite}
+                    className="w-full border border-[var(--color-border)] rounded-xl py-2.5 text-[14px] font-semibold text-[var(--color-text-muted)] hover:bg-[var(--color-surface-alt)] disabled:opacity-50 cursor-pointer"
+                  >
+                    {genningInvite ? 'Generating…' : 'Generate invite code'}
+                  </button>
                 )}
               </div>
 
-              {/* Mature View toggle */}
-              <div className="mt-2.5 flex items-start justify-between gap-3 pl-[52px]">
-                <div className="min-w-0">
-                  <p className="text-[13px] font-semibold text-[var(--color-text)]">Mature View (Ages 13+)</p>
-                  <p className="text-[12px] text-[var(--color-text-muted)] mt-0.5 leading-snug">
-                    Switches the dashboard to a minimalist, professional fintech layout.
-                  </p>
-                </div>
-                <button
-                  role="switch"
-                  aria-checked={isTeen}
-                  onClick={() => handleTeenModeToggle(child.id)}
-                  disabled={isBusy}
-                  className={`
-                    shrink-0 relative w-11 h-6 rounded-full transition-colors duration-200 cursor-pointer
-                    focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)]
-                    disabled:opacity-50
-                    ${isTeen ? 'bg-[var(--brand-primary)]' : 'bg-[var(--color-border)]'}
-                  `}
-                >
-                  <span className={`
-                    absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200
-                    ${isTeen ? 'translate-x-5' : 'translate-x-0'}
-                  `} />
-                </button>
-              </div>
-            </div>
-          )
-        })}
-
-        {children.length === 0 && !showAddChild && (
-          <div className="px-4 py-6 text-center text-[14px] text-[var(--color-text-muted)]">No children yet.</div>
-        )}
-
-        {showAddChild && (
-          <form onSubmit={handleAddChild} className="px-4 py-3 space-y-2.5 border-t border-[var(--color-border)] bg-[var(--color-surface-alt)]">
-            {addChildResult && (
-              <div className="bg-[color-mix(in_srgb,var(--brand-primary)_8%,transparent)] border border-[color-mix(in_srgb,var(--brand-primary)_25%,transparent)] rounded-lg p-3">
-                <p className="text-[13px] font-semibold text-[var(--brand-primary)] mb-1">Child added!</p>
-                <p className="text-[12px] text-[var(--color-text)]">Share this PIN code with them to log in:</p>
-                <p className="text-[20px] font-extrabold text-[var(--brand-primary)] tracking-widest mt-1">{addChildResult.invite_code}</p>
-              </div>
-            )}
-            <input
-              required
-              className="w-full border border-[var(--color-border)] rounded-lg px-3 py-2 text-[14px] bg-white focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]"
-              placeholder="Child's name"
-              value={newChildName}
-              onChange={e => setNewChildName(e.target.value)}
-            />
-            <div className="flex gap-2">
-              <button type="button" onClick={() => { setShowAddChild(false); setAddChildResult(null) }} className="flex-1 border border-[var(--color-border)] rounded-xl py-2.5 text-[14px] font-semibold text-[var(--color-text-muted)] bg-white cursor-pointer">Cancel</button>
-              <button type="submit" disabled={addingChild} className="flex-1 bg-[var(--brand-primary)] text-white rounded-xl py-2.5 text-[14px] font-bold hover:opacity-90 disabled:opacity-50 cursor-pointer">
-                {addingChild ? 'Adding…' : 'Add'}
-              </button>
-            </div>
-          </form>
-        )}
-      </section>
-
-      {/* Co-parent invite */}
-      <section className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl p-4">
-        <p className="text-[13px] font-bold text-[var(--color-text-muted)] uppercase tracking-wide mb-2">Invite co-parent</p>
-        {inviteCode ? (
-          <div className="space-y-1">
-            <p className="text-[13px] text-[var(--color-text-muted)]">Share this code (expires {inviteExpiry}):</p>
-            <p className="text-[22px] font-extrabold tracking-widest text-[var(--color-text)]">{inviteCode}</p>
-            <button onClick={() => setInviteCode(null)} className="text-[12px] text-[var(--color-text-muted)] hover:underline cursor-pointer">Clear</button>
+              {/* Remove co-parent — Lead only */}
+              {isLead && (
+                <SettingsRow
+                  icon={<Users size={15} />}
+                  label="Remove Co-Parent"
+                  description="Revoke access for the secondary manager"
+                  onClick={comingSoon}
+                  destructive
+                />
+              )}
+            </SectionCard>
           </div>
-        ) : (
-          <button
-            onClick={handleGenerateInvite}
-            disabled={genningInvite}
-            className="w-full border border-[var(--color-border)] rounded-xl py-2.5 text-[14px] font-semibold text-[var(--color-text-muted)] hover:bg-[var(--color-surface-alt)] disabled:opacity-50 cursor-pointer"
-          >
-            {genningInvite ? 'Generating…' : 'Generate invite code'}
-          </button>
-        )}
-      </section>
 
-      {/* Display mode */}
-      <section className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl p-4">
-        <ThemePicker />
-      </section>
+          {/* Global Orchard Rules */}
+          <div>
+            <div className="flex items-center gap-2 px-1 mb-2">
+              <p className="text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wide">Global Orchard Rules</p>
+              {!isLead && <ReadOnlyBadge />}
+            </div>
+            <SectionCard>
+              <SettingsRow
+                icon={<Calendar size={15} />}
+                label="Harvest Day"
+                description="Weekly day for automated allowance drops"
+                onClick={comingSoon}
+                disabled={!isLead}
+                badge={!isLead ? undefined : undefined}
+              />
+              <SettingsRow
+                icon={<Shield size={15} />}
+                label="Global Overdraft Policy"
+                description="Toggle bailouts — default: off / £0"
+                onClick={comingSoon}
+                disabled={!isLead}
+              />
+            </SectionCard>
+          </div>
+        </div>
+      )
+    }
+
+    // ── 3. Security & Access ─────────────────────────────────────────────────
+    if (view.section === 'security') {
+      return (
+        <div className="space-y-4">
+          {toast && <Toast message={toast} />}
+          <SectionHeader title="Security & Access" onBack={() => setView({ type: 'menu' })} />
+          <SectionCard>
+            <SettingsRow
+              icon={<Lock size={15} />}
+              label="PIN Management"
+              description="Reset your 6-digit parent PIN"
+              onClick={comingSoon}
+            />
+            <SettingsRow
+              icon={<Eye size={15} />}
+              label="Active Sessions"
+              description="View and log out of all devices accessing the Family Orchard"
+              onClick={comingSoon}
+            />
+          </SectionCard>
+        </div>
+      )
+    }
+
+    // ── 4. Appearance & Display ──────────────────────────────────────────────
+    if (view.section === 'appearance') {
+      return (
+        <div className="space-y-4">
+          {toast && <Toast message={toast} />}
+          <SectionHeader title="Appearance & Display" onBack={() => setView({ type: 'menu' })} />
+          <SectionCard>
+            <div className="px-4 py-3.5 border-b border-[var(--color-border)]">
+              <ThemePicker />
+            </div>
+            <SettingsRow
+              icon={<Info size={15} />}
+              label="Language"
+              description="UK English / Polish"
+              onClick={comingSoon}
+            />
+          </SectionCard>
+        </div>
+      )
+    }
+
+    // ── 5. Billing & Subscriptions ───────────────────────────────────────────
+    if (view.section === 'billing') {
+      return (
+        <div className="space-y-4">
+          {toast && <Toast message={toast} />}
+          <SectionHeader title="Billing & Subscriptions" onBack={() => setView({ type: 'menu' })} />
+          <SectionCard>
+            <SettingsRow
+              icon={<CreditCard size={15} />}
+              label="Trial Status"
+              description="Visual tracker for the 14-day Professional trial"
+              onClick={comingSoon}
+            />
+            <SettingsRow
+              icon={<CreditCard size={15} />}
+              label="Plan Management"
+              description="Upgrade, downgrade or cancel subscription"
+              onClick={comingSoon}
+            />
+            <SettingsRow
+              icon={<CreditCard size={15} />}
+              label="Payment History"
+              description="View past invoices for Seedling or Professional tiers"
+              onClick={comingSoon}
+            />
+          </SectionCard>
+        </div>
+      )
+    }
+
+    // ── 6. Data & Exports ────────────────────────────────────────────────────
+    if (view.section === 'data') {
+      return (
+        <div className="space-y-4">
+          {toast && <Toast message={toast} />}
+          <SectionHeader title="Data & Exports" onBack={() => setView({ type: 'menu' })} />
+          <SectionCard>
+            <SettingsRow
+              icon={<Database size={15} />}
+              label="Download Ledger"
+              description="Full family transaction history (CSV / PDF)"
+              onClick={comingSoon}
+            />
+            {/* Data Pruning — Lead only */}
+            {isLead && (
+              <SettingsRow
+                icon={<AlertTriangle size={15} />}
+                label="Data Pruning"
+                description="Clean up records older than 2 years (immutable ledger protection)"
+                onClick={comingSoon}
+                destructive
+              />
+            )}
+          </SectionCard>
+        </div>
+      )
+    }
+
+    // ── 7. Referrals ─────────────────────────────────────────────────────────
+    if (view.section === 'referrals') {
+      return (
+        <div className="space-y-4">
+          {toast && <Toast message={toast} />}
+          <SectionHeader title="Referrals" onBack={() => setView({ type: 'menu' })} />
+          <SectionCard>
+            <SettingsRow
+              icon={<Gift size={15} />}
+              label="Share the Grove"
+              description="Generate a unique referral link or discount code for other families"
+              onClick={comingSoon}
+            />
+          </SectionCard>
+        </div>
+      )
+    }
+
+    // ── 8. About & Support ───────────────────────────────────────────────────
+    if (view.section === 'about') {
+      return (
+        <div className="space-y-4">
+          {toast && <Toast message={toast} />}
+          <SectionHeader title="About & Support" onBack={() => setView({ type: 'menu' })} />
+          <SectionCard>
+            <div className="px-4 py-3.5 border-b border-[var(--color-border)]">
+              <p className="text-[13px] font-semibold text-[var(--color-text-muted)]">Version</p>
+              <p className="text-[14px] font-bold text-[var(--color-text)] mt-0.5">
+                {__APP_VERSION__ ?? '—'}
+              </p>
+            </div>
+            <SettingsRow
+              icon={<Info size={15} />}
+              label="Privacy Policy"
+              description="How we handle your family's data"
+              onClick={comingSoon}
+            />
+            <SettingsRow
+              icon={<Info size={15} />}
+              label="Terms of Use"
+              description="The Legal Grove"
+              onClick={comingSoon}
+            />
+            <SettingsRow
+              icon={<Info size={15} />}
+              label="Support Desk"
+              description="Get help with Morechard"
+              onClick={comingSoon}
+            />
+          </SectionCard>
+        </div>
+      )
+    }
+  }
+
+  // ── Top-level menu ──────────────────────────────────────────────────────────
+
+  const MENU_SECTIONS: {
+    id:          TopSection
+    icon:        React.ReactNode
+    label:       string
+    description: string
+    leadOnly?:   boolean
+  }[] = [
+    {
+      id:          'account',
+      icon:        <User size={17} />,
+      label:       'Account & Profile',
+      description: 'Name, email, avatar',
+    },
+    {
+      id:          'family',
+      icon:        <Users size={17} />,
+      label:       'Manage Family',
+      description: 'Children, co-parenting, global rules',
+    },
+    {
+      id:          'security',
+      icon:        <Shield size={17} />,
+      label:       'Security & Access',
+      description: 'PIN, active sessions',
+    },
+    {
+      id:          'appearance',
+      icon:        <Palette size={17} />,
+      label:       'Appearance & Display',
+      description: 'Theme, language',
+    },
+    {
+      id:          'billing',
+      icon:        <CreditCard size={17} />,
+      label:       'Billing & Subscriptions',
+      description: 'Trial, plan, invoices',
+      leadOnly:    true,
+    },
+    {
+      id:          'data',
+      icon:        <Database size={17} />,
+      label:       'Data & Exports',
+      description: 'Download ledger, data pruning',
+    },
+    {
+      id:          'referrals',
+      icon:        <Gift size={17} />,
+      label:       'Referrals',
+      description: 'Share the Grove',
+    },
+    {
+      id:          'about',
+      icon:        <Info size={17} />,
+      label:       'About & Support',
+      description: 'Version, legal, support',
+    },
+  ]
+
+  return (
+    <div className="space-y-4">
+      {toast && <Toast message={toast} />}
+
+      {/* Role badge */}
+      <div className={cn(
+        'flex items-center gap-2 px-3 py-2 rounded-xl text-[12px] font-semibold',
+        isLead
+          ? 'bg-teal-50 text-teal-700 border border-teal-200'
+          : 'bg-amber-50 text-amber-700 border border-amber-200',
+      )}>
+        <TreePine size={13} />
+        {isLead ? 'Orchard Lead — full access' : 'Co-Parent — some options are restricted'}
+      </div>
+
+      {/* Main menu */}
+      <SectionCard>
+        {MENU_SECTIONS
+          .filter(s => !s.leadOnly || isLead)
+          .map(s => (
+            <button
+              key={s.id}
+              type="button"
+              onClick={() => setView({ type: 'section', section: s.id })}
+              className="w-full flex items-center gap-3 px-4 py-3.5 border-b border-[var(--color-border)] last:border-0 hover:bg-[var(--color-surface-alt)] active:bg-[var(--color-surface-alt)] cursor-pointer transition-colors text-left"
+            >
+              <span className="shrink-0 w-9 h-9 rounded-xl flex items-center justify-center bg-[color-mix(in_srgb,var(--brand-primary)_10%,transparent)] text-[var(--brand-primary)]">
+                {s.icon}
+              </span>
+              <div className="flex-1 min-w-0">
+                <p className="text-[14px] font-semibold text-[var(--color-text)]">{s.label}</p>
+                <p className="text-[12px] text-[var(--color-text-muted)] mt-0.5">{s.description}</p>
+              </div>
+              <ChevronRight size={15} className="shrink-0 text-[var(--color-text-muted)]" />
+            </button>
+          ))
+        }
+      </SectionCard>
 
       {/* Log out */}
-      <section className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl p-4">
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <p className="text-[14px] font-semibold text-[var(--color-text)]">Log out</p>
-            <p className="text-[12px] text-[var(--color-text-muted)] mt-0.5 leading-snug">
-              Your family's data stays safe. You'll need to log back in to use the app on this phone.
-            </p>
+      <SectionCard>
+        <button
+          type="button"
+          onClick={() => {
+            if (!window.confirm("Log out? Your family's data stays safe.")) return
+            clearDeviceIdentity()
+            window.location.href = '/'
+          }}
+          className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-red-50 active:bg-red-50 cursor-pointer transition-colors text-left rounded-xl"
+        >
+          <span className="shrink-0 w-9 h-9 rounded-xl flex items-center justify-center bg-red-50 text-red-500">
+            <LogOut size={17} />
+          </span>
+          <div className="flex-1 min-w-0">
+            <p className="text-[14px] font-semibold text-red-600">Log out</p>
+            <p className="text-[12px] text-[var(--color-text-muted)] mt-0.5">Your family's data stays safe</p>
           </div>
-          <button
-            onClick={() => {
-              if (!window.confirm('Log out? Your family\'s data stays safe.')) return
-              clearDeviceIdentity()
-              window.location.href = '/'
-            }}
-            className="shrink-0 px-4 py-2 rounded-xl border-2 border-[var(--color-border)] text-[var(--color-text-muted)] text-[13px] font-semibold hover:bg-[var(--color-surface-alt)] active:scale-[0.98] transition-all cursor-pointer"
-          >
-            Log out
-          </button>
-        </div>
-      </section>
+        </button>
+      </SectionCard>
     </div>
   )
 }
+
+// Version injected at build time by Vite define
+declare const __APP_VERSION__: string | undefined

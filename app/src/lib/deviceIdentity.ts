@@ -10,17 +10,26 @@
 
 export type DeviceRole = 'parent' | 'child'
 
+/**
+ * Parenting role — only set for parent devices.
+ * LEAD_PARENT: the account creator; has full access including billing & deletion.
+ * CO_PARENT: joined via invite; restricted access (read-only rules, no billing).
+ */
+export type ParentingRole = 'LEAD_PARENT' | 'CO_PARENT'
+
 export interface DeviceIdentity {
-  user_id:       string
-  family_id:     string
-  display_name:  string
-  role:          DeviceRole
-  initials:      string
-  registered_at: string
+  user_id:        string
+  family_id:      string
+  display_name:   string
+  role:           DeviceRole
+  /** Distinguishes the account creator from a co-parent. Only set when role === 'parent'. */
+  parenting_role?: ParentingRole
+  initials:       string
+  registered_at:  string
   /** How this device is locked: biometrics, pin, or none (skipped) */
-  auth_method:   'biometrics' | 'pin' | 'none'
+  auth_method:    'biometrics' | 'pin' | 'none'
   /** 4-digit PIN — only set when auth_method === 'pin' */
-  pin?:          string
+  pin?:           string
 }
 
 const STORAGE_KEY = 'mc_device_identity'

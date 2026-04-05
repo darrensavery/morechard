@@ -231,14 +231,15 @@ export function JoinFamilyScreen() {
     const role = redeemedData.role === 'co-parent' ? 'parent' as const : 'child' as const
 
     setDeviceIdentity({
-      user_id:       redeemedData.user_id,
-      family_id:     redeemedData.family_id,
-      display_name:  name,
+      user_id:        redeemedData.user_id,
+      family_id:      redeemedData.family_id,
+      display_name:   name,
       role,
-      initials:      toInitials(name),
-      registered_at: new Date().toISOString(),
-      auth_method:   authMethod,
-      pin:           pinValue ?? undefined,
+      parenting_role: redeemedData.role === 'co-parent' ? 'CO_PARENT' : undefined,
+      initials:       toInitials(name),
+      registered_at:  new Date().toISOString(),
+      auth_method:    authMethod,
+      pin:            pinValue ?? undefined,
     })
 
     Sentry.setUser({ id: redeemedData.user_id })
