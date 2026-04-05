@@ -260,18 +260,52 @@ export async function handleAddChild(request: Request, env: Env): Promise<Respon
     `).bind(code, caller.family_id, caller.sub, expiresAt),
   ];
 
-  // If a non-zero opening balance is provided, record it as an immutable ledger entry
-  if (opening_balance_pence > 0) {
-    const entryId = nanoid();
-    stmts.push(
-      env.DB.prepare(`
-        INSERT INTO ledger (id, family_id, child_id, amount_pence, currency, type, description, created_at)
-        VALUES (?, ?, ?, ?, (SELECT base_currency FROM families WHERE id = ?), 'opening_balance', 'Opening balance', ?)
-      `).bind(entryId, caller.family_id, childId, opening_balance_pence, caller.family_id, now),
-    );
-  }
-
   await env.DB.batch(stmts);
+
+  // If a non-zero opening balance is provided, record it as an immutable ledger entry.
+  // Done after the batch so the child row exists before the FK reference.
+  if (opening_balance_pence > 0) {
+    const { computeRecordHash, GENESIS_HASH } = await import('../lib/hash.js');
+
+    const family = await env.DB
+      .prepare('SELECT base_currency, verify_mode FROM families WHERE id = ?')
+      .bind(caller.family_id)
+      .first<{ base_currency: string; verify_mode: string }>();
+
+    const currency           = family?.base_currency ?? 'GBP';
+    const verificationStatus = family?.verify_mode === 'standard' ? 'verified_manual' : 'verified_auto';
+    const ip                 = clientIp(request);
+
+    const prevRow = await env.DB
+      .prepare('SELECT id, record_hash FROM ledger WHERE family_id = ? ORDER BY id DESC LIMIT 1')
+      .bind(caller.family_id)
+      .first<{ id: number; record_hash: string }>();
+
+    const previousHash = prevRow?.record_hash ?? GENESIS_HASH;
+
+    const maxRow = await env.DB
+      .prepare('SELECT COALESCE(MAX(id), 0) AS max_id FROM ledger WHERE family_id = ?')
+      .bind(caller.family_id)
+      .first<{ max_id: number }>();
+
+    const newId = (maxRow?.max_id ?? 0) + 1;
+
+    const recordHash = await computeRecordHash(
+      newId, caller.family_id, childId,
+      opening_balance_pence, currency, 'credit', previousHash,
+    );
+
+    await env.DB.prepare(`
+      INSERT INTO ledger
+        (id, family_id, child_id, entry_type, amount, currency,
+         description, verification_status, previous_hash, record_hash, ip_address)
+      VALUES (?, ?, ?, 'credit', ?, ?, 'Opening balance', ?, ?, ?, ?)
+    `).bind(
+      newId, caller.family_id, childId,
+      opening_balance_pence, currency,
+      verificationStatus, previousHash, recordHash, ip,
+    ).run();
+  }
 
   return json({ child_id: childId, invite_code: code, expires_at: expiresAt }, 201);
 }
