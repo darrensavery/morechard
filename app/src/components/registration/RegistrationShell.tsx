@@ -257,39 +257,39 @@ function CheckEmailScreen({ email, onResend }: { email: string; onResend: () => 
   return (
     <div className="space-y-6 text-center">
       <div className="flex flex-col items-center gap-3">
-        <div className="rounded-full bg-primary/10 p-5">
-          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="text-primary">
+        <div className="rounded-full bg-teal-50 p-5">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="text-teal-600">
             <rect x="2" y="4" width="20" height="16" rx="2"/>
             <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
           </svg>
         </div>
         <div>
-          <h2 className="text-2xl font-bold tracking-tight">Check your email</h2>
-          <p className="text-muted-foreground text-sm mt-1 leading-relaxed max-w-xs mx-auto">
-            We've sent a magic link to <strong className="text-foreground">{email}</strong>.
+          <h2 className="text-2xl font-bold tracking-tight text-gray-900">Check your email</h2>
+          <p className="text-gray-500 text-sm mt-1 leading-relaxed max-w-xs mx-auto">
+            We've sent a magic link to <strong className="text-gray-900">{email}</strong>.
             Click the link to verify your account and continue setup.
           </p>
         </div>
       </div>
 
-      <div className="rounded-2xl border bg-muted/40 px-5 py-4 text-left space-y-2">
-        <p className="text-sm font-semibold text-foreground">What to expect:</p>
-        <ul className="text-sm text-muted-foreground space-y-1.5">
-          <li className="flex items-start gap-2"><span className="text-primary mt-0.5">✓</span> An email from Morechard with a secure link</li>
-          <li className="flex items-start gap-2"><span className="text-primary mt-0.5">✓</span> The link is valid for 15 minutes</li>
-          <li className="flex items-start gap-2"><span className="text-primary mt-0.5">✓</span> Clicking it will bring you back here to finish setup</li>
+      <div className="rounded-2xl border border-gray-200 bg-gray-50 px-5 py-4 text-left space-y-2">
+        <p className="text-sm font-semibold text-gray-800">What to expect:</p>
+        <ul className="text-sm text-gray-500 space-y-1.5">
+          <li className="flex items-start gap-2"><span className="text-teal-600 mt-0.5">✓</span> An email from Morechard with a secure link</li>
+          <li className="flex items-start gap-2"><span className="text-teal-600 mt-0.5">✓</span> The link is valid for 15 minutes</li>
+          <li className="flex items-start gap-2"><span className="text-teal-600 mt-0.5">✓</span> Clicking it will bring you back here to finish setup</li>
         </ul>
       </div>
 
-      <p className="text-sm text-muted-foreground">
+      <p className="text-sm text-gray-500">
         Didn't receive it? Check your spam folder, or{' '}
         {resent ? (
-          <span className="text-primary font-semibold">link resent!</span>
+          <span className="text-teal-600 font-semibold">link resent!</span>
         ) : (
           <button
             onClick={handleResend}
             disabled={resending}
-            className="text-primary font-semibold underline underline-offset-2 hover:opacity-80 disabled:opacity-50"
+            className="text-teal-600 font-semibold underline underline-offset-2 hover:opacity-80 disabled:opacity-50"
           >
             {resending ? 'Sending…' : 'resend the link'}
           </button>
