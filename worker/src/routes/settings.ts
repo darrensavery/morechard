@@ -292,6 +292,72 @@ export async function handleParentMessageGet(request: Request, env: Env): Promis
   return json({ messages: msg.results });
 }
 
+// ----------------------------------------------------------------
+// GET  /api/child-growth/:child_id   — parent reads a child's earnings config
+// PATCH /api/child-growth/:child_id  — parent updates earnings config
+// Body: { earnings_mode?, allowance_amount?, allowance_frequency? }
+// ----------------------------------------------------------------
+export async function handleChildGrowthGet(
+  request: Request, env: Env, childId: string,
+): Promise<Response> {
+  const auth = (request as AuthedRequest).auth;
+  if (auth.role !== 'parent') return error('Only parents can read child growth settings', 403);
+
+  const child = await env.DB.prepare(`
+    SELECT u.id, u.display_name, u.earnings_mode, u.allowance_amount, u.allowance_frequency
+    FROM users u JOIN family_roles fr ON fr.user_id = u.id
+    WHERE u.id = ? AND fr.family_id = ? AND fr.role = 'child'
+  `).bind(childId, auth.family_id).first();
+  if (!child) return error('Child not found', 404);
+
+  return json(child);
+}
+
+export async function handleChildGrowthUpdate(
+  request: Request, env: Env, childId: string,
+): Promise<Response> {
+  const auth = (request as AuthedRequest).auth;
+  if (auth.role !== 'parent') return error('Only parents can update child growth settings', 403);
+
+  const body = await parseBody(request);
+  if (!body) return error('Invalid JSON');
+
+  // Verify child belongs to this family
+  const child = await env.DB.prepare(`
+    SELECT u.id FROM users u JOIN family_roles fr ON fr.user_id = u.id
+    WHERE u.id = ? AND fr.family_id = ? AND fr.role = 'child'
+  `).bind(childId, auth.family_id).first();
+  if (!child) return error('Child not found', 404);
+
+  const VALID_MODES  = ['ALLOWANCE', 'CHORES', 'HYBRID'];
+  const VALID_FREQS  = ['WEEKLY', 'BI_WEEKLY', 'MONTHLY'];
+
+  const updates: string[] = [];
+  const values: unknown[] = [];
+
+  if ('earnings_mode' in body) {
+    if (!VALID_MODES.includes(body.earnings_mode as string)) return error('Invalid earnings_mode');
+    updates.push('earnings_mode = ?'); values.push(body.earnings_mode);
+  }
+  if ('allowance_amount' in body) {
+    if (!Number.isInteger(body.allowance_amount) || (body.allowance_amount as number) < 0)
+      return error('allowance_amount must be a non-negative integer');
+    updates.push('allowance_amount = ?'); values.push(body.allowance_amount);
+  }
+  if ('allowance_frequency' in body) {
+    if (!VALID_FREQS.includes(body.allowance_frequency as string)) return error('Invalid allowance_frequency');
+    updates.push('allowance_frequency = ?'); values.push(body.allowance_frequency);
+  }
+
+  if (updates.length === 0) return error('No valid fields to update');
+  values.push(childId);
+
+  await env.DB.prepare(`UPDATE users SET ${updates.join(', ')} WHERE id = ?`)
+    .bind(...values).run();
+
+  return json({ ok: true });
+}
+
 // Returns the user_id to act on.
 // - No query param → caller's own ID.
 // - user_id param present → only allowed if caller is a parent.

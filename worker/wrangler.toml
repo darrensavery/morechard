@@ -20,6 +20,12 @@ FIREBASE_PROJECT_ID = "pocket-money-85878"
 # Do NOT put real values here. This file is committed to git.
 # For local dev, add to .dev.vars (see .dev.vars.example)
 
+# ── Cron triggers ────────────────────────────────────────────────────────────
+# Payday sweep: every Saturday at 08:00 UTC
+# Governance expiry also runs in the same scheduled() handler.
+[triggers]
+crons = ["0 8 * * 6"]
+
 # ── Production environment ────────────────────────────────────────────────────
 # Deploy with: wrangler deploy --env production
 [env.production]

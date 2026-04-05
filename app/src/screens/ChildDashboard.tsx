@@ -245,196 +245,57 @@ export function ChildDashboard() {
       <main className="flex-1 max-w-[560px] mx-auto w-full px-3.5 py-4 flex flex-col gap-4">
         {loading ? (
           <div className="py-16 text-center text-[14px] text-[var(--color-text-muted)]">Loading…</div>
+        ) : tone.isChild ? (
+          /* ═══════════════════════════════════════════════════════════
+             ORCHARD VIEW — card-based, metaphorical, playful
+             ══════════════════════════════════════════════════════════ */
+          <OrchardView
+            balance={balance}
+            chores={chores}
+            pending={pending}
+            goals={goals}
+            tone={tone}
+            activeDay={activeDay}
+            setActiveDay={setActiveDay}
+            grovePlans={grovePlans}
+            dayChores={dayChores}
+            unplannedChores={unplannedChores}
+            activeTopGoal={activeTopGoal}
+            goalBarPct={goalBarPct}
+            submitted={submitted}
+            submitting={submitting}
+            noteChore={noteChore}
+            noteText={noteText}
+            submitErr={submitErr}
+            cardClass={cardClass}
+            isPlanted={isPlanted}
+            togglePlant={togglePlant}
+            handleDone={handleDone}
+            setNoteChore={setNoteChore}
+            setNoteText={setNoteText}
+          />
         ) : (
-          <>
-            {/* ── Balance card ────────────────────────────────────────── */}
-            <div className={`${tone.isChild ? 'rounded-2xl shadow-sm' : 'rounded-xl'} bg-[var(--color-surface)] border-t-[3px] border-t-[var(--brand-primary)] border border-[var(--color-border)] p-4`}>
-              <div className="text-[12px] font-semibold text-[var(--color-text-muted)] uppercase tracking-wider mb-1">{tone.balance}</div>
-              <div className="text-[46px] font-extrabold text-[var(--color-text)] leading-none tracking-tight tabular-nums">
-                {balance ? formatCurrency(balance.available, 'GBP') : '£—'}
-              </div>
-              <div className="flex gap-4 mt-2">
-                <span className="text-[13px] text-[var(--color-text-muted)]">
-                  Earned: <strong className="text-[var(--color-text)] tabular-nums">
-                    {balance ? formatCurrency(balance.earned, 'GBP') : '—'}
-                  </strong>
-                </span>
-                {(balance?.pending ?? 0) > 0 && (
-                  <span className="text-[13px] text-[var(--color-text-muted)]">
-                    Pending approval: <strong className="text-amber-500 tabular-nums">
-                      {formatCurrency(balance!.pending, 'GBP')}
-                    </strong>
-                  </span>
-                )}
-              </div>
-            </div>
-
-            {/* ── Pending approvals nudge ─────────────────────────────── */}
-            {pending.length > 0 && (
-              <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 flex items-center gap-3">
-                {tone.isChild && <span className="text-[20px]">⏳</span>}
-                <p className="text-[13px] text-amber-800 font-semibold">
-                  {pending.length === 1
-                    ? `1 ${tone.isChild ? 'job' : 'task'} is waiting for your parent to check`
-                    : `${pending.length} ${tone.isChild ? 'jobs' : 'tasks'} are waiting for your parent to check`}
-                </p>
-              </div>
-            )}
-
-            {/* ── Weekly tracker ──────────────────────────────────────── */}
-            <div className={cardClass}>
-              <div className="px-4 pt-4 pb-1">
-                <h2 className="text-[15px] font-bold text-[var(--color-text)]">{tone.weekSection}</h2>
-                <p className="text-[12px] text-[var(--color-text-muted)] mt-0.5">{tone.weekSubtitle}</p>
-              </div>
-
-              {/* Day strip */}
-              <div className="flex gap-1.5 px-4 pb-3 mt-2 overflow-x-auto scrollbar-hide">
-                {DAYS.map((day, i) => {
-                  const dayNum = i + 1
-                  const isToday = activeDay === dayNum
-                  const hasChores = chores.some(c => effectiveDays(c, grovePlans).includes(dayNum))
-                  return (
-                    <button
-                      key={day}
-                      onClick={() => setActiveDay(dayNum)}
-                      className={`
-                        shrink-0 flex flex-col items-center ${tone.isChild ? 'rounded-xl' : 'rounded-lg'} px-2.5 py-2 min-w-[44px]
-                        transition-colors duration-100 cursor-pointer
-                        ${isToday
-                          ? 'bg-[var(--brand-primary)] text-white'
-                          : 'bg-[var(--color-surface-alt)] text-[var(--color-text-muted)] hover:bg-[var(--color-border)]'}
-                      `}
-                    >
-                      <span className="text-[11px] font-semibold">{day}</span>
-                      <span className={`mt-1.5 rounded-full w-1.5 h-1.5 ${
-                        hasChores
-                          ? isToday ? 'bg-white/50' : 'bg-[var(--brand-primary)]'
-                          : 'bg-transparent'
-                      }`} />
-                    </button>
-                  )
-                })}
-              </div>
-
-              {/* Chores for selected day */}
-              <div className="border-t border-[var(--color-border)] divide-y divide-[var(--color-border)]">
-                {dayChores.length === 0 ? (
-                  <p className="px-4 py-5 text-[13px] text-[var(--color-text-muted)] text-center">
-                    {tone.nothingToday} {DAYS[activeDay - 1]} yet
-                  </p>
-                ) : (
-                  dayChores.map(chore => (
-                    <ChoreRow
-                      key={chore.id}
-                      chore={chore}
-                      tone={tone}
-                      submitted={submitted.has(chore.id)}
-                      submitting={submitting === chore.id}
-                      noteOpen={noteChore === chore.id}
-                      noteText={noteChore === chore.id ? noteText : ''}
-                      submitErr={submitErr}
-                      onDone={() => {
-                        if (chore.description) {
-                          setNoteChore(chore.id)
-                        } else {
-                          handleDone(chore.id)
-                        }
-                      }}
-                      onNoteChange={setNoteText}
-                      onNoteSubmit={() => handleDone(chore.id, noteText || undefined)}
-                      onNoteCancel={() => { setNoteChore(null); setNoteText('') }}
-                      showPlantButton={false}
-                      planted={true}
-                    />
-                  ))
-                )}
-              </div>
-            </div>
-
-            {/* ── All tasks ───────────────────────────────────────────── */}
-            {chores.length > 0 && (
-              <div className={cardClass}>
-                <div className="px-4 py-3 border-b border-[var(--color-border)]">
-                  <h2 className="text-[15px] font-bold text-[var(--color-text)]">{tone.allChores}</h2>
-                </div>
-                <div className="divide-y divide-[var(--color-border)]">
-                  {chores.map(chore => (
-                    <ChoreRow
-                      key={chore.id}
-                      chore={chore}
-                      tone={tone}
-                      submitted={submitted.has(chore.id)}
-                      submitting={submitting === chore.id}
-                      noteOpen={noteChore === chore.id}
-                      noteText={noteChore === chore.id ? noteText : ''}
-                      submitErr={submitErr}
-                      onDone={() => {
-                        setNoteChore(chore.id)
-                        setNoteText('')
-                      }}
-                      onNoteChange={setNoteText}
-                      onNoteSubmit={() => handleDone(chore.id, noteText || undefined)}
-                      onNoteCancel={() => { setNoteChore(null); setNoteText('') }}
-                      showPlantButton={!isAutoPlant(chore.frequency) && weeklyDayFromChore(chore) === null}
-                      planted={isPlanted(chore)}
-                      onTogglePlant={() => togglePlant(chore, activeDay)}
-                    />
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {chores.length === 0 && (
-              <div className={`${tone.isChild ? 'rounded-2xl shadow-sm' : 'rounded-xl'} bg-[var(--color-surface)] border border-[var(--color-border)] p-8 text-center`}>
-                {tone.isChild && <p className="text-[28px] mb-2">🌱</p>}
-                <p className="text-[15px] font-semibold text-[var(--color-text)]">{tone.emptyGrove}</p>
-                <p className="text-[13px] text-[var(--color-text-muted)] mt-1">{tone.emptyGroveSub}</p>
-              </div>
-            )}
-
-            {/* ── Top savings goal ────────────────────────────────────── */}
-            {activeTopGoal && (
-              <div className={`${tone.isChild ? 'rounded-2xl shadow-sm' : 'rounded-xl'} bg-[var(--color-surface)] border border-[var(--color-border)] p-4`}>
-                <h2 className="text-[15px] font-bold text-[var(--color-text)] mb-3">Saving up for</h2>
-                <div className="flex items-center gap-3 mb-3">
-                  {tone.isChild && <span className="text-2xl">🎯</span>}
-                  <div className="flex-1 min-w-0">
-                    <div className="text-[14px] font-semibold text-[var(--color-text)] truncate">{activeTopGoal.title}</div>
-                    <div className="text-[12px] text-[var(--color-text-muted)] tabular-nums">
-                      {formatCurrency(balance?.available ?? 0, activeTopGoal.currency)} of {formatCurrency(activeTopGoal.target_amount, activeTopGoal.currency)}
-                    </div>
-                  </div>
-                </div>
-                <div className="w-full h-3 bg-[var(--color-surface-alt)] rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-[var(--brand-primary)] rounded-full"
-                    style={{
-                      width: `${goalBarPct}%`,
-                      transition: 'width 1.1s cubic-bezier(0.25, 1, 0.5, 1)',
-                    }}
-                  />
-                </div>
-                <div className="flex justify-between mt-1.5">
-                  <span className="text-[12px] text-[var(--color-text-muted)] tabular-nums">
-                    {formatCurrency(balance?.available ?? 0, activeTopGoal.currency)}
-                  </span>
-                  <span className="text-[12px] text-[var(--color-text-muted)] tabular-nums">
-                    {formatCurrency(activeTopGoal.target_amount, activeTopGoal.currency)}
-                  </span>
-                </div>
-              </div>
-            )}
-
-            {/* Unplanned nudge */}
-            {unplannedChores.length > 0 && (
-              <p className="text-center text-[12px] text-[var(--color-text-muted)]">
-                {unplannedChores.length} {tone.isChild ? `job${unplannedChores.length > 1 ? 's' : ''} not in your week yet` : `task${unplannedChores.length > 1 ? 's' : ''} not scheduled`} — tap{' '}
-                {tone.isChild ? <PlantIcon inline /> : <CalendarIcon inline />} to {tone.isChild ? 'add them' : 'schedule'}.
-              </p>
-            )}
-          </>
+          /* ═══════════════════════════════════════════════════════════
+             PROFESSIONAL VIEW — compact table/list, financial language
+             All colours via CSS variables — inherits Light/Dark theme
+             ══════════════════════════════════════════════════════════ */
+          <ProfessionalView
+            balance={balance}
+            chores={chores}
+            pending={pending}
+            goals={goals}
+            tone={tone}
+            submitted={submitted}
+            submitting={submitting}
+            noteChore={noteChore}
+            noteText={noteText}
+            submitErr={submitErr}
+            handleDone={handleDone}
+            setNoteChore={setNoteChore}
+            setNoteText={setNoteText}
+          />
         )}
+
       </main>
     </div>
   )
@@ -604,5 +465,389 @@ function RecurringIcon() {
       <path d="M7 22l-4-4 4-4"/>
       <path d="M21 13v2a4 4 0 0 1-4 4H3"/>
     </svg>
+  )
+}
+
+// ─── OrchardView ─────────────────────────────────────────────────────────────
+// Card-based, metaphorical layout for younger children.
+// ─────────────────────────────────────────────────────────────────────────────
+
+interface OrchardViewProps {
+  balance: BalanceSummary | null
+  chores: Chore[]
+  pending: Completion[]
+  goals: Goal[]
+  tone: ReturnType<typeof import('../lib/useTone').useTone>
+  activeDay: number
+  setActiveDay: (d: number) => void
+  grovePlans: Record<string, number[]>
+  dayChores: Chore[]
+  unplannedChores: Chore[]
+  activeTopGoal: Goal | null
+  goalBarPct: number
+  submitted: Set<string>
+  submitting: string | null
+  noteChore: string | null
+  noteText: string
+  submitErr: string | null
+  cardClass: string
+  isPlanted: (c: Chore) => boolean
+  togglePlant: (c: Chore, day: number) => void
+  handleDone: (id: string, note?: string) => Promise<void>
+  setNoteChore: (id: string | null) => void
+  setNoteText: (t: string) => void
+}
+
+function OrchardView({
+  balance, chores, pending, goals: _goals, tone,
+  activeDay, setActiveDay, grovePlans, dayChores, unplannedChores,
+  activeTopGoal, goalBarPct, submitted, submitting,
+  noteChore, noteText, submitErr, cardClass,
+  isPlanted, togglePlant, handleDone, setNoteChore, setNoteText,
+}: OrchardViewProps) {
+  return (
+    <>
+      {/* Balance card */}
+      <div className="bg-[var(--color-surface)] rounded-2xl shadow-sm border-t-[3px] border-t-[var(--brand-primary)] border border-[var(--color-border)] p-4">
+        <div className="text-[12px] font-semibold text-[var(--color-text-muted)] uppercase tracking-wider mb-1">{tone.balance}</div>
+        <div className="text-[46px] font-extrabold text-[var(--color-text)] leading-none tracking-tight tabular-nums">
+          {balance ? formatCurrency(balance.available, 'GBP') : '£—'}
+        </div>
+        <div className="flex gap-4 mt-2">
+          <span className="text-[13px] text-[var(--color-text-muted)]">
+            Earned: <strong className="text-[var(--color-text)] tabular-nums">
+              {balance ? formatCurrency(balance.earned, 'GBP') : '—'}
+            </strong>
+          </span>
+          {(balance?.pending ?? 0) > 0 && (
+            <span className="text-[13px] text-[var(--color-text-muted)]">
+              Pending: <strong className="text-amber-500 tabular-nums">
+                {formatCurrency(balance!.pending, 'GBP')}
+              </strong>
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* Pending nudge */}
+      {pending.length > 0 && (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 flex items-center gap-3">
+          <span className="text-[20px]">⏳</span>
+          <p className="text-[13px] text-amber-800 font-semibold">
+            {pending.length === 1
+              ? `1 job is waiting for your parent to check`
+              : `${pending.length} jobs are waiting for your parent to check`}
+          </p>
+        </div>
+      )}
+
+      {/* Weekly tracker */}
+      <div className={cardClass}>
+        <div className="px-4 pt-4 pb-1">
+          <h2 className="text-[15px] font-bold text-[var(--color-text)]">{tone.weekSection}</h2>
+          <p className="text-[12px] text-[var(--color-text-muted)] mt-0.5">{tone.weekSubtitle}</p>
+        </div>
+        <div className="flex gap-1.5 px-4 pb-3 mt-2 overflow-x-auto scrollbar-hide">
+          {DAYS.map((day, i) => {
+            const dayNum = i + 1
+            const isToday = activeDay === dayNum
+            const hasChores = chores.some(c => effectiveDays(c, grovePlans).includes(dayNum))
+            return (
+              <button
+                key={day}
+                onClick={() => setActiveDay(dayNum)}
+                className={`shrink-0 flex flex-col items-center rounded-xl px-2.5 py-2 min-w-[44px] transition-colors duration-100 cursor-pointer
+                  ${isToday ? 'bg-[var(--brand-primary)] text-white' : 'bg-[var(--color-surface-alt)] text-[var(--color-text-muted)] hover:bg-[var(--color-border)]'}`}
+              >
+                <span className="text-[11px] font-semibold">{day}</span>
+                <span className={`mt-1.5 rounded-full w-1.5 h-1.5 ${hasChores ? (isToday ? 'bg-white/50' : 'bg-[var(--brand-primary)]') : 'bg-transparent'}`} />
+              </button>
+            )
+          })}
+        </div>
+        <div className="border-t border-[var(--color-border)] divide-y divide-[var(--color-border)]">
+          {dayChores.length === 0 ? (
+            <p className="px-4 py-5 text-[13px] text-[var(--color-text-muted)] text-center">
+              {tone.nothingToday} {DAYS[activeDay - 1]} yet
+            </p>
+          ) : (
+            dayChores.map(chore => (
+              <ChoreRow
+                key={chore.id}
+                chore={chore}
+                tone={tone}
+                submitted={submitted.has(chore.id)}
+                submitting={submitting === chore.id}
+                noteOpen={noteChore === chore.id}
+                noteText={noteChore === chore.id ? noteText : ''}
+                submitErr={submitErr}
+                onDone={() => chore.description ? setNoteChore(chore.id) : handleDone(chore.id)}
+                onNoteChange={setNoteText}
+                onNoteSubmit={() => handleDone(chore.id, noteText || undefined)}
+                onNoteCancel={() => { setNoteChore(null); setNoteText('') }}
+                showPlantButton={false}
+                planted={true}
+              />
+            ))
+          )}
+        </div>
+      </div>
+
+      {/* All jobs */}
+      {chores.length > 0 && (
+        <div className={cardClass}>
+          <div className="px-4 py-3 border-b border-[var(--color-border)]">
+            <h2 className="text-[15px] font-bold text-[var(--color-text)]">{tone.allChores}</h2>
+          </div>
+          <div className="divide-y divide-[var(--color-border)]">
+            {chores.map(chore => (
+              <ChoreRow
+                key={chore.id}
+                chore={chore}
+                tone={tone}
+                submitted={submitted.has(chore.id)}
+                submitting={submitting === chore.id}
+                noteOpen={noteChore === chore.id}
+                noteText={noteChore === chore.id ? noteText : ''}
+                submitErr={submitErr}
+                onDone={() => { setNoteChore(chore.id); setNoteText('') }}
+                onNoteChange={setNoteText}
+                onNoteSubmit={() => handleDone(chore.id, noteText || undefined)}
+                onNoteCancel={() => { setNoteChore(null); setNoteText('') }}
+                showPlantButton={!isAutoPlant(chore.frequency) && weeklyDayFromChore(chore) === null}
+                planted={isPlanted(chore)}
+                onTogglePlant={() => togglePlant(chore, activeDay)}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {chores.length === 0 && (
+        <div className="bg-[var(--color-surface)] rounded-2xl shadow-sm border border-[var(--color-border)] p-8 text-center">
+          <p className="text-[28px] mb-2">🌱</p>
+          <p className="text-[15px] font-semibold text-[var(--color-text)]">{tone.emptyGrove}</p>
+          <p className="text-[13px] text-[var(--color-text-muted)] mt-1">{tone.emptyGroveSub}</p>
+        </div>
+      )}
+
+      {/* Top savings goal */}
+      {activeTopGoal && (
+        <div className="bg-[var(--color-surface)] rounded-2xl shadow-sm border border-[var(--color-border)] p-4">
+          <h2 className="text-[15px] font-bold text-[var(--color-text)] mb-3">Saving up for</h2>
+          <div className="flex items-center gap-3 mb-3">
+            <span className="text-2xl">🎯</span>
+            <div className="flex-1 min-w-0">
+              <div className="text-[14px] font-semibold text-[var(--color-text)] truncate">{activeTopGoal.title}</div>
+              <div className="text-[12px] text-[var(--color-text-muted)] tabular-nums">
+                {formatCurrency(balance?.available ?? 0, activeTopGoal.currency)} of {formatCurrency(activeTopGoal.target_amount, activeTopGoal.currency)}
+              </div>
+            </div>
+          </div>
+          <div className="w-full h-3 bg-[var(--color-surface-alt)] rounded-full overflow-hidden">
+            <div className="h-full bg-[var(--brand-primary)] rounded-full" style={{ width: `${goalBarPct}%`, transition: 'width 1.1s cubic-bezier(0.25, 1, 0.5, 1)' }} />
+          </div>
+          <div className="flex justify-between mt-1.5">
+            <span className="text-[12px] text-[var(--color-text-muted)] tabular-nums">{formatCurrency(balance?.available ?? 0, activeTopGoal.currency)}</span>
+            <span className="text-[12px] text-[var(--color-text-muted)] tabular-nums">{formatCurrency(activeTopGoal.target_amount, activeTopGoal.currency)}</span>
+          </div>
+        </div>
+      )}
+
+      {unplannedChores.length > 0 && (
+        <p className="text-center text-[12px] text-[var(--color-text-muted)]">
+          {unplannedChores.length} job{unplannedChores.length > 1 ? 's' : ''} not in your week yet — tap <PlantIcon inline /> to add them.
+        </p>
+      )}
+    </>
+  )
+}
+
+// ─── ProfessionalView ─────────────────────────────────────────────────────────
+// Compact table/list layout with financial terminology.
+// Strictly consumes CSS variables — inherits Light/Dark theme automatically.
+// ─────────────────────────────────────────────────────────────────────────────
+
+interface ProfessionalViewProps {
+  balance: BalanceSummary | null
+  chores: Chore[]
+  pending: Completion[]
+  goals: Goal[]
+  tone: ReturnType<typeof import('../lib/useTone').useTone>
+  submitted: Set<string>
+  submitting: string | null
+  noteChore: string | null
+  noteText: string
+  submitErr: string | null
+  handleDone: (id: string, note?: string) => Promise<void>
+  setNoteChore: (id: string | null) => void
+  setNoteText: (t: string) => void
+}
+
+function ProfessionalView({
+  balance, chores, pending, goals,
+  tone, submitted, submitting,
+  noteChore, noteText, submitErr,
+  handleDone, setNoteChore, setNoteText,
+}: ProfessionalViewProps) {
+  return (
+    <>
+      {/* Account summary — dense stat row */}
+      <div className="bg-[var(--color-surface)] rounded-xl border border-[var(--color-border)] overflow-hidden">
+        <div className="px-4 py-3 border-b border-[var(--color-border)]">
+          <p className="text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-widest">{tone.balance}</p>
+          <p className="text-[36px] font-extrabold text-[var(--color-text)] leading-none tabular-nums mt-0.5">
+            {balance ? formatCurrency(balance.available, 'GBP') : '£—'}
+          </p>
+        </div>
+        <div className="grid grid-cols-3 divide-x divide-[var(--color-border)]">
+          {[
+            { label: 'Earned',  value: balance?.earned    ?? 0 },
+            { label: 'Pending', value: balance?.pending   ?? 0 },
+            { label: 'Spent',   value: balance?.spent     ?? 0 },
+          ].map(({ label, value }) => (
+            <div key={label} className="px-3 py-2.5">
+              <p className="text-[10px] font-semibold text-[var(--color-text-muted)] uppercase tracking-wide">{label}</p>
+              <p className="text-[13px] font-bold text-[var(--color-text)] tabular-nums mt-0.5">
+                {formatCurrency(value, 'GBP')}
+              </p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Pending transactions alert */}
+      {pending.length > 0 && (
+        <div className="bg-[var(--color-surface)] border border-amber-300 rounded-xl px-4 py-2.5 flex items-center justify-between">
+          <p className="text-[13px] font-semibold text-[var(--color-text)]">
+            {pending.length} pending transaction{pending.length > 1 ? 's' : ''}
+          </p>
+          <span className="text-[11px] font-bold text-amber-600 bg-amber-100 rounded-full px-2 py-0.5">AWAITING APPROVAL</span>
+        </div>
+      )}
+
+      {/* Tasks table */}
+      <div className="bg-[var(--color-surface)] rounded-xl border border-[var(--color-border)] overflow-hidden">
+        <div className="px-4 py-2.5 border-b border-[var(--color-border)] flex items-center justify-between">
+          <p className="text-[12px] font-bold text-[var(--color-text-muted)] uppercase tracking-widest">{tone.allChores}</p>
+          <p className="text-[11px] text-[var(--color-text-muted)]">{chores.length} task{chores.length !== 1 ? 's' : ''}</p>
+        </div>
+
+        {chores.length === 0 ? (
+          <p className="px-4 py-6 text-[13px] text-[var(--color-text-muted)] text-center">{tone.emptyGrove}</p>
+        ) : (
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="border-b border-[var(--color-border)] bg-[var(--color-surface-alt)]">
+                <th className="px-4 py-2 text-[10px] font-bold text-[var(--color-text-muted)] uppercase tracking-wide">Task</th>
+                <th className="px-4 py-2 text-[10px] font-bold text-[var(--color-text-muted)] uppercase tracking-wide">Frequency</th>
+                <th className="px-4 py-2 text-[10px] font-bold text-[var(--color-text-muted)] uppercase tracking-wide text-right">Value</th>
+                <th className="px-2 py-2 text-[10px] font-bold text-[var(--color-text-muted)] uppercase tracking-wide text-right">Action</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[var(--color-border)]">
+              {chores.map(chore => {
+                const isSubmitted = submitted.has(chore.id)
+                const isSubmitting = submitting === chore.id
+                const isNoteOpen = noteChore === chore.id
+                return (
+                  <tr key={chore.id} className="group">
+                    <td className="px-4 py-2.5 align-top">
+                      <div className="flex items-center gap-1.5">
+                        {chore.is_flash && <span className="text-[9px] font-bold text-red-600 bg-red-50 border border-red-200 rounded px-1">FLASH</span>}
+                        <span className="text-[13px] font-semibold text-[var(--color-text)]">{chore.title}</span>
+                      </div>
+                      {isNoteOpen && (
+                        <div className="mt-2 space-y-1.5">
+                          {submitErr && <p className="text-[11px] text-red-600">{submitErr}</p>}
+                          <textarea
+                            className="w-full border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] rounded px-2 py-1.5 text-[12px] resize-none focus:outline-none focus:ring-1 focus:ring-[var(--brand-primary)] placeholder:text-[var(--color-text-muted)]"
+                            placeholder="Add a note (optional)"
+                            rows={2}
+                            value={noteText}
+                            onChange={e => setNoteText(e.target.value)}
+                            autoFocus
+                          />
+                          <div className="flex gap-1.5">
+                            <button onClick={() => { setNoteChore(null); setNoteText('') }}
+                              className="flex-1 border border-[var(--color-border)] rounded px-2 py-1 text-[12px] font-semibold text-[var(--color-text-muted)] cursor-pointer hover:bg-[var(--color-surface-alt)]">
+                              Cancel
+                            </button>
+                            <button onClick={() => handleDone(chore.id, noteText || undefined)} disabled={isSubmitting}
+                              className="flex-1 bg-[var(--brand-primary)] text-white rounded px-2 py-1 text-[12px] font-bold hover:opacity-90 disabled:opacity-50 cursor-pointer">
+                              {isSubmitting ? '…' : tone.submitButton}
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </td>
+                    <td className="px-4 py-2.5 align-top">
+                      <span className="text-[12px] text-[var(--color-text-muted)] capitalize">{chore.frequency.replace('_', ' ')}</span>
+                    </td>
+                    <td className="px-4 py-2.5 align-top text-right">
+                      <span className="text-[13px] font-semibold text-[var(--color-text)] tabular-nums">{formatCurrency(chore.reward_amount, chore.currency)}</span>
+                    </td>
+                    <td className="px-2 py-2.5 align-top text-right">
+                      {isSubmitted ? (
+                        <span className="text-[11px] font-bold text-amber-700 bg-amber-50 border border-amber-200 rounded px-1.5 py-0.5">{tone.waitingBadge}</span>
+                      ) : (
+                        <button
+                          onClick={() => { setNoteChore(chore.id); setNoteText('') }}
+                          disabled={isSubmitting}
+                          className="text-[12px] font-bold text-[var(--brand-primary)] hover:underline disabled:opacity-50 cursor-pointer whitespace-nowrap"
+                        >
+                          {isSubmitting ? '…' : tone.doneButton}
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        )}
+      </div>
+
+      {/* Savings goals — compact list */}
+      {goals.length > 0 && (
+        <div className="bg-[var(--color-surface)] rounded-xl border border-[var(--color-border)] overflow-hidden">
+          <div className="px-4 py-2.5 border-b border-[var(--color-border)]">
+            <p className="text-[12px] font-bold text-[var(--color-text-muted)] uppercase tracking-widest">Savings Goals</p>
+          </div>
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="border-b border-[var(--color-border)] bg-[var(--color-surface-alt)]">
+                <th className="px-4 py-2 text-[10px] font-bold text-[var(--color-text-muted)] uppercase tracking-wide">Goal</th>
+                <th className="px-4 py-2 text-[10px] font-bold text-[var(--color-text-muted)] uppercase tracking-wide text-right">Target</th>
+                <th className="px-4 py-2 text-[10px] font-bold text-[var(--color-text-muted)] uppercase tracking-wide text-right">Progress</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[var(--color-border)]">
+              {goals.map(goal => {
+                const pct = Math.min(100, Math.round(((balance?.available ?? 0) / goal.target_amount) * 100))
+                return (
+                  <tr key={goal.id}>
+                    <td className="px-4 py-2.5">
+                      <span className="text-[13px] font-semibold text-[var(--color-text)]">{goal.title}</span>
+                    </td>
+                    <td className="px-4 py-2.5 text-right">
+                      <span className="text-[12px] text-[var(--color-text-muted)] tabular-nums">{formatCurrency(goal.target_amount, goal.currency)}</span>
+                    </td>
+                    <td className="px-4 py-2.5 text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <div className="w-16 h-1.5 bg-[var(--color-surface-alt)] rounded-full overflow-hidden">
+                          <div className="h-full bg-[var(--brand-primary)] rounded-full" style={{ width: `${pct}%` }} />
+                        </div>
+                        <span className="text-[11px] font-bold text-[var(--color-text-muted)] tabular-nums w-8 text-right">{pct}%</span>
+                      </div>
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </>
   )
 }

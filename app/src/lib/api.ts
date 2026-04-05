@@ -130,6 +130,25 @@ export async function updateChildSettings(child_id: string, body: { teen_mode?: 
 }
 
 // ----------------------------------------------------------------
+// Child growth path (earnings mode + allowance)
+// ----------------------------------------------------------------
+export interface ChildGrowthSettings {
+  id: string;
+  display_name: string;
+  earnings_mode: 'ALLOWANCE' | 'CHORES' | 'HYBRID';
+  allowance_amount: number;
+  allowance_frequency: 'WEEKLY' | 'BI_WEEKLY' | 'MONTHLY';
+}
+
+export async function getChildGrowth(child_id: string): Promise<ChildGrowthSettings> {
+  return request(`/api/child-growth/${encodeURIComponent(child_id)}`);
+}
+
+export async function updateChildGrowth(child_id: string, body: Partial<Pick<ChildGrowthSettings, 'earnings_mode' | 'allowance_amount' | 'allowance_frequency'>>): Promise<void> {
+  await request(`/api/child-growth/${encodeURIComponent(child_id)}`, { method: 'PATCH', body: JSON.stringify(body) });
+}
+
+// ----------------------------------------------------------------
 // Chores
 // ----------------------------------------------------------------
 export interface Chore {

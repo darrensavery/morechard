@@ -115,14 +115,14 @@ wrangler deploy
 > **Claude Instruction:** Update this list after every successful implementation. 
 
 ### **Phase 1: Core Foundation (The Truth Engine)**
-- [ ] Initialize Cloudflare D1 Schema (Families, Kids, Ledger)
-- [ ] Implement SHA-256 Hash Chain Logic in Worker for every transaction
-- [ ] Build '6-Digit Child Code' Generation & Verification Logic
+- [x] Initialize Cloudflare D1 Schema (Families, Kids, Ledger)
+- [x] Implement SHA-256 Hash Chain Logic in Worker for every transaction
+- [x] Build '6-Digit Child Code' Generation & Verification Logic
 
 ### **Phase 2: High-Integrity Onboarding**
-- [ ] Build 4-Stage Adaptive Registration Flow (UK/US/PL)
-- [ ] Implement Region-Aware UI (Currency & Terminology Logic)
-- [ ] Set up 'Better Auth' for secure Parent identity management
+- [x] Build 4-Stage Adaptive Registration Flow (UK/US/PL)
+- [x] Implement Region-Aware UI (Currency & Terminology Logic)
+- [x] Set up 'Better Auth' for secure Parent identity management (custom JWT/magic-link — leaner for Cloudflare)
 
 ### **Phase 3: The Transaction Loop (The "Sovereign" Ledger)**
 - [ ] Build 'Parent Job Create' API & UI
@@ -150,6 +150,6 @@ wrangler deploy
 - [ ] Implement US/UK/PL specific tax/invoice generation (Stripe Tax)
 
 ### **Phase 8: Polish & Passive Automation**
-- [ ] Add Sentry Error Tracking (24/7 solo-dev monitoring)
+- [x] Add Sentry Error Tracking (24/7 solo-dev monitoring)
 - [ ] Implement PostHog Session Replays (UX friction hunting)
 - [ ] Final PWA Optimization (Offline caching & Push notifications)

@@ -72,6 +72,7 @@ import {
   handleChildrenList,
   handleAccountLock, handleAccountUnlock,
   handleParentMessageSet, handleParentMessageGet,
+  handleChildGrowthGet, handleChildGrowthUpdate,
 } from './routes/settings.js';
 import { handleLedgerPost, handleLedgerGet, handleLedgerDispute } from './routes/ledger.js';
 import { handleLedgerVerify } from './routes/verify.js';
@@ -140,12 +141,119 @@ export default Sentry.withSentry(
 
   async scheduled(_event: ScheduledEvent, env: Env): Promise<void> {
     const now = Math.floor(Date.now() / 1000);
+
+    // ── 1. Expire stale governance requests ────────────────────
     await env.DB
       .prepare(`UPDATE family_governance_log SET status = 'expired' WHERE status = 'pending' AND expires_at < ?`)
       .bind(now).run();
+
+    // ── 2. Weekly allowance payday sweep ───────────────────────
+    // Runs every Saturday. For each child with allowance_amount > 0,
+    // check if they have already been paid this week (payday_log UNIQUE
+    // constraint is the idempotency key — safe on cron retry).
+    await runPaydaySweep(env, now);
   },
 } satisfies ExportedHandler<Env>,
 );
+
+// ----------------------------------------------------------------
+// ISO week number helper (1–53)
+// ----------------------------------------------------------------
+function getIsoWeekNumber(d: Date): number {
+  const date = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
+  date.setUTCDate(date.getUTCDate() + 4 - (date.getUTCDay() || 7));
+  const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
+  return Math.ceil(((date.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
+}
+
+// ----------------------------------------------------------------
+// Payday sweep — called from scheduled() every Saturday
+// ----------------------------------------------------------------
+async function runPaydaySweep(env: Env, nowEpoch: number): Promise<void> {
+  // Derive ISO week_start (Monday of current week) from nowEpoch
+  const d = new Date(nowEpoch * 1000);
+  const dayOfWeek = d.getUTCDay(); // 0=Sun … 6=Sat
+  const daysToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+  const monday = new Date(d);
+  monday.setUTCDate(d.getUTCDate() - daysToMonday);
+  const weekStart = monday.toISOString().slice(0, 10); // YYYY-MM-DD
+
+  // Fetch all children eligible for an allowance payment this run.
+  // Skip earnings_mode = 'CHORES' (task-based only — no automatic deposit).
+  const { results: children } = await env.DB.prepare(`
+    SELECT u.id AS child_id, u.family_id, u.display_name,
+           u.allowance_amount, u.allowance_frequency, f.currency, f.verify_mode
+    FROM users u
+    JOIN family_roles fr ON fr.user_id = u.id AND fr.role = 'child'
+    JOIN families f ON f.id = u.family_id
+    WHERE u.allowance_amount > 0
+      AND u.earnings_mode IN ('ALLOWANCE', 'HYBRID')
+  `).all<{
+    child_id: string; family_id: string; display_name: string;
+    allowance_amount: number; allowance_frequency: string;
+    currency: string; verify_mode: string;
+  }>();
+
+  for (const child of children) {
+    // Frequency gate — BI_WEEKLY fires on even ISO week numbers; MONTHLY on week 1 of month
+    if (child.allowance_frequency === 'BI_WEEKLY') {
+      const isoWeek = getIsoWeekNumber(d);
+      if (isoWeek % 2 !== 0) continue;
+    } else if (child.allowance_frequency === 'MONTHLY') {
+      // Only pay on the first Saturday of the month (day-of-month <= 7)
+      if (d.getUTCDate() > 7) continue;
+    }
+
+    // Idempotency check — skip if already paid this week
+    const alreadyPaid = await env.DB
+      .prepare('SELECT id FROM payday_log WHERE child_id = ? AND week_start = ?')
+      .bind(child.child_id, weekStart)
+      .first();
+    if (alreadyPaid) continue;
+
+    // Compute chain hash for new ledger row
+    const { computeRecordHash, GENESIS_HASH } = await import('./lib/hash.js');
+
+    const prevRow = await env.DB
+      .prepare('SELECT id, record_hash FROM ledger WHERE family_id = ? ORDER BY id DESC LIMIT 1')
+      .bind(child.family_id)
+      .first<{ id: number; record_hash: string }>();
+
+    const previousHash = prevRow?.record_hash ?? GENESIS_HASH;
+
+    const maxRow = await env.DB
+      .prepare('SELECT COALESCE(MAX(id), 0) AS max_id FROM ledger WHERE family_id = ?')
+      .bind(child.family_id)
+      .first<{ max_id: number }>();
+
+    const newId = (maxRow?.max_id ?? 0) + 1;
+    const verificationStatus = child.verify_mode === 'amicable' ? 'verified_auto' : 'verified_manual';
+
+    const recordHash = await computeRecordHash(
+      newId, child.family_id, child.child_id,
+      child.allowance_amount, child.currency, 'credit', previousHash,
+    );
+
+    // Atomic batch: ledger row + payday_log row (idempotency key)
+    await env.DB.batch([
+      env.DB.prepare(`
+        INSERT INTO ledger
+          (id, family_id, child_id, entry_type, amount, currency,
+           description, verification_status, previous_hash, record_hash, ip_address)
+        VALUES (?,?,?,'credit',?,?,?,?,?,?,'cron')
+      `).bind(
+        newId, child.family_id, child.child_id,
+        child.allowance_amount, child.currency,
+        `Weekly allowance — w/c ${weekStart}`,
+        verificationStatus, previousHash, recordHash,
+      ),
+      env.DB.prepare(`
+        INSERT OR IGNORE INTO payday_log (family_id, child_id, week_start, ledger_id, paid_at)
+        VALUES (?,?,?,?,?)
+      `).bind(child.family_id, child.child_id, weekStart, newId, nowEpoch),
+    ]);
+  }
+}
 
 // ----------------------------------------------------------------
 async function route(request: Request, env: Env, method: string, path: string): Promise<Response> {
@@ -181,6 +289,11 @@ async function route(request: Request, env: Env, method: string, path: string): 
   // Family info (read — any authenticated role)
   if (path === '/api/family'   && method === 'GET')   return withAuth(request, auth, env, handleFamilyGet);
   if (path === '/api/children' && method === 'GET')   return withAuth(request, auth, env, handleChildrenList);
+
+  // Child growth path (parent only)
+  const childGrowthMatch = path.match(/^\/api\/child-growth\/([^/]+)$/);
+  if (childGrowthMatch && method === 'GET')   return withAuth(request, auth, env, (req, e) => handleChildGrowthGet(req, e, childGrowthMatch[1]));
+  if (childGrowthMatch && method === 'PATCH') return withAuth(request, auth, env, (req, e) => handleChildGrowthUpdate(req, e, childGrowthMatch[1]));
 
   // Chores — children can list & submit
   if (path === '/api/chores' && method === 'GET')     return withAuth(request, auth, env, handleChoreList);

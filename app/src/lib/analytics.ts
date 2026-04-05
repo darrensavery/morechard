@@ -14,6 +14,7 @@ export function initAnalytics() {
   posthog.init(key, {
     api_host:             'https://sap.morechard.com',  // reverse proxy — never hits posthog.com directly
     ui_host:              'https://eu.posthog.com',     // PostHog UI for session replays / dashboards
+    defaults:             '2026-01-30',                 // pins PostHog feature behaviour to this date
     person_profiles:      'identified_only',
     capture_pageview:     true,
     capture_pageleave:    true,
