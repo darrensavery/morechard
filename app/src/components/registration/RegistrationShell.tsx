@@ -17,7 +17,7 @@ import { Stage2FamilyConstitution } from './Stage2FamilyConstitution'
 import { Stage3SecureApp }          from './Stage3SecureApp'
 import { Stage4CoParentBridge }     from './Stage4CoParentBridge'
 import { WelcomeNudge }             from './WelcomeNudge'
-import { createFamily, login, saveRegistrationStep } from '@/lib/api'
+import { createFamily, requestMagicLink, saveRegistrationStep } from '@/lib/api'
 
 // ── Shared state ─────────────────────────────────────────────────────────────
 
@@ -68,13 +68,14 @@ interface Props {
 }
 
 export function RegistrationShell({ onComplete }: Props) {
-  const [step,   setStep]   = useState(1)
-  const [done,   setDone]   = useState(false)
-  const [state,  setState]  = useState<RegistrationState>({})
-  const [error,  setError]  = useState('')
-  const [saving, setSaving] = useState(false)
-  const [authMethod, setAuthMethod] = useState<'biometrics' | 'pin' | null>(null)
-  const [pin,        setPin]        = useState<string | null>(null)
+  const [step,         setStep]         = useState(1)
+  const [done,         setDone]         = useState(false)
+  const [awaitingEmail, setAwaitingEmail] = useState(false)  // waiting for magic link click
+  const [state,        setState]        = useState<RegistrationState>({})
+  const [error,        setError]        = useState('')
+  const [saving,       setSaving]       = useState(false)
+  const [authMethod,   setAuthMethod]   = useState<'biometrics' | 'pin' | null>(null)
+  const [pin,          setPin]          = useState<string | null>(null)
 
   const isCoParenting = state.parenting_mode === 'co-parenting'
   const totalSteps    = isCoParenting ? 4 : 3
@@ -101,22 +102,17 @@ export function RegistrationShell({ onComplete }: Props) {
             base_currency:   merged.base_currency ?? 'GBP',
           })
 
-          const loginResult = await login(merged.email!, merged.password!)
-          localStorage.setItem('mc_token', loginResult.token)
-
           merged.family_id = familyResult.family_id
           merged.user_id   = familyResult.user_id
           setState(merged)
 
-          await saveRegistrationStep(1, {
-            parenting_mode:  merged.parenting_mode,
-            governance_mode: merged.governance_mode,
-            base_currency:   merged.base_currency,
-          })
+          // Send magic link — user must verify email before continuing
+          await requestMagicLink(merged.email!)
         }
 
-        setStep(nextStep ?? 2)
+        // Show "check your email" screen — steps 2-4 run after email verified
         setSaving(false)
+        setAwaitingEmail(true)
         return
       }
 
@@ -182,6 +178,19 @@ export function RegistrationShell({ onComplete }: Props) {
     )
   }
 
+  if (awaitingEmail) {
+    return (
+      <RegistrationLayout step={null} totalSteps={totalSteps} progress={25}>
+        <CheckEmailScreen
+          email={state.email!}
+          onResend={async () => {
+            await requestMagicLink(state.email!)
+          }}
+        />
+      </RegistrationLayout>
+    )
+  }
+
   return (
     <RegistrationLayout step={step} totalSteps={totalSteps} progress={progress}>
       {error && (
@@ -229,6 +238,67 @@ export function RegistrationShell({ onComplete }: Props) {
         />
       )}
     </RegistrationLayout>
+  )
+}
+
+// ── CheckEmailScreen ──────────────────────────────────────────────────────────
+
+function CheckEmailScreen({ email, onResend }: { email: string; onResend: () => Promise<void> }) {
+  const [resent,    setResent]    = useState(false)
+  const [resending, setResending] = useState(false)
+
+  async function handleResend() {
+    setResending(true)
+    try {
+      await onResend()
+      setResent(true)
+    } finally {
+      setResending(false)
+    }
+  }
+
+  return (
+    <div className="space-y-6 text-center">
+      <div className="flex flex-col items-center gap-3">
+        <div className="rounded-full bg-primary/10 p-5">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="text-primary">
+            <rect x="2" y="4" width="20" height="16" rx="2"/>
+            <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
+          </svg>
+        </div>
+        <div>
+          <h2 className="text-2xl font-bold tracking-tight">Check your email</h2>
+          <p className="text-muted-foreground text-sm mt-1 leading-relaxed max-w-xs mx-auto">
+            We've sent a magic link to <strong className="text-foreground">{email}</strong>.
+            Click the link to verify your account and continue setup.
+          </p>
+        </div>
+      </div>
+
+      <div className="rounded-2xl border bg-muted/40 px-5 py-4 text-left space-y-2">
+        <p className="text-sm font-semibold text-foreground">What to expect:</p>
+        <ul className="text-sm text-muted-foreground space-y-1.5">
+          <li className="flex items-start gap-2"><span className="text-primary mt-0.5">✓</span> An email from Morechard with a secure link</li>
+          <li className="flex items-start gap-2"><span className="text-primary mt-0.5">✓</span> The link is valid for 15 minutes</li>
+          <li className="flex items-start gap-2"><span className="text-primary mt-0.5">✓</span> Clicking it will bring you back here to finish setup</li>
+        </ul>
+      </div>
+
+      <p className="text-sm text-muted-foreground">
+        Didn't receive it? Check your spam folder, or{' '}
+        {resent ? (
+          <span className="text-primary font-semibold">link resent!</span>
+        ) : (
+          <button
+            onClick={handleResend}
+            disabled={resending}
+            className="text-primary font-semibold underline underline-offset-2 hover:opacity-80 disabled:opacity-50"
+          >
+            {resending ? 'Sending…' : 'resend the link'}
+          </button>
+        )}
+      </p>
+    </div>
   )
 }
 

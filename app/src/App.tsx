@@ -1,6 +1,8 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useSearchParams } from 'react-router-dom'
+import { useState, useEffect } from 'react'
 import { ThemeProvider } from './lib/theme'
 import { RegistrationShell } from './components/registration/RegistrationShell'
+import { WelcomeNudge } from './components/registration/WelcomeNudge'
 import { LandingGate } from './screens/LandingGate'
 import { LockScreen } from './screens/LockScreen'
 import { ParentDashboard } from './screens/ParentDashboard'
@@ -8,7 +10,99 @@ import { ChildDashboard } from './screens/ChildDashboard'
 import { JoinFamilyScreen } from './screens/JoinFamilyScreen'
 import { getDeviceIdentity, setDeviceIdentity, toInitials } from './lib/deviceIdentity'
 import { analytics, track } from './lib/analytics'
+import { verifyMagicLink, setToken, getMe } from './lib/api'
 import * as Sentry from '@sentry/react'
+
+/**
+ * MagicLinkVerifyScreen — handles /auth/verify?token=...
+ * Consumes the token, marks email verified, then shows WelcomeNudge before
+ * redirecting to the parent dashboard.
+ */
+function MagicLinkVerifyScreen() {
+  const [params]  = useSearchParams()
+  const token     = params.get('token')
+  const [phase, setPhase]   = useState<'verifying' | 'welcome' | 'error'>('verifying')
+  const [errMsg, setErrMsg] = useState('')
+  const [identity, setIdentity] = useState<{
+    family_id: string; user_id: string; display_name: string;
+  } | null>(null)
+
+  useEffect(() => {
+    if (!token) { setPhase('error'); setErrMsg('No token found in link.'); return }
+
+    verifyMagicLink(token)
+      .then(async (result) => {
+        setToken(result.token)
+        const me = await getMe()
+        localStorage.setItem('mc_family_id', me.family_id)
+        localStorage.setItem('mc_user_id',   me.id)
+        localStorage.setItem('mc_role',      me.role)
+        setIdentity({ family_id: me.family_id, user_id: me.id, display_name: me.display_name })
+        setPhase('welcome')
+      })
+      .catch(e => {
+        setErrMsg(e.message ?? 'Verification failed.')
+        setPhase('error')
+      })
+  }, [token])
+
+  function handleWelcomeDone() {
+    if (!identity) return
+    setDeviceIdentity({
+      user_id:       identity.user_id,
+      family_id:     identity.family_id,
+      display_name:  identity.display_name,
+      role:          'parent',
+      initials:      toInitials(identity.display_name),
+      registered_at: new Date().toISOString(),
+      auth_method:   'none',
+    })
+    Sentry.setUser({ id: identity.user_id })
+    analytics.identify(identity.user_id, { role: 'parent', family_id: identity.family_id })
+    track.registrationCompleted({ auth_method: 'none', parenting_mode: 'unknown', currency: 'unknown' })
+    window.location.href = '/parent'
+  }
+
+  if (phase === 'verifying') {
+    return (
+      <div className="min-h-svh flex items-center justify-center bg-[var(--color-bg)]">
+        <div className="flex flex-col items-center gap-3">
+          <span className="h-8 w-8 animate-spin rounded-full border-2 border-[var(--brand-primary)] border-t-transparent" />
+          <p className="text-sm text-[var(--color-text-muted)] font-medium">Verifying your email…</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (phase === 'error') {
+    return (
+      <div className="min-h-svh flex items-center justify-center bg-[var(--color-bg)] px-5">
+        <div className="max-w-sm w-full text-center space-y-4">
+          <p className="text-[28px]">⚠️</p>
+          <h2 className="text-lg font-bold text-[var(--color-text)]">Link invalid or expired</h2>
+          <p className="text-sm text-[var(--color-text-muted)]">{errMsg}</p>
+          <p className="text-sm text-[var(--color-text-muted)]">
+            Magic links expire after 15 minutes. Please{' '}
+            <a href="/register" className="text-[var(--brand-primary)] underline">register again</a>
+            {' '}or request a new link from the login page.
+          </p>
+        </div>
+      </div>
+    )
+  }
+
+  // phase === 'welcome'
+  return (
+    <div className="min-h-svh bg-white flex flex-col">
+      <main className="flex-1 px-5 py-8 max-w-md mx-auto w-full">
+        <WelcomeNudge
+          data={{ display_name: identity?.display_name, base_currency: 'GBP' }}
+          onFinish={handleWelcomeDone}
+        />
+      </main>
+    </div>
+  )
+}
 
 /** Root — cold start shows landing page, returning user goes to lock screen. */
 function RootGate() {
@@ -77,6 +171,7 @@ export default function App() {
             />
           }
         />
+        <Route path="/auth/verify" element={<MagicLinkVerifyScreen />} />
         <Route path="/parent" element={<RequireSession><ParentDashboard /></RequireSession>} />
         <Route path="/child"  element={<RequireSession><ChildDashboard /></RequireSession>} />
         <Route path="*"       element={<Navigate to="/" replace />} />
