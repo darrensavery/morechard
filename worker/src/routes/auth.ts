@@ -56,12 +56,17 @@ export async function handleCreateFamily(request: Request, env: Env): Promise<Re
   if (existing && existing.email_verified === 1) return error('Email already registered', 409);
 
   // If the user exists but never verified (e.g. previous registration hit an error),
-  // delete the orphaned record so they can start fresh cleanly
+  // delete the orphaned record so they can start fresh cleanly.
+  // Must delete all FK-dependent child rows before deleting families.
   if (existing && existing.email_verified === 0) {
     await env.DB.batch([
-      env.DB.prepare('DELETE FROM family_roles WHERE user_id = ?').bind(existing.id),
-      env.DB.prepare('DELETE FROM users WHERE id = ?').bind(existing.id),
-      env.DB.prepare('DELETE FROM families WHERE id = ?').bind(existing.family_id),
+      env.DB.prepare('DELETE FROM family_roles        WHERE user_id  = ?').bind(existing.id),
+      env.DB.prepare('DELETE FROM magic_link_tokens   WHERE user_id  = ?').bind(existing.id),
+      env.DB.prepare('DELETE FROM sessions            WHERE user_id  = ?').bind(existing.id),
+      env.DB.prepare('DELETE FROM invite_codes        WHERE family_id = ?').bind(existing.family_id),
+      env.DB.prepare('DELETE FROM registration_progress WHERE family_id = ?').bind(existing.family_id),
+      env.DB.prepare('DELETE FROM users               WHERE id       = ?').bind(existing.id),
+      env.DB.prepare('DELETE FROM families            WHERE id       = ?').bind(existing.family_id),
     ]);
   }
 
