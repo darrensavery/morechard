@@ -209,6 +209,14 @@ export function ParentDashboard() {
           </div>
         )}
       </main>
+
+      <footer className="py-3 text-center">
+        <p className="text-[10px] text-[var(--color-text-muted)] opacity-50 tracking-wide">
+          v{__APP_VERSION__}
+        </p>
+      </footer>
     </div>
   )
 }
+
+declare const __APP_VERSION__: string
