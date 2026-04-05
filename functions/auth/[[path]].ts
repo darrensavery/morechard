@@ -12,5 +12,11 @@ interface Env {
 }
 
 export const onRequest: PagesFunction<Env> = async (ctx) => {
+  // GET /auth/verify is handled client-side by the SPA (React Router).
+  // Let Pages serve index.html so the app can read the token from the URL.
+  const url = new URL(ctx.request.url);
+  if (ctx.request.method === 'GET' && url.pathname === '/auth/verify') {
+    return ctx.next();
+  }
   return ctx.env.API.fetch(ctx.request);
 };
