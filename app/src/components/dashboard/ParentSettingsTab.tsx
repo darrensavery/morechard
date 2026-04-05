@@ -1,13 +1,47 @@
 import { useState, useEffect, useCallback } from 'react'
+import { track } from '../../lib/analytics'
 import { clearDeviceIdentity } from '../../lib/deviceIdentity'
-import type { ChildRecord } from '../../lib/api'
+import type { ChildRecord, ChildGrowthSettings } from '../../lib/api'
 import {
   getChildren, addChild, generateInvite,
   getFamily, getSettings, updateSettings,
   getChildSettings, updateChildSettings,
+  getChildGrowth, updateChildGrowth,
 } from '../../lib/api'
 import { AvatarSVG, AVATARS, AVATAR_CATEGORIES } from '../../lib/avatars'
 import { ThemePicker } from '../../lib/theme'
+
+// ── Growth Path config ────────────────────────────────────────────────────────
+
+const GROWTH_PATHS = [
+  {
+    mode: 'ALLOWANCE' as const,
+    title: 'The Automated Harvest',
+    subtitle: 'Allowance only',
+    description: 'Fruit that grows on its own every season.',
+    icon: '🌧️',
+  },
+  {
+    mode: 'CHORES' as const,
+    title: 'The Labor of the Land',
+    subtitle: 'Chores only',
+    description: 'Fruit gathered only by tending to the trees.',
+    icon: '🪵',
+  },
+  {
+    mode: 'HYBRID' as const,
+    title: 'The Integrated Grove',
+    subtitle: 'Allowance + Chores',
+    description: 'A steady harvest with extra rewards for hard work.',
+    icon: '🌳',
+  },
+]
+
+const FREQ_LABELS: Record<string, string> = {
+  WEEKLY:    'Weekly',
+  BI_WEEKLY: 'Every 2 weeks',
+  MONTHLY:   'Monthly',
+}
 
 interface Props {
   familyId: string
@@ -39,6 +73,11 @@ export function ParentSettingsTab({ familyId, onChildrenChange }: Props) {
   const [teenModes, setTeenModes]       = useState<Record<string, number>>({})
   const [teenModeBusy, setTeenModeBusy] = useState<string | null>(null)
 
+  // Per-child growth path settings
+  const [growthSettings, setGrowthSettings] = useState<Record<string, ChildGrowthSettings>>({})
+  const [growthBusy, setGrowthBusy]         = useState<string | null>(null)
+  const [expandedGrowth, setExpandedGrowth] = useState<string | null>(null)
+
   const load = useCallback(async () => {
     setLoading(true)
     const [c, f, s] = await Promise.all([
@@ -50,11 +89,19 @@ export function ParentSettingsTab({ familyId, onChildrenChange }: Props) {
     onChildrenChange(c)
     setFamily(f)
     setSettings(s)
-    // Load teen_mode for each child in parallel
-    const modes = await Promise.all(
-      c.map(child => getChildSettings(child.id).then(cs => [child.id, cs.teen_mode] as const).catch(() => [child.id, 0] as const))
-    )
+    // Load teen_mode + growth settings for each child in parallel
+    const [modes, growths] = await Promise.all([
+      Promise.all(
+        c.map(child => getChildSettings(child.id).then(cs => [child.id, cs.teen_mode] as const).catch(() => [child.id, 0] as const))
+      ),
+      Promise.all(
+        c.map(child => getChildGrowth(child.id).catch(() => null))
+      ),
+    ])
     setTeenModes(Object.fromEntries(modes))
+    const growthMap: Record<string, ChildGrowthSettings> = {}
+    growths.forEach(g => { if (g) growthMap[g.id] = g })
+    setGrowthSettings(growthMap)
     setLoading(false)
   }, [familyId, onChildrenChange])
 
@@ -102,8 +149,28 @@ export function ParentSettingsTab({ familyId, onChildrenChange }: Props) {
     try {
       await updateChildSettings(childId, { teen_mode: next })
       setTeenModes(prev => ({ ...prev, [childId]: next }))
+      track.uiStyleChanged({ style: next === 1 ? 'professional' : 'orchard', child_id: childId })
     } finally {
       setTeenModeBusy(null)
+    }
+  }
+
+  async function handleGrowthUpdate(
+    childId: string,
+    patch: Partial<Pick<ChildGrowthSettings, 'earnings_mode' | 'allowance_amount' | 'allowance_frequency'>>,
+  ) {
+    setGrowthBusy(childId)
+    try {
+      await updateChildGrowth(childId, patch)
+      const next = { ...growthSettings[childId], ...patch }
+      setGrowthSettings(prev => ({ ...prev, [childId]: next }))
+      track.growthPathUpdated({
+        mode:         next.earnings_mode      ?? 'HYBRID',
+        frequency:    next.allowance_frequency ?? 'WEEKLY',
+        amount_pence: next.allowance_amount    ?? 0,
+      })
+    } finally {
+      setGrowthBusy(null)
     }
   }
 
@@ -193,6 +260,92 @@ export function ParentSettingsTab({ familyId, onChildrenChange }: Props) {
                     <p className="text-[12px] text-red-600 font-semibold">Locked</p>
                   )}
                 </div>
+              </div>
+
+              {/* Growth Path */}
+              <div className="mt-2.5 pl-[52px]">
+                <button
+                  onClick={() => setExpandedGrowth(expandedGrowth === child.id ? null : child.id)}
+                  className="w-full flex items-center justify-between cursor-pointer group"
+                >
+                  <div className="text-left">
+                    <p className="text-[13px] font-semibold text-[var(--color-text)]">Growth Path</p>
+                    <p className="text-[12px] text-[var(--color-text-muted)] mt-0.5">
+                      {(() => {
+                        const g = growthSettings[child.id]
+                        const path = GROWTH_PATHS.find(p => p.mode === (g?.earnings_mode ?? 'HYBRID'))
+                        return path ? `${path.icon} ${path.subtitle}` : '🌳 Allowance + Chores'
+                      })()}
+                    </p>
+                  </div>
+                  <span className={`text-[var(--color-text-muted)] text-[12px] transition-transform duration-150 ${expandedGrowth === child.id ? 'rotate-180' : ''}`}>▾</span>
+                </button>
+
+                {expandedGrowth === child.id && (
+                  <div className="mt-2 space-y-1.5">
+                    {GROWTH_PATHS.map(path => {
+                      const g = growthSettings[child.id]
+                      const active = (g?.earnings_mode ?? 'HYBRID') === path.mode
+                      const busy = growthBusy === child.id
+                      return (
+                        <button
+                          key={path.mode}
+                          disabled={busy}
+                          onClick={() => handleGrowthUpdate(child.id, { earnings_mode: path.mode })}
+                          className={`w-full text-left rounded-xl border px-3 py-2.5 transition-colors cursor-pointer disabled:opacity-50
+                            ${active
+                              ? 'border-[var(--brand-primary)] bg-[color-mix(in_srgb,var(--brand-primary)_8%,transparent)]'
+                              : 'border-[var(--color-border)] hover:bg-[var(--color-surface-alt)]'
+                            }`}
+                        >
+                          <div className="flex items-center gap-2">
+                            <span className="text-[16px]">{path.icon}</span>
+                            <div className="min-w-0">
+                              <p className={`text-[13px] font-semibold ${active ? 'text-[var(--brand-primary)]' : 'text-[var(--color-text)]'}`}>
+                                {path.title}
+                              </p>
+                              <p className="text-[11px] text-[var(--color-text-muted)] leading-snug mt-0.5">{path.description}</p>
+                            </div>
+                            {active && <span className="ml-auto text-[var(--brand-primary)] text-[14px] shrink-0">✓</span>}
+                          </div>
+                        </button>
+                      )
+                    })}
+
+                    {/* Allowance amount + frequency — only relevant when ALLOWANCE or HYBRID */}
+                    {(growthSettings[child.id]?.earnings_mode ?? 'HYBRID') !== 'CHORES' && (
+                      <div className="mt-2 grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="text-[11px] font-semibold text-[var(--color-text-muted)] uppercase tracking-wide">Amount (pence)</label>
+                          <input
+                            type="number"
+                            min={0}
+                            step={50}
+                            defaultValue={growthSettings[child.id]?.allowance_amount ?? 0}
+                            onBlur={e => {
+                              const val = parseInt(e.target.value, 10)
+                              if (!isNaN(val) && val >= 0) handleGrowthUpdate(child.id, { allowance_amount: val })
+                            }}
+                            className="mt-1 w-full border border-[var(--color-border)] rounded-lg px-2 py-1.5 text-[13px] bg-[var(--color-surface)] text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]"
+                          />
+                          <p className="text-[10px] text-[var(--color-text-muted)] mt-0.5">500 = £5.00</p>
+                        </div>
+                        <div>
+                          <label className="text-[11px] font-semibold text-[var(--color-text-muted)] uppercase tracking-wide">Frequency</label>
+                          <select
+                            value={growthSettings[child.id]?.allowance_frequency ?? 'WEEKLY'}
+                            onChange={e => handleGrowthUpdate(child.id, { allowance_frequency: e.target.value as 'WEEKLY' | 'BI_WEEKLY' | 'MONTHLY' })}
+                            className="mt-1 w-full border border-[var(--color-border)] rounded-lg px-2 py-1.5 text-[13px] bg-[var(--color-surface)] text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] cursor-pointer"
+                          >
+                            {Object.entries(FREQ_LABELS).map(([val, label]) => (
+                              <option key={val} value={val}>{label}</option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Mature View toggle */}

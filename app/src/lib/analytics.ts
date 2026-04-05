@@ -12,7 +12,8 @@ export function initAnalytics() {
   if (!key || !import.meta.env.PROD) return
 
   posthog.init(key, {
-    api_host:             'https://eu.i.posthog.com',
+    api_host:             'https://sap.morechard.com',  // reverse proxy — never hits posthog.com directly
+    ui_host:              'https://eu.posthog.com',     // PostHog UI for session replays / dashboards
     person_profiles:      'identified_only',
     capture_pageview:     true,
     capture_pageleave:    true,
@@ -61,4 +62,10 @@ export const track = {
 
   choreCompleted: () => analytics.track('chore_completed'),
   choreApproved:  () => analytics.track('chore_approved'),
+
+  uiStyleChanged: (props: { style: 'professional' | 'orchard'; child_id: string }) =>
+    analytics.track('ui_style_changed', props),
+
+  growthPathUpdated: (props: { mode: 'ALLOWANCE' | 'CHORES' | 'HYBRID'; frequency: 'WEEKLY' | 'BI_WEEKLY' | 'MONTHLY'; amount_pence: number }) =>
+    analytics.track('growth_path_updated', props),
 }
