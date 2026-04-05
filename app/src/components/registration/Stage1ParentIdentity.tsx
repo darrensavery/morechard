@@ -4,7 +4,7 @@
  * password strength meter, teal active states, haptic feedback on CTA.
  */
 
-import { useState, useId } from 'react'
+import { useState } from 'react'
 import { Users, User, Eye, EyeOff, ShieldCheck, CheckCircle2, XCircle } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { RegistrationState } from './RegistrationShell'
@@ -86,7 +86,11 @@ export function Stage1ParentIdentity({ data, onNext }: Props) {
   }
 
   return (
-    <div className="space-y-8">
+    <form
+      className="space-y-8"
+      onSubmit={e => { e.preventDefault(); handleNext() }}
+      autoComplete="on"
+    >
 
       {/* ── Trust header ─────────────────────────────────────────────── */}
       <div>
@@ -229,8 +233,7 @@ export function Stage1ParentIdentity({ data, onNext }: Props) {
 
       {/* ── CTA ──────────────────────────────────────────────────────── */}
       <button
-        type="button"
-        onClick={handleNext}
+        type="submit"
         className={cn(
           'w-full h-13 rounded-xl font-semibold text-base text-white',
           'bg-teal-600 hover:bg-teal-700 active:scale-[0.98] cursor-pointer',
@@ -241,7 +244,7 @@ export function Stage1ParentIdentity({ data, onNext }: Props) {
         Continue
       </button>
 
-    </div>
+    </form>
   )
 }
 
@@ -301,7 +304,6 @@ function FloatingField({
   autoComplete, error, hint, trailingIcon,
 }: FloatingFieldProps) {
   const [focused, setFocused] = useState(false)
-  const uid = useId()
   const floated = focused || value.length > 0
 
   return (
@@ -309,7 +311,7 @@ function FloatingField({
       <div className="relative">
         {/* Floating label */}
         <label
-          htmlFor={uid + id}
+          htmlFor={id}
           className={cn(
             'absolute left-3.5 transition-all duration-150 pointer-events-none select-none',
             floated
@@ -328,7 +330,7 @@ function FloatingField({
         </label>
 
         <input
-          id={uid + id}
+          id={id}
           type={type}
           value={value}
           autoComplete={autoComplete}
