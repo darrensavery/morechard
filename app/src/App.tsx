@@ -2,7 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate, useSearchParams } from 'react-r
 import { useState, useEffect } from 'react'
 import { ThemeProvider } from './lib/theme'
 import { RegistrationShell } from './components/registration/RegistrationShell'
-import { WelcomeNudge } from './components/registration/WelcomeNudge'
+import { WelcomeOrchardScreen } from './components/registration/WelcomeOrchardScreen'
 import { LandingGate } from './screens/LandingGate'
 import { LockScreen } from './screens/LockScreen'
 import { ParentDashboard } from './screens/ParentDashboard'
@@ -15,8 +15,8 @@ import * as Sentry from '@sentry/react'
 
 /**
  * MagicLinkVerifyScreen — handles /auth/verify?token=...
- * Consumes the token, marks email verified, then shows WelcomeNudge before
- * redirecting to the parent dashboard.
+ * Consumes the token, marks email verified, then shows WelcomeOrchardScreen
+ * (add first child or skip) before redirecting to the parent dashboard.
  */
 function MagicLinkVerifyScreen() {
   const [params]  = useSearchParams()
@@ -95,9 +95,9 @@ function MagicLinkVerifyScreen() {
   return (
     <div className="min-h-svh bg-white flex flex-col">
       <main className="flex-1 px-5 py-8 max-w-md mx-auto w-full">
-        <WelcomeNudge
-          data={{ display_name: identity?.display_name, base_currency: 'GBP' }}
-          onFinish={handleWelcomeDone}
+        <WelcomeOrchardScreen
+          displayName={identity?.display_name}
+          onDone={handleWelcomeDone}
         />
       </main>
     </div>

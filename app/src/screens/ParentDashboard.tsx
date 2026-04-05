@@ -24,6 +24,17 @@ export function ParentDashboard() {
   const [pendingCount, setPendingCount] = useState(0)
   const [online,     setOnline]     = useState(navigator.onLine)
 
+  // Trial nudge: shown once after first child is added (set by WelcomeOrchardScreen)
+  const [showTrialNudge, setShowTrialNudge] = useState(() => {
+    return localStorage.getItem('mc_first_child_added') === '1'
+      && localStorage.getItem('has_seen_trial_intro') !== '1'
+  })
+
+  function dismissTrialNudge() {
+    localStorage.setItem('has_seen_trial_intro', '1')
+    setShowTrialNudge(false)
+  }
+
   // Load children on mount
   useEffect(() => {
     if (!familyId) { navigate('/'); return }
@@ -138,6 +149,30 @@ export function ParentDashboard() {
           ))}
         </div>
       </header>
+
+      {/* Trial nudge — one-time, shown after first child added */}
+      {showTrialNudge && (
+        <div className="max-w-[560px] mx-auto w-full px-3.5 pt-3">
+          <div className="rounded-2xl bg-[color-mix(in_srgb,var(--brand-primary)_8%,white)] border border-[color-mix(in_srgb,var(--brand-primary)_20%,transparent)] px-4 py-3.5 flex items-start gap-3">
+            <span className="text-xl shrink-0 mt-0.5">🌳</span>
+            <div className="flex-1 min-w-0">
+              <p className="text-[13px] font-semibold text-[var(--color-text)] leading-snug">
+                Your 14-day harvest begins here.
+              </p>
+              <p className="text-[12px] text-[var(--color-text-muted)] mt-0.5 leading-relaxed">
+                Once you add the first chore or goal, the clock starts. We'll guide you and {activeChild?.display_name ?? 'your child'} through your first harvest — everything Morechard has to offer, yours to explore.
+              </p>
+            </div>
+            <button
+              onClick={dismissTrialNudge}
+              className="shrink-0 text-[var(--color-text-muted)] hover:text-[var(--color-text)] text-lg leading-none mt-0.5 cursor-pointer"
+              aria-label="Dismiss"
+            >
+              ×
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Content */}
       <main className="flex-1 max-w-[560px] mx-auto w-full px-3.5 py-4">

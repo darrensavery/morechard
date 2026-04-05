@@ -67,6 +67,12 @@ export const track = {
   uiStyleChanged: (props: { style: 'professional' | 'orchard'; child_id: string }) =>
     analytics.track('ui_style_changed', props),
 
+  onboardingChoiceMade: (props: { choice: 'add_child' | 'skip_to_dash' }) =>
+    analytics.track('onboarding_choice_made', props),
+
+  firstChildAdded: (props: { age: number; has_opening_balance: boolean }) =>
+    analytics.track('first_child_added', props),
+
   growthPathUpdated: (props: { mode: 'ALLOWANCE' | 'CHORES' | 'HYBRID'; frequency: 'WEEKLY' | 'BI_WEEKLY' | 'MONTHLY'; amount_pence: number }) =>
     analytics.track('growth_path_updated', props),
 }

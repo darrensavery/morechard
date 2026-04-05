@@ -222,7 +222,7 @@ async function redeemCoParentInvite(
 
 // ── POST /auth/child/add ─────────────────────────────────────────────────────
 // Parent creates a child record + generates a child invite code in one step.
-// Body: { display_name }
+// Body: { display_name, age?, opening_balance_pence? }
 // Returns: { child_id, invite_code, expires_at }
 export async function handleAddChild(request: Request, env: Env): Promise<Response> {
   const caller = (request as AuthedRequest).auth;
@@ -234,16 +234,22 @@ export async function handleAddChild(request: Request, env: Env): Promise<Respon
   const display_name = (body['display_name'] as string | undefined)?.trim();
   if (!display_name) return error('display_name required');
 
-  const childId  = nanoid();
-  const code     = generateCode();
-  const now      = Math.floor(Date.now() / 1000);
+  const age                  = typeof body['age'] === 'number' ? Math.floor(body['age'] as number) : undefined;
+  const opening_balance_pence = typeof body['opening_balance_pence'] === 'number'
+    ? Math.max(0, Math.floor(body['opening_balance_pence'] as number))
+    : 0;
+  const teen_mode            = age !== undefined && age >= 12 ? 1 : 0;
+
+  const childId   = nanoid();
+  const code      = generateCode();
+  const now       = Math.floor(Date.now() / 1000);
   const expiresAt = now + INVITE_TTL;
 
-  await env.DB.batch([
+  const stmts = [
     env.DB.prepare(`
-      INSERT INTO users (id, family_id, display_name, email, locale, email_verified)
-      VALUES (?, ?, ?, ?, 'en', 0)
-    `).bind(childId, caller.family_id, display_name, `child-${childId}@internal`),
+      INSERT INTO users (id, family_id, display_name, email, locale, email_verified, teen_mode)
+      VALUES (?, ?, ?, ?, 'en', 0, ?)
+    `).bind(childId, caller.family_id, display_name, `child-${childId}@internal`, teen_mode),
 
     env.DB.prepare(`INSERT INTO family_roles (user_id, family_id, role) VALUES (?, ?, 'child')`)
       .bind(childId, caller.family_id),
@@ -252,7 +258,20 @@ export async function handleAddChild(request: Request, env: Env): Promise<Respon
       INSERT INTO invite_codes (code, family_id, created_by, role, expires_at)
       VALUES (?, ?, ?, 'child', ?)
     `).bind(code, caller.family_id, caller.sub, expiresAt),
-  ]);
+  ];
+
+  // If a non-zero opening balance is provided, record it as an immutable ledger entry
+  if (opening_balance_pence > 0) {
+    const entryId = nanoid();
+    stmts.push(
+      env.DB.prepare(`
+        INSERT INTO ledger (id, family_id, child_id, amount_pence, currency, type, description, created_at)
+        VALUES (?, ?, ?, ?, (SELECT base_currency FROM families WHERE id = ?), 'opening_balance', 'Opening balance', ?)
+      `).bind(entryId, caller.family_id, childId, opening_balance_pence, caller.family_id, now),
+    );
+  }
+
+  await env.DB.batch(stmts);
 
   return json({ child_id: childId, invite_code: code, expires_at: expiresAt }, 201);
 }
