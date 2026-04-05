@@ -317,7 +317,7 @@ export function ParentSettingsTab({ familyId, onChildrenChange }: Props) {
     if (!newChildName.trim()) return
     setAddingChild(true)
     try {
-      const result = await addChild(newChildName.trim())
+      const result = await addChild(newChildName.trim(), 'HYBRID')
       setAddChildResult(result)
       setNewChildName('')
       await load()

@@ -38,7 +38,7 @@ export function Stage3ChildOnboarding({ data, onNext, onBack }: Props) {
     setError('')
     setLoading(true)
     try {
-      const result = await addChild(name)
+      const result = await addChild(name, 'HYBRID')
       const child: ChildRecord = {
         child_id:    result.child_id,
         display_name: name,

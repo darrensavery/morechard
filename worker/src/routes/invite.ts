@@ -234,11 +234,13 @@ export async function handleAddChild(request: Request, env: Env): Promise<Respon
   const display_name = (body['display_name'] as string | undefined)?.trim();
   if (!display_name) return error('display_name required');
 
-  const age                  = typeof body['age'] === 'number' ? Math.floor(body['age'] as number) : undefined;
+  const VALID_MODES = ['ALLOWANCE', 'CHORES', 'HYBRID'];
+  const earnings_mode = (body['earnings_mode'] as string | undefined) ?? 'HYBRID';
+  if (!VALID_MODES.includes(earnings_mode)) return error('Invalid earnings_mode');
+
   const opening_balance_pence = typeof body['opening_balance_pence'] === 'number'
     ? Math.max(0, Math.floor(body['opening_balance_pence'] as number))
     : 0;
-  const teen_mode            = age !== undefined && age >= 12 ? 1 : 0;
 
   const childId   = nanoid();
   const code      = generateCode();
@@ -247,9 +249,9 @@ export async function handleAddChild(request: Request, env: Env): Promise<Respon
 
   const stmts = [
     env.DB.prepare(`
-      INSERT INTO users (id, family_id, display_name, email, locale, email_verified, teen_mode)
+      INSERT INTO users (id, family_id, display_name, email, locale, email_verified, earnings_mode)
       VALUES (?, ?, ?, ?, 'en', 0, ?)
-    `).bind(childId, caller.family_id, display_name, `child-${childId}@internal`, teen_mode),
+    `).bind(childId, caller.family_id, display_name, `child-${childId}@internal`, earnings_mode),
 
     env.DB.prepare(`INSERT INTO family_roles (user_id, family_id, role) VALUES (?, ?, 'child')`)
       .bind(childId, caller.family_id),

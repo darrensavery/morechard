@@ -14,6 +14,7 @@ import { Sprout, ChevronRight, ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { addChild } from '@/lib/api'
 import { track } from '@/lib/analytics'
+import { cn } from '@/lib/utils'
 
 interface Props {
   displayName?: string
@@ -21,18 +22,20 @@ interface Props {
 }
 
 type Phase = 'welcome' | 'add-child' | 'success'
+type EarningsMode = 'ALLOWANCE' | 'CHORES' | 'HYBRID'
 
 interface NewChild {
   name: string
-  age: string
   openingBalance: string
+  earningsMode: EarningsMode
 }
 
 export function WelcomeOrchardScreen({ displayName, onDone }: Props) {
-  const [phase,    setPhase]   = useState<Phase>('welcome')
-  const [child,    setChild]   = useState<NewChild>({ name: '', age: '', openingBalance: '' })
-  const [saving,   setSaving]  = useState(false)
-  const [error,    setError]   = useState('')
+  const [phase,      setPhase]     = useState<Phase>('welcome')
+  const [child,      setChild]     = useState<NewChild>({ name: '', openingBalance: '', earningsMode: 'HYBRID' })
+  const [saving,     setSaving]    = useState(false)
+  const [addAnother, setAddAnother] = useState(false)
+  const [error,      setError]     = useState('')
   const [inviteCode, setInviteCode] = useState('')
 
   const firstName = displayName?.split(' ')[0] ?? 'there'
@@ -47,15 +50,9 @@ export function WelcomeOrchardScreen({ displayName, onDone }: Props) {
     setPhase('add-child')
   }
 
-  async function handleSubmitChild() {
+  async function handleSubmitChild(goToDash: boolean) {
     const name = child.name.trim()
     if (!name) { setError('Please enter a name.'); return }
-
-    const age = child.age ? parseInt(child.age, 10) : undefined
-    if (child.age && (isNaN(age!) || age! < 1 || age! > 17)) {
-      setError('Age must be between 1 and 17.')
-      return
-    }
 
     const balancePounds = parseFloat(child.openingBalance || '0')
     if (isNaN(balancePounds) || balancePounds < 0) {
@@ -66,16 +63,24 @@ export function WelcomeOrchardScreen({ displayName, onDone }: Props) {
 
     setError('')
     setSaving(true)
+    setAddAnother(!goToDash)
     try {
-      const result = await addChild(name, age, opening_balance_pence)
+      const result = await addChild(name, child.earningsMode, opening_balance_pence)
       setInviteCode(result.invite_code)
-      track.firstChildAdded({ age: age ?? 0, has_opening_balance: opening_balance_pence > 0 })
+      track.firstChildAdded({ age: 0, has_opening_balance: opening_balance_pence > 0 })
       localStorage.setItem('mc_first_child_added', '1')
-      setPhase('success')
+      if (goToDash) {
+        setPhase('success')
+      } else {
+        // Reset form for another child
+        setChild({ name: '', openingBalance: '', earningsMode: 'HYBRID' })
+        setError('')
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Something went wrong. Please try again.')
     } finally {
       setSaving(false)
+      setAddAnother(false)
     }
   }
 
@@ -130,6 +135,8 @@ export function WelcomeOrchardScreen({ displayName, onDone }: Props) {
   }
 
   if (phase === 'add-child') {
+    const childFirstName = child.name.trim().split(' ')[0] || 'they'
+
     return (
       <div className="space-y-6">
         {/* Back + title */}
@@ -148,6 +155,7 @@ export function WelcomeOrchardScreen({ displayName, onDone }: Props) {
 
         {/* Form */}
         <div className="space-y-4">
+          {/* Name */}
           <div className="space-y-1.5">
             <label className="text-[13px] font-semibold text-[var(--color-text)]">
               Name <span className="text-[var(--brand-primary)]">*</span>
@@ -161,27 +169,35 @@ export function WelcomeOrchardScreen({ displayName, onDone }: Props) {
             />
           </div>
 
-          <div className="space-y-1.5">
+          {/* Earnings mode */}
+          <div className="space-y-2">
             <label className="text-[13px] font-semibold text-[var(--color-text)]">
-              Age <span className="text-[var(--color-text-muted)] font-normal">(optional)</span>
+              How will {childFirstName} receive pocket money?
             </label>
-            <input
-              type="number"
-              inputMode="numeric"
-              placeholder="e.g. 9"
-              min="1"
-              max="17"
-              value={child.age}
-              onChange={e => setChild(c => ({ ...c, age: e.target.value }))}
-              className="w-full h-11 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-4 text-[14px] text-[var(--color-text)] placeholder:text-[var(--color-text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]/30"
-            />
-            {child.age && parseInt(child.age, 10) >= 12 && (
-              <p className="text-[12px] text-[var(--brand-primary)] font-medium">
-                🌱 We'll show {child.name || 'them'} the professional view — velocity tracking and strategy tools.
-              </p>
-            )}
+            <div className="grid grid-cols-3 gap-2">
+              {([
+                { value: 'ALLOWANCE', label: 'Allowance only' },
+                { value: 'CHORES',    label: 'Chores only' },
+                { value: 'HYBRID',    label: 'Both' },
+              ] as { value: EarningsMode; label: string }[]).map(opt => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => setChild(c => ({ ...c, earningsMode: opt.value }))}
+                  className={cn(
+                    'rounded-xl border-2 px-3 py-3 text-[12px] font-semibold text-center transition-all cursor-pointer leading-tight',
+                    child.earningsMode === opt.value
+                      ? 'border-[var(--brand-primary)] bg-[color-mix(in_srgb,var(--brand-primary)_10%,transparent)] text-[var(--brand-primary)]'
+                      : 'border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-muted)] hover:border-[var(--brand-primary)]/50',
+                  )}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
           </div>
 
+          {/* Opening balance */}
           <div className="space-y-1.5">
             <label className="text-[13px] font-semibold text-[var(--color-text)]">
               Opening Balance <span className="text-[var(--color-text-muted)] font-normal">(optional)</span>
@@ -211,20 +227,38 @@ export function WelcomeOrchardScreen({ displayName, onDone }: Props) {
           </p>
         )}
 
-        <Button
-          className="w-full h-12 text-[15px] font-semibold"
-          onClick={handleSubmitChild}
-          disabled={saving || !child.name.trim()}
-        >
-          {saving ? (
-            <span className="flex items-center gap-2">
-              <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-              Planting…
-            </span>
-          ) : (
-            <>Plant their Orchard <ChevronRight size={16} /></>
-          )}
-        </Button>
+        <div className="space-y-3">
+          <Button
+            className="w-full h-12 text-[15px] font-semibold"
+            onClick={() => handleSubmitChild(true)}
+            disabled={saving || !child.name.trim()}
+          >
+            {saving && !addAnother ? (
+              <span className="flex items-center gap-2">
+                <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                Creating…
+              </span>
+            ) : (
+              <>Create + go to dashboard <ChevronRight size={16} /></>
+            )}
+          </Button>
+
+          <button
+            type="button"
+            onClick={() => handleSubmitChild(false)}
+            disabled={saving || !child.name.trim()}
+            className="w-full h-11 rounded-xl border-2 border-[var(--color-border)] text-[14px] font-semibold text-[var(--color-text)] hover:border-[var(--brand-primary)]/50 hover:bg-[var(--color-surface-alt)] transition-all cursor-pointer disabled:opacity-50"
+          >
+            {saving && addAnother ? (
+              <span className="flex items-center justify-center gap-2">
+                <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                Saving…
+              </span>
+            ) : (
+              'Add another child'
+            )}
+          </button>
+        </div>
       </div>
     )
   }

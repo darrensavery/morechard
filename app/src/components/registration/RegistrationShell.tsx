@@ -177,7 +177,7 @@ export function RegistrationShell({ onComplete }: Props) {
 
   if (awaitingEmail) {
     return (
-      <RegistrationLayout step={null} totalSteps={totalSteps} progress={25}>
+      <RegistrationLayout step={2} totalSteps={totalSteps} progress={Math.round((2 / totalSteps) * 100)}>
         <CheckEmailScreen
           email={state.email!}
           onResend={async () => {

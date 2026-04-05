@@ -108,26 +108,26 @@ function MagicLinkVerifyScreen() {
 
   // phase === 'welcome' — Step 3 of 3 in the registration layout
   return (
-    <div className="min-h-svh bg-white flex flex-col">
-      <header className="sticky top-0 z-40 bg-white border-b border-gray-100 shadow-[0_1px_4px_rgba(0,0,0,0.06)]">
+    <div className="min-h-svh bg-[var(--color-bg)] flex flex-col">
+      <header className="sticky top-0 z-40 bg-[var(--color-surface)] border-b border-[var(--color-border)] shadow-[0_1px_4px_rgba(0,0,0,0.06)]">
         <div className="max-w-md mx-auto px-5 pt-4 pb-3 space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
               <div className="rounded-xl bg-teal-600 p-1.5">
                 <ShieldCheck size={15} className="text-white" strokeWidth={2.5} />
               </div>
-              <span className="font-extrabold text-sm text-gray-900 tracking-tight">Morechard</span>
+              <span className="font-extrabold text-sm text-[var(--color-text)] tracking-tight">Morechard</span>
             </div>
             <div className="text-right">
-              <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
+              <span className="text-[11px] font-semibold text-[var(--color-text-muted)] uppercase tracking-wider">
                 Step 3 of 3
               </span>
-              <p className="text-xs font-semibold text-gray-700 leading-none mt-0.5">
+              <p className="text-xs font-semibold text-[var(--color-text)] leading-none mt-0.5">
                 Add Child
               </p>
             </div>
           </div>
-          <div className="relative h-2 w-full rounded-full bg-gray-100 overflow-hidden">
+          <div className="relative h-2 w-full rounded-full bg-[var(--color-border)] overflow-hidden">
             <div className="absolute inset-y-0 left-0 rounded-full bg-teal-500 transition-all duration-500 ease-in-out" style={{ width: '100%' }} />
           </div>
         </div>
@@ -138,8 +138,8 @@ function MagicLinkVerifyScreen() {
           onDone={handleWelcomeDone}
         />
       </main>
-      <footer className="px-5 py-4 text-center border-t border-gray-100">
-        <p className="text-[11px] text-gray-400 tracking-wide">Your data is private and secure</p>
+      <footer className="px-5 py-4 text-center border-t border-[var(--color-border)]">
+        <p className="text-[11px] text-[var(--color-text-muted)] tracking-wide">Your data is private and secure</p>
       </footer>
     </div>
   )

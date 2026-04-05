@@ -365,12 +365,12 @@ export interface Subscription { id: string; title: string; category: string; amo
 export interface AddChildResult { child_id: string; invite_code: string }
 export async function addChild(
   display_name: string,
-  age?: number,
+  earnings_mode: 'ALLOWANCE' | 'CHORES' | 'HYBRID',
   opening_balance_pence?: number,
 ): Promise<AddChildResult> {
   return request('/auth/child/add', {
     method: 'POST',
-    body: JSON.stringify({ display_name, family_id: getFamilyId(), age, opening_balance_pence }),
+    body: JSON.stringify({ display_name, family_id: getFamilyId(), earnings_mode, opening_balance_pence }),
   });
 }
 export async function generateInvite(role: 'child' | 'co-parent'): Promise<{ code: string; expires_at: number }> {
