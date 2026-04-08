@@ -41,7 +41,7 @@ CREATE TABLE completions (
   proof_url       TEXT,                                        -- R2 object key (not public URL)
   parent_notes    TEXT,                                        -- filled on needs_revision
   attempt_count   INTEGER NOT NULL DEFAULT 1,                  -- increments on each resubmit
-  ledger_id       INTEGER REFERENCES ledger(id),              -- set when completed
+  ledger_id       INTEGER,                                     -- set when completed (ledger PK is composite, no FK)
   rating          INTEGER DEFAULT 0,                           -- 1 thumbs up / -1 thumbs down / 0 none
   submitted_at    INTEGER NOT NULL DEFAULT (unixepoch()),
   resolved_at     INTEGER,
