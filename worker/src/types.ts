@@ -1,5 +1,6 @@
 export interface Env {
   DB: D1Database;
+  EVIDENCE: R2Bucket;
   ENVIRONMENT: string;
   JWT_SECRET: string;
   RESEND_API_KEY: string;
@@ -8,6 +9,9 @@ export interface Env {
   STRIPE_WEBHOOK_SECRET: string;
   FIREBASE_PROJECT_ID: string;
 }
+
+// Completion lifecycle statuses
+export type CompletionStatus = 'awaiting_review' | 'completed' | 'needs_revision';
 
 export type PaymentType = 'LIFETIME' | 'AI_ANNUAL';
 

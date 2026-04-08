@@ -1,5 +1,6 @@
 import { useRef, useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
+import { FullLogo } from '../components/ui/Logo'
 
 const PIN_LENGTH = 4
 
@@ -73,8 +74,7 @@ export function PinScreen() {
   return (
     <div className="min-h-svh bg-[#F5F4F0] flex flex-col">
       <header className="sticky top-0 bg-white border-b border-[#D3D1C7] shadow-[0_1px_4px_rgba(0,0,0,.05)] px-4 py-3 flex items-center gap-2.5">
-        <div className="w-8 h-8 rounded-lg bg-teal-600 flex items-center justify-center text-white text-sm font-bold">M</div>
-        <span className="text-[17px] font-extrabold text-[#1C1C1A] tracking-tight">Morechard</span>
+        <FullLogo iconSize={26} />
       </header>
 
       <main className="flex-1 flex flex-col items-center justify-center px-6 pb-12">

@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate, useSearchParams } from 'react-router-dom'
-import { ShieldCheck } from 'lucide-react'
+import { FullLogo } from './components/ui/Logo'
 import { useState, useEffect } from 'react'
 import { ThemeProvider } from './lib/theme'
 import { RegistrationShell } from './components/registration/RegistrationShell'
@@ -113,10 +113,7 @@ function MagicLinkVerifyScreen() {
         <div className="max-w-md mx-auto px-5 pt-4 pb-3 space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
-              <div className="rounded-xl bg-teal-600 p-1.5">
-                <ShieldCheck size={15} className="text-white" strokeWidth={2.5} />
-              </div>
-              <span className="font-extrabold text-sm text-[var(--color-text)] tracking-tight">Morechard</span>
+              <FullLogo iconSize={26} />
             </div>
             <div className="text-right">
               <span className="text-[11px] font-semibold text-[var(--color-text-muted)] uppercase tracking-wider">

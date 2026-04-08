@@ -1,11 +1,19 @@
 /**
  * Completions routes — Parent approval queue
  *
- * GET    /api/completions             List pending completions (parent)
- * POST   /api/completions/:id/approve Parent approves → writes ledger entry
- * POST   /api/completions/:id/reject  Parent rejects with optional note
- * POST   /api/completions/:id/rate    Child rates an approved completion
- * GET    /api/completions/history     Full history for a child (all statuses)
+ * GET    /api/completions                   List completions by status (parent/child)
+ * GET    /api/completions/count             Badge count: awaiting_review for a family
+ * GET    /api/completions/history           Full history for a child (all statuses)
+ * POST   /api/completions/:id/approve       Parent approves → writes ledger entry (status: completed)
+ * POST   /api/completions/:id/revise        Parent requests revision with notes (status: needs_revision)
+ * POST   /api/completions/:id/rate          Child rates a completed completion
+ *
+ * Completion lifecycle:
+ *   (chore submitted) → awaiting_review → completed
+ *                                       → needs_revision → awaiting_review (loop)
+ *
+ * "attempt_count" tracks how many times a job went through the loop.
+ * This surfaces the child's "professionalism" metric in the UI.
  */
 
 import { Env } from '../types.js';
@@ -17,34 +25,39 @@ type AuthedRequest = Request & { auth: JwtPayload };
 
 // ----------------------------------------------------------------
 // GET /api/completions?family_id=&child_id=&status=
+// Default status: awaiting_review
 // ----------------------------------------------------------------
 export async function handleCompletionList(request: Request, env: Env): Promise<Response> {
   const auth = (request as AuthedRequest).auth;
   const url = new URL(request.url);
   const family_id = url.searchParams.get('family_id');
   const child_id  = url.searchParams.get('child_id');
-  const status    = url.searchParams.get('status') ?? 'pending';
+  const status    = url.searchParams.get('status') ?? 'awaiting_review';
+
+  const validStatuses = ['awaiting_review', 'completed', 'needs_revision'];
+  if (!validStatuses.includes(status)) return error(`status must be one of: ${validStatuses.join(', ')}`);
 
   if (!family_id) return error('family_id required');
   if (family_id !== auth.family_id) return error('Forbidden', 403);
 
   const effectiveChildId = auth.role === 'child' ? auth.sub : (child_id ?? null);
 
-  let stmt;
   const baseQuery = `
     SELECT
       comp.*,
-      ch.title      AS chore_title,
+      ch.title        AS chore_title,
       ch.reward_amount,
       ch.currency,
-      ch.description AS chore_description,
-      u.display_name AS child_name
+      ch.description  AS chore_description,
+      ch.proof_required,
+      u.display_name  AS child_name
     FROM completions comp
     JOIN chores ch ON ch.id = comp.chore_id
     JOIN users  u  ON u.id  = comp.child_id
     WHERE comp.family_id = ?
   `;
 
+  let stmt;
   if (effectiveChildId) {
     stmt = env.DB.prepare(
       `${baseQuery} AND comp.child_id = ? AND comp.status = ?
@@ -59,6 +72,27 @@ export async function handleCompletionList(request: Request, env: Env): Promise<
 
   const { results } = await stmt.all();
   return json({ completions: results });
+}
+
+// ----------------------------------------------------------------
+// GET /api/completions/count?family_id=
+// Returns count of awaiting_review completions — used for parent badge dot.
+// ----------------------------------------------------------------
+export async function handleCompletionCount(request: Request, env: Env): Promise<Response> {
+  const auth = (request as AuthedRequest).auth;
+  const url = new URL(request.url);
+  const family_id = url.searchParams.get('family_id');
+
+  if (!family_id) return error('family_id required');
+  if (family_id !== auth.family_id) return error('Forbidden', 403);
+
+  const row = await env.DB
+    .prepare(`SELECT COUNT(*) AS count FROM completions
+              WHERE family_id = ? AND status = 'awaiting_review'`)
+    .bind(family_id)
+    .first<{ count: number }>();
+
+  return json({ awaiting_review: row?.count ?? 0 });
 }
 
 // ----------------------------------------------------------------
@@ -96,7 +130,8 @@ export async function handleCompletionHistory(request: Request, env: Env): Promi
 
 // ----------------------------------------------------------------
 // POST /api/completions/:id/approve
-// Parent approves → writes immutable ledger entry (hash chained).
+// Parent approves → writes immutable ledger entry (hash-chained).
+// Guard: completion must be in 'awaiting_review' state.
 // ----------------------------------------------------------------
 export async function handleCompletionApprove(
   request: Request,
@@ -121,9 +156,11 @@ export async function handleCompletionApprove(
 
   if (!comp) return error('Completion not found', 404);
   if (comp.family_id !== auth.family_id) return error('Forbidden', 403);
-  if (comp.status !== 'pending') return error(`Completion is already ${comp.status}`);
 
-  // Fetch family verify_mode
+  // Double-dip guard: must be awaiting review
+  if (comp.status !== 'awaiting_review')
+    return error(`Cannot approve — completion is '${comp.status}'`, 409);
+
   const family = await env.DB
     .prepare('SELECT verify_mode FROM families WHERE id = ?')
     .bind(comp.family_id)
@@ -134,7 +171,7 @@ export async function handleCompletionApprove(
   const now = Math.floor(Date.now() / 1000);
   const disputeBefore = verificationStatus === 'verified_auto' ? now + 172800 : null;
 
-  // Hash chain — get previous ledger row for this family
+  // Hash chain
   const prevRow = await env.DB
     .prepare('SELECT id, record_hash FROM ledger WHERE family_id = ? ORDER BY id DESC LIMIT 1')
     .bind(comp.family_id)
@@ -142,7 +179,6 @@ export async function handleCompletionApprove(
 
   const previousHash = prevRow?.record_hash ?? GENESIS_HASH;
 
-  // Next ledger id
   const maxRow = await env.DB
     .prepare('SELECT COALESCE(MAX(id), 0) AS max_id FROM ledger')
     .first<{ max_id: number }>();
@@ -158,7 +194,6 @@ export async function handleCompletionApprove(
     previousHash,
   );
 
-  // Write ledger + update completion atomically
   await env.DB.batch([
     env.DB.prepare(`
       INSERT INTO ledger
@@ -178,12 +213,12 @@ export async function handleCompletionApprove(
     ),
     env.DB.prepare(`
       UPDATE completions
-      SET status = 'approved', resolved_at = ?, resolved_by = ?, ledger_id = ?
+      SET status = 'completed', resolved_at = ?, resolved_by = ?, ledger_id = ?
       WHERE id = ?
     `).bind(now, auth.sub, newLedgerId, completionId),
   ]);
 
-  // Log status transition
+  // Status log
   await env.DB.prepare(`
     INSERT INTO ledger_status_log
       (ledger_id, from_status, to_status, actor_id, ip_address)
@@ -201,19 +236,21 @@ export async function handleCompletionApprove(
 }
 
 // ----------------------------------------------------------------
-// POST /api/completions/:id/reject
-// Body: { rejection_note? }
+// POST /api/completions/:id/revise
+// Parent sends job back with notes (needs_revision).
+// Child sees the orange badge + parent_notes in their task list.
+// Body: { parent_notes? }
 // ----------------------------------------------------------------
-export async function handleCompletionReject(
+export async function handleCompletionRevise(
   request: Request,
   env: Env,
   completionId: string,
 ): Promise<Response> {
   const auth = (request as AuthedRequest).auth;
-  if (auth.role !== 'parent') return error('Only parents can reject completions', 403);
+  if (auth.role !== 'parent') return error('Only parents can request revision', 403);
 
   const body = await parseBody(request);
-  const rejection_note = body?.rejection_note ? String(body.rejection_note).trim() : null;
+  const parent_notes = body?.parent_notes ? String(body.parent_notes).trim() : null;
 
   const comp = await env.DB
     .prepare('SELECT id, family_id, status FROM completions WHERE id = ?')
@@ -222,22 +259,23 @@ export async function handleCompletionReject(
 
   if (!comp) return error('Completion not found', 404);
   if (comp.family_id !== auth.family_id) return error('Forbidden', 403);
-  if (comp.status !== 'pending') return error(`Completion is already ${comp.status}`);
+  if (comp.status !== 'awaiting_review')
+    return error(`Cannot request revision — completion is '${comp.status}'`, 409);
 
   const now = Math.floor(Date.now() / 1000);
   await env.DB
     .prepare(`UPDATE completions
-              SET status = 'rejected', rejection_note = ?, resolved_at = ?, resolved_by = ?
+              SET status = 'needs_revision', parent_notes = ?, resolved_at = ?, resolved_by = ?
               WHERE id = ?`)
-    .bind(rejection_note, now, auth.sub, completionId)
+    .bind(parent_notes, now, auth.sub, completionId)
     .run();
 
-  return json({ ok: true });
+  return json({ ok: true, parent_notes });
 }
 
 // ----------------------------------------------------------------
 // POST /api/completions/:id/rate
-// Child rates an approved completion. Body: { rating: 1 | -1 }
+// Child rates a completed completion. Body: { rating: 1 | -1 }
 // ----------------------------------------------------------------
 export async function handleCompletionRate(
   request: Request,
@@ -259,7 +297,7 @@ export async function handleCompletionRate(
   if (!comp) return error('Completion not found', 404);
   if (comp.family_id !== auth.family_id) return error('Forbidden', 403);
   if (comp.child_id !== auth.sub) return error('Not your completion', 403);
-  if (comp.status !== 'approved') return error('Only approved completions can be rated');
+  if (comp.status !== 'completed') return error('Only completed jobs can be rated');
 
   await env.DB
     .prepare('UPDATE completions SET rating = ? WHERE id = ?')
@@ -271,7 +309,7 @@ export async function handleCompletionRate(
 
 // ----------------------------------------------------------------
 // POST /api/completions/approve-all
-// Approve all pending completions for a child in one action.
+// Approve all awaiting_review completions for a child in one action.
 // Body: { family_id, child_id }
 // ----------------------------------------------------------------
 export async function handleApproveAll(request: Request, env: Env): Promise<Response> {
@@ -288,7 +326,7 @@ export async function handleApproveAll(request: Request, env: Env): Promise<Resp
            ch.title, ch.reward_amount, ch.currency
     FROM completions comp
     JOIN chores ch ON ch.id = comp.chore_id
-    WHERE comp.family_id = ? AND comp.child_id = ? AND comp.status = 'pending'
+    WHERE comp.family_id = ? AND comp.child_id = ? AND comp.status = 'awaiting_review'
     ORDER BY comp.submitted_at ASC
   `).bind(family_id, child_id).all<{
     comp_id: string; chore_id: string; child_id: string;
@@ -307,7 +345,7 @@ export async function handleApproveAll(request: Request, env: Env): Promise<Resp
   const ip = clientIp(request);
   const now = Math.floor(Date.now() / 1000);
 
-  // Process each one — sequential to maintain hash chain integrity
+  // Sequential to maintain hash chain integrity
   for (const comp of pending) {
     const prevRow = await env.DB
       .prepare('SELECT id, record_hash FROM ledger WHERE family_id = ? ORDER BY id DESC LIMIT 1')
@@ -341,7 +379,7 @@ export async function handleApproveAll(request: Request, env: Env): Promise<Resp
         previousHash, recordHash, ip, disputeBefore,
       ),
       env.DB.prepare(`
-        UPDATE completions SET status = 'approved', resolved_at = ?, resolved_by = ?, ledger_id = ?
+        UPDATE completions SET status = 'completed', resolved_at = ?, resolved_by = ?, ledger_id = ?
         WHERE id = ?
       `).bind(now, auth.sub, newLedgerId, comp.comp_id),
     ]);

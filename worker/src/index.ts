@@ -45,10 +45,11 @@ import {
   handleChoreArchive, handleChoreRestore, handleChoreSubmit,
 } from './routes/chores.js';
 import {
-  handleCompletionList, handleCompletionHistory,
-  handleCompletionApprove, handleCompletionReject,
+  handleCompletionList, handleCompletionCount, handleCompletionHistory,
+  handleCompletionApprove, handleCompletionRevise,
   handleCompletionRate, handleApproveAll,
 } from './routes/completions.js';
+import { handleProofUpload, handleProofGet } from './routes/proof.js';
 import {
   handleGoalList, handleGoalCreate, handleGoalUpdate,
   handleGoalDelete, handleGoalReorder,
@@ -303,9 +304,14 @@ async function route(request: Request, env: Env, method: string, path: string): 
 
   // Completions — children can list their own & rate
   if (path === '/api/completions'         && method === 'GET')  return withAuth(request, auth, env, handleCompletionList);
+  if (path === '/api/completions/count'   && method === 'GET')  return withAuth(request, auth, env, handleCompletionCount);
   if (path === '/api/completions/history' && method === 'GET')  return withAuth(request, auth, env, handleCompletionHistory);
   const compRateMatch = path.match(/^\/api\/completions\/([^/]+)\/rate$/);
   if (compRateMatch && method === 'POST') return withAuth(request, auth, env, (req, e) => handleCompletionRate(req, e, compRateMatch[1]));
+  // Proof upload/view — child uploads, both roles view
+  const compProofMatch = path.match(/^\/api\/completions\/([^/]+)\/proof$/);
+  if (compProofMatch && method === 'POST') return withAuth(request, auth, env, (req, e) => handleProofUpload(req, e, compProofMatch[1]));
+  if (compProofMatch && method === 'GET')  return withAuth(request, auth, env, (req, e) => handleProofGet(req, e, compProofMatch[1]));
 
   // Goals — children & parents can read; parents can write
   if (path === '/api/goals' && method === 'GET')      return withAuth(request, auth, env, handleGoalList);
@@ -368,8 +374,8 @@ async function route(request: Request, env: Env, method: string, path: string): 
   // Completions — parent approval
   const compApproveMatch = path.match(/^\/api\/completions\/([^/]+)\/approve$/);
   if (compApproveMatch && method === 'POST') return withAuth(request, auth, env, (req, e) => handleCompletionApprove(req, e, compApproveMatch[1]));
-  const compRejectMatch = path.match(/^\/api\/completions\/([^/]+)\/reject$/);
-  if (compRejectMatch && method === 'POST') return withAuth(request, auth, env, (req, e) => handleCompletionReject(req, e, compRejectMatch[1]));
+  const compReviseMatch = path.match(/^\/api\/completions\/([^/]+)\/revise$/);
+  if (compReviseMatch && method === 'POST') return withAuth(request, auth, env, (req, e) => handleCompletionRevise(req, e, compReviseMatch[1]));
   if (path === '/api/completions/approve-all' && method === 'POST') return withAuth(request, auth, env, handleApproveAll);
 
   // Goals write (parent only)

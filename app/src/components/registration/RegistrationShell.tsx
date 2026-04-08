@@ -11,7 +11,7 @@
  */
 
 import { useState } from 'react'
-import { ShieldCheck } from 'lucide-react'
+import { FullLogo } from '../ui/Logo'
 import { Stage1ParentIdentity }     from './Stage1ParentIdentity'
 import { Stage2FamilyConstitution } from './Stage2FamilyConstitution'
 import { Stage3SecureApp }          from './Stage3SecureApp'
@@ -313,10 +313,7 @@ function RegistrationLayout({ step, totalSteps, progress, children }: {
         <div className="max-w-md mx-auto px-5 pt-4 pb-3 space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
-              <div className="rounded-xl bg-teal-600 p-1.5">
-                <ShieldCheck size={15} className="text-white" strokeWidth={2.5} />
-              </div>
-              <span className="font-extrabold text-sm text-gray-900 tracking-tight">Morechard</span>
+              <FullLogo iconSize={26} />
             </div>
             {step !== null && (
               <div className="text-right">

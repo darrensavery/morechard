@@ -304,7 +304,8 @@ CREATE TABLE IF NOT EXISTS registration_progress (
 -- ============================================================
 -- Migrations from 0010: teen_mode on users
 -- ============================================================
--- Attempt; will fail if already exists (that is fine — run separately if needed)
+-- Applied manually 2026-04-07 via wrangler d1 execute --remote
+ALTER TABLE user_settings ADD COLUMN teen_mode INTEGER NOT NULL DEFAULT 0;
 
 -- ============================================================
 -- Migrations from 0011: allowance columns

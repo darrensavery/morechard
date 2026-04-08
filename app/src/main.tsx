@@ -1,3 +1,11 @@
+// Polyfill Array.prototype.at for older browsers (required by web-vitals v5 via @sentry/react)
+if (!Array.prototype.at) {
+  Array.prototype.at = function (index: number) {
+    const i = index < 0 ? this.length + index : index
+    return this[i]
+  }
+}
+
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import * as Sentry from '@sentry/react'

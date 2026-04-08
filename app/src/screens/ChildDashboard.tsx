@@ -9,6 +9,7 @@ import type { Chore, BalanceSummary, Goal, Completion } from '../lib/api'
 import { useTone } from '../lib/useTone'
 import { ThemePicker } from '../lib/theme'
 import { SavingsGrove } from '../components/dashboard/SavingsGrove'
+import { FullLogo } from '../components/ui/Logo'
 
 // ─── localStorage grove planner ──────────────────────────────────────────────
 // Key: `grove_plans_${userId}`
@@ -215,7 +216,7 @@ export function ChildDashboard() {
       {/* Header */}
       <header className="sticky top-0 z-10 bg-[var(--color-surface)] border-b border-[var(--color-border)] shadow-[0_1px_4px_rgba(0,0,0,.05)]">
         <div className="max-w-[560px] mx-auto px-3.5 py-3 flex items-center justify-between">
-          <span className="text-[17px] font-extrabold text-[var(--brand-deep)] tracking-tight">Morechard</span>
+          <FullLogo iconSize={26} />
           <div className="flex items-center gap-2">
             <button
               onClick={() => setShowSettings(true)}

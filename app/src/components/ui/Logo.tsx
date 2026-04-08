@@ -119,16 +119,18 @@ interface FullLogoProps {
 }
 
 export function FullLogo({ iconSize = 28, className = '' }: FullLogoProps) {
-  // Text size: roughly 85% of iconSize so they sit comfortably side-by-side
-  const fontSize = Math.round(iconSize * 0.85)
-
   return (
     <span
       className={`inline-flex items-center gap-2 ${className}`}
       aria-label="Morechard"
     >
       <BrandMark size={iconSize} aria-hidden />
-      <BrandWordmark fontSize={fontSize} />
+      <span
+        className="font-semibold tracking-tight text-[#1b2d2e] dark:text-[#f9f7f2]"
+        style={{ fontSize: Math.round(iconSize * 0.65) }}
+      >
+        Morechard
+      </span>
     </span>
   )
 }

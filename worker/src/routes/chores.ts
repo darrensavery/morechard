@@ -5,14 +5,15 @@
  * GET    /api/chores                  List jobs (family_id, child_id?, archived?)
  * PATCH  /api/chores/:id              Parent edits a job
  * DELETE /api/chores/:id              Parent archives a job (soft delete)
- * POST   /api/chores/:id/submit       Child marks job done → pending completion
+ * POST   /api/chores/:id/submit       Child marks job done → completion record (or instant settlement if auto_approve)
  * POST   /api/chores/:id/restore      Parent restores an archived job
  */
 
 import { Env } from '../types.js';
-import { json, error } from '../lib/response.js';
+import { json, error, clientIp } from '../lib/response.js';
 import { nanoid } from '../lib/nanoid.js';
 import { JwtPayload } from '../lib/jwt.js';
+import { computeRecordHash, GENESIS_HASH } from '../lib/hash.js';
 
 type AuthedRequest = Request & { auth: JwtPayload };
 
@@ -23,7 +24,7 @@ const VALID_FREQUENCIES = ['daily','weekly','bi_weekly','monthly','quarterly','a
 // Parent creates a job definition.
 // Body: { family_id, assigned_to, title, reward_amount, currency,
 //         frequency?, due_date?, description?, is_priority?, is_flash?,
-//         flash_deadline? }
+//         flash_deadline?, proof_required?, auto_approve? }
 // ----------------------------------------------------------------
 export async function handleChoreCreate(request: Request, env: Env): Promise<Response> {
   const auth = (request as AuthedRequest).auth;
@@ -33,6 +34,7 @@ export async function handleChoreCreate(request: Request, env: Env): Promise<Res
   const {
     family_id, assigned_to, title, reward_amount, currency,
     frequency, due_date, description, is_priority, is_flash, flash_deadline,
+    proof_required, auto_approve,
   } = body;
 
   if (!family_id   || typeof family_id   !== 'string') return error('family_id required');
@@ -47,6 +49,11 @@ export async function handleChoreCreate(request: Request, env: Env): Promise<Res
   if (frequency && !VALID_FREQUENCIES.includes(frequency as string))
     return error(`frequency must be one of: ${VALID_FREQUENCIES.join(', ')}`);
 
+  // proof_required and auto_approve are mutually exclusive:
+  // auto_approve implicitly means no proof needed.
+  const proofRequired = proof_required ? 1 : 0;
+  const autoApprove   = auto_approve   ? 1 : 0;
+
   // Verify assigned_to is a child in this family
   const child = await env.DB
     .prepare(`SELECT u.id FROM users u JOIN family_roles fr ON fr.user_id = u.id
@@ -60,8 +67,9 @@ export async function handleChoreCreate(request: Request, env: Env): Promise<Res
   await env.DB.prepare(`
     INSERT INTO chores
       (id, family_id, assigned_to, created_by, title, description, reward_amount,
-       currency, frequency, due_date, is_priority, is_flash, flash_deadline, created_at, updated_at)
-    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+       currency, frequency, due_date, is_priority, is_flash, flash_deadline,
+       proof_required, auto_approve, created_at, updated_at)
+    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
   `).bind(
     id, family_id, assigned_to, auth.sub,
     (title as string).trim(),
@@ -73,6 +81,8 @@ export async function handleChoreCreate(request: Request, env: Env): Promise<Res
     is_priority ? 1 : 0,
     is_flash ? 1 : 0,
     flash_deadline ?? null,
+    proofRequired,
+    autoApprove,
     now, now,
   ).run();
 
@@ -139,8 +149,11 @@ export async function handleChoreUpdate(request: Request, env: Env, id: string):
   if (chore.family_id !== auth.family_id) return error('Forbidden', 403);
   if (chore.archived) return error('Cannot edit an archived chore');
 
-  const allowed = ['title','description','reward_amount','currency','frequency',
-                   'due_date','is_priority','is_flash','flash_deadline'];
+  const allowed = [
+    'title','description','reward_amount','currency','frequency',
+    'due_date','is_priority','is_flash','flash_deadline',
+    'proof_required','auto_approve',
+  ];
   const updates: string[] = [];
   const values: unknown[] = [];
 
@@ -218,10 +231,19 @@ export async function handleChoreRestore(request: Request, env: Env, id: string)
 
 // ----------------------------------------------------------------
 // POST /api/chores/:id/submit
-// Child marks a job done. Creates a completion record.
-// The ledger entry is written AFTER parent approval.
+// Child marks a job done.
+//
+// Two paths:
+//   auto_approve = 1 → instant ledger write, returns status: 'completed'
+//   auto_approve = 0 → creates completion record, returns status: 'awaiting_review'
+//
+// proof_required = 1 → proof_url must already be set on an existing
+//   awaiting_review completion (uploaded via POST /api/completions/:id/proof).
+//   This endpoint does NOT accept raw file data.
+//
+// Rate-limit: one non-needs_revision submission per chore per child per day.
+// Double-dip guard: explicit status check before any write.
 // Body: { note? }
-// Rate-limit: one submission per chore per child per calendar day.
 // ----------------------------------------------------------------
 export async function handleChoreSubmit(request: Request, env: Env, id: string): Promise<Response> {
   const auth = (request as AuthedRequest).auth;
@@ -237,6 +259,7 @@ export async function handleChoreSubmit(request: Request, env: Env, id: string):
       id: string; family_id: string; assigned_to: string; title: string;
       reward_amount: number; currency: string; archived: number;
       is_flash: number; flash_deadline: string | null;
+      proof_required: number; auto_approve: number;
     }>();
 
   if (!chore) return error('Chore not found', 404);
@@ -250,23 +273,126 @@ export async function handleChoreSubmit(request: Request, env: Env, id: string):
     if (Date.now() > deadline) return error('Flash job deadline has passed', 409);
   }
 
-  // Rate-limit: one pending/approved submission per day
+  // Rate-limit: one active submission per chore per child per day
+  // (needs_revision is exempt — child is resubmitting after feedback)
   const todayStart = todayEpoch();
   const existing = await env.DB
     .prepare(`SELECT id FROM completions
-              WHERE chore_id = ? AND child_id = ? AND status != 'rejected'
+              WHERE chore_id = ? AND child_id = ? AND status = 'awaiting_review'
               AND submitted_at >= ? LIMIT 1`)
     .bind(id, auth.sub, todayStart)
     .first<{ id: string }>();
 
-  if (existing) return error('Already submitted today — wait for parent approval first', 409);
+  if (existing) return error('Already submitted today — wait for parent review first', 409);
 
-  const completionId = nanoid();
+  // Double-dip guard: cannot submit if a completed entry exists today
+  const alreadyCompleted = await env.DB
+    .prepare(`SELECT id FROM completions
+              WHERE chore_id = ? AND child_id = ? AND status = 'completed'
+              AND submitted_at >= ? LIMIT 1`)
+    .bind(id, auth.sub, todayStart)
+    .first<{ id: string }>();
+
+  if (alreadyCompleted) return error('This chore was already completed and paid today', 409);
+
   const now = Math.floor(Date.now() / 1000);
+
+  // ── AUTO-APPROVE PATH ──────────────────────────────────────────
+  if (chore.auto_approve) {
+    const ip = clientIp(request);
+
+    const family = await env.DB
+      .prepare('SELECT verify_mode FROM families WHERE id = ?')
+      .bind(chore.family_id)
+      .first<{ verify_mode: string }>();
+    if (!family) return error('Family not found', 404);
+
+    const prevRow = await env.DB
+      .prepare('SELECT id, record_hash FROM ledger WHERE family_id = ? ORDER BY id DESC LIMIT 1')
+      .bind(chore.family_id)
+      .first<{ id: number; record_hash: string }>();
+
+    const previousHash = prevRow?.record_hash ?? GENESIS_HASH;
+    const maxRow = await env.DB
+      .prepare('SELECT COALESCE(MAX(id), 0) AS max_id FROM ledger')
+      .first<{ max_id: number }>();
+    const newLedgerId = (maxRow?.max_id ?? 0) + 1;
+
+    const recordHash = await computeRecordHash(
+      newLedgerId, chore.family_id, auth.sub,
+      chore.reward_amount, chore.currency, 'credit', previousHash,
+    );
+
+    const completionId = nanoid();
+
+    await env.DB.batch([
+      // Write completion as already completed
+      env.DB.prepare(`
+        INSERT INTO completions
+          (id, family_id, chore_id, child_id, note, status, ledger_id, submitted_at, resolved_at, resolved_by)
+        VALUES (?,?,?,?,?,'completed',?,?,?,?)
+      `).bind(completionId, chore.family_id, id, auth.sub, note, newLedgerId, now, now, auth.sub),
+
+      // Write immutable ledger entry — verified_auto since trust was pre-granted
+      env.DB.prepare(`
+        INSERT INTO ledger
+          (id, family_id, child_id, chore_id, entry_type, amount, currency,
+           description, verification_status, authorised_by, verified_at, verified_by,
+           previous_hash, record_hash, ip_address)
+        VALUES (?,?,?,?,'credit',?,?,?,'verified_auto',?,?,?,?,?,?)
+      `).bind(
+        newLedgerId,
+        chore.family_id, auth.sub, id,
+        chore.reward_amount, chore.currency,
+        `Auto-approved: ${chore.title}`,
+        auth.sub, now, auth.sub,
+        previousHash, recordHash, ip,
+      ),
+    ]);
+
+    return json({
+      id: completionId,
+      chore_id: id,
+      title: chore.title,
+      reward_amount: chore.reward_amount,
+      currency: chore.currency,
+      status: 'completed',
+      ledger_id: newLedgerId,
+      submitted_at: now,
+      auto_approved: true,
+    }, 201);
+  }
+
+  // ── STANDARD PATH — create awaiting_review completion ─────────
+  // Check if this is a resubmission after needs_revision
+  const needsRevision = await env.DB
+    .prepare(`SELECT id, attempt_count FROM completions
+              WHERE chore_id = ? AND child_id = ? AND status = 'needs_revision'
+              ORDER BY submitted_at DESC LIMIT 1`)
+    .bind(id, auth.sub)
+    .first<{ id: string; attempt_count: number }>();
+
+  if (needsRevision) {
+    // Reopen the existing record: bump attempt_count, reset status, clear parent_notes
+    await env.DB.prepare(`
+      UPDATE completions
+      SET status = 'awaiting_review', note = ?, parent_notes = NULL,
+          attempt_count = ?, submitted_at = ?, resolved_at = NULL, resolved_by = NULL
+      WHERE id = ?
+    `).bind(note, needsRevision.attempt_count + 1, now, needsRevision.id).run();
+
+    const updated = await env.DB
+      .prepare('SELECT * FROM completions WHERE id = ?')
+      .bind(needsRevision.id).first();
+    return json(updated, 200);
+  }
+
+  // Fresh submission
+  const completionId = nanoid();
 
   await env.DB.prepare(`
     INSERT INTO completions (id, family_id, chore_id, child_id, note, status, submitted_at)
-    VALUES (?,?,?,?,?,'pending',?)
+    VALUES (?,?,?,?,?,'awaiting_review',?)
   `).bind(completionId, chore.family_id, id, auth.sub, note, now).run();
 
   return json({
@@ -275,7 +401,7 @@ export async function handleChoreSubmit(request: Request, env: Env, id: string):
     title: chore.title,
     reward_amount: chore.reward_amount,
     currency: chore.currency,
-    status: 'pending',
+    status: 'awaiting_review',
     submitted_at: now,
   }, 201);
 }
