@@ -181,7 +181,7 @@ export function ParentDashboard() {
             {tab === 'jobs'     && <JobsTab          familyId={familyId} child={activeChild} />}
             {tab === 'pending'  && <PendingTab        familyId={familyId} child={activeChild} onCountChange={setPendingCount} />}
             {tab === 'history'  && <HistoryTab        familyId={familyId} child={activeChild} />}
-            {tab === 'insights' && <InsightsTab       familyId={familyId} child={activeChild} />}
+            {tab === 'insights' && <InsightsTab       familyId={familyId} child={activeChild} children={children} />}
             {tab === 'goals'    && <GoalBoostingTab   familyId={familyId} child={activeChild} />}
             {tab === 'settings' && <ParentSettingsTab familyId={familyId} onChildrenChange={setChildren} />}
           </>

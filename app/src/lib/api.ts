@@ -269,6 +269,38 @@ export async function getProofUrl(completionId: string): Promise<{ url: string }
   return request(`/api/completions/${completionId}/proof`);
 }
 
+// ----------------------------------------------------------------
+// Insights
+// ----------------------------------------------------------------
+export interface InsightsData {
+  period: string;
+  period_start_epoch: number | null;
+  child_id: string;
+  is_discovery_phase: boolean;
+  all_time_completed: number;
+  first_time_pass_rate: number | null;
+  consistency_score: number | null;
+  effort_preference: 'high_yield' | 'steady' | null;
+  planning_horizon: number | null;
+  savings_consistency: number | null;
+  tasks_completed: number;
+  tasks_revised: number;
+  total_earned_pence: number;
+  total_spent_pence: number;
+  total_saved_pence: number;
+  available_balance_pence: number;
+  lifetime_earned_pence: number;
+  goals_locked_pence: number;
+}
+
+export async function getInsights(
+  family_id: string,
+  child_id: string,
+  period: 'week' | 'month' | 'all' = 'week',
+): Promise<InsightsData> {
+  return request(`/api/insights?family_id=${family_id}&child_id=${child_id}&period=${period}`);
+}
+
 export async function approveAll(family_id: string, child_id: string): Promise<{ approved: number }> {
   return request('/api/completions/approve-all', { method: 'POST', body: JSON.stringify({ family_id, child_id }) });
 }
