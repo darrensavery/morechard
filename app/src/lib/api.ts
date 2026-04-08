@@ -164,6 +164,7 @@ export interface Chore {
   title: string; description: string | null; reward_amount: number; currency: string;
   frequency: string; due_date: string | null; is_priority: number; is_flash: number;
   flash_deadline: string | null; archived: number;
+  proof_required: number; auto_approve: number;
   child_name: string; parent_name: string;
   created_at: number; updated_at: number;
 }
@@ -272,6 +273,19 @@ export async function getProofUrl(completionId: string): Promise<{ url: string }
 // ----------------------------------------------------------------
 // Insights
 // ----------------------------------------------------------------
+export interface TrendEntry {
+  current: number | null;
+  delta: number | null;
+  direction: 'up' | 'down' | 'flat' | null;
+}
+
+export interface MentorBriefing {
+  observation: string;
+  behavioral_root: string;
+  the_nudge: string;
+  source: 'ai' | 'fallback' | 'cache';
+}
+
 export interface InsightsData {
   period: string;
   period_start_epoch: number | null;
@@ -291,6 +305,16 @@ export interface InsightsData {
   available_balance_pence: number;
   lifetime_earned_pence: number;
   goals_locked_pence: number;
+  trends: {
+    consistency: TrendEntry;
+    responsibility: TrendEntry;
+    horizon: TrendEntry;
+  } | null;
+  velocity_context: (
+    | { mode: 'seedling';      avg_tasks_per_week: number }
+    | { mode: 'professional';  avg_earned_pence_week: number }
+  ) | null;
+  mentor_briefing: MentorBriefing | null;
 }
 
 export async function getInsights(

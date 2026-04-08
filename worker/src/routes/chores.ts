@@ -128,6 +128,17 @@ export async function handleChoreList(request: Request, env: Env): Promise<Respo
   }
 
   const { results } = await stmt.all();
+
+  // Lazy generation: for child requests, ensure every recurring chore has an
+  // 'available' completion record for the current period.
+  if (auth.role === 'child' && effectiveChildId) {
+    await lazyGenerateCompletions(
+      env, family_id,
+      effectiveChildId,
+      (results as { id: string; frequency: string }[]),
+    );
+  }
+
   return json({ chores: results });
 }
 
@@ -363,31 +374,38 @@ export async function handleChoreSubmit(request: Request, env: Env, id: string):
     }, 201);
   }
 
-  // ── STANDARD PATH — create awaiting_review completion ─────────
-  // Check if this is a resubmission after needs_revision
-  const needsRevision = await env.DB
-    .prepare(`SELECT id, attempt_count FROM completions
-              WHERE chore_id = ? AND child_id = ? AND status = 'needs_revision'
+  // ── STANDARD PATH — create / transition to awaiting_review ───
+  // Priority order:
+  //   1. needs_revision record → resubmission (bump attempt_count)
+  //   2. available record → lazy-gen transition (child tapped Done)
+  //   3. neither → fresh INSERT
+
+  const existingRecord = await env.DB
+    .prepare(`SELECT id, status, attempt_count FROM completions
+              WHERE chore_id = ? AND child_id = ? AND status IN ('needs_revision','available')
               ORDER BY submitted_at DESC LIMIT 1`)
     .bind(id, auth.sub)
-    .first<{ id: string; attempt_count: number }>();
+    .first<{ id: string; status: string; attempt_count: number }>();
 
-  if (needsRevision) {
-    // Reopen the existing record: bump attempt_count, reset status, clear parent_notes
+  if (existingRecord) {
+    const newAttemptCount = existingRecord.status === 'needs_revision'
+      ? existingRecord.attempt_count + 1
+      : 1; // available → first real attempt
+
     await env.DB.prepare(`
       UPDATE completions
       SET status = 'awaiting_review', note = ?, parent_notes = NULL,
           attempt_count = ?, submitted_at = ?, resolved_at = NULL, resolved_by = NULL
       WHERE id = ?
-    `).bind(note, needsRevision.attempt_count + 1, now, needsRevision.id).run();
+    `).bind(note, newAttemptCount, now, existingRecord.id).run();
 
     const updated = await env.DB
       .prepare('SELECT * FROM completions WHERE id = ?')
-      .bind(needsRevision.id).first();
+      .bind(existingRecord.id).first();
     return json(updated, 200);
   }
 
-  // Fresh submission
+  // Fresh submission — no prior record
   const completionId = nanoid();
 
   await env.DB.prepare(`
@@ -418,4 +436,70 @@ function todayEpoch(): number {
   const d = new Date();
   d.setHours(0, 0, 0, 0);
   return Math.floor(d.getTime() / 1000);
+}
+
+/**
+ * Lazy generation — called when a child fetches their chore list.
+ *
+ * For each active recurring chore assigned to the child, checks whether an
+ * 'available' or later completion exists for the current period.
+ * If not, inserts a new 'available' record so the child sees the task immediately.
+ *
+ * Period boundaries use the UTC offset implicit in the Worker runtime.
+ * Periods: daily = calendar day, weekly = Mon–Sun, monthly = calendar month.
+ * 'as_needed', 'quarterly' → skipped (no recurring period).
+ */
+export async function lazyGenerateCompletions(
+  env: Env,
+  familyId: string,
+  childId: string,
+  chores: { id: string; frequency: string }[],
+): Promise<void> {
+  const now = new Date();
+
+  // Period start timestamps (epoch seconds)
+  const dayStart = Math.floor(new Date(
+    now.getFullYear(), now.getMonth(), now.getDate(),
+  ).getTime() / 1000);
+
+  // ISO week: Mon = day 1
+  const dow = now.getDay() === 0 ? 6 : now.getDay() - 1; // 0=Mon … 6=Sun
+  const weekStart = Math.floor(new Date(
+    now.getFullYear(), now.getMonth(), now.getDate() - dow,
+  ).getTime() / 1000);
+
+  const monthStart = Math.floor(new Date(
+    now.getFullYear(), now.getMonth(), 1,
+  ).getTime() / 1000);
+
+  const SKIP = new Set(['as_needed', 'quarterly']);
+
+  for (const chore of chores) {
+    if (SKIP.has(chore.frequency)) continue;
+
+    const periodStart =
+      chore.frequency === 'daily' || chore.frequency === 'school_days' ? dayStart :
+      chore.frequency === 'weekly' || chore.frequency === 'bi_weekly'  ? weekStart :
+      chore.frequency === 'monthly'                                      ? monthStart :
+      weekStart; // fallback
+
+    // Check: does a non-orphan completion already exist for this period?
+    const existing = await env.DB.prepare(`
+      SELECT id FROM completions
+      WHERE chore_id = ? AND child_id = ?
+        AND status IN ('available','awaiting_review','completed','needs_revision')
+        AND submitted_at >= ?
+      LIMIT 1
+    `).bind(chore.id, childId, periodStart).first<{ id: string }>();
+
+    if (existing) continue; // already covered
+
+    // Insert lazy record
+    const id = nanoid();
+    await env.DB.prepare(`
+      INSERT INTO completions
+        (id, family_id, chore_id, child_id, status, submitted_at)
+      VALUES (?,?,?,?,'available',?)
+    `).bind(id, familyId, chore.id, childId, Math.floor(Date.now() / 1000)).run();
+  }
 }

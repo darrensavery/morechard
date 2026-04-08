@@ -1,6 +1,8 @@
 export interface Env {
   DB: D1Database;
   EVIDENCE: R2Bucket;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  AI: any; // Cloudflare Workers AI binding (@cloudflare/workers-types Ai)
   ENVIRONMENT: string;
   JWT_SECRET: string;
   RESEND_API_KEY: string;
@@ -11,7 +13,11 @@ export interface Env {
 }
 
 // Completion lifecycle statuses
-export type CompletionStatus = 'awaiting_review' | 'completed' | 'needs_revision';
+// 'available'       — lazy-generated for a recurring chore period, not yet submitted
+// 'awaiting_review' — child submitted, parent to review
+// 'completed'       — approved, ledger written
+// 'needs_revision'  — parent sent back with notes
+export type CompletionStatus = 'available' | 'awaiting_review' | 'completed' | 'needs_revision';
 
 export type PaymentType = 'LIFETIME' | 'AI_ANNUAL';
 

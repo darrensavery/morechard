@@ -30,6 +30,7 @@ export function PendingTab({ familyId, child, onCountChange }: Props) {
   const [reviseNote, setReviseNote]   = useState('')
   const [busy, setBusy]               = useState<string | null>(null)
   const [approveAllBusy, setApproveAllBusy] = useState(false)
+  const [showApproveAllModal, setShowApproveAllModal] = useState(false)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -60,11 +61,16 @@ export function PendingTab({ familyId, child, onCountChange }: Props) {
     }
   }
 
-  async function handleApproveAll() {
+  async function handleConfirmApproveAll() {
+    setShowApproveAllModal(false)
     setApproveAllBusy(true)
     try { await approveAll(familyId, child.id); await load() }
     finally { setApproveAllBusy(false) }
   }
+
+  // Totals for the modal
+  const approveAllTotal = completions.reduce((s, c) => s + c.reward_amount, 0)
+  const approveAllCurrency = completions[0]?.currency ?? 'GBP'
 
   if (loading) return <div className="py-10 text-center text-[14px] text-[var(--color-text-muted)]">Loading…</div>
 
@@ -83,11 +89,16 @@ export function PendingTab({ familyId, child, onCountChange }: Props) {
       {/* Approve-all bulk action */}
       {completions.length > 1 && (
         <button
-          onClick={handleApproveAll}
+          onClick={() => setShowApproveAllModal(true)}
           disabled={approveAllBusy}
           className="w-full bg-[var(--brand-primary)] text-white font-bold py-3.5 rounded-2xl text-[15px] hover:opacity-90 disabled:opacity-50 cursor-pointer shadow-sm active:scale-[0.98] transition-all"
         >
-          {approveAllBusy ? 'Approving all…' : `Approve all ${completions.length} submissions`}
+          {approveAllBusy ? (
+            <span className="flex items-center justify-center gap-2">
+              <span className="w-4 h-4 border-2 border-white/60 border-t-white rounded-full animate-spin" />
+              Approving…
+            </span>
+          ) : `Approve all ${completions.length} submissions`}
         </button>
       )}
 
@@ -106,6 +117,54 @@ export function PendingTab({ familyId, child, onCountChange }: Props) {
           onConfirmRevise={() => handleRevise(c.id)}
         />
       ))}
+
+      {/* Approve-all confirmation modal */}
+      {showApproveAllModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+          <div className="absolute inset-0 bg-black/50" onClick={() => setShowApproveAllModal(false)} />
+          <div className="relative bg-[var(--color-surface)] rounded-2xl shadow-2xl w-full max-w-sm p-6 flex flex-col gap-4">
+            {/* Header */}
+            <div>
+              <p className="text-[18px] font-extrabold text-[var(--color-text)] tracking-tight">
+                Confirm payment
+              </p>
+              <p className="text-[13px] text-[var(--color-text-muted)] mt-1 leading-relaxed">
+                You are about to pay out <strong className="text-[var(--color-text)]">{completions.length} task{completions.length !== 1 ? 's' : ''}</strong> totalling{' '}
+                <strong className="text-[var(--brand-primary)]">{formatCurrency(approveAllTotal, approveAllCurrency)}</strong>.
+                Have you verified that these tasks meet the agreed standard?
+              </p>
+            </div>
+
+            {/* Task list — scrollable if long */}
+            <div className="max-h-48 overflow-y-auto rounded-xl border border-[var(--color-border)] divide-y divide-[var(--color-border)]">
+              {completions.map(c => (
+                <div key={c.id} className="flex items-center justify-between px-3.5 py-2.5">
+                  <span className="text-[13px] text-[var(--color-text)] truncate mr-3">{c.chore_title}</span>
+                  <span className="text-[13px] font-semibold tabular-nums text-[var(--brand-primary)] shrink-0">
+                    {formatCurrency(c.reward_amount, c.currency)}
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-2.5">
+              <button
+                onClick={() => setShowApproveAllModal(false)}
+                className="flex-1 border border-[var(--color-border)] rounded-xl py-3 text-[14px] font-semibold text-[var(--color-text-muted)] hover:bg-[var(--color-surface-alt)] cursor-pointer transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmApproveAll}
+                className="flex-1 bg-[var(--brand-primary)] text-white rounded-xl py-3 text-[14px] font-bold hover:opacity-90 cursor-pointer active:scale-[0.98] transition-all shadow-sm"
+              >
+                Confirm &amp; pay
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

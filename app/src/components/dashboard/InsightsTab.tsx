@@ -13,8 +13,8 @@
  *  7. Supporting stats row
  */
 
-import { useState, useEffect, useCallback } from 'react'
-import type { ChildRecord, InsightsData } from '../../lib/api'
+import { useState, useEffect, useCallback, useRef } from 'react'
+import type { ChildRecord, InsightsData, TrendEntry, MentorBriefing } from '../../lib/api'
 import { getInsights, formatCurrency } from '../../lib/api'
 import { AvatarSVG } from '../../lib/avatars'
 
@@ -135,6 +135,7 @@ function InsightsDashboard({
           value={data.is_discovery_phase ? null : data.first_time_pass_rate}
           isDiscovery={data.is_discovery_phase}
           color="var(--brand-primary)"
+          trend={data.trends?.responsibility ?? null}
         />
         <GaugeCard
           label="Consistency"
@@ -142,6 +143,7 @@ function InsightsDashboard({
           value={data.is_discovery_phase ? null : data.consistency_score}
           isDiscovery={data.is_discovery_phase}
           color="#f59e0b"
+          trend={data.trends?.consistency ?? null}
         />
         <GaugeCard
           label="Savings"
@@ -149,6 +151,7 @@ function InsightsDashboard({
           value={data.is_discovery_phase ? null : data.savings_consistency}
           isDiscovery={data.is_discovery_phase}
           color="#8b5cf6"
+          trend={data.trends?.horizon ?? null}
         />
       </div>
 
@@ -293,34 +296,108 @@ function BriefingSlot({ data, child }: { data: InsightsData; child: ChildRecord 
     )
   }
 
-  // Live phase — reserved AI slot
+  // Live phase — AI briefing card
+  return <LiveBriefingCard data={data} child={child} name={name} />
+}
+
+// ── Live Briefing Card ────────────────────────────────────────────────────────
+
+function LiveBriefingCard({
+  data, child, name,
+}: { data: InsightsData; child: ChildRecord; name: string }) {
+  const briefing = data.mentor_briefing
+  const animate  = briefing?.source === 'ai'
+
+  const [modalOpen, setModalOpen] = useState(false)
+
+  // If no briefing yet (shouldn't happen outside discovery, but guard anyway)
+  if (!briefing) {
+    return (
+      <div className="relative bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl overflow-hidden">
+        <div className="absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r from-[var(--brand-primary)] via-[color-mix(in_srgb,var(--brand-primary)_60%,transparent)] to-transparent" />
+        <BriefingSkeleton />
+      </div>
+    )
+  }
+
+  const isTeenMode = data.velocity_context?.mode === 'professional'
+
   return (
-    <div className="relative bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl overflow-hidden">
-      <div className="absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r from-[var(--brand-primary)] via-[color-mix(in_srgb,var(--brand-primary)_60%,transparent)] to-transparent" />
-      <div className="px-4 pt-4 pb-4">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <div className="flex items-center gap-2 mb-0.5">
-              <span className="inline-block w-2 h-2 rounded-full bg-[var(--brand-primary)]" />
-              <span className="text-[10px] font-bold text-[var(--color-text-muted)] uppercase tracking-widest">
-                Mentor Executive Briefing
-              </span>
+    <>
+      <div className="relative rounded-2xl overflow-hidden border border-[color-mix(in_srgb,var(--brand-primary)_22%,transparent)]"
+           style={{ background: 'color-mix(in_srgb, var(--brand-primary) 5%, var(--color-surface))' }}>
+        {/* Orchard green accent bar */}
+        <div className="absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r from-[var(--brand-primary)] via-[color-mix(in_srgb,var(--brand-primary)_60%,transparent)] to-transparent" />
+
+        <div className="px-4 pt-4 pb-4 space-y-3">
+          {/* Header */}
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <div className="flex items-center gap-2 mb-0.5">
+                <span className="inline-block w-2 h-2 rounded-full bg-[var(--brand-primary)]" />
+                <span className="text-[10px] font-bold text-[var(--color-text-muted)] uppercase tracking-widest">
+                  Mentor Executive Briefing
+                </span>
+              </div>
+              <p className="text-[15px] font-extrabold text-[var(--color-text)] tracking-tight">
+                Orchard Lead Analysis
+              </p>
             </div>
-            <p className="text-[15px] font-extrabold text-[var(--color-text)] tracking-tight">
-              AI Analysis
-            </p>
-            <p className="text-[12px] text-[var(--color-text-muted)] mt-0.5 leading-relaxed">
-              Personalised coaching insights are coming in Phase 5. The data is live — the mentor is being trained.
-            </p>
+            <div className="shrink-0 w-9 h-9 rounded-xl bg-[color-mix(in_srgb,var(--brand-primary)_10%,transparent)] border border-[color-mix(in_srgb,var(--brand-primary)_20%,transparent)] flex items-center justify-center">
+              {/* Leaf / insight icon */}
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--brand-primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10z"/>
+                <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/>
+              </svg>
+            </div>
           </div>
-          <div className="shrink-0 w-9 h-9 rounded-xl bg-[color-mix(in_srgb,var(--brand-primary)_10%,transparent)] border border-[color-mix(in_srgb,var(--brand-primary)_20%,transparent)] flex items-center justify-center">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--brand-primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 2a10 10 0 1 0 10 10"/><path d="M12 6v6l4 2"/><path d="M22 2 12 12"/>
+
+          {/* Observation */}
+          <div>
+            <p className="text-[10px] font-bold text-[var(--color-text-muted)] uppercase tracking-wide mb-1">Observation</p>
+            <TypewriterText text={briefing.observation} animate={animate} className="text-[13px] text-[var(--color-text)] leading-relaxed font-medium" />
+          </div>
+
+          {/* Behavioural Root */}
+          <div>
+            <p className="text-[10px] font-bold text-[var(--color-text-muted)] uppercase tracking-wide mb-1">Behavioural Root</p>
+            <TypewriterText text={briefing.behavioral_root} animate={animate} delay={animate ? briefing.observation.length * 18 + 200 : 0} className="text-[13px] text-[var(--color-text-muted)] leading-relaxed" />
+          </div>
+
+          {/* Divider */}
+          <div className="border-t border-[color-mix(in_srgb,var(--brand-primary)_15%,transparent)]" />
+
+          {/* The Nudge */}
+          <div>
+            <p className="text-[10px] font-bold text-[var(--color-text-muted)] uppercase tracking-wide mb-1">The Nudge</p>
+            <p className="text-[13px] text-[var(--color-text)] leading-relaxed">{briefing.the_nudge}</p>
+          </div>
+
+          {/* Share button */}
+          <button
+            onClick={() => setModalOpen(true)}
+            className="w-full mt-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-[13px] font-semibold text-white cursor-pointer transition-opacity hover:opacity-90 active:opacity-80"
+            style={{ background: 'var(--brand-primary)' }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
+              <path d="M8.59 13.51 15.42 17.49M15.41 6.51 8.59 10.49"/>
             </svg>
-          </div>
+            Share Nudge with {name}
+          </button>
         </div>
       </div>
-    </div>
+
+      {/* Modal */}
+      {modalOpen && (
+        <ShareNudgeModal
+          briefing={briefing}
+          child={child}
+          isTeenMode={isTeenMode}
+          onClose={() => setModalOpen(false)}
+        />
+      )}
+    </>
   )
 }
 
@@ -335,16 +412,193 @@ function RecommendationRow({ icon, text }: { icon: React.ReactNode; text: string
   )
 }
 
+// ── Typewriter text ───────────────────────────────────────────────────────────
+
+function TypewriterText({
+  text, animate, delay = 0, className,
+}: { text: string; animate: boolean; delay?: number; className?: string }) {
+  const [displayed, setDisplayed] = useState(animate ? '' : text)
+  const frameRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    if (!animate) { setDisplayed(text); return }
+    setDisplayed('')
+    let i = 0
+    const CHAR_DELAY = 18 // ms per character
+
+    const start = setTimeout(() => {
+      const tick = () => {
+        i++
+        setDisplayed(text.slice(0, i))
+        if (i < text.length) {
+          frameRef.current = setTimeout(tick, CHAR_DELAY)
+        }
+      }
+      frameRef.current = setTimeout(tick, CHAR_DELAY)
+    }, delay)
+
+    return () => {
+      clearTimeout(start)
+      if (frameRef.current) clearTimeout(frameRef.current)
+    }
+  }, [text, animate, delay])
+
+  return <p className={className}>{displayed}<span className="opacity-0">.</span></p>
+}
+
+// ── Briefing skeleton (shown when briefing is null post-discovery) ─────────────
+
+function BriefingSkeleton() {
+  return (
+    <div className="px-4 pt-4 pb-4 space-y-3 animate-pulse">
+      <div className="h-3 w-32 bg-[var(--color-surface-alt)] rounded-full" />
+      <div className="h-5 w-48 bg-[var(--color-surface-alt)] rounded-full" />
+      <div className="space-y-1.5">
+        <div className="h-3 w-full bg-[var(--color-surface-alt)] rounded-full" />
+        <div className="h-3 w-4/5 bg-[var(--color-surface-alt)] rounded-full" />
+      </div>
+      <div className="space-y-1.5">
+        <div className="h-3 w-full bg-[var(--color-surface-alt)] rounded-full" />
+        <div className="h-3 w-3/5 bg-[var(--color-surface-alt)] rounded-full" />
+      </div>
+    </div>
+  )
+}
+
+// ── Share Nudge Modal ─────────────────────────────────────────────────────────
+
+function ShareNudgeModal({
+  briefing, child, isTeenMode, onClose,
+}: {
+  briefing: MentorBriefing
+  child: ChildRecord
+  isTeenMode: boolean
+  onClose: () => void
+}) {
+  const name = child.display_name.split(' ')[0]
+  const [copied, setCopied] = useState(false)
+
+  const message = isTeenMode
+    ? `Hey ${name}, your consistency this week is building real momentum. We're thinking of introducing a High-Integrity Bonus for your next streak — it tracks first-time passes, which is the metric that matters most in the real world. Worth a conversation? 🧭`
+    : `Hey ${name}! Every task you finish is like watering the tree — you might not see it grow day by day, but the roots are getting stronger. We've spotted some great work in the Orchard this week. Keep it up and the harvest will come! 🌱`
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(message)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2500)
+    } catch {
+      // Fallback: select text for manual copy
+    }
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4"
+      style={{ background: 'rgba(0,0,0,0.45)' }}
+      onClick={e => { if (e.target === e.currentTarget) onClose() }}
+    >
+      <div className="w-full max-w-sm bg-[var(--color-surface)] rounded-2xl overflow-hidden shadow-xl">
+        {/* Header */}
+        <div className="flex items-center justify-between px-4 pt-4 pb-3 border-b border-[var(--color-border)]">
+          <div>
+            <p className="text-[10px] font-bold text-[var(--color-text-muted)] uppercase tracking-widest mb-0.5">Share Nudge</p>
+            <p className="text-[15px] font-extrabold text-[var(--color-text)] tracking-tight">Draft Message for {name}</p>
+          </div>
+          <button
+            onClick={onClose}
+            className="w-7 h-7 rounded-full flex items-center justify-center text-[var(--color-text-muted)] hover:text-[var(--color-text)] cursor-pointer transition-colors"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+              <path d="M18 6 6 18M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+
+        {/* Draft message */}
+        <div className="px-4 py-3.5">
+          <div
+            className="rounded-xl px-3.5 py-3 text-[13px] leading-relaxed text-[var(--color-text)] border border-[var(--color-border)]"
+            style={{ background: 'color-mix(in_srgb, var(--brand-primary) 4%, var(--color-surface))' }}
+          >
+            {message}
+          </div>
+
+          {/* Nudge source label */}
+          <p className="text-[10px] text-[var(--color-text-muted)] mt-2 text-center">
+            Based on: "{briefing.the_nudge.length > 72 ? briefing.the_nudge.slice(0, 72) + '…' : briefing.the_nudge}"
+          </p>
+        </div>
+
+        {/* Copy button */}
+        <div className="px-4 pb-4 space-y-2">
+          <button
+            onClick={handleCopy}
+            className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-[13px] font-semibold text-white cursor-pointer transition-opacity hover:opacity-90 active:opacity-80"
+            style={{ background: copied ? '#16a34a' : 'var(--brand-primary)' }}
+          >
+            {copied ? (
+              <>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M20 6 9 17l-5-5"/>
+                </svg>
+                Copied to clipboard
+              </>
+            ) : (
+              <>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>
+                </svg>
+                Copy Message
+              </>
+            )}
+          </button>
+
+          {/* Mentor attribution */}
+          <p className="text-[10px] text-[var(--color-text-muted)] text-center">
+            Drafted by your Orchard Mentor.
+          </p>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ── Gauge card ────────────────────────────────────────────────────────────────
 
+function TrendIndicator({ trend }: { trend: TrendEntry | null }) {
+  if (!trend || trend.direction === null) return null
+  if (trend.direction === 'up') {
+    return (
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 19V5M5 12l7-7 7 7"/>
+      </svg>
+    )
+  }
+  if (trend.direction === 'down') {
+    return (
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 5v14M5 12l7 7 7-7"/>
+      </svg>
+    )
+  }
+  // flat
+  return (
+    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M5 12h14"/>
+    </svg>
+  )
+}
+
 function GaugeCard({
-  label, sublabel, value, isDiscovery, color,
+  label, sublabel, value, isDiscovery, color, trend,
 }: {
   label: string
   sublabel: string
   value: number | null
   isDiscovery: boolean
   color: string
+  trend: TrendEntry | null
 }) {
   const size   = 72
   const stroke = 7
@@ -424,7 +678,10 @@ function GaugeCard({
 
       {/* Labels */}
       <div className="text-center">
-        <p className="text-[11px] font-bold text-[var(--color-text)] leading-tight">{label}</p>
+        <div className="flex items-center justify-center gap-1">
+          <p className="text-[11px] font-bold text-[var(--color-text)] leading-tight">{label}</p>
+          {!isDiscovery && <TrendIndicator trend={trend} />}
+        </div>
         <p className="text-[9.5px] text-[var(--color-text-muted)] leading-tight mt-0.5">
           {subText ?? sublabel}
         </p>

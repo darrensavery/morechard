@@ -34,7 +34,7 @@ export async function handleCompletionList(request: Request, env: Env): Promise<
   const child_id  = url.searchParams.get('child_id');
   const status    = url.searchParams.get('status') ?? 'awaiting_review';
 
-  const validStatuses = ['awaiting_review', 'completed', 'needs_revision'];
+  const validStatuses = ['available', 'awaiting_review', 'completed', 'needs_revision'];
   if (!validStatuses.includes(status)) return error(`status must be one of: ${validStatuses.join(', ')}`);
 
   if (!family_id) return error('family_id required');

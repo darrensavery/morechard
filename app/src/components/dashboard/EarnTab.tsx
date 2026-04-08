@@ -1,14 +1,20 @@
 /**
  * EarnTab — child's task earn view.
  *
- * Priority 1: "Needs revision" cards — parent's feedback is the first thing
- *   the child reads, not behind a tap.
- * Priority 2: Available tasks — open cards with camera or note submission.
- * Submission handshake: proof_required → camera input → upload → harvest pulse.
+ * Data model (post lazy-generation):
+ *   available       — worker created this for the current period; child taps Done to submit
+ *   needs_revision  — parent sent back with notes; child must resubmit
+ *   awaiting_review — already submitted; waiting for parent
  *
- * Lazy generation: the worker creates completion records for recurring
- * chores on-demand; this view simply calls GET /api/chores and
- * GET /api/completions to distinguish submitted vs open.
+ * Submission handshake:
+ *   proof_required  → camera input (capture="environment") → upload → harvest pulse
+ *   no proof        → optional note drawer → submit → harvest pulse
+ *
+ * PostHog funnel events:
+ *   task_submit_started   — child taps Done (or camera button)
+ *   task_submitted        — submission confirmed by worker
+ *   revision_viewed       — needs_revision card rendered (dwell tracked)
+ *   revision_resubmitted  — child resubmits after revision
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react'
@@ -17,6 +23,7 @@ import {
   getChores, getCompletions, submitChore,
   uploadProof, formatCurrency,
 } from '../../lib/api'
+import { track } from '../../lib/analytics'
 
 interface Props {
   familyId: string
@@ -26,15 +33,19 @@ interface Props {
 
 interface SubmitState {
   choreId: string
+  completionId: string | null  // set once lazy record is identified
+  isRevision: boolean
   stage: 'note' | 'uploading' | 'submitting' | 'harvesting'
   note: string
   error: string | null
+  startedAt: number            // epoch ms — for velocity tracking
 }
 
 export function EarnTab({ familyId, childId, currency }: Props) {
   const [chores,    setChores]    = useState<Chore[]>([])
-  const [awaiting,  setAwaiting]  = useState<Completion[]>([])   // awaiting_review
-  const [revisions, setRevisions] = useState<Completion[]>([])   // needs_revision
+  const [available, setAvailable] = useState<Completion[]>([])  // status=available
+  const [awaiting,  setAwaiting]  = useState<Completion[]>([])  // status=awaiting_review
+  const [revisions, setRevisions] = useState<Completion[]>([])  // status=needs_revision
   const [loading,   setLoading]   = useState(true)
   const [submit,    setSubmit]    = useState<SubmitState | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
@@ -42,12 +53,15 @@ export function EarnTab({ familyId, childId, currency }: Props) {
   const load = useCallback(async () => {
     setLoading(true)
     try {
-      const [c, aw, rev] = await Promise.all([
+      // GET /api/chores triggers lazy generation server-side for recurring chores
+      const [c, av, aw, rev] = await Promise.all([
         getChores({ family_id: familyId, child_id: childId }).then(r => r.chores),
+        getCompletions({ family_id: familyId, child_id: childId, status: 'available' }).then(r => r.completions),
         getCompletions({ family_id: familyId, child_id: childId, status: 'awaiting_review' }).then(r => r.completions),
         getCompletions({ family_id: familyId, child_id: childId, status: 'needs_revision' }).then(r => r.completions),
       ])
       setChores(c)
+      setAvailable(av)
       setAwaiting(aw)
       setRevisions(rev)
     } catch { /* silently degrade */ }
@@ -56,34 +70,54 @@ export function EarnTab({ familyId, childId, currency }: Props) {
 
   useEffect(() => { load() }, [load])
 
-  // IDs of chores that already have an awaiting_review submission today
-  const submittedChoreIds = new Set(awaiting.map(c => c.chore_id))
-
-  // Open tasks — not yet submitted
-  const openChores = chores.filter(c => !submittedChoreIds.has(c.id))
+  // Map chore_id → Chore for quick lookup
+  const choreMap = new Map(chores.map(c => [c.id, c]))
 
   // ── Submission flow ─────────────────────────────────────────────────────────
 
-  function startSubmit(chore: Chore) {
-    if (chore.proof_required) {
-      // Trigger camera immediately
-      setSubmit({ choreId: chore.id, stage: 'uploading', note: '', error: null })
+  function startSubmit(comp: Completion, isRevision: boolean) {
+    const chore = choreMap.get(comp.chore_id)
+    track.taskSubmitStarted({
+      chore_id: comp.chore_id,
+      is_revision: isRevision,
+      has_proof_required: !!(chore?.proof_required),
+    })
+
+    if (chore?.proof_required) {
+      setSubmit({
+        choreId: comp.chore_id,
+        completionId: comp.id,
+        isRevision,
+        stage: 'uploading',
+        note: '',
+        error: null,
+        startedAt: Date.now(),
+      })
       setTimeout(() => fileRef.current?.click(), 50)
     } else {
-      setSubmit({ choreId: chore.id, stage: 'note', note: '', error: null })
+      setSubmit({
+        choreId: comp.chore_id,
+        completionId: comp.id,
+        isRevision,
+        stage: 'note',
+        note: '',
+        error: null,
+        startedAt: Date.now(),
+      })
     }
   }
 
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file || !submit) return
-    e.target.value = '' // reset so same file can be re-selected after error
+    e.target.value = ''
 
     setSubmit(s => s ? { ...s, stage: 'uploading', error: null } : s)
     try {
-      // First create the submission record, then upload proof
       const res = await submitChore(submit.choreId, submit.note || undefined)
       await uploadProof(res.id, file)
+      const velocityMs = Date.now() - submit.startedAt
+      track.taskSubmitted({ chore_id: submit.choreId, is_revision: submit.isRevision, velocity_ms: velocityMs, had_proof: true })
       setSubmit(s => s ? { ...s, stage: 'harvesting' } : s)
       setTimeout(() => { setSubmit(null); load() }, 1800)
     } catch (err: unknown) {
@@ -96,6 +130,8 @@ export function EarnTab({ familyId, childId, currency }: Props) {
     setSubmit(s => s ? { ...s, stage: 'submitting', error: null } : s)
     try {
       await submitChore(submit.choreId, submit.note.trim() || undefined)
+      const velocityMs = Date.now() - submit.startedAt
+      track.taskSubmitted({ chore_id: submit.choreId, is_revision: submit.isRevision, velocity_ms: velocityMs, had_proof: false })
       setSubmit(s => s ? { ...s, stage: 'harvesting' } : s)
       setTimeout(() => { setSubmit(null); load() }, 1800)
     } catch (err: unknown) {
@@ -104,6 +140,8 @@ export function EarnTab({ familyId, childId, currency }: Props) {
   }
 
   if (loading) return <div className="py-10 text-center text-[14px] text-[var(--color-text-muted)]">Loading…</div>
+
+  const hasAnything = revisions.length > 0 || available.length > 0 || awaiting.length > 0
 
   return (
     <div className="space-y-6">
@@ -122,13 +160,13 @@ export function EarnTab({ familyId, childId, currency }: Props) {
               <RevisionCard
                 key={c.id}
                 completion={c}
-                chore={chores.find(ch => ch.id === c.chore_id) ?? null}
+                chore={choreMap.get(c.chore_id) ?? null}
                 isSubmitting={submit?.choreId === c.chore_id && submit.stage === 'submitting'}
                 isHarvesting={submit?.choreId === c.chore_id && submit.stage === 'harvesting'}
                 submitNote={submit?.choreId === c.chore_id ? submit.note : ''}
                 submitError={submit?.choreId === c.chore_id ? submit.error : null}
                 noteOpen={submit?.choreId === c.chore_id && submit.stage === 'note'}
-                onResubmit={() => chores.find(ch => ch.id === c.chore_id) && startSubmit(chores.find(ch => ch.id === c.chore_id)!)}
+                onResubmit={() => startSubmit(c, true)}
                 onNoteChange={v => setSubmit(s => s ? { ...s, note: v } : s)}
                 onNoteSubmit={handleNoteSubmit}
                 onNoteCancel={() => setSubmit(null)}
@@ -138,28 +176,32 @@ export function EarnTab({ familyId, childId, currency }: Props) {
         </section>
       )}
 
-      {/* ── OPEN TASKS ─────────────────────────────────────────────── */}
-      {openChores.length > 0 && (
+      {/* ── AVAILABLE TASKS ────────────────────────────────────────── */}
+      {available.length > 0 && (
         <section>
           <h2 className="text-[13px] font-extrabold text-[var(--color-text-muted)] uppercase tracking-wider mb-3">
             Available tasks
           </h2>
           <div className="space-y-2.5">
-            {openChores.map(chore => (
-              <OpenChoreCard
-                key={chore.id}
-                chore={chore}
-                currency={currency}
-                isActive={submit?.choreId === chore.id}
-                stage={submit?.choreId === chore.id ? submit.stage : null}
-                note={submit?.choreId === chore.id ? submit.note : ''}
-                error={submit?.choreId === chore.id ? submit.error : null}
-                onStart={() => startSubmit(chore)}
-                onNoteChange={v => setSubmit(s => s ? { ...s, note: v } : s)}
-                onNoteSubmit={handleNoteSubmit}
-                onCancel={() => setSubmit(null)}
-              />
-            ))}
+            {available.map(comp => {
+              const chore = choreMap.get(comp.chore_id)
+              if (!chore) return null
+              return (
+                <OpenChoreCard
+                  key={comp.id}
+                  chore={chore}
+                  currency={currency}
+                  isActive={submit?.choreId === chore.id}
+                  stage={submit?.choreId === chore.id ? submit.stage : null}
+                  note={submit?.choreId === chore.id ? submit.note : ''}
+                  error={submit?.choreId === chore.id ? submit.error : null}
+                  onStart={() => startSubmit(comp, false)}
+                  onNoteChange={v => setSubmit(s => s ? { ...s, note: v } : s)}
+                  onNoteSubmit={handleNoteSubmit}
+                  onCancel={() => setSubmit(null)}
+                />
+              )
+            })}
           </div>
         </section>
       )}
@@ -186,7 +228,7 @@ export function EarnTab({ familyId, childId, currency }: Props) {
         </section>
       )}
 
-      {openChores.length === 0 && revisions.length === 0 && awaiting.length === 0 && (
+      {!hasAnything && (
         <div className="py-16 text-center">
           <p className="text-4xl mb-3">🌱</p>
           <p className="text-[15px] font-bold text-[var(--color-text)]">No tasks yet</p>
@@ -208,7 +250,6 @@ export function EarnTab({ familyId, childId, currency }: Props) {
 }
 
 // ── RevisionCard ───────────────────────────────────────────────────────────────
-// Shows parent feedback front-and-centre, then resubmit action
 
 interface RevisionCardProps {
   completion: Completion
@@ -231,9 +272,17 @@ function RevisionCard({
 }: RevisionCardProps) {
   const parentNotes = c.parent_notes ?? c.rejection_note
 
-  if (isHarvesting) {
-    return <HarvestPulse label="Resubmitted!" />
-  }
+  // Track how long the child spends looking at the revision card
+  useEffect(() => {
+    const viewedAt = Date.now()
+    track.revisionViewed({ chore_id: c.chore_id, attempt_count: c.attempt_count ?? 1 })
+    return () => {
+      const dwellMs = Date.now() - viewedAt
+      track.revisionDwellTime({ chore_id: c.chore_id, dwell_ms: dwellMs })
+    }
+  }, [c.id]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  if (isHarvesting) return <HarvestPulse label="Resubmitted!" />
 
   return (
     <div className="rounded-2xl overflow-hidden border-2 border-amber-400 bg-amber-50 dark:bg-amber-950/30">
@@ -265,7 +314,7 @@ function RevisionCard({
         )}
       </div>
 
-      {/* Note drawer or submit button */}
+      {/* Note drawer or resubmit button */}
       {noteOpen ? (
         <div className="px-4 pb-4 space-y-2 border-t border-amber-200 dark:border-amber-800 pt-3">
           {submitError && <p className="text-[12px] text-red-600">{submitError}</p>}
@@ -301,10 +350,7 @@ function RevisionCard({
             className="w-full h-11 bg-amber-500 hover:bg-amber-600 text-white font-bold text-[14px] rounded-xl cursor-pointer disabled:opacity-50 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
           >
             {chore?.proof_required ? (
-              <>
-                <CameraIcon />
-                Take photo &amp; resubmit
-              </>
+              <><CameraIcon /> Take photo &amp; resubmit</>
             ) : 'Resubmit task →'}
           </button>
         </div>
@@ -332,12 +378,7 @@ function OpenChoreCard({
   chore, currency, isActive, stage, note, error,
   onStart, onNoteChange, onNoteSubmit, onCancel,
 }: OpenChoreCardProps) {
-  if (stage === 'harvesting') {
-    return <HarvestPulse label="Submitted!" />
-  }
-
-  const isOverdue = chore.due_date && !isNaN(Number(chore.due_date)) === false
-    && new Date(chore.due_date) < new Date()
+  if (stage === 'harvesting') return <HarvestPulse label="Submitted!" />
 
   return (
     <div className={`bg-[var(--color-surface)] border rounded-xl overflow-hidden transition-all
@@ -345,7 +386,6 @@ function OpenChoreCard({
       ${chore.is_flash ? 'border-l-4 border-l-red-500' : chore.is_priority ? 'border-l-4 border-l-amber-500' : ''}
     `}>
       <div className="px-4 py-3 flex items-center gap-3">
-        {/* Info */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5 flex-wrap">
             {chore.is_flash && (
@@ -364,13 +404,11 @@ function OpenChoreCard({
           )}
           {chore.proof_required && (
             <p className="text-[11px] text-[var(--color-text-muted)] mt-1 flex items-center gap-1">
-              <CameraIcon small />
-              Photo required to submit
+              <CameraIcon small /> Photo required to submit
             </p>
           )}
         </div>
 
-        {/* Action */}
         {stage === 'uploading' || stage === 'submitting' ? (
           <span className="shrink-0 flex items-center gap-1.5 text-[12px] font-bold text-[var(--brand-primary)]">
             <span className="w-4 h-4 border-2 border-[var(--brand-primary)] border-t-transparent rounded-full animate-spin" />
@@ -385,17 +423,12 @@ function OpenChoreCard({
                 : 'px-4 bg-[var(--brand-primary)] text-white hover:opacity-90'
               }`}
           >
-            {chore.proof_required ? (
-              <>
-                <CameraIcon />
-                Done
-              </>
-            ) : 'Done'}
+            {chore.proof_required ? <><CameraIcon /> Done</> : 'Done'}
           </button>
         )}
       </div>
 
-      {/* Note drawer — shown when proof not required and card is active */}
+      {/* Note drawer */}
       {isActive && stage === 'note' && (
         <div className="px-4 pb-4 space-y-2.5 border-t border-[var(--color-border)] pt-3">
           {error && <p className="text-[12px] text-red-600">{error}</p>}
@@ -428,12 +461,10 @@ function OpenChoreCard({
 }
 
 // ── Harvest pulse ─────────────────────────────────────────────────────────────
-// Teal pulse animation that plays on successful submission
 
 function HarvestPulse({ label }: { label: string }) {
   return (
     <div className="relative rounded-2xl overflow-hidden bg-[color-mix(in_srgb,var(--brand-primary)_12%,transparent)] border-2 border-[var(--brand-primary)] px-4 py-5 flex items-center justify-center gap-3">
-      {/* Ripple rings */}
       <span className="absolute inset-0 rounded-2xl animate-ping bg-[var(--brand-primary)] opacity-10 pointer-events-none" />
       <span className="text-2xl">🌿</span>
       <p className="text-[15px] font-extrabold text-[var(--brand-primary)]">{label}</p>

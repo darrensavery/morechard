@@ -109,6 +109,7 @@ import {
   handleAddChild,
   handleSaveRegistrationStep,
 } from './routes/invite.js';
+import { handleInsights } from './routes/insights.js';
 import { json, error } from './lib/response.js';
 import { JwtPayload } from './lib/jwt.js';
 
@@ -327,7 +328,10 @@ async function route(request: Request, env: Env, method: string, path: string): 
   if (path === '/api/suggestions' && method === 'POST') return withAuth(request, auth, env, handleSuggestionCreate);
 
   // Balance — any role
-  if (path === '/api/balance' && method === 'GET')    return withAuth(request, auth, env, handleBalance);
+  if (path === '/api/balance'   && method === 'GET')  return withAuth(request, auth, env, handleBalance);
+
+  // Insights — parent or child (child sees own data only, enforced in handler)
+  if (path === '/api/insights'  && method === 'GET')  return withAuth(request, auth, env, handleInsights);
 
   // Spending — child logs, both read
   if (path === '/api/spending' && method === 'GET')   return withAuth(request, auth, env, handleSpendingList);

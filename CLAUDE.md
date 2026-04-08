@@ -125,9 +125,9 @@ wrangler deploy
 - [x] Set up 'Better Auth' for secure Parent identity management (custom JWT/magic-link — leaner for Cloudflare)
 
 ### **Phase 3: The Transaction Loop (The "Sovereign" Ledger)**
-- [ ] Build 'Parent Job Create' API & UI
-- [ ] Build 'Child Mark Done' UI (Virtual Ledger interaction)
-- [ ] Implement Parent Approval -> Immutable Ledger Write
+- [x] Build 'Parent Job Create' API & UI
+- [x] Build 'Child Mark Done' UI (Virtual Ledger interaction)
+- [x] Implement Parent Approval -> Immutable Ledger Write
 
 ### **Phase 4: Behavioral Education (The "Simulator" Logic)**
 - [x] Build 'Goal Planning' Module — Savings Grove with effort-to-earn mentor, goal creation sheet, purchase flow, parental boosting portal
@@ -137,7 +137,20 @@ wrangler deploy
 ### **Phase 5: The AI Mentor (Behavioral Nudging)**
 - [ ] Integrate AI Personality for Child ('Coaching' tone)
 - [ ] Implement AI 'Nudges' based on spending patterns
-- [ ] Build Parent 'Insights' AI (Summarizing child behavior for the week)
+- [x] Build Parent 'Insights' AI (Summarizing child behavior for the week)
+  - [x] `insight_snapshots` D1 table — weekly KPI snapshots with trend deltas (consistency, responsibility, planning horizon)
+  - [x] Temporal context: delta calculation vs. prior week snapshot, direction indicators (up/down/flat)
+  - [x] Velocity context: Seedling (avg tasks/week) vs. Professional (avg £ earned/week)
+  - [x] Orchard Lead AI briefing via `@cf/meta/llama-3-8b-instruct` with 5s timeout + rule-based fallback
+  - [x] D1 briefing cache — AI runs once per week per child; subsequent loads return instantly
+  - [x] Literacy Matrix integration — all briefings grounded in Pillars 1–5 with explicit Pillar naming
+  - [x] Pillar 5 surplus trigger — fires when balance > £100 or all goals funded
+  - [x] Polish localisation — `getPolishHonorific()`, Pan/Pani formal address, Mistrz Sadu persona, "Honor i Obowiązek Zbiorów" Pillar 5 framing
+  - [x] Two AI personas: Orchard Lead (EN, collaborative) vs. Mistrz Sadu (PL, direct/formal)
+  - [x] InsightsTab UI — typewriter animation (source=ai only), trend indicators on KPI gauges, parchment-tinted briefing card
+  - [x] 'Copy for Child' modal — Seedling (visual/orchard metaphors) and Professional (velocity/streak) templates with "Drafted by your Orchard Mentor" attribution
+- [ ] An AI-driven "Audit" of monthly spending across all children to identify family-wide trends
+- [ ] Linking "Seasonal" events (Birthdays, Holidays, School trips) to the Mentor's advice so it can predict future spending needs
 
 ### **Phase 6: Compliance & Legal (The "Audit" Factor)**
 - [ ] Build 'Court-Ready' PDF Audit Export for co-parents

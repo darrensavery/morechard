@@ -75,4 +75,16 @@ export const track = {
 
   growthPathUpdated: (props: { mode: 'ALLOWANCE' | 'CHORES' | 'HYBRID'; frequency: 'WEEKLY' | 'BI_WEEKLY' | 'MONTHLY'; amount_pence: number }) =>
     analytics.track('growth_path_updated', props),
+
+  taskSubmitStarted: (props: { chore_id: string; is_revision: boolean; has_proof_required: boolean }) =>
+    analytics.track('task_submit_started', props),
+
+  taskSubmitted: (props: { chore_id: string; is_revision: boolean; velocity_ms: number; had_proof: boolean }) =>
+    analytics.track('task_submitted', props),
+
+  revisionViewed: (props: { chore_id: string; attempt_count: number }) =>
+    analytics.track('revision_viewed', props),
+
+  revisionDwellTime: (props: { chore_id: string; dwell_ms: number }) =>
+    analytics.track('revision_dwell_time', props),
 }
