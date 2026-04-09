@@ -234,13 +234,13 @@ export function Stage3SecureApp({ data, onNext, onBack }: Props) {
           <div className="flex gap-3">
             {pin.map((d, i) => (
               <input key={i} ref={el => { enterRefs.current[i] = el }}
-                type="password" inputMode="numeric" maxLength={1} value={d}
+                type="text" inputMode="numeric" maxLength={1} value={d}
                 onChange={e => pinStage === 'enter' && handlePinInput(i, e.target.value)}
                 onKeyDown={e => pinStage === 'enter' && handlePinKeyDown(i, pin, setPin, enterRefs, e)}
                 autoFocus={i === 0 && pinStage === 'enter'}
                 aria-label={`PIN digit ${i + 1}`}
                 className={cn(
-                  'w-[54px] h-[66px] text-center text-[28px] font-extrabold',
+                  'w-[54px] h-[66px] text-center text-[28px] font-extrabold text-[#1C1C1A]',
                   'border-2 rounded-xl outline-none transition-colors duration-100 bg-white',
                   d ? 'border-teal-500' : 'border-[#D3D1C7]', 'focus:border-teal-500',
                 )}
@@ -255,14 +255,14 @@ export function Stage3SecureApp({ data, onNext, onBack }: Props) {
           <div className="flex gap-3">
             {confirmPin.map((d, i) => (
               <input key={i} ref={el => { confirmRefs.current[i] = el }}
-                type="password" inputMode="numeric" maxLength={1} value={d}
+                type="text" inputMode="numeric" maxLength={1} value={d}
                 onChange={e => pinStage === 'confirm' && handlePinInput(i, e.target.value)}
                 onKeyDown={e => pinStage === 'confirm' && handlePinKeyDown(i, confirmPin, setConfirmPin, confirmRefs, e)}
                 aria-label={`Confirm PIN digit ${i + 1}`}
                 className={cn(
-                  'w-[54px] h-[66px] text-center text-[28px] font-extrabold',
+                  'w-[54px] h-[66px] text-center text-[28px] font-extrabold text-[#1C1C1A]',
                   'border-2 rounded-xl outline-none transition-colors duration-100 bg-white',
-                  error ? 'border-red-400 bg-red-50' : d ? 'border-teal-500' : 'border-[#D3D1C7]',
+                  error ? 'border-red-400 bg-red-50 text-red-700' : d ? 'border-teal-500' : 'border-[#D3D1C7]',
                   'focus:border-teal-500',
                 )}
               />

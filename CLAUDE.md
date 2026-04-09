@@ -41,25 +41,16 @@ If the knowledge base does not specify something:
 ## Strategic Tech Direction (IMPORTANT)
 
 ### Current Direction
-Morechard is evolving away from Firebase toward a **Cloudflare‑native stack**
-to take advantage of:
+Morechard runs on a **Cloudflare‑native stack** taking advantage of:
 
 - Cloudflare Pages + Functions
 - Cloudflare D1 (SQL database)
 - Cloudflare environment bindings
 - Simpler mental model, lower long‑term cost, tighter platform integration
 
-### Migration Rules
-- Cloudflare D1 (SQL) is the **target data layer**
-- Firebase should NOT be introduced in new code
-- If legacy Firebase patterns exist:
-  - Treat them as transitional
-  - Do not expand or deepen Firebase usage
-  - Prefer migration or abstraction over extension
-
-If a storage or data-model decision is required:
-- Default to Cloudflare D1 + SQL
-- Ask before proposing Firebase-based solutions
+### Data Layer
+- Cloudflare D1 (SQL) is the **only data layer** — do not introduce any other database or storage backend
+- Default to Cloudflare D1 + SQL for all storage decisions
 
 ### SPA Routing
 Use 404.html (copied from index.html at build) for Cloudflare Pages SPA routing.
@@ -86,13 +77,13 @@ which /docs/notebooklm files were consulted.
 ---
 
 ## Key Project Files
-- `pocket-money-v3/pwa-v3/index.html` — single-file app (~344KB)
-- `test-app.js` — Playwright test suite (repo root)
-- `pocket-money-v3/pwa-v3/start-server.bat` — local dev server (localhost:3000)
 - `app/src/lib/deviceIdentity.ts` — Device identity model (one device = one user)
 - `app/src/lib/biometrics.ts` — WebAuthn biometric wrapper (Face ID / Touch ID)
 - `app/src/screens/LockScreen.tsx` — Auto-challenges biometrics on app open
 - `app/src/components/registration/Stage3SecureApp.tsx` — Biometric + PIN setup
+
+## Navigation Rule
+- **Stack Reset on Registration Complete:** Once registration is complete, transition to `/parent` using `window.location.href = '/parent'` (never `navigate('/parent')`). This performs a full-page navigation that clears the history stack so the user cannot swipe/go back to onboarding screens.
 
 ## Common Commands
 
@@ -106,8 +97,6 @@ npm run dev
 
 ### Deploy to Cloudflare
 wrangler deploy
-
----
 
 ---
 

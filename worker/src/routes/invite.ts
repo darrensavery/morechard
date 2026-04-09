@@ -111,11 +111,11 @@ export async function handleRedeemInvite(request: Request, env: Env): Promise<Re
 
   const invite = await env.DB
     .prepare(`
-      SELECT code, family_id, role, redeemed_at, expires_at
+      SELECT code, family_id, role, redeemed_at, expires_at, child_id
       FROM invite_codes WHERE code = ?
     `)
     .bind(code)
-    .first<{ code: string; family_id: string; role: InviteRole; redeemed_at: number | null; expires_at: number }>();
+    .first<{ code: string; family_id: string; role: InviteRole; redeemed_at: number | null; expires_at: number; child_id: string | null }>();
 
   if (!invite)              return error('Invalid invite code', 404);
   if (invite.redeemed_at)   return error('Invite code already used', 409);
@@ -124,7 +124,7 @@ export async function handleRedeemInvite(request: Request, env: Env): Promise<Re
   const ip = clientIp(request);
 
   if (invite.role === 'child') {
-    return redeemChildInvite(invite.code, invite.family_id, body, now, ip, env);
+    return redeemChildInvite(invite.code, invite.family_id, invite.child_id, body, now, ip, env);
   } else {
     return redeemCoParentInvite(invite.code, invite.family_id, body, now, ip, env);
   }
@@ -133,6 +133,7 @@ export async function handleRedeemInvite(request: Request, env: Env): Promise<Re
 async function redeemChildInvite(
   code: string,
   familyId: string,
+  preCreatedChildId: string | null,
   body: Record<string, unknown>,
   now: number,
   ip: string,
@@ -141,33 +142,56 @@ async function redeemChildInvite(
   const display_name = (body['display_name'] as string | undefined)?.trim();
   if (!display_name) return error('display_name required');
 
-  const userId = nanoid();
-  const jti    = nanoid();
+  const jti = nanoid();
 
-  await env.DB.batch([
-    env.DB.prepare(`
-      INSERT INTO users (id, family_id, display_name, email, locale, email_verified)
-      VALUES (?, ?, ?, ?, 'en', 0)
-    `).bind(userId, familyId, display_name, `child-${userId}@internal`),
+  let userId: string;
 
-    env.DB.prepare(`INSERT INTO family_roles (user_id, family_id, role) VALUES (?, ?, 'child')`)
-      .bind(userId, familyId),
+  if (preCreatedChildId) {
+    // The parent pre-created this child via /auth/child/add.
+    // Update the existing user record with the name the child chose
+    // (the parent may have used a placeholder — the child's choice wins).
+    userId = preCreatedChildId;
+    await env.DB.batch([
+      env.DB.prepare(`UPDATE users SET display_name = ? WHERE id = ?`)
+        .bind(display_name, userId),
 
-    env.DB.prepare(`UPDATE invite_codes SET redeemed_by = ?, redeemed_at = ? WHERE code = ?`)
-      .bind(userId, now, code),
+      env.DB.prepare(`UPDATE invite_codes SET redeemed_by = ?, redeemed_at = ? WHERE code = ?`)
+        .bind(userId, now, code),
 
-    env.DB.prepare(`
-      INSERT INTO sessions (jti, user_id, family_id, role, expires_at, ip_address)
-      VALUES (?, ?, ?, 'child', ?, ?)
-    `).bind(jti, userId, familyId, now + CHILD_JWT_EXPIRY, ip),
-  ]);
+      env.DB.prepare(`
+        INSERT INTO sessions (jti, user_id, family_id, role, expires_at, ip_address)
+        VALUES (?, ?, ?, 'child', ?, ?)
+      `).bind(jti, userId, familyId, now + CHILD_JWT_EXPIRY, ip),
+    ]);
+  } else {
+    // Legacy path: invite was generated without a pre-created child
+    // (e.g. from /auth/invite/generate). Create the user fresh.
+    userId = nanoid();
+    await env.DB.batch([
+      env.DB.prepare(`
+        INSERT INTO users (id, family_id, display_name, email, locale, email_verified)
+        VALUES (?, ?, ?, ?, 'en', 0)
+      `).bind(userId, familyId, display_name, `child-${userId}@internal`),
+
+      env.DB.prepare(`INSERT INTO family_roles (user_id, family_id, role) VALUES (?, ?, 'child')`)
+        .bind(userId, familyId),
+
+      env.DB.prepare(`UPDATE invite_codes SET redeemed_by = ?, redeemed_at = ? WHERE code = ?`)
+        .bind(userId, now, code),
+
+      env.DB.prepare(`
+        INSERT INTO sessions (jti, user_id, family_id, role, expires_at, ip_address)
+        VALUES (?, ?, ?, 'child', ?, ?)
+      `).bind(jti, userId, familyId, now + CHILD_JWT_EXPIRY, ip),
+    ]);
+  }
 
   const token = await signJwt(
     { sub: userId, jti, family_id: familyId, role: 'child', iat: now, exp: now + CHILD_JWT_EXPIRY },
     env.JWT_SECRET,
   );
 
-  return json({ token, expires_in: CHILD_JWT_EXPIRY, role: 'child' }, 201);
+  return json({ token, expires_in: CHILD_JWT_EXPIRY, role: 'child', user_id: userId, family_id: familyId }, 201);
 }
 
 async function redeemCoParentInvite(
@@ -217,7 +241,7 @@ async function redeemCoParentInvite(
     env.JWT_SECRET,
   );
 
-  return json({ token, expires_in: PARENT_JWT_EXPIRY, role: 'co-parent' }, 201);
+  return json({ token, expires_in: PARENT_JWT_EXPIRY, role: 'co-parent', user_id: userId, family_id: familyId }, 201);
 }
 
 // ── POST /auth/child/add ─────────────────────────────────────────────────────
@@ -257,9 +281,9 @@ export async function handleAddChild(request: Request, env: Env): Promise<Respon
       .bind(childId, caller.family_id),
 
     env.DB.prepare(`
-      INSERT INTO invite_codes (code, family_id, created_by, role, expires_at)
-      VALUES (?, ?, ?, 'child', ?)
-    `).bind(code, caller.family_id, caller.sub, expiresAt),
+      INSERT INTO invite_codes (code, family_id, created_by, role, expires_at, child_id)
+      VALUES (?, ?, ?, 'child', ?, ?)
+    `).bind(code, caller.family_id, caller.sub, expiresAt, childId),
   ];
 
   await env.DB.batch(stmts);

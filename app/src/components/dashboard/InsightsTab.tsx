@@ -124,10 +124,7 @@ function InsightsDashboard({
       {/* ── Balance status bar ── */}
       <BalanceBar data={data} currency={currency} />
 
-      {/* ── Mentor Executive Briefing ── */}
-      <BriefingSlot data={data} child={child} />
-
-      {/* ── KPI gauges ── */}
+      {/* ── KPI gauges — shown first for at-a-glance status ── */}
       <div className="grid grid-cols-3 gap-2.5">
         <GaugeCard
           label="Responsibility"
@@ -160,6 +157,9 @@ function InsightsDashboard({
         <EffortTag preference={data.effort_preference} child={child} />
       )}
 
+      {/* ── Mentor Executive Briefing — always visible, glassmorphism ── */}
+      <BriefingSlot data={data} child={child} />
+
       {/* ── Supporting stats ── */}
       <SupportingStats data={data} currency={currency} />
     </div>
@@ -179,9 +179,9 @@ function BalanceBar({ data, currency }: { data: InsightsData; currency: string }
           position="left"
         />
         <BalanceStat
-          label="In goals"
+          label="Allocated Savings"
           value={formatCurrency(data.goals_locked_pence, currency)}
-          valueColor="text-[#8b5cf6]"
+          valueColor="text-[#10b981]"
           position="center"
         />
         <BalanceStat
@@ -214,9 +214,16 @@ function BriefingSlot({ data, child }: { data: InsightsData; child: ChildRecord 
 
   if (data.is_discovery_phase) {
     return (
-      <div className="relative bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl overflow-hidden">
-        {/* Subtle teal gradient accent */}
-        <div className="absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r from-[var(--brand-primary)] via-[color-mix(in_srgb,var(--brand-primary)_60%,transparent)] to-transparent" />
+      <div className="relative rounded-2xl overflow-hidden"
+           style={{
+             background: 'color-mix(in_srgb, var(--brand-primary) 6%, var(--color-surface))',
+             border: '1px solid color-mix(in_srgb, var(--brand-primary) 30%, transparent)',
+             backdropFilter: 'blur(12px)',
+             WebkitBackdropFilter: 'blur(12px)',
+             boxShadow: '0 4px 24px color-mix(in_srgb, var(--brand-primary) 10%, transparent)',
+           }}>
+        {/* Teal gradient accent bar */}
+        <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-transparent via-[var(--brand-primary)] to-transparent" />
 
         <div className="px-4 pt-4 pb-4">
           {/* Header */}
@@ -313,8 +320,15 @@ function LiveBriefingCard({
   // If no briefing yet (shouldn't happen outside discovery, but guard anyway)
   if (!briefing) {
     return (
-      <div className="relative bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl overflow-hidden">
-        <div className="absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r from-[var(--brand-primary)] via-[color-mix(in_srgb,var(--brand-primary)_60%,transparent)] to-transparent" />
+      <div className="relative rounded-2xl overflow-hidden"
+           style={{
+             background: 'color-mix(in_srgb, var(--brand-primary) 6%, var(--color-surface))',
+             border: '1px solid color-mix(in_srgb, var(--brand-primary) 30%, transparent)',
+             backdropFilter: 'blur(12px)',
+             WebkitBackdropFilter: 'blur(12px)',
+             boxShadow: '0 4px 24px color-mix(in_srgb, var(--brand-primary) 10%, transparent)',
+           }}>
+        <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-transparent via-[var(--brand-primary)] to-transparent" />
         <BriefingSkeleton />
       </div>
     )
@@ -324,23 +338,33 @@ function LiveBriefingCard({
 
   return (
     <>
-      <div className="relative rounded-2xl overflow-hidden border border-[color-mix(in_srgb,var(--brand-primary)_22%,transparent)]"
-           style={{ background: 'color-mix(in_srgb, var(--brand-primary) 5%, var(--color-surface))' }}>
-        {/* Orchard green accent bar */}
-        <div className="absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r from-[var(--brand-primary)] via-[color-mix(in_srgb,var(--brand-primary)_60%,transparent)] to-transparent" />
+      <div className="relative rounded-2xl overflow-hidden"
+           style={{
+             background: 'color-mix(in_srgb, var(--brand-primary) 6%, var(--color-surface))',
+             border: '1px solid color-mix(in_srgb, var(--brand-primary) 30%, transparent)',
+             backdropFilter: 'blur(12px)',
+             WebkitBackdropFilter: 'blur(12px)',
+             boxShadow: '0 4px 24px color-mix(in_srgb, var(--brand-primary) 10%, transparent)',
+           }}>
+        {/* Luminous teal accent line */}
+        <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-transparent via-[var(--brand-primary)] to-transparent" />
 
         <div className="px-4 pt-4 pb-4 space-y-3">
           {/* Header */}
           <div className="flex items-start justify-between gap-3">
             <div>
-              <div className="flex items-center gap-2 mb-0.5">
+              <div className="flex items-center gap-2 mb-1">
                 <span className="inline-block w-2 h-2 rounded-full bg-[var(--brand-primary)]" />
                 <span className="text-[10px] font-bold text-[var(--color-text-muted)] uppercase tracking-widest">
-                  Mentor Executive Briefing
+                  Mentor Briefing
+                </span>
+                <span className="text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-full"
+                      style={{ background: 'color-mix(in_srgb, var(--brand-primary) 15%, transparent)', color: 'var(--brand-primary)' }}>
+                  Coach
                 </span>
               </div>
               <p className="text-[15px] font-extrabold text-[var(--color-text)] tracking-tight">
-                Orchard Lead Analysis
+                Weekly Behavior Analysis
               </p>
             </div>
             <div className="shrink-0 w-9 h-9 rounded-xl bg-[color-mix(in_srgb,var(--brand-primary)_10%,transparent)] border border-[color-mix(in_srgb,var(--brand-primary)_20%,transparent)] flex items-center justify-center">

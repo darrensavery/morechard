@@ -187,7 +187,7 @@ function SettingsRow({
       {icon && (
         <span className={cn(
           'shrink-0 w-8 h-8 rounded-xl flex items-center justify-center',
-          destructive ? 'bg-red-50 text-red-500' : 'bg-[color-mix(in_srgb,var(--brand-primary)_10%,transparent)] text-[var(--brand-primary)]',
+          destructive ? 'bg-red-600 text-white' : 'bg-[color-mix(in_srgb,var(--brand-primary)_10%,transparent)] text-[var(--brand-primary)]',
         )}>
           {icon}
         </span>
@@ -195,7 +195,7 @@ function SettingsRow({
       <div className="flex-1 min-w-0">
         <p className={cn(
           'text-[14px] font-semibold',
-          destructive ? 'text-red-600' : 'text-[var(--color-text)]',
+          destructive ? 'text-[var(--color-text)]' : 'text-[var(--color-text)]',
         )}>
           {label}
         </p>
@@ -421,6 +421,12 @@ export function ParentSettingsTab({ familyId, onChildrenChange }: Props) {
               description="Generate a new 6-digit secret key"
               onClick={comingSoon}
             />
+            <SettingsRow
+              icon={<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>}
+              label="Login History"
+              description="Recent sessions and device activity"
+              onClick={comingSoon}
+            />
           </SectionCard>
         </div>
 
@@ -438,9 +444,9 @@ export function ParentSettingsTab({ familyId, onChildrenChange }: Props) {
                     <Eye size={15} />
                   </span>
                   <div className="min-w-0">
-                    <p className="text-[14px] font-semibold text-[var(--color-text)]">Orchard Theme</p>
+                    <p className="text-[14px] font-semibold text-[var(--color-text)]">Interface Style</p>
                     <p className="text-[12px] text-[var(--color-text-muted)] mt-0.5 leading-snug">
-                      {isTeen ? 'Professional (data-heavy)' : 'Visual Orchard (metaphorical)'}
+                      {isTeen ? "Detailed 'Professional' view" : "Simplified 'Seedling' view"}
                     </p>
                   </div>
                 </div>
@@ -476,7 +482,7 @@ export function ParentSettingsTab({ familyId, onChildrenChange }: Props) {
         {/* Orchard Rules (Individual) */}
         <div>
           <p className="text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wide px-1 mb-2">
-            Orchard Rules (Individual)
+            Individual Rules
           </p>
           <SectionCard>
             <SettingsRow
@@ -487,8 +493,8 @@ export function ParentSettingsTab({ familyId, onChildrenChange }: Props) {
             />
             <SettingsRow
               icon={<Calendar size={15} />}
-              label="Harvest Status"
-              description="Active or Paused — temporarily stop allowance flow"
+              label="Allowance Status"
+              description="Pause or resume the flow of funds to this account"
               onClick={comingSoon}
             />
             <SettingsRow
@@ -592,18 +598,18 @@ export function ParentSettingsTab({ familyId, onChildrenChange }: Props) {
         {/* Danger Zone — Lead Parent only */}
         {isLead && (
           <div>
-            <p className="text-[11px] font-bold text-red-400 uppercase tracking-wide px-1 mb-2">
+            <p className="text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wide px-1 mb-2">
               Danger Zone
             </p>
-            <SectionCard>
+            <div className="rounded-xl border-2 border-red-500 overflow-hidden">
               <SettingsRow
                 icon={<AlertTriangle size={15} />}
-                label="Uproot Profile"
-                description="Permanently delete this child's ledger and data"
+                label="Delete Profile"
+                description="Permanently uproot this child from the orchard — deletes their ledger and all data"
                 onClick={comingSoon}
                 destructive
               />
-            </SectionCard>
+            </div>
           </div>
         )}
       </div>
@@ -700,16 +706,16 @@ export function ParentSettingsTab({ familyId, onChildrenChange }: Props) {
           {/* Delete — Lead only */}
           {isLead && (
             <div>
-              <p className="text-[11px] font-bold text-red-400 uppercase tracking-wide px-1 mb-2">Danger Zone</p>
-              <SectionCard>
+              <p className="text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wide px-1 mb-2">Danger Zone</p>
+              <div className="rounded-xl border-2 border-red-500 overflow-hidden">
                 <SettingsRow
                   icon={<AlertTriangle size={15} />}
-                  label="Uproot Orchard"
-                  description="Permanently delete your family account and all data"
+                  label="Delete Account"
+                  description="Permanently uproot your orchard and delete your family account, including all data"
                   onClick={comingSoon}
                   destructive
                 />
-              </SectionCard>
+              </div>
             </div>
           )}
         </div>
@@ -825,14 +831,14 @@ export function ParentSettingsTab({ familyId, onChildrenChange }: Props) {
           {/* Global Orchard Rules */}
           <div>
             <div className="flex items-center gap-2 px-1 mb-2">
-              <p className="text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wide">Global Orchard Rules</p>
+              <p className="text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wide">Global Family Rules</p>
               {!isLead && <ReadOnlyBadge />}
             </div>
             <SectionCard>
               <SettingsRow
                 icon={<Calendar size={15} />}
-                label="Harvest Day"
-                description="Weekly day for automated allowance drops"
+                label="Allowance Day"
+                description="Weekly day for automated allowance drops — your family's harvest day"
                 onClick={comingSoon}
                 disabled={!isLead}
                 badge={!isLead ? undefined : undefined}
@@ -962,8 +968,8 @@ export function ParentSettingsTab({ familyId, onChildrenChange }: Props) {
           <SectionCard>
             <SettingsRow
               icon={<Gift size={15} />}
-              label="Share the Grove"
-              description="Generate a unique referral link or discount code for other families"
+              label="Refer a Family"
+              description="Share the grove — generate a unique referral link or discount code for other families"
               onClick={comingSoon}
             />
           </SectionCard>
@@ -1058,7 +1064,7 @@ export function ParentSettingsTab({ familyId, onChildrenChange }: Props) {
       id:          'referrals',
       icon:        <Gift size={17} />,
       label:       'Referrals',
-      description: 'Share the Grove',
+      description: 'Refer a family, earn rewards',
     },
     {
       id:          'about',
@@ -1080,7 +1086,7 @@ export function ParentSettingsTab({ familyId, onChildrenChange }: Props) {
           : 'bg-amber-50 text-amber-700 border border-amber-200',
       )}>
         <TreePine size={13} />
-        {isLead ? 'Orchard Lead — full access' : 'Co-Parent — some options are restricted'}
+        {isLead ? 'Parent — full access' : 'Co-Parent — some options are restricted'}
       </div>
 
       {/* Main menu */}
@@ -1116,13 +1122,13 @@ export function ParentSettingsTab({ familyId, onChildrenChange }: Props) {
             clearDeviceIdentity()
             window.location.href = '/'
           }}
-          className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-red-50 active:bg-red-50 cursor-pointer transition-colors text-left rounded-xl"
+          className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-[var(--color-surface-alt)] active:bg-[var(--color-surface-alt)] cursor-pointer transition-colors text-left rounded-xl"
         >
-          <span className="shrink-0 w-9 h-9 rounded-xl flex items-center justify-center bg-red-50 text-red-500">
+          <span className="shrink-0 w-9 h-9 rounded-xl flex items-center justify-center bg-red-600 text-white">
             <LogOut size={17} />
           </span>
           <div className="flex-1 min-w-0">
-            <p className="text-[14px] font-semibold text-red-600">Log out</p>
+            <p className="text-[14px] font-semibold text-[var(--color-text)]">Log out</p>
             <p className="text-[12px] text-[var(--color-text-muted)] mt-0.5">Your family's data stays safe</p>
           </div>
         </button>
