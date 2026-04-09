@@ -83,7 +83,7 @@ export function ParentDashboard() {
   ]
 
   function handleLock() {
-    navigate('/')
+    navigate('/lock')
   }
 
   return (
