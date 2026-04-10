@@ -152,7 +152,7 @@ function useToast() {
 
 function Toast({ message }: { message: string }) {
   return (
-    <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl bg-[var(--color-text)] text-white text-[13px] font-semibold shadow-xl max-w-xs text-center animate-fade-in-up">
+    <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl bg-[#1a2e2e] text-white text-[13px] font-semibold shadow-xl max-w-xs text-center animate-fade-in-up">
       🌱 {message}
     </div>
   )
