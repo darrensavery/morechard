@@ -69,13 +69,15 @@ import {
   X, Check,
 } from 'lucide-react'
 import { track } from '../../lib/analytics'
-import { clearDeviceIdentity, getDeviceIdentity } from '../../lib/deviceIdentity'
+import { clearDeviceIdentity, getDeviceIdentity, updateDeviceIdentity } from '../../lib/deviceIdentity'
 import type { ChildRecord, ChildGrowthSettings } from '../../lib/api'
 import {
   getChildren, addChild, generateInvite,
   getFamily, getSettings, updateSettings,
   getChildSettings, updateChildSettings,
   getChildGrowth, updateChildGrowth,
+  getMe, updateProfile,
+  type MeResult,
 } from '../../lib/api'
 import { AvatarSVG, AVATARS, AVATAR_CATEGORIES } from '../../lib/avatars'
 import { ThemePicker } from '../../lib/theme'
@@ -280,21 +282,74 @@ export function ParentSettingsTab({ familyId, onChildrenChange }: Props) {
 
   const { toast, showToast } = useToast()
 
+  // Profile (loaded from GET /auth/me)
+  const [profile, setProfile] = useState<MeResult | null>(null)
+
+  // Display name inline edit
+  const [editingName,  setEditingName]  = useState(false)
+  const [nameInput,    setNameInput]    = useState('')
+  const [nameSaving,   setNameSaving]   = useState(false)
+  const [nameError,    setNameError]    = useState<string | null>(null)
+
+  // Email inline edit
+  const [editingEmail, setEditingEmail] = useState(false)
+  const [emailInput,   setEmailInput]   = useState('')
+  const [emailSaving,  setEmailSaving]  = useState(false)
+  const [emailError,   setEmailError]   = useState<string | null>(null)
+
   function comingSoon() {
     showToast('Coming Soon to the Orchard')
   }
 
+  async function handleSaveName(e: React.FormEvent) {
+    e.preventDefault()
+    if (!nameInput.trim() || nameInput.trim() === (profile?.display_name ?? '')) return
+    setNameSaving(true)
+    setNameError(null)
+    try {
+      const updated = await updateProfile({ display_name: nameInput.trim() })
+      setProfile(updated)
+      updateDeviceIdentity({ display_name: updated.display_name })
+      setFamily(prev => ({ ...prev, display_name: updated.display_name }))
+      setEditingName(false)
+      showToast('🌿 Name updated')
+    } catch (err: unknown) {
+      setNameError((err as Error).message)
+    } finally {
+      setNameSaving(false)
+    }
+  }
+
+  async function handleSaveEmail(e: React.FormEvent) {
+    e.preventDefault()
+    if (!emailInput.trim() || emailInput.trim() === (profile?.email ?? '')) return
+    setEmailSaving(true)
+    setEmailError(null)
+    try {
+      const updated = await updateProfile({ email: emailInput.trim() })
+      setProfile(updated)
+      setEditingEmail(false)
+      showToast('📬 Email updated')
+    } catch (err: unknown) {
+      setEmailError((err as Error).message)
+    } finally {
+      setEmailSaving(false)
+    }
+  }
+
   const load = useCallback(async () => {
     setLoading(true)
-    const [c, f, s] = await Promise.all([
+    const [c, f, s, p] = await Promise.all([
       getChildren().then(r => r.children),
       getFamily(),
       getSettings(),
+      getMe(),
     ])
     setChildren(c)
     onChildrenChange(c)
     setFamily(f)
     setSettings(s)
+    setProfile(p)
     if (s?.avatar_id) localStorage.setItem('mc_parent_avatar', s.avatar_id)
     const [modes, growths] = await Promise.all([
       Promise.all(
@@ -691,18 +746,103 @@ export function ParentSettingsTab({ familyId, onChildrenChange }: Props) {
           )}
 
           <SectionCard>
+            {/* Display Name row */}
             <SettingsRow
               icon={<User size={15} />}
               label="Display Name"
-              description="Update your name as shown in the app"
-              onClick={comingSoon}
+              description={profile?.display_name ?? identity?.display_name ?? 'Not set'}
+              onClick={() => {
+                setNameInput(profile?.display_name ?? identity?.display_name ?? '')
+                setNameError(null)
+                setEditingName(v => !v)
+                setEditingEmail(false)
+              }}
             />
+            {editingName && (
+              <form onSubmit={handleSaveName} className="px-4 py-3 border-t border-[var(--color-border)] space-y-2">
+                <input
+                  type="text"
+                  value={nameInput}
+                  onChange={e => setNameInput(e.target.value)}
+                  maxLength={40}
+                  autoFocus
+                  placeholder="Your name"
+                  className="w-full px-3 py-2 text-[14px] rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-alt)] text-[var(--color-text)] placeholder-[var(--color-text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]"
+                />
+                {nameError && <p className="text-[12px] text-red-500">{nameError}</p>}
+                <div className="flex gap-2">
+                  <button
+                    type="submit"
+                    disabled={
+                      nameSaving ||
+                      nameInput.trim().length < 2 ||
+                      nameInput.trim() === (profile?.display_name ?? identity?.display_name ?? '')
+                    }
+                    className="flex-1 py-2 rounded-xl text-[13px] font-bold bg-[var(--brand-primary)] text-white disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed"
+                  >
+                    {nameSaving ? 'Saving…' : 'Save'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setEditingName(false); setNameError(null) }}
+                    className="px-4 py-2 rounded-xl text-[13px] font-semibold text-[var(--color-text-muted)] border border-[var(--color-border)] cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {/* Email row */}
             <SettingsRow
               icon={<Shield size={15} />}
-              label="Email Management"
-              description="Update or verify your email address"
-              onClick={comingSoon}
+              label="Email"
+              description={profile?.email ?? 'No email set'}
+              badge={
+                profile && (profile.email_verified === 0 || profile.email_pending)
+                  ? 'Unverified'
+                  : undefined
+              }
+              onClick={() => {
+                setEmailInput(profile?.email ?? '')
+                setEmailError(null)
+                setEditingEmail(v => !v)
+                setEditingName(false)
+              }}
             />
+            {editingEmail && (
+              <form onSubmit={handleSaveEmail} className="px-4 py-3 border-t border-[var(--color-border)] space-y-2">
+                <input
+                  type="email"
+                  value={emailInput}
+                  onChange={e => setEmailInput(e.target.value)}
+                  autoFocus
+                  placeholder="your@email.com"
+                  className="w-full px-3 py-2 text-[14px] rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-alt)] text-[var(--color-text)] placeholder-[var(--color-text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]"
+                />
+                {emailError && <p className="text-[12px] text-red-500">{emailError}</p>}
+                <div className="flex gap-2">
+                  <button
+                    type="submit"
+                    disabled={
+                      emailSaving ||
+                      !emailInput.trim() ||
+                      emailInput.trim() === (profile?.email ?? '')
+                    }
+                    className="flex-1 py-2 rounded-xl text-[13px] font-bold bg-[var(--brand-primary)] text-white disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed"
+                  >
+                    {emailSaving ? 'Saving…' : 'Save'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setEditingEmail(false); setEmailError(null) }}
+                    className="px-4 py-2 rounded-xl text-[13px] font-semibold text-[var(--color-text-muted)] border border-[var(--color-border)] cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            )}
           </SectionCard>
 
           {/* Delete — Lead only */}
