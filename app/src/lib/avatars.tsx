@@ -6,29 +6,29 @@
 export interface AvatarDef {
   id: string
   name: string
-  category: 'people' | 'animals' | 'robots' | 'symbols'
+  category: 'professional' | 'animals' | 'robots' | 'symbols'
   bg: string
   body: React.ReactNode
 }
 
 export const AVATARS: AvatarDef[] = [
-  // ── People & Characters ───────────────────────────────────────
-  { id: 'ninja',   name: 'Ninja',   category: 'people',  bg: '#1a1a2e',
-    body: <g><ellipse cx="50" cy="42" rx="18" ry="20" fill="#2d2d44"/><rect x="32" y="36" width="36" height="8" rx="4" fill="#1a1a2e"/><ellipse cx="43" cy="40" rx="4" ry="3" fill="#fff"/><ellipse cx="57" cy="40" rx="4" ry="3" fill="#fff"/><ellipse cx="43" cy="40" rx="2" ry="2" fill="#1a1a2e"/><ellipse cx="57" cy="40" rx="2" ry="2" fill="#1a1a2e"/></g> },
-  { id: 'astro',   name: 'Astro',   category: 'people',  bg: '#1e3a5f',
-    body: <g><ellipse cx="50" cy="45" rx="22" ry="24" fill="#c8d8e8"/><ellipse cx="50" cy="42" rx="14" ry="15" fill="#3a6ea8"/><ellipse cx="50" cy="42" rx="10" ry="11" fill="#e8f4ff" opacity="0.7"/><circle cx="44" cy="40" r="3" fill="#1e3a5f"/><circle cx="56" cy="40" r="3" fill="#1e3a5f"/><path d="M44 47 Q50 52 56 47" stroke="#1e3a5f" strokeWidth="2" fill="none"/></g> },
-  { id: 'samurai', name: 'Samurai', category: 'people',  bg: '#8b0000',
-    body: <g><ellipse cx="50" cy="48" rx="20" ry="22" fill="#f4c5a0"/><path d="M30 30 Q50 20 70 30 L68 42 Q50 38 32 42Z" fill="#8b0000"/><path d="M32 30 L30 22 M68 30 L70 22" stroke="#8b0000" strokeWidth="3"/><ellipse cx="43" cy="48" rx="4" ry="3" fill="#5a3a1a"/><ellipse cx="57" cy="48" rx="4" ry="3" fill="#5a3a1a"/><path d="M43 56 Q50 61 57 56" stroke="#c0706a" strokeWidth="2.5" fill="none"/></g> },
-  { id: 'punk',    name: 'Punk',    category: 'people',  bg: '#2d1b4e',
-    body: <g><ellipse cx="50" cy="50" rx="19" ry="21" fill="#ffd0a0"/><path d="M31 32 Q50 15 69 32 L66 36 Q50 24 34 36Z" fill="#e040fb"/><path d="M40 20 L40 30 M50 16 L50 27 M60 20 L60 30" stroke="#e040fb" strokeWidth="4" strokeLinecap="round"/><ellipse cx="43" cy="50" rx="4" ry="3" fill="#5a3a1a"/><ellipse cx="57" cy="50" rx="4" ry="3" fill="#5a3a1a"/><path d="M43 58 Q50 63 57 58" stroke="#d0706a" strokeWidth="2.5" fill="none"/></g> },
-  { id: 'knight',  name: 'Knight',  category: 'people',  bg: '#3d4a5c',
-    body: <g><ellipse cx="50" cy="45" rx="22" ry="24" fill="#9aa8b8"/><rect x="30" y="28" width="40" height="30" rx="5" fill="#7a8898"/><ellipse cx="50" cy="40" rx="12" ry="14" fill="#c8d0d8"/><ellipse cx="43" cy="40" rx="4" ry="3" fill="#2a3340"/><ellipse cx="57" cy="40" rx="4" ry="3" fill="#2a3340"/><rect x="35" y="54" width="30" height="6" rx="2" fill="#7a8898"/></g> },
-  { id: 'witch',   name: 'Witch',   category: 'people',  bg: '#1a0533',
-    body: <g><ellipse cx="50" cy="50" rx="18" ry="20" fill="#c8a0d0"/><path d="M30 38 L50 10 L70 38Z" fill="#1a0533"/><rect x="26" y="36" width="48" height="5" rx="2" fill="#1a0533"/><ellipse cx="43" cy="50" rx="4" ry="3" fill="#5a3070"/><ellipse cx="57" cy="50" rx="4" ry="3" fill="#5a3070"/><path d="M43 58 Q50 64 57 58" stroke="#9a6080" strokeWidth="2.5" fill="none"/></g> },
-  { id: 'pirate',  name: 'Pirate',  category: 'people',  bg: '#3b2107',
-    body: <g><ellipse cx="50" cy="50" rx="19" ry="21" fill="#f0c888"/><rect x="31" y="22" width="38" height="20" rx="3" fill="#1a1a1a"/><rect x="29" y="39" width="42" height="4" rx="2" fill="#1a1a1a"/><ellipse cx="43" cy="49" rx="4" ry="3" fill="#3b2107"/><rect x="39" y="46" width="8" height="6" rx="1" fill="#c0a000"/><ellipse cx="57" cy="49" rx="4" ry="3" fill="#3b2107"/><path d="M43 58 Q50 63 57 58" stroke="#c07050" strokeWidth="2.5" fill="none"/><circle cx="38" cy="30" r="5" fill="#3b2107"/></g> },
-  { id: 'reaper',  name: 'Reaper',  category: 'people',  bg: '#0d0d0d',
-    body: <g><ellipse cx="50" cy="50" rx="20" ry="22" fill="#1a1a1a"/><path d="M26 30 Q50 8 74 30 L70 40 Q50 30 30 40Z" fill="#0d0d0d"/><ellipse cx="50" cy="45" rx="12" ry="14" fill="#101010"/><ellipse cx="43" cy="44" rx="5" ry="4" fill="#7700cc" opacity="0.8"/><ellipse cx="57" cy="44" rx="5" ry="4" fill="#7700cc" opacity="0.8"/><path d="M43 56 Q50 60 57 56" stroke="#550099" strokeWidth="2" fill="none"/></g> },
+  // ── Professional ─────────────────────────────────────────────
+  { id: 'monogram-a', name: 'Slate',    category: 'professional', bg: '#2d3748',
+    body: <g><text x="50" y="66" textAnchor="middle" fontSize="52" fontWeight="700" fill="#e2e8f0" fontFamily="Georgia, serif" letterSpacing="-2">A</text></g> },
+  { id: 'pen',        name: 'Pen',      category: 'professional', bg: '#1a2a1a',
+    body: <g><rect x="47" y="18" width="6" height="46" rx="3" fill="#c8d8b0"/><path d="M44 58 L50 74 L56 58Z" fill="#a0b888"/><rect x="44" y="16" width="12" height="6" rx="2" fill="#8aaa60"/><rect x="46" y="22" width="2" height="30" rx="1" fill="#fff" opacity="0.3"/></g> },
+  { id: 'compass',    name: 'Compass',  category: 'professional', bg: '#1c1c2e',
+    body: <g><circle cx="50" cy="50" r="26" fill="none" stroke="#a0a8c8" strokeWidth="2.5"/><circle cx="50" cy="50" r="3" fill="#c8cce8"/><line x1="50" y1="24" x2="50" y2="38" stroke="#c8cce8" strokeWidth="2.5" strokeLinecap="round"/><line x1="50" y1="62" x2="50" y2="76" stroke="#6068a0" strokeWidth="2.5" strokeLinecap="round"/><line x1="24" y1="50" x2="38" y2="50" stroke="#6068a0" strokeWidth="2" strokeLinecap="round"/><line x1="62" y1="50" x2="76" y2="50" stroke="#6068a0" strokeWidth="2" strokeLinecap="round"/><path d="M50 26 L53 36 L50 38 L47 36Z" fill="#e8a030"/></g> },
+  { id: 'key',        name: 'Key',      category: 'professional', bg: '#2a1f0e',
+    body: <g><circle cx="42" cy="42" r="16" fill="none" stroke="#c8a84a" strokeWidth="5"/><circle cx="42" cy="42" r="6" fill="none" stroke="#c8a84a" strokeWidth="3"/><rect x="55" y="39" width="22" height="6" rx="3" fill="#c8a84a"/><rect x="68" y="45" width="6" height="8" rx="2" fill="#c8a84a"/><rect x="60" y="45" width="5" height="6" rx="1.5" fill="#c8a84a"/></g> },
+  { id: 'lens',       name: 'Lens',     category: 'professional', bg: '#0f1e2e',
+    body: <g><circle cx="46" cy="46" r="22" fill="none" stroke="#5a8ab0" strokeWidth="5"/><circle cx="46" cy="46" r="14" fill="none" stroke="#3a6a90" strokeWidth="2"/><circle cx="40" cy="40" r="4" fill="#5a8ab0" opacity="0.4"/><line x1="62" y1="62" x2="76" y2="76" stroke="#5a8ab0" strokeWidth="6" strokeLinecap="round"/></g> },
+  { id: 'leaf',       name: 'Leaf',     category: 'professional', bg: '#0f1f0f',
+    body: <g><path d="M50 75 C50 75 24 60 24 38 C24 22 38 16 50 20 C62 16 76 22 76 38 C76 60 50 75 50 75Z" fill="#2d5a2d"/><path d="M50 75 C50 75 24 60 24 38 C24 22 38 16 50 20 C62 16 76 22 76 38 C76 60 50 75 50 75Z" fill="none" stroke="#4a8a4a" strokeWidth="1.5"/><line x1="50" y1="72" x2="50" y2="22" stroke="#4a8a4a" strokeWidth="2" strokeLinecap="round"/><line x1="50" y1="38" x2="36" y2="30" stroke="#4a8a4a" strokeWidth="1.5" strokeLinecap="round"/><line x1="50" y1="48" x2="64" y2="40" stroke="#4a8a4a" strokeWidth="1.5" strokeLinecap="round"/><line x1="50" y1="58" x2="38" y2="52" stroke="#4a8a4a" strokeWidth="1.5" strokeLinecap="round"/></g> },
+  { id: 'mountain',   name: 'Mountain', category: 'professional', bg: '#1a1f2e',
+    body: <g><path d="M50 18 L78 70 L22 70Z" fill="#3a4a6a"/><path d="M50 18 L78 70 L22 70Z" fill="none" stroke="#5a6a8a" strokeWidth="1.5"/><path d="M50 18 L62 42 L38 42Z" fill="#c8d0e0"/><path d="M32 50 L50 70 L14 70Z" fill="#2a3a5a"/></g> },
+  { id: 'hourglass',  name: 'Hourglass',category: 'professional', bg: '#1f1a2e',
+    body: <g><rect x="30" y="20" width="40" height="6" rx="3" fill="#8878c8"/><rect x="30" y="74" width="40" height="6" rx="3" fill="#8878c8"/><path d="M34 26 L50 50 L66 26Z" fill="#6858a8"/><path d="M34 74 L50 50 L66 74Z" fill="#4a3a8a"/><ellipse cx="50" cy="50" rx="5" ry="5" fill="#c0b8e8" opacity="0.6"/><circle cx="42" cy="66" r="3" fill="#8878c8" opacity="0.5"/><circle cx="50" cy="68" r="2" fill="#8878c8" opacity="0.4"/></g> },
 
   // ── Animals ───────────────────────────────────────────────────
   { id: 'wolf',    name: 'Wolf',    category: 'animals', bg: '#4a5568',
@@ -86,10 +86,10 @@ export const AVATARS: AvatarDef[] = [
 ]
 
 export const AVATAR_CATEGORIES = [
-  { id: 'people',  label: 'Characters' },
-  { id: 'animals', label: 'Animals' },
-  { id: 'robots',  label: 'Robots' },
-  { id: 'symbols', label: 'Symbols' },
+  { id: 'professional', label: 'Style' },
+  { id: 'animals',      label: 'Animals' },
+  { id: 'robots',       label: 'Robots' },
+  { id: 'symbols',      label: 'Symbols' },
 ] as const
 
 export function AvatarSVG({ id, size = 52 }: { id: string; size?: number }) {
