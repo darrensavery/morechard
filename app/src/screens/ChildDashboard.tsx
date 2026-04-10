@@ -84,6 +84,7 @@ export function ChildDashboard() {
   const [showSettings, setShowSettings] = useState(false)
   const [showGrove,    setShowGrove]    = useState(false)
   const [weeklyAllowancePence, setWeeklyAllowancePence] = useState(0)
+  const [currency, setCurrency] = useState('GBP')
   const [purchasing,   setPurchasing]   = useState<string | null>(null)
   const [goalBarPct, setGoalBarPct] = useState(0)   // starts at 0 so the CSS transition has room to grow
   const goalBarTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -108,6 +109,7 @@ export function ChildDashboard() {
         getSettings(),
       ])
       setChores(c)
+      if (c.length > 0) setCurrency(c[0].currency)
       setBalance(b)
       setGoals(g)
       setPending(p)
@@ -231,7 +233,7 @@ export function ChildDashboard() {
               </svg>
             </button>
             <button
-              onClick={() => navigate('/')}
+              onClick={() => navigate('/lock')}
               className="w-8 h-8 rounded-lg border border-[var(--color-border)] flex items-center justify-center text-[var(--color-text-muted)] hover:bg-[var(--color-surface-alt)] cursor-pointer"
               title="Lock"
             >
@@ -334,6 +336,7 @@ export function ChildDashboard() {
             pending={pending}
             goals={goals}
             tone={tone}
+            currency={currency}
             submitted={submitted}
             submitting={submitting}
             noteChore={noteChore}
@@ -589,7 +592,7 @@ function OrchardView({
       const weeks = Math.ceil(targetPence / weeklyAllowancePence)
       return `${weeks} week${weeks !== 1 ? 's' : ''} of Harvest`
     }
-    return formatCurrency(targetPence, 'GBP')
+    return formatCurrency(targetPence, currency)
   }
 
   const activeGoals = goals.filter(g => g.status === 'ACTIVE' || !g.status)
@@ -599,18 +602,18 @@ function OrchardView({
       <div className="bg-[var(--color-surface)] rounded-2xl shadow-sm border-t-[3px] border-t-[var(--brand-primary)] border border-[var(--color-border)] p-4">
         <div className="text-[12px] font-semibold text-[var(--color-text-muted)] uppercase tracking-wider mb-1">{tone.balance}</div>
         <div className="text-[46px] font-extrabold text-[var(--color-text)] leading-none tracking-tight tabular-nums">
-          {balance ? formatCurrency(balance.available, 'GBP') : '£—'}
+          {balance ? formatCurrency(balance.available, currency) : '£—'}
         </div>
         <div className="flex gap-4 mt-2">
           <span className="text-[13px] text-[var(--color-text-muted)]">
             Earned: <strong className="text-[var(--color-text)] tabular-nums">
-              {balance ? formatCurrency(balance.earned, 'GBP') : '—'}
+              {balance ? formatCurrency(balance.earned, currency) : '—'}
             </strong>
           </span>
           {(balance?.pending ?? 0) > 0 && (
             <span className="text-[13px] text-[var(--color-text-muted)]">
               Pending: <strong className="text-amber-500 tabular-nums">
-                {formatCurrency(balance!.pending, 'GBP')}
+                {formatCurrency(balance!.pending, currency)}
               </strong>
             </span>
           )}
@@ -860,6 +863,7 @@ interface ProfessionalViewProps {
   pending: Completion[]
   goals: Goal[]
   tone: ReturnType<typeof import('../lib/useTone').useTone>
+  currency: string
   submitted: Set<string>
   submitting: string | null
   noteChore: string | null
@@ -872,7 +876,7 @@ interface ProfessionalViewProps {
 
 function ProfessionalView({
   balance, chores, pending, goals,
-  tone, submitted, submitting,
+  tone, currency, submitted, submitting,
   noteChore, noteText, submitErr,
   handleDone, setNoteChore, setNoteText,
 }: ProfessionalViewProps) {
@@ -883,7 +887,7 @@ function ProfessionalView({
         <div className="px-4 py-3 border-b border-[var(--color-border)]">
           <p className="text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-widest">{tone.balance}</p>
           <p className="text-[36px] font-extrabold text-[var(--color-text)] leading-none tabular-nums mt-0.5">
-            {balance ? formatCurrency(balance.available, 'GBP') : '£—'}
+            {balance ? formatCurrency(balance.available, currency) : '£—'}
           </p>
         </div>
         <div className="grid grid-cols-3 divide-x divide-[var(--color-border)]">
@@ -895,7 +899,7 @@ function ProfessionalView({
             <div key={label} className="px-3 py-2.5">
               <p className="text-[10px] font-semibold text-[var(--color-text-muted)] uppercase tracking-wide">{label}</p>
               <p className="text-[13px] font-bold text-[var(--color-text)] tabular-nums mt-0.5">
-                {formatCurrency(value, 'GBP')}
+                {formatCurrency(value, currency)}
               </p>
             </div>
           ))}
