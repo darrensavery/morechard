@@ -88,7 +88,7 @@ export async function handleCreateFamily(request: Request, env: Env): Promise<Re
       INSERT INTO users (id, family_id, display_name, email, locale, password_hash, email_verified)
       VALUES (?,?,?,?,?,?,0)
     `).bind(userId, familyId, display_name, normEmail, userLocale, passwordHash),
-    env.DB.prepare(`INSERT INTO family_roles (user_id, family_id, role) VALUES (?,?,'parent')`)
+    env.DB.prepare(`INSERT INTO family_roles (user_id, family_id, role, parent_role) VALUES (?,?,'parent','lead')`)
       .bind(userId, familyId),
   ]);
 
@@ -130,7 +130,7 @@ export async function handleRegister(request: Request, env: Env): Promise<Respon
     `).bind(userId, family_id, display_name, normEmail, userLocale, passwordHash),
 
     env.DB.prepare(`
-      INSERT INTO family_roles (user_id, family_id, role) VALUES (?,?,'parent')
+      INSERT INTO family_roles (user_id, family_id, role, parent_role) VALUES (?,?,'parent','lead')
     `).bind(userId, family_id),
   ]);
 
