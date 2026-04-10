@@ -106,6 +106,21 @@ export async function updateProfile(
 }
 
 // ----------------------------------------------------------------
+// Co-parent-aware account deletion
+// ----------------------------------------------------------------
+export async function getLeadCount(): Promise<{ lead_count: number }> {
+  return request('/auth/family/leads', { method: 'GET' });
+}
+
+export async function leaveFamily(): Promise<{ ok: boolean; action: string }> {
+  return request('/auth/me/leave', { method: 'DELETE' });
+}
+
+export async function deleteFamily(): Promise<{ ok: boolean; action: string }> {
+  return request('/auth/family', { method: 'DELETE' });
+}
+
+// ----------------------------------------------------------------
 // Family & children
 // ----------------------------------------------------------------
 export async function getFamily(): Promise<Record<string, unknown>> {
