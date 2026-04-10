@@ -9,9 +9,9 @@
  * │    [UI Shell]   Navigation exists, no underlying logic          │
  * │    [Functional] Fully coded and connected                       │
  * │                                                                 │
- * │  1. Account & Profile          [UI Shell]                       │
- * │     • Display Name             [Planned]                        │
- * │     • Email Management         [Planned]                        │
+ * │  1. Account & Profile          [Functional]                     │
+ * │     • Display Name             [Functional]                     │
+ * │     • Email                    [Functional]  (unverified badge) │
  * │     • Delete Account *         [Planned]  (LEAD_PARENT only)    │
  * │                                                                 │
  * │  2. Manage Family              [UI Shell]                       │
