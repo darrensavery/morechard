@@ -21,18 +21,19 @@ interface Props {
 }
 
 export function SecuritySettings({ profile, toast, onBack, onComingSoon }: Props) {
-  const [searchParams, setSearchParams] = useSearchParams()
-  const [view, setView] = useState<SecurityView>('menu')
+  const [, setSearchParams] = useSearchParams()
+  const [view, setView] = useState<SecurityView>(() => {
+    const v = new URLSearchParams(window.location.search).get('view')
+    return v === 'pin' || v === 'sessions' ? v : 'menu'
+  })
 
-  // Handle deep-link: /parent?settings=security&view=pin
+  // Clean deep-link query params after reading them on mount
   useEffect(() => {
-    const v = searchParams.get('view')
+    const v = new URLSearchParams(window.location.search).get('view')
     if (v === 'pin' || v === 'sessions') {
-      setView(v)
-      // Clean the query params so navigating back works cleanly
       setSearchParams({}, { replace: true })
     }
-  }, [])
+  }, [setSearchParams])
 
   if (view === 'pin') {
     return (
