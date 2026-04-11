@@ -663,6 +663,45 @@ export async function handleDeleteFamily(request: Request & { auth?: JwtPayload 
 }
 
 // ----------------------------------------------------------------
+// POST /auth/pin/set  (also handles POST /auth/pin/reset-with-password)
+// Set or change the parent's 4-digit PIN.
+// Always requires email password as the master key.
+// Body: { password: string, new_pin: string }
+// ----------------------------------------------------------------
+export async function handlePinSet(request: Request, env: Env): Promise<Response> {
+  const caller = (request as AuthedRequest).auth;
+  if (!caller) return error('Unauthorised', 401);
+  if (caller.role !== 'parent') return error('Parents only', 403);
+
+  const body = await parseBody(request);
+  if (!body) return error('Invalid JSON body');
+
+  const { password, new_pin } = body;
+  if (!password || typeof password !== 'string') return error('password required');
+  if (!new_pin  || typeof new_pin  !== 'string') return error('new_pin required');
+  if (!/^\d{4}$/.test(new_pin as string)) return error('PIN must be exactly 4 digits');
+
+  const user = await env.DB
+    .prepare('SELECT password_hash FROM users WHERE id = ?')
+    .bind(caller.sub)
+    .first<{ password_hash: string | null }>();
+
+  if (!user) return error('User not found', 404);
+  if (!user.password_hash) return error('Set a password first to enable PIN.', 400);
+
+  const valid = await verifyPassword(password as string, user.password_hash);
+  if (!valid) return error('Incorrect password', 401);
+
+  const pinHash = await hashPassword(new_pin as string);
+  await env.DB
+    .prepare('UPDATE users SET parent_pin_hash = ?, pin_attempt_count = 0, pin_locked_until = NULL WHERE id = ?')
+    .bind(pinHash, caller.sub)
+    .run();
+
+  return json({ ok: true });
+}
+
+// ----------------------------------------------------------------
 // Internal helpers
 // ----------------------------------------------------------------
 
