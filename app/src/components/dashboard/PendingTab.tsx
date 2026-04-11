@@ -11,6 +11,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react'
+import { useGatekeeper } from '../../hooks/useGatekeeper'
 import type { Completion, ChildRecord } from '../../lib/api'
 import {
   getCompletions, approveCompletion, reviseCompletion,
@@ -24,6 +25,7 @@ interface Props {
 }
 
 export function PendingTab({ familyId, child, onCountChange }: Props) {
+  const { challenge, GatekeeperModal } = useGatekeeper()
   const [completions, setCompletions] = useState<Completion[]>([])
   const [loading, setLoading]         = useState(true)
   const [reviseId, setReviseId]       = useState<string | null>(null)
@@ -86,6 +88,7 @@ export function PendingTab({ familyId, child, onCountChange }: Props) {
 
   return (
     <div className="space-y-3">
+      <GatekeeperModal />
       {/* Approve-all bulk action */}
       {completions.length > 1 && (
         <button
@@ -110,7 +113,7 @@ export function PendingTab({ familyId, child, onCountChange }: Props) {
           reviseNote={reviseNote}
           busy={busy === c.id}
           anyBusy={!!busy || approveAllBusy}
-          onApprove={() => handleApprove(c.id)}
+          onApprove={() => challenge(() => handleApprove(c.id))}
           onStartRevise={() => { setReviseId(c.id); setReviseNote('') }}
           onCancelRevise={() => { setReviseId(null); setReviseNote('') }}
           onReviseNoteChange={setReviseNote}
@@ -156,7 +159,7 @@ export function PendingTab({ familyId, child, onCountChange }: Props) {
                 Cancel
               </button>
               <button
-                onClick={handleConfirmApproveAll}
+                onClick={() => challenge(handleConfirmApproveAll)}
                 className="flex-1 bg-[var(--brand-primary)] text-white rounded-xl py-3 text-[14px] font-bold hover:opacity-90 cursor-pointer active:scale-[0.98] transition-all shadow-sm"
               >
                 Confirm &amp; pay
