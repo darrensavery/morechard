@@ -9,6 +9,8 @@ import { LockScreen } from './screens/LockScreen'
 import { ParentDashboard } from './screens/ParentDashboard'
 import { ChildDashboard } from './screens/ChildDashboard'
 import { JoinFamilyScreen } from './screens/JoinFamilyScreen'
+import LoginScreen from './screens/LoginScreen'
+import AuthCallbackScreen from './screens/AuthCallbackScreen'
 import { getDeviceIdentity, setDeviceIdentity, toInitials } from './lib/deviceIdentity'
 import { analytics, track } from './lib/analytics'
 import { verifyMagicLink, setToken, getMe } from './lib/api'
@@ -222,7 +224,9 @@ export default function App() {
             />
           }
         />
-        <Route path="/auth/verify" element={<MagicLinkVerifyScreen />} />
+        <Route path="/auth/verify"    element={<MagicLinkVerifyScreen />} />
+        <Route path="/auth/login"    element={<LoginScreen />} />
+        <Route path="/auth/callback" element={<AuthCallbackScreen />} />
         <Route path="/parent" element={<RequireSession><ParentDashboard /></RequireSession>} />
         <Route path="/child"  element={<RequireSession><ChildDashboard /></RequireSession>} />
         <Route path="*"       element={<Navigate to="/" replace />} />

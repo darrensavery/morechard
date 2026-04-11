@@ -554,3 +554,26 @@ export function getMondayISO(): string {
   d.setDate(d.getDate() + diff);
   return d.toISOString().split('T')[0];
 }
+
+// ── SLT Exchange ───────────────────────────────────────────────────
+
+export interface SltExchangeResult {
+  token: string
+  user: {
+    id:             string
+    family_id:      string
+    display_name:   string
+    role:           'parent'
+    parenting_role: 'LEAD_PARENT' | 'CO_PARENT'
+    has_pin:        boolean
+    has_password:   boolean
+    google_picture: string | null
+  }
+}
+
+export async function exchangeSlt(slt: string): Promise<SltExchangeResult> {
+  return request('/auth/slt/exchange', {
+    method: 'POST',
+    body:   JSON.stringify({ slt }),
+  })
+}

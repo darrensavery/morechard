@@ -30,6 +30,8 @@ export interface DeviceIdentity {
   auth_method:    'biometrics' | 'pin' | 'none'
   /** 4-digit PIN — only set when auth_method === 'pin' */
   pin?:           string
+  /** Google profile picture URL; undefined for non-Google logins */
+  google_picture?: string
 }
 
 const STORAGE_KEY = 'mc_device_identity'
