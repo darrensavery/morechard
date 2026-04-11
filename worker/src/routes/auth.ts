@@ -658,11 +658,12 @@ async function issueParentJwt(userId: string, familyId: string, request: Request
   const ip  = clientIp(request);
   const now = Math.floor(Date.now() / 1000);
   const jti = nanoid();
+  const ua = request.headers.get('User-Agent') ?? '';
 
   await env.DB
-    .prepare(`INSERT INTO sessions (jti, user_id, family_id, role, expires_at, ip_address)
-              VALUES (?,?,?,'parent',?,?)`)
-    .bind(jti, userId, familyId, now + PARENT_JWT_EXPIRY, ip)
+    .prepare(`INSERT INTO sessions (jti, user_id, family_id, role, expires_at, ip_address, user_agent)
+              VALUES (?,?,?,'parent',?,?,?)`)
+    .bind(jti, userId, familyId, now + PARENT_JWT_EXPIRY, ip, ua)
     .run();
 
   const token = await signJwt(
