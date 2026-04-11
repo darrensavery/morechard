@@ -101,6 +101,11 @@ import {
   handleFamilyLeads,
   handleLeaveFamily,
   handleDeleteFamily,
+  handlePinSet,
+  handleVerifyPin,
+  handleGetSessions,
+  handleRevokeSession,
+  handleRevokeOtherSessions,
 } from './routes/auth.js';
 import { requireAuth, requireRole, requireFamilyMatch } from './lib/middleware.js';
 import { checkTrialStatus, getTrialStatus } from './lib/trial.js';
@@ -482,6 +487,35 @@ async function route(request: Request, env: Env, method: string, path: string): 
     const [, id, action] = govActionMatch;
     if (action === 'confirm') return handleGovernanceConfirm(request, env, id);
     if (action === 'reject')  return handleGovernanceReject(request, env, id);
+  }
+
+  // ── Security / PIN ────────────────────────────────────────────────
+  if (method === 'POST' && path === '/auth/pin/set') {
+    await requireAuth(request, env);
+    return handlePinSet(request, env);
+  }
+  // Same handler — distinct route name lets the frontend show different copy ("Forgot PIN?")
+  if (method === 'POST' && path === '/auth/pin/reset-with-password') {
+    await requireAuth(request, env);
+    return handlePinSet(request, env);
+  }
+  if (method === 'POST' && path === '/auth/verify-pin') {
+    await requireAuth(request, env);
+    return handleVerifyPin(request, env);
+  }
+
+  // ── Sessions ──────────────────────────────────────────────────────
+  if (method === 'GET' && path === '/auth/sessions') {
+    await requireAuth(request, env);
+    return handleGetSessions(request, env);
+  }
+  if (method === 'DELETE' && path === '/auth/sessions' && url.searchParams.get('others') === 'true') {
+    await requireAuth(request, env);
+    return handleRevokeOtherSessions(request, env);
+  }
+  if (method === 'DELETE' && path.startsWith('/auth/sessions/')) {
+    await requireAuth(request, env);
+    return handleRevokeSession(request, env);
   }
 
   return error('Not found', 404);
