@@ -10,6 +10,8 @@ export interface Env {
   STRIPE_SECRET_KEY: string;
   STRIPE_WEBHOOK_SECRET: string;
   FIREBASE_PROJECT_ID: string;
+  GOOGLE_CLIENT_ID:     string;
+  GOOGLE_CLIENT_SECRET: string;
 }
 
 // Completion lifecycle statuses

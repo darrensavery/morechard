@@ -827,8 +827,301 @@ export async function handleRevokeOtherSessions(request: Request, env: Env): Pro
 }
 
 // ----------------------------------------------------------------
+// GET /auth/google
+// Initiates Google OAuth 2.0 flow. Sets CSRF state cookie and
+// redirects to Google's authorisation endpoint.
+// ----------------------------------------------------------------
+export async function handleGoogleAuth(_request: Request, env: Env): Promise<Response> {
+  const state      = nanoid(16);
+  const redirectUri = 'https://morechard-api.darren-savery.workers.dev/auth/google/callback';
+
+  const params = new URLSearchParams({
+    client_id:     env.GOOGLE_CLIENT_ID,
+    redirect_uri:  redirectUri,
+    response_type: 'code',
+    scope:         'openid email profile',
+    state,
+    access_type:   'offline',
+    prompt:        'select_account',
+  });
+
+  return new Response(null, {
+    status: 302,
+    headers: {
+      'Location':   `https://accounts.google.com/o/oauth2/v2/auth?${params}`,
+      'Set-Cookie': `mc_oauth_state=${state}; HttpOnly; Secure; SameSite=Lax; Max-Age=300; Path=/`,
+    },
+  });
+}
+
+// ----------------------------------------------------------------
+// GET /auth/google/callback
+// Receives the OAuth code, verifies CSRF, exchanges code for tokens,
+// verifies the ID token, merges the user, issues SLT, redirects.
+// ----------------------------------------------------------------
+export async function handleGoogleCallback(request: Request, env: Env): Promise<Response> {
+  const url         = new URL(request.url);
+  const code        = url.searchParams.get('code');
+  const stateParam  = url.searchParams.get('state');
+  const appUrl      = 'https://app.morechard.com';
+  const redirectUri = 'https://morechard-api.darren-savery.workers.dev/auth/google/callback';
+  const clearCookie = 'mc_oauth_state=; HttpOnly; Secure; SameSite=Lax; Max-Age=0; Path=/';
+
+  // ── Step 1: CSRF validation ──────────────────────────────────
+  const cookieHeader = request.headers.get('Cookie') ?? '';
+  const stateCookie  = cookieHeader
+    .split(';')
+    .map(c => c.trim())
+    .find(c => c.startsWith('mc_oauth_state='))
+    ?.slice('mc_oauth_state='.length);
+
+  if (!stateParam || !stateCookie || stateParam !== stateCookie) {
+    return new Response(null, {
+      status: 302,
+      headers: { 'Location': `${appUrl}/auth/login?error=csrf`, 'Set-Cookie': clearCookie },
+    });
+  }
+
+  // ── Step 2: Token exchange ────────────────────────────────────
+  const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      code,
+      client_id:     env.GOOGLE_CLIENT_ID,
+      client_secret: env.GOOGLE_CLIENT_SECRET,
+      redirect_uri:  redirectUri,
+      grant_type:    'authorization_code',
+    }),
+  });
+
+  if (!tokenRes.ok) {
+    return new Response(null, {
+      status: 302,
+      headers: { 'Location': `${appUrl}/auth/login?error=google_exchange`, 'Set-Cookie': clearCookie },
+    });
+  }
+
+  const tokenData = await tokenRes.json<{ id_token: string }>();
+
+  // ── Step 3: Verify ID token ───────────────────────────────────
+  let googlePayload: GoogleIdTokenPayload;
+  try {
+    googlePayload = await verifyGoogleIdToken(tokenData.id_token, env.GOOGLE_CLIENT_ID);
+  } catch {
+    return new Response(null, {
+      status: 302,
+      headers: { 'Location': `${appUrl}/auth/login?error=google_exchange`, 'Set-Cookie': clearCookie },
+    });
+  }
+
+  if (!googlePayload.email_verified) {
+    return new Response(null, {
+      status: 302,
+      headers: { 'Location': `${appUrl}/auth/login?error=unverified`, 'Set-Cookie': clearCookie },
+    });
+  }
+
+  const { sub, email, picture } = googlePayload;
+  const normEmail = email.toLowerCase().trim();
+
+  // ── Step 4: Merge / bridge logic ─────────────────────────────
+  const user = await env.DB
+    .prepare('SELECT id, family_id, display_name FROM users WHERE email = ? LIMIT 1')
+    .bind(normEmail)
+    .first<{ id: string; family_id: string; display_name: string }>();
+
+  if (!user) {
+    return new Response(null, {
+      status: 302,
+      headers: {
+        'Location':   `${appUrl}/auth/login?error=no_account&hint=${encodeURIComponent(normEmail)}`,
+        'Set-Cookie': clearCookie,
+      },
+    });
+  }
+
+  await env.DB
+    .prepare('UPDATE users SET google_sub = ?, google_picture = ?, email_verified = 1 WHERE id = ?')
+    .bind(sub, picture ?? null, user.id)
+    .run();
+
+  // ── Step 5: Issue SLT ─────────────────────────────────────────
+  const slt = nanoid(32);
+  const now = Math.floor(Date.now() / 1000);
+
+  await env.DB
+    .prepare('INSERT INTO slt_tokens (token, user_id, expires_at, ip_address, user_agent) VALUES (?, ?, ?, ?, ?)')
+    .bind(slt, user.id, now + 60, clientIp(request), request.headers.get('User-Agent') ?? '')
+    .run();
+
+  // ── Step 6: Redirect to frontend ─────────────────────────────
+  return new Response(null, {
+    status: 302,
+    headers: { 'Location': `${appUrl}/auth/callback?slt=${slt}`, 'Set-Cookie': clearCookie },
+  });
+}
+
+// ----------------------------------------------------------------
+// POST /auth/slt/exchange
+// Consumes a Short-Lived Token, returns a long-lived JWT.
+// Body: { slt: string }
+// ----------------------------------------------------------------
+export async function handleSltExchange(request: Request, env: Env): Promise<Response> {
+  const body = await parseBody(request);
+  if (!body) return error('Invalid JSON body');
+
+  const { slt } = body;
+  if (!slt || typeof slt !== 'string') return error('slt required');
+
+  const ip  = clientIp(request);
+  const now = Math.floor(Date.now() / 1000);
+
+  // ── Step 1: IP abuse check ────────────────────────────────────
+  const attempt = await env.DB
+    .prepare('SELECT attempts, blocked_until FROM slt_attempts WHERE ip = ?')
+    .bind(ip)
+    .first<{ attempts: number; blocked_until: number | null }>();
+
+  if (attempt?.blocked_until && attempt.blocked_until > now) {
+    return error('Too many attempts. Try again later.', 429);
+  }
+
+  // ── Step 2: SLT lookup ────────────────────────────────────────
+  const tokenRow = await env.DB
+    .prepare('SELECT user_id FROM slt_tokens WHERE token = ? AND expires_at > ?')
+    .bind(slt, now)
+    .first<{ user_id: string }>();
+
+  if (!tokenRow) {
+    await env.DB
+      .prepare(`
+        INSERT INTO slt_attempts (ip, attempts, blocked_until)
+        VALUES (?, 1, NULL)
+        ON CONFLICT(ip) DO UPDATE SET
+          attempts      = attempts + 1,
+          blocked_until = CASE WHEN attempts + 1 >= 5
+                          THEN unixepoch() + 3600
+                          ELSE blocked_until END
+      `)
+      .bind(ip)
+      .run();
+    return error('Invalid or expired token', 401);
+  }
+
+  // ── Step 3: Consume token ─────────────────────────────────────
+  await env.DB
+    .prepare('DELETE FROM slt_tokens WHERE token = ?')
+    .bind(slt)
+    .run();
+
+  // ── Step 4: Load user ─────────────────────────────────────────
+  const user = await env.DB
+    .prepare(`
+      SELECT u.id, u.display_name, u.google_picture,
+             u.parent_pin_hash, u.password_hash,
+             fr.family_id, fr.granted_by
+      FROM users u
+      JOIN family_roles fr ON fr.user_id = u.id AND fr.role = 'parent'
+      WHERE u.id = ?
+      LIMIT 1
+    `)
+    .bind(tokenRow.user_id)
+    .first<{
+      id:              string;
+      display_name:    string;
+      google_picture:  string | null;
+      parent_pin_hash: string | null;
+      password_hash:   string | null;
+      family_id:       string;
+      granted_by:      string | null;
+    }>();
+
+  if (!user) return error('User not found', 404);
+
+  // ── Step 5: Issue JWT ─────────────────────────────────────────
+  const jwtResponse = await issueParentJwt(user.id, user.family_id, request, env);
+  const jwtData     = await jwtResponse.clone().json<{ token: string }>();
+
+  // ── Step 6: Reset abuse counter on success ───────────────────
+  await env.DB
+    .prepare('DELETE FROM slt_attempts WHERE ip = ?')
+    .bind(ip)
+    .run();
+
+  // ── Step 7: Respond ───────────────────────────────────────────
+  return json({
+    token: jwtData.token,
+    user: {
+      id:             user.id,
+      family_id:      user.family_id,
+      display_name:   user.display_name,
+      role:           'parent',
+      parenting_role: user.granted_by ? 'CO_PARENT' : 'LEAD_PARENT',
+      has_pin:        user.parent_pin_hash !== null,
+      has_password:   user.password_hash   !== null,
+      google_picture: user.google_picture  ?? null,
+    },
+  });
+}
+
+// ----------------------------------------------------------------
 // Internal helpers
 // ----------------------------------------------------------------
+
+interface GoogleIdTokenPayload {
+  sub:            string;
+  email:          string;
+  email_verified: boolean;
+  name:           string;
+  picture:        string;
+  exp:            number;
+  aud:            string;
+  iss:            string;
+}
+
+async function verifyGoogleIdToken(
+  idToken: string,
+  expectedClientId: string,
+): Promise<GoogleIdTokenPayload> {
+  const parts = idToken.split('.');
+  if (parts.length !== 3) throw new Error('Invalid token format');
+  const [headerB64, payloadB64, sigB64] = parts;
+
+  function b64url(s: string): string {
+    return s.replace(/-/g, '+').replace(/_/g, '/');
+  }
+
+  const header  = JSON.parse(atob(b64url(headerB64)))  as { kid: string; alg: string };
+  const payload = JSON.parse(atob(b64url(payloadB64))) as GoogleIdTokenPayload;
+
+  const now = Math.floor(Date.now() / 1000);
+  if (payload.exp < now)                           throw new Error('Token expired');
+  if (payload.aud !== expectedClientId)            throw new Error('Wrong audience');
+  if (payload.iss !== 'https://accounts.google.com' &&
+      payload.iss !== 'accounts.google.com')       throw new Error('Wrong issuer');
+
+  // Fetch Google's public JWK set
+  const certsRes = await fetch('https://www.googleapis.com/oauth2/v3/certs');
+  const certs    = await certsRes.json<{ keys: Array<{ kid: string; n: string; e: string; kty: string; alg: string }> }>();
+  const jwk      = certs.keys.find(k => k.kid === header.kid);
+  if (!jwk) throw new Error('JWK not found for kid: ' + header.kid);
+
+  const publicKey = await crypto.subtle.importKey(
+    'jwk',
+    jwk,
+    { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' },
+    false,
+    ['verify'],
+  );
+
+  const sigBytes  = Uint8Array.from(atob(b64url(sigB64)),  c => c.charCodeAt(0));
+  const dataBytes = new TextEncoder().encode(`${headerB64}.${payloadB64}`);
+  const valid     = await crypto.subtle.verify('RSASSA-PKCS1-v1_5', publicKey, sigBytes, dataBytes);
+  if (!valid) throw new Error('Invalid signature');
+
+  return payload;
+}
 
 async function issueParentJwt(userId: string, familyId: string, request: Request, env: Env): Promise<Response> {
   const ip  = clientIp(request);

@@ -106,6 +106,9 @@ import {
   handleGetSessions,
   handleRevokeSession,
   handleRevokeOtherSessions,
+  handleGoogleAuth,
+  handleGoogleCallback,
+  handleSltExchange,
 } from './routes/auth.js';
 import { requireAuth, requireRole, requireFamilyMatch } from './lib/middleware.js';
 import { checkTrialStatus, getTrialStatus } from './lib/trial.js';
@@ -164,6 +167,10 @@ export default Sentry.withSentry(
     // check if they have already been paid this week (payday_log UNIQUE
     // constraint is the idempotency key — safe on cron retry).
     await runPaydaySweep(env, now);
+
+    // ── 3. Clean up expired SLT tokens and unblocked IP attempts ──
+    await env.DB.prepare('DELETE FROM slt_tokens WHERE expires_at < ?').bind(now).run();
+    await env.DB.prepare('DELETE FROM slt_attempts WHERE blocked_until IS NOT NULL AND blocked_until < ?').bind(now).run();
   },
 } satisfies ExportedHandler<Env>,
 );
@@ -282,6 +289,9 @@ async function route(request: Request, env: Env, method: string, path: string): 
   if (path === '/auth/child/login'   && method === 'POST') return handleChildLogin(request, env);
   if (path === '/auth/invite/peek'   && method === 'POST') return handlePeekInvite(request, env);
   if (path === '/auth/invite/redeem' && method === 'POST') return handleRedeemInvite(request, env);
+  if (path === '/auth/google'          && method === 'GET')  return handleGoogleAuth(request, env);
+  if (path === '/auth/google/callback' && method === 'GET')  return handleGoogleCallback(request, env);
+  if (path === '/auth/slt/exchange'    && method === 'POST') return handleSltExchange(request, env);
 
   // Stripe webhook — public but signature-verified internally
   if (path === '/api/stripe/webhook' && method === 'POST') return handleStripeWebhook(request, env);
