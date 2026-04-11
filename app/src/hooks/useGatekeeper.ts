@@ -171,12 +171,12 @@ export function useGatekeeper() {
     const padDisabled = locked || submitting
 
     return (
-      <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm">
+      <div role="dialog" aria-modal="true" aria-labelledby="gk-title" className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm">
         <div className="w-full max-w-sm bg-[var(--color-surface)] rounded-t-3xl sm:rounded-3xl shadow-2xl px-6 pt-6 pb-8">
 
           {/* Header */}
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-[16px] font-bold text-[var(--color-text)]">Confirm it's you</h2>
+            <h2 id="gk-title" className="text-[16px] font-bold text-[var(--color-text)]">Confirm it's you</h2>
             <button
               type="button"
               onClick={handleClose}
@@ -204,7 +204,7 @@ export function useGatekeeper() {
           </div>
 
           {/* Error / lockout message */}
-          <div className="h-5 flex items-center justify-center mb-4">
+          <div role="status" aria-live="polite" className="h-5 flex items-center justify-center mb-4">
             {locked ? (
               <p className="text-[12px] font-semibold text-amber-600">
                 Locked for {lockSeconds}s…
