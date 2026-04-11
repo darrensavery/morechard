@@ -75,11 +75,12 @@ interface Props {
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export function ActiveSessionsSettings({ onBack }: Props) {
-  const [sessions,  setSessions]  = useState<SessionRow[]>([])
-  const [loading,   setLoading]   = useState(true)
-  const [error,     setError]     = useState<string | null>(null)
-  const [revoking,  setRevoking]  = useState<string | null>(null)
-  const [revokeAll, setRevokeAll] = useState(false)
+  const [sessions,    setSessions]    = useState<SessionRow[]>([])
+  const [loading,     setLoading]     = useState(true)
+  const [error,       setError]       = useState<string | null>(null)
+  const [revoking,    setRevoking]    = useState<string | null>(null)
+  const [revokeAll,   setRevokeAll]   = useState(false)
+  const [revokeError, setRevokeError] = useState<string | null>(null)
 
   const currentJti = getCurrentJti()
 
@@ -100,11 +101,15 @@ export function ActiveSessionsSettings({ onBack }: Props) {
 
   async function handleRevoke(jti: string) {
     setRevoking(jti)
+    setRevokeError(null)
+    const snapshot = sessions
+    setSessions(prev => prev.filter(s => s.jti !== jti))
     try {
       await revokeSession(jti)
-      setSessions(prev => prev.filter(s => s.jti !== jti))
-    } catch {
-      // Silent — list stays correct on next load
+    } catch (err) {
+      setSessions(snapshot)
+      setRevokeError('Could not revoke session. Please try again.')
+      console.error('revokeSession failed:', err)
     } finally {
       setRevoking(null)
     }
@@ -112,11 +117,15 @@ export function ActiveSessionsSettings({ onBack }: Props) {
 
   async function handleRevokeAll() {
     setRevokeAll(true)
+    setRevokeError(null)
+    const snapshot = sessions
+    setSessions(prev => prev.filter(s => s.jti === currentJti))
     try {
       await revokeOtherSessions()
-      setSessions(prev => prev.filter(s => s.jti === currentJti))
-    } catch {
-      // Silent
+    } catch (err) {
+      setSessions(snapshot)
+      setRevokeError('Could not revoke sessions. Please try again.')
+      console.error('revokeOtherSessions failed:', err)
     } finally {
       setRevokeAll(false)
     }
@@ -213,6 +222,10 @@ export function ActiveSessionsSettings({ onBack }: Props) {
 
           {otherSessions.length === 0 && sessions.length > 0 && (
             <p className="text-center text-[12px] text-[var(--color-text-muted)]">No other devices logged in.</p>
+          )}
+
+          {revokeError && (
+            <p className="text-center text-[12px] text-red-500">{revokeError}</p>
           )}
         </>
       )}
