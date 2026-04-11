@@ -762,6 +762,71 @@ export async function handleVerifyPin(request: Request, env: Env): Promise<Respo
 }
 
 // ----------------------------------------------------------------
+// GET /auth/sessions
+// Returns all active (non-revoked, non-expired) sessions for the caller.
+// ----------------------------------------------------------------
+export async function handleGetSessions(request: Request, env: Env): Promise<Response> {
+  const caller = (request as AuthedRequest).auth;
+  if (!caller) return error('Unauthorised', 401);
+  if (caller.role !== 'parent') return error('Parents only', 403);
+
+  const now = Math.floor(Date.now() / 1000);
+
+  const { results } = await env.DB
+    .prepare(`
+      SELECT jti, issued_at, user_agent
+      FROM sessions
+      WHERE user_id = ? AND revoked_at IS NULL AND expires_at > ?
+      ORDER BY issued_at DESC
+    `)
+    .bind(caller.sub, now)
+    .all<{ jti: string; issued_at: number; user_agent: string | null }>();
+
+  return json({ sessions: results });
+}
+
+// ----------------------------------------------------------------
+// DELETE /auth/sessions/:jti
+// Revoke a single session. Caller must own the session.
+// ----------------------------------------------------------------
+export async function handleRevokeSession(request: Request, env: Env): Promise<Response> {
+  const caller = (request as AuthedRequest).auth;
+  if (!caller) return error('Unauthorised', 401);
+  if (caller.role !== 'parent') return error('Parents only', 403);
+
+  const url = new URL(request.url);
+  const jti = url.pathname.split('/').at(-1);
+  if (!jti) return error('jti required', 400);
+
+  const now = Math.floor(Date.now() / 1000);
+  const result = await env.DB
+    .prepare('UPDATE sessions SET revoked_at = ? WHERE jti = ? AND user_id = ? AND revoked_at IS NULL')
+    .bind(now, jti, caller.sub)
+    .run();
+
+  if (result.meta.changes === 0) return error('Session not found', 404);
+  return json({ ok: true });
+}
+
+// ----------------------------------------------------------------
+// DELETE /auth/sessions?others=true
+// Revoke all sessions for this user except the current one.
+// ----------------------------------------------------------------
+export async function handleRevokeOtherSessions(request: Request, env: Env): Promise<Response> {
+  const caller = (request as AuthedRequest).auth;
+  if (!caller) return error('Unauthorised', 401);
+  if (caller.role !== 'parent') return error('Parents only', 403);
+
+  const now = Math.floor(Date.now() / 1000);
+  const result = await env.DB
+    .prepare('UPDATE sessions SET revoked_at = ? WHERE user_id = ? AND jti != ? AND revoked_at IS NULL')
+    .bind(now, caller.sub, caller.jti)
+    .run();
+
+  return json({ ok: true, revoked: result.meta.changes });
+}
+
+// ----------------------------------------------------------------
 // Internal helpers
 // ----------------------------------------------------------------
 
