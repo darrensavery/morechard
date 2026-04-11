@@ -12,10 +12,10 @@ interface Env {
 }
 
 export const onRequest: PagesFunction<Env> = async (ctx) => {
-  // GET /auth/verify is handled client-side by the SPA (React Router).
-  // Let Pages serve index.html so the app can read the token from the URL.
+  // These are frontend SPA routes — let Pages serve index.html.
   const url = new URL(ctx.request.url);
-  if (ctx.request.method === 'GET' && url.pathname === '/auth/verify') {
+  const frontendRoutes = ['/auth/verify', '/auth/login', '/auth/callback'];
+  if (ctx.request.method === 'GET' && frontendRoutes.includes(url.pathname)) {
     return ctx.next();
   }
   return ctx.env.API.fetch(ctx.request);
