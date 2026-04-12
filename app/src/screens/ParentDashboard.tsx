@@ -233,17 +233,60 @@ export function ParentDashboard() {
       {showSettings && (
         <div className="fixed inset-0 z-50 bg-[var(--color-bg)] flex flex-col">
           <header className="sticky top-0 z-10 bg-[var(--color-surface)] border-b border-[var(--color-border)] shadow-[0_1px_4px_rgba(0,0,0,.05)]">
-            <div className="max-w-[560px] mx-auto px-3.5 py-3 flex items-center gap-3">
-              <button
-                onClick={() => setShowSettings(false)}
-                className="w-8 h-8 rounded-lg border border-[var(--color-border)] flex items-center justify-center text-[var(--color-text-muted)] hover:bg-[var(--color-surface-alt)] cursor-pointer"
-                title="Back"
-              >
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="15 18 9 12 15 6"/>
-                </svg>
-              </button>
-              <h2 className="text-[16px] font-bold text-[var(--color-text)]">Settings</h2>
+            <div className="max-w-[560px] mx-auto px-3.5 py-3 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setShowSettings(false)}
+                  className="w-8 h-8 rounded-lg border border-[var(--color-border)] flex items-center justify-center text-[var(--color-text-muted)] hover:bg-[var(--color-surface-alt)] cursor-pointer"
+                  title="Back"
+                >
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="15 18 9 12 15 6"/>
+                  </svg>
+                </button>
+                <h2 className="text-[16px] font-bold text-[var(--color-text)]">Settings</h2>
+              </div>
+              <div className="flex items-center gap-2">
+                {/* Parent avatar */}
+                {(() => {
+                  const avatarId = localStorage.getItem('mc_parent_avatar')
+                  const identity = getDeviceIdentity()
+                  if (identity?.google_picture) {
+                    return (
+                      <img
+                        src={identity.google_picture}
+                        alt={identity.display_name}
+                        className="w-9 h-9 rounded-full object-cover border-2 border-[var(--brand-primary)] shrink-0"
+                        onError={e => { (e.target as HTMLImageElement).style.display = 'none' }}
+                      />
+                    )
+                  }
+                  return avatarId ? (
+                    <div className="w-8 h-8 rounded-full overflow-hidden shrink-0 border border-[var(--color-border)]">
+                      <AvatarSVG id={avatarId} size={32} />
+                    </div>
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-[var(--brand-primary)] flex items-center justify-center text-white text-[11px] font-bold tracking-wide shrink-0">
+                      {identity?.initials ?? 'P'}
+                    </div>
+                  )
+                })()}
+                {/* Online status */}
+                <span
+                  title={online ? 'Online' : 'Offline'}
+                  className={`flex items-center justify-center w-8 h-8 rounded-lg ${online ? 'text-[var(--color-text-muted)]' : 'text-amber-500'}`}
+                >
+                  {online ? (
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><circle cx="12" cy="20" r="1" fill="currentColor"/>
+                    </svg>
+                  ) : (
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <line x1="1" y1="1" x2="23" y2="23"/><path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"/><path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"/><path d="M10.71 5.05A16 16 0 0 1 22.56 9"/><path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><circle cx="12" cy="20" r="1" fill="currentColor"/>
+                    </svg>
+                  )}
+                </span>
+              </div>
             </div>
           </header>
           <div className="flex-1 overflow-y-auto max-w-[560px] mx-auto w-full px-3.5 py-4">

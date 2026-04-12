@@ -7,7 +7,7 @@
  *   forgot          — collect account password to reset PIN (no current PIN check)
  */
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import type { MeResult } from '../../../lib/api'
 import { setParentPin, resetPinWithPassword } from '../../../lib/api'
 import { isBiometricsAvailable, hasBiometricCredential, registerBiometrics } from '../../../lib/biometrics'
@@ -85,8 +85,15 @@ export function PinManagementSettings({ profile, onBack }: Props) {
   const hasPinAlready  = profile?.has_pin      ?? false
   const hasPassword    = profile?.has_password ?? true  // assume password exists if unknown
 
-  // Google-only users have no password — skip straight to PIN entry
-  const [pinState,    setPinState]    = useState<PinState>(hasPassword ? 'verify-current' : 'set-new')
+  // Google-only users have no password — skip straight to PIN entry.
+  // useEffect handles the case where profile loads after initial render.
+  const [pinState,    setPinState]    = useState<PinState>('verify-current')
+
+  useEffect(() => {
+    if (profile && !profile.has_password) {
+      setPinState(prev => prev === 'verify-current' ? 'set-new' : prev)
+    }
+  }, [profile])
   const [password,    setPassword]    = useState('')
   const [pwError,     setPwError]     = useState('')
 
