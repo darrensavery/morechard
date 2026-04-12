@@ -157,17 +157,6 @@ export function ParentDashboard() {
                 <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
               </svg>
             </button>
-            {/* Lock */}
-            <button
-              onClick={handleLock}
-              className="w-8 h-8 rounded-lg border border-[var(--color-border)] flex items-center justify-center text-[var(--color-text-muted)] hover:bg-[var(--color-surface-alt)] cursor-pointer"
-              title="Lock"
-            >
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-                <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-              </svg>
-            </button>
           </div>
         </div>
 
@@ -278,25 +267,62 @@ export function ParentDashboard() {
             {tab === 'goals'     && <GoalBoostingTab   familyId={familyId} child={activeChild} />}
           </>
         ) : (
-          <div className="flex flex-col items-center justify-center py-16 px-4 text-center gap-5">
-            <div className="w-20 h-20 rounded-3xl bg-[color-mix(in_srgb,var(--brand-primary)_10%,transparent)] border-2 border-[color-mix(in_srgb,var(--brand-primary)_20%,transparent)] flex items-center justify-center text-4xl">
-              👧
-            </div>
-            <div>
-              <h2 className="text-[18px] font-extrabold text-[var(--color-text)] tracking-tight mb-1.5">
-                Add your first child
-              </h2>
-              <p className="text-[13px] text-[var(--color-text-muted)] leading-relaxed max-w-[260px] mx-auto">
-                Once you add a child, you can set up chores, track their pocket money, and watch their savings grow.
-              </p>
-            </div>
-            <button
-              onClick={() => setShowSettings(true)}
-              className="h-12 px-6 bg-[var(--brand-primary)] text-white font-semibold text-[14px] rounded-2xl cursor-pointer hover:opacity-90 active:scale-[0.98] transition-all shadow-md"
-            >
-              Add a child →
-            </button>
-          </div>
+          {(() => {
+            const identity = getDeviceIdentity()
+            const locale   = localStorage.getItem('mc_locale') ?? (navigator.language.startsWith('pl') ? 'pl' : 'en')
+            const name     = identity?.display_name ?? ''
+            const welcome  = locale === 'pl'
+              ? `Witaj, ${name}. Zacznijmy uprawę Twojego sadu.`
+              : `Welcome, ${name}. Let's grow your orchard.`
+            return (
+              <div className="flex flex-col items-center justify-center py-16 px-4 text-center gap-5">
+                {/* Sapling illustration */}
+                <div className="w-20 h-20 rounded-3xl bg-[color-mix(in_srgb,var(--brand-primary)_10%,transparent)] border-2 border-[color-mix(in_srgb,var(--brand-primary)_20%,transparent)] flex items-center justify-center shadow-sm">
+                  <svg width="44" height="44" viewBox="0 0 44 44" fill="none" aria-hidden="true">
+                    {/* Soil line */}
+                    <rect x="8" y="36" width="28" height="3" rx="1.5" fill="color-mix(in srgb, var(--brand-primary) 30%, transparent)" opacity="0.4"/>
+                    {/* Trunk */}
+                    <path d="M22 36 L22 22" stroke="#92613a" strokeWidth="2.5" strokeLinecap="round"/>
+                    {/* Left leaf */}
+                    <path d="M22 26 C22 26 14 24 13 17 C17 17 22 21 22 26Z" fill="#34d399"/>
+                    <path d="M22 26 C22 26 14 24 13 17 C17 17 22 21 22 26Z" fill="none" stroke="#059669" strokeWidth="0.6"/>
+                    {/* Right leaf */}
+                    <path d="M22 22 C22 22 30 20 31 13 C27 13 22 17 22 22Z" fill="#34d399"/>
+                    <path d="M22 22 C22 22 30 20 31 13 C27 13 22 17 22 22Z" fill="none" stroke="#059669" strokeWidth="0.6"/>
+                    {/* Leaf vein left */}
+                    <path d="M22 26 L14.5 18.5" stroke="#059669" strokeWidth="0.5" strokeLinecap="round" opacity="0.6"/>
+                    {/* Leaf vein right */}
+                    <path d="M22 22 L29.5 15" stroke="#059669" strokeWidth="0.5" strokeLinecap="round" opacity="0.6"/>
+                    {/* Top bud */}
+                    <circle cx="22" cy="11" r="3" fill="#6ee7b7"/>
+                    <circle cx="22" cy="11" r="3" fill="none" stroke="#059669" strokeWidth="0.6"/>
+                  </svg>
+                </div>
+
+                <div>
+                  <p className="text-[12px] font-semibold text-[var(--brand-primary)] mb-2 tracking-wide">
+                    {welcome}
+                  </p>
+                  <h2 className="text-[18px] font-extrabold text-[var(--color-text)] tracking-tight mb-1.5">
+                    Add your first child
+                  </h2>
+                  <p className="text-[13px] text-[var(--color-text-muted)] leading-relaxed max-w-[260px] mx-auto">
+                    Once you add a child, you can set up chores, track their pocket money, and watch their savings grow.
+                  </p>
+                </div>
+
+                <button
+                  onClick={() => setShowSettings(true)}
+                  className="h-12 px-6 bg-[var(--brand-primary)] text-white font-semibold text-[14px] rounded-2xl cursor-pointer hover:opacity-90 active:scale-[0.98] transition-all shadow-md flex items-center gap-2"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                    <path d="M12 5v14M5 12h14"/>
+                  </svg>
+                  Add a child
+                </button>
+              </div>
+            )
+          })()}
         )}
       </main>
 
