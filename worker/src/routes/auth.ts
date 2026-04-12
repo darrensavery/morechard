@@ -962,7 +962,7 @@ async function _handleGoogleCallback(request: Request, env: Env, appUrl: string)
 
   await env.DB
     .prepare('INSERT INTO slt_tokens (token, user_id, expires_at, ip_address, user_agent) VALUES (?, ?, ?, ?, ?)')
-    .bind(slt, user.id, now + 60, clientIp(request), request.headers.get('User-Agent') ?? '')
+    .bind(slt, user.id, now + 300, clientIp(request), request.headers.get('User-Agent') ?? '')
     .run();
 
   // ── Step 6: Redirect to frontend ─────────────────────────────

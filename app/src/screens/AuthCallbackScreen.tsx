@@ -6,10 +6,12 @@ import { setDeviceIdentity, toInitials } from '../lib/deviceIdentity'
 
 type ScreenState = 'loading' | 'error'
 
+
 export default function AuthCallbackScreen() {
   const [searchParams]    = useSearchParams()
   const navigate          = useNavigate()
-  const [state, setState] = useState<ScreenState>('loading')
+  const [state, setState]   = useState<ScreenState>('loading')
+  const [errorMsg, setErrorMsg] = useState('')
 
   const locale = (localStorage.getItem('mc_locale') as string | null)
     ?? (navigator.language.startsWith('pl') ? 'pl' : 'en')
@@ -48,8 +50,11 @@ export default function AuthCallbackScreen() {
         // re-reads mc_device_identity from localStorage on remount.
         window.location.replace('/parent')
       })
-      .catch(() => {
-        if (!cancelled) setState('error')
+      .catch((err: unknown) => {
+        if (!cancelled) {
+          setErrorMsg(err instanceof Error ? err.message : String(err))
+          setState('error')
+        }
       })
 
     return () => { cancelled = true }
@@ -62,6 +67,9 @@ export default function AuthCallbackScreen() {
         <p className="text-[16px] text-[var(--color-text-muted)] text-center">
           Sign-in failed. Please try again.
         </p>
+        {errorMsg && (
+          <p className="text-[12px] text-red-400 text-center max-w-xs break-all">{errorMsg}</p>
+        )}
         <button
           onClick={() => navigate('/auth/login')}
           className="h-11 px-6 rounded-xl bg-[var(--brand-primary)] text-white text-[14px] font-semibold cursor-pointer active:scale-[0.98] transition-all"
