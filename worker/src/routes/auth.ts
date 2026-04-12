@@ -835,7 +835,7 @@ export async function handleGoogleAuth(_request: Request, env: Env): Promise<Res
   const nonce       = nanoid(16);
   const sig         = await hmacSign(nonce, env.JWT_SECRET);
   const state       = `${nonce}.${sig}`;
-  const redirectUri = 'https://morechard-api.darren-savery.workers.dev/auth/google/callback';
+  const redirectUri = 'https://api.morechard.com/auth/google/callback';
 
   const params = new URLSearchParams({
     client_id:     env.GOOGLE_CLIENT_ID,
@@ -865,7 +865,7 @@ export async function handleGoogleCallback(request: Request, env: Env): Promise<
   const code        = url.searchParams.get('code');
   const stateParam  = url.searchParams.get('state');
   const appUrl      = 'https://app.morechard.com';
-  const redirectUri = 'https://morechard-api.darren-savery.workers.dev/auth/google/callback';
+  const redirectUri = 'https://api.morechard.com/auth/google/callback';
   void redirectUri; // used in token exchange body below
 
   // ── Step 1: CSRF validation (HMAC-signed state, no cookie needed) ──
