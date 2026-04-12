@@ -119,7 +119,7 @@ export function FamilySettings({
               onClick={() => setActiveChildId(child.id)}
               className="w-full flex items-center gap-3 px-4 py-3.5 border-b border-[var(--color-border)] last:border-0 hover:bg-[var(--color-surface-alt)] active:bg-[var(--color-surface-alt)] cursor-pointer transition-colors text-left"
             >
-              <AvatarSVG id={child.avatar_id ?? 'bot'} size={36} />
+              <AvatarSVG id={child.avatar_id ?? 'bottts:spark'} size={36} />
               <div className="flex-1 min-w-0">
                 <p className="text-[14px] font-semibold text-[var(--color-text)]">{child.display_name}</p>
                 {child.locked_until && child.locked_until > Date.now() / 1000 && (

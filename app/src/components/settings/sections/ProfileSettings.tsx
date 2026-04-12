@@ -8,7 +8,7 @@
 
 import { useState } from 'react'
 import { User, Shield, AlertTriangle, X, LogOut } from 'lucide-react'
-import { AvatarSVG, AVATARS, AVATAR_CATEGORIES } from '../../../lib/avatars'
+import { AvatarSVG, AVATAR_CATEGORIES, avatarsForCategory, type AvatarCategory } from '../../../lib/avatars'
 import type { MeResult } from '../../../lib/api'
 import { leaveFamily, deleteFamily, clearToken } from '../../../lib/api'
 import { clearDeviceIdentity, getDeviceIdentity } from '../../../lib/deviceIdentity'
@@ -39,7 +39,7 @@ export function ProfileSettings({
   onSaveName, onSaveEmail, onSetAvatar,
   onBack, onComingSoon: _onComingSoon, toast,
 }: Props) {
-  const myAvatar = settings?.avatar_id ?? 'bot'
+  const myAvatar = settings?.avatar_id ?? 'bottts:spark'
 
   // Avatar picker
   const [showAvatarPicker, setShowAvatarPicker] = useState(false)
@@ -182,20 +182,19 @@ export function ProfileSettings({
               <div key={cat.id}>
                 <p className="text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wide mb-1.5">{cat.label}</p>
                 <div className="flex flex-wrap gap-2">
-                  {AVATARS.filter(av => av.category === cat.id).map(av => (
+                  {avatarsForCategory(cat.id as AvatarCategory).map(avId => (
                     <button
-                      key={av.id}
-                      onClick={() => handleSetAvatar(av.id)}
+                      key={avId}
+                      onClick={() => handleSetAvatar(avId)}
                       disabled={savingAvatar}
                       className={cn(
-                        'p-1.5 rounded-xl border-2 transition-colors cursor-pointer',
-                        myAvatar === av.id
+                        'p-1 rounded-xl border-2 transition-colors cursor-pointer',
+                        myAvatar === avId
                           ? 'border-[var(--brand-primary)] bg-[color-mix(in_srgb,var(--brand-primary)_8%,transparent)]'
                           : 'border-transparent hover:border-[var(--color-border)]',
                       )}
-                      title={av.name}
                     >
-                      <AvatarSVG id={av.id} size={40} />
+                      <AvatarSVG id={avId} size={44} />
                     </button>
                   ))}
                 </div>

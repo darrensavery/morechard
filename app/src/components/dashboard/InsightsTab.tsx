@@ -133,7 +133,7 @@ export function InsightsTab({ familyId, child, children }: Props) {
                   : 'bg-[var(--color-surface)] text-[var(--color-text-muted)] border-[var(--color-border)] hover:opacity-80'}
               `}
             >
-              <AvatarSVG id={c.avatar_id ?? 'bot'} size={18} />
+              <AvatarSVG id={c.avatar_id ?? 'bottts:spark'} size={18} />
               {c.display_name}
             </button>
           ))}

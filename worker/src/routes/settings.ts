@@ -38,8 +38,8 @@ export async function handleSettingsGet(request: Request, env: Env): Promise<Res
     await env.DB
       .prepare(`INSERT INTO user_settings (user_id, avatar_id, theme, locale, teen_mode, updated_at)
                 VALUES (?,?,?,?,0,?) ON CONFLICT(user_id) DO NOTHING`)
-      .bind(targetId, 'bot', 'system', 'en', now).run();
-    return json({ user_id: targetId, avatar_id: 'bot', theme: 'system', locale: 'en', teen_mode: 0 });
+      .bind(targetId, 'bottts:spark', 'system', 'en', now).run();
+    return json({ user_id: targetId, avatar_id: 'bottts:spark', theme: 'system', locale: 'en', teen_mode: 0 });
   }
   return json(settings);
 }
@@ -66,10 +66,12 @@ export async function handleSettingsUpdate(request: Request, env: Env): Promise<
   const VALID_THEMES  = ['light','dark','system'];
   const VALID_LOCALES = ['en','pl'];
   const VALID_AVATARS = [
-    'monogram-a','prism','wave','delta','ink','grid','arc','facet',
-    'wolf','fox','owl','bear','shark','lion','eagle','cat',
-    'bot','mech','alien','cyborg','android','ufo','circuit',
-    'flame','galaxy','crystal','bolt','vortex','skull','crown','shield','target',
+    'adventurer:felix','adventurer:luna','adventurer:jasper','adventurer:nova','adventurer:orion','adventurer:sage',
+    'bottts:spark','bottts:volt','bottts:byte','bottts:nano','bottts:pixel','bottts:core',
+    'croodles:wisp','croodles:fern','croodles:mossy','croodles:dune','croodles:ember','croodles:cove',
+    'fun-emoji:bliss','fun-emoji:zest','fun-emoji:glee','fun-emoji:whim','fun-emoji:fizz','fun-emoji:hype',
+    'shapes:prism','shapes:arc','shapes:delta','shapes:grid','shapes:wave','shapes:facet',
+    'thumbs:scout','thumbs:ivy','thumbs:echo','thumbs:vale','thumbs:rook','thumbs:flint',
   ];
 
   const updates: string[] = [];
@@ -108,7 +110,7 @@ export async function handleSettingsUpdate(request: Request, env: Env): Promise<
       await env.DB
         .prepare(`INSERT INTO user_settings (user_id, avatar_id, theme, locale, teen_mode, updated_at)
                   VALUES (?,?,?,?,0,?) ON CONFLICT(user_id) DO NOTHING`)
-        .bind(targetId, 'bot', 'system', 'en', now).run();
+        .bind(targetId, 'bottts:spark', 'system', 'en', now).run();
       await env.DB
         .prepare(`UPDATE user_settings SET ${updates.join(', ')} WHERE user_id = ?`)
         .bind(...values).run();

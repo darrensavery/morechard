@@ -171,7 +171,7 @@ export function ParentDashboard() {
                     : 'bg-[var(--color-surface-alt)] text-[var(--color-text-muted)] hover:opacity-80'}
                 `}
               >
-                <AvatarSVG id={child.avatar_id ?? 'bot'} size={20} />
+                <AvatarSVG id={child.avatar_id ?? 'bottts:spark'} size={20} />
                 {child.display_name}
               </button>
             ))}
