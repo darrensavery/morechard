@@ -77,10 +77,14 @@ export function AvatarSVG({ id, size = 52 }: { id: string; size?: number }) {
   if (!parsed) return <DefaultAvatar size={size} />
 
   const svg = renderSvg(parsed.style, parsed.seed)
+  const dataUri = `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`
   return (
-    <span
-      style={{ width: size, height: size, borderRadius: '50%', display: 'block', flexShrink: 0, overflow: 'hidden' }}
-      dangerouslySetInnerHTML={{ __html: svg }}
+    <img
+      src={dataUri}
+      width={size}
+      height={size}
+      alt=""
+      style={{ borderRadius: '50%', display: 'block', flexShrink: 0 }}
     />
   )
 }
