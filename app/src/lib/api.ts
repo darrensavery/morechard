@@ -169,6 +169,18 @@ export async function getFamily(): Promise<Record<string, unknown>> {
   return request('/api/family');
 }
 
+export interface TrialStatus {
+  is_activated:         boolean
+  days_remaining:       number | null
+  is_expired:           boolean
+  has_lifetime_license: boolean
+  ai_subscription_active: boolean
+}
+
+export async function getTrialStatus(): Promise<TrialStatus> {
+  return request('/api/trial/status')
+}
+
 export async function updateFamily(body: Record<string, unknown>): Promise<void> {
   await request('/api/family', { method: 'PATCH', body: JSON.stringify(body) });
 }

@@ -73,8 +73,8 @@ import {
   getFamily, getSettings, updateSettings,
   getChildSettings, updateChildSettings,
   getChildGrowth, updateChildGrowth,
-  getMe, updateProfile, getLeadCount,
-  type MeResult,
+  getMe, updateProfile, getLeadCount, getTrialStatus,
+  type MeResult, type TrialStatus,
 } from '../../lib/api'
 import { track } from '../../lib/analytics'
 import { cn } from '../../lib/utils'
@@ -160,8 +160,9 @@ export function ParentSettingsTab({ familyId, onChildrenChange }: Props) {
   const { toast, showToast } = useToast()
 
   // Profile (loaded from GET /auth/me)
-  const [profile, setProfile] = useState<MeResult | null>(null)
+  const [profile,   setProfile]   = useState<MeResult | null>(null)
   const [leadCount, setLeadCount] = useState<number>(1)
+  const [trial,     setTrial]     = useState<TrialStatus | null>(null)
 
   function comingSoon() {
     showToast('Coming Soon to the Orchard')
@@ -183,12 +184,13 @@ export function ParentSettingsTab({ familyId, onChildrenChange }: Props) {
 
   const load = useCallback(async () => {
     setLoading(true)
-    const [c, f, s, p, leads] = await Promise.all([
+    const [c, f, s, p, leads, t] = await Promise.all([
       getChildren().then(r => r.children),
       getFamily(),
       getSettings(),
       getMe(),
       getLeadCount().then(r => r.lead_count).catch(() => 1),
+      getTrialStatus().catch(() => null),
     ])
     setChildren(c)
     onChildrenChange(c)
@@ -196,6 +198,7 @@ export function ParentSettingsTab({ familyId, onChildrenChange }: Props) {
     setSettings(s)
     setProfile(p)
     setLeadCount(leads)
+    setTrial(t)
     if (s?.avatar_id) localStorage.setItem('mc_parent_avatar', s.avatar_id)
     const [modes, growths] = await Promise.all([
       Promise.all(
@@ -343,15 +346,31 @@ export function ParentSettingsTab({ familyId, onChildrenChange }: Props) {
       {toast && <Toast message={toast} />}
 
       {/* Role badge */}
-      <div className={cn(
-        'flex items-center gap-2 px-3 py-2 rounded-xl text-[12px] font-semibold',
-        isLead
-          ? 'bg-teal-50 text-teal-700 border border-teal-200'
-          : 'bg-amber-50 text-amber-700 border border-amber-200',
-      )}>
-        <TreePine size={13} />
-        {isLead ? 'Parent — full access' : 'Co-Parent — some options are restricted'}
-      </div>
+      {(() => {
+        const licensed = trial?.has_lifetime_license
+        const trialLabel = (() => {
+          if (!isLead) return 'Co-Parent — some options are restricted'
+          if (licensed) return 'Parent — full access'
+          if (trial?.days_remaining != null) {
+            const endDate = new Date(Date.now() + trial.days_remaining * 86_400_000)
+            const formatted = endDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+            return `Parent — free trial ends ${formatted}`
+          }
+          return 'Parent — full access'
+        })()
+        if (licensed) return null
+        return (
+          <div className={cn(
+            'flex items-center gap-2 px-3 py-2 rounded-xl text-[12px] font-semibold',
+            isLead
+              ? 'bg-teal-50 text-teal-700 border border-teal-200'
+              : 'bg-amber-50 text-amber-700 border border-amber-200',
+          )}>
+            <TreePine size={13} />
+            {trialLabel}
+          </div>
+        )
+      })()}
 
       {/* Main menu */}
       <SectionCard>
