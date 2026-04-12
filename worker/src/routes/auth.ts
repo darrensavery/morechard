@@ -677,7 +677,6 @@ export async function handlePinSet(request: Request, env: Env): Promise<Response
   if (!body) return error('Invalid JSON body');
 
   const { password, new_pin } = body;
-  if (!password || typeof password !== 'string') return error('password required');
   if (!new_pin  || typeof new_pin  !== 'string') return error('new_pin required');
   if (!/^\d{4}$/.test(new_pin as string)) return error('PIN must be exactly 4 digits');
 
@@ -687,10 +686,13 @@ export async function handlePinSet(request: Request, env: Env): Promise<Response
     .first<{ password_hash: string | null }>();
 
   if (!user) return error('User not found', 404);
-  if (!user.password_hash) return error('Set a password first to enable PIN.', 400);
 
-  const valid = await verifyPassword(password as string, user.password_hash);
-  if (!valid) return error('Incorrect password', 401);
+  // Google-only users have no password — JWT is sufficient proof of identity
+  if (user.password_hash) {
+    if (!password || typeof password !== 'string') return error('password required');
+    const valid = await verifyPassword(password as string, user.password_hash);
+    if (!valid) return error('Incorrect password', 401);
+  }
 
   const pinHash = await hashPassword(new_pin as string);
   await env.DB

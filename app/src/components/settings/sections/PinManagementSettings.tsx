@@ -82,9 +82,11 @@ function DigitPad({ onDigit, onBackspace }: { onDigit: (d: string) => void; onBa
 // ── Main component ────────────────────────────────────────────────────────────
 
 export function PinManagementSettings({ profile, onBack }: Props) {
-  const hasPinAlready = profile?.has_pin ?? false
+  const hasPinAlready  = profile?.has_pin      ?? false
+  const hasPassword    = profile?.has_password ?? true  // assume password exists if unknown
 
-  const [pinState,    setPinState]    = useState<PinState>('verify-current')
+  // Google-only users have no password — skip straight to PIN entry
+  const [pinState,    setPinState]    = useState<PinState>(hasPassword ? 'verify-current' : 'set-new')
   const [password,    setPassword]    = useState('')
   const [pwError,     setPwError]     = useState('')
 
@@ -273,8 +275,8 @@ export function PinManagementSettings({ profile, onBack }: Props) {
             </button>
           </div>
 
-          {/* Forgot PIN link — only in verify-current when PIN already set */}
-          {!isForgot && hasPinAlready && (
+          {/* Forgot PIN link — only when user has a password and PIN already set */}
+          {!isForgot && hasPinAlready && hasPassword && (
             <button
               type="button"
               onClick={() => { setPassword(''); setPwError(''); setPinState('forgot') }}
