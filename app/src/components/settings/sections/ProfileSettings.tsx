@@ -177,29 +177,24 @@ export function ProfileSettings({
               <X size={18} />
             </button>
           </div>
-          <div className="p-4 space-y-3">
-            {AVATAR_CATEGORIES.map(cat => (
-              <div key={cat.id}>
-                <p className="text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wide mb-1.5">{cat.label}</p>
-                <div className="flex flex-wrap gap-2">
-                  {avatarsForCategory(cat.id as AvatarCategory).map(avId => (
-                    <button
-                      key={avId}
-                      onClick={() => handleSetAvatar(avId)}
-                      disabled={savingAvatar}
-                      className={cn(
-                        'p-1 rounded-xl border-2 transition-colors cursor-pointer',
-                        myAvatar === avId
-                          ? 'border-[var(--brand-primary)] bg-[color-mix(in_srgb,var(--brand-primary)_8%,transparent)]'
-                          : 'border-transparent hover:border-[var(--color-border)]',
-                      )}
-                    >
-                      <AvatarSVG id={avId} size={44} />
-                    </button>
-                  ))}
-                </div>
-              </div>
-            ))}
+          <div className="p-3 grid grid-cols-6 gap-2">
+            {AVATAR_CATEGORIES.flatMap(cat =>
+              avatarsForCategory(cat.id as AvatarCategory).map(avId => (
+                <button
+                  key={avId}
+                  onClick={() => handleSetAvatar(avId)}
+                  disabled={savingAvatar}
+                  className={cn(
+                    'p-1 rounded-xl border-2 transition-colors cursor-pointer',
+                    myAvatar === avId
+                      ? 'border-[var(--brand-primary)] bg-[color-mix(in_srgb,var(--brand-primary)_8%,transparent)]'
+                      : 'border-transparent hover:border-[var(--color-border)]',
+                  )}
+                >
+                  <AvatarSVG id={avId} size={44} />
+                </button>
+              ))
+            )}
           </div>
         </SectionCard>
       )}
