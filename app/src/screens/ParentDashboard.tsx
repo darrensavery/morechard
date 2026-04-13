@@ -13,6 +13,21 @@ import { ParentSettingsTab } from '../components/dashboard/ParentSettingsTab'
 import { GoalBoostingTab }  from '../components/dashboard/GoalBoostingTab'
 import { FullLogo } from '../components/ui/Logo'
 
+// Offline signal SVG
+function OfflineIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="1" y1="1" x2="23" y2="23"/>
+      <path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"/>
+      <path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"/>
+      <path d="M10.71 5.05A16 16 0 0 1 22.56 9"/>
+      <path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"/>
+      <path d="M8.53 16.11a6 6 0 0 1 6.95 0"/>
+      <circle cx="12" cy="20" r="1" fill="currentColor"/>
+    </svg>
+  )
+}
+
 type Tab = 'chores' | 'approvals' | 'activity' | 'insights' | 'goals'
 
 export function ParentDashboard() {
@@ -91,70 +106,53 @@ export function ParentDashboard() {
         <div className="max-w-[560px] mx-auto px-3.5 py-3 flex items-center justify-between">
           <FullLogo iconSize={26} />
           <div className="flex items-center gap-2">
-            {/* Parent avatar */}
+            {/* Offline indicator — only visible when offline */}
+            {!online && (
+              <span title="Offline" className="flex items-center justify-center w-8 h-8 rounded-lg text-amber-500">
+                <OfflineIcon />
+              </span>
+            )}
+            {/* Avatar — opens settings drawer */}
             {(() => {
               const avatarId = localStorage.getItem('mc_parent_avatar')
               const identity = getDeviceIdentity()
               if (identity?.google_picture) {
                 return (
-                  <img
-                    src={identity.google_picture}
-                    alt={identity.display_name}
-                    title={identity.display_name}
-                    className="w-9 h-9 rounded-full object-cover border-2 border-[var(--brand-primary)] shrink-0"
-                    onError={e => { (e.target as HTMLImageElement).style.display = 'none' }}
-                  />
+                  <button
+                    onClick={() => setShowSettings(true)}
+                    className="shrink-0 rounded-full cursor-pointer focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)]"
+                    title="Settings"
+                    aria-label="Open settings"
+                  >
+                    <img
+                      src={identity.google_picture}
+                      alt={identity.display_name}
+                      className="w-9 h-9 rounded-full object-cover border-2 border-[var(--brand-primary)]"
+                      onError={e => { (e.target as HTMLImageElement).style.display = 'none' }}
+                    />
+                  </button>
                 )
               }
               return avatarId ? (
-                <div className="w-8 h-8 rounded-full overflow-hidden shrink-0 border border-[var(--color-border)]"
-                     title={identity?.display_name ?? 'Parent'}>
+                <button
+                  onClick={() => setShowSettings(true)}
+                  className="w-8 h-8 rounded-full overflow-hidden shrink-0 border border-[var(--color-border)] cursor-pointer focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)]"
+                  title="Settings"
+                  aria-label="Open settings"
+                >
                   <AvatarSVG id={avatarId} size={32} />
-                </div>
+                </button>
               ) : (
-                <div
-                  className="w-8 h-8 rounded-full bg-[var(--brand-primary)] flex items-center justify-center text-white text-[11px] font-bold tracking-wide shrink-0"
-                  title={identity?.display_name ?? 'Parent'}
+                <button
+                  onClick={() => setShowSettings(true)}
+                  className="w-8 h-8 rounded-full bg-[var(--brand-primary)] flex items-center justify-center text-white text-[11px] font-bold tracking-wide shrink-0 cursor-pointer focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-[var(--brand-primary)]"
+                  title="Settings"
+                  aria-label="Open settings"
                 >
                   {identity?.initials ?? 'P'}
-                </div>
+                </button>
               )
             })()}
-            {/* Connectivity icon */}
-            <span
-              title={online ? 'Online' : 'Offline'}
-              className={`flex items-center justify-center w-8 h-8 rounded-lg ${online ? 'text-[var(--color-text-muted)]' : 'text-amber-500'}`}
-            >
-              {online ? (
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M5 12.55a11 11 0 0 1 14.08 0"/>
-                  <path d="M1.42 9a16 16 0 0 1 21.16 0"/>
-                  <path d="M8.53 16.11a6 6 0 0 1 6.95 0"/>
-                  <circle cx="12" cy="20" r="1" fill="currentColor"/>
-                </svg>
-              ) : (
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="1" y1="1" x2="23" y2="23"/>
-                  <path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"/>
-                  <path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"/>
-                  <path d="M10.71 5.05A16 16 0 0 1 22.56 9"/>
-                  <path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"/>
-                  <path d="M8.53 16.11a6 6 0 0 1 6.95 0"/>
-                  <circle cx="12" cy="20" r="1" fill="currentColor"/>
-                </svg>
-              )}
-            </span>
-            {/* Settings cog */}
-            <button
-              onClick={() => setShowSettings(true)}
-              className="w-8 h-8 rounded-lg border border-[var(--color-border)] flex items-center justify-center text-[var(--color-text-muted)] hover:bg-[var(--color-surface-alt)] cursor-pointer"
-              title="Settings"
-            >
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="3"/>
-                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-              </svg>
-            </button>
           </div>
         </div>
 
@@ -231,74 +229,30 @@ export function ParentDashboard() {
         </div>
       )}
 
-      {/* Settings overlay */}
-      {showSettings && (
-        <div className="fixed inset-0 z-50 bg-[var(--color-bg)] flex flex-col">
-          <header className="sticky top-0 z-10 bg-[var(--color-surface)] border-b border-[var(--color-border)] shadow-[0_1px_4px_rgba(0,0,0,.05)]">
-            <div className="max-w-[560px] mx-auto px-3.5 py-3 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={() => setShowSettings(false)}
-                  className="w-8 h-8 rounded-lg border border-[var(--color-border)] flex items-center justify-center text-[var(--color-text-muted)] hover:bg-[var(--color-surface-alt)] cursor-pointer"
-                  title="Back"
-                >
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="15 18 9 12 15 6"/>
-                  </svg>
-                </button>
-                <h2 className="text-[16px] font-bold text-[var(--color-text)]">Settings</h2>
-              </div>
-              <div className="flex items-center gap-2">
-                {/* Parent avatar */}
-                {(() => {
-                  const avatarId = localStorage.getItem('mc_parent_avatar')
-                  const identity = getDeviceIdentity()
-                  if (identity?.google_picture) {
-                    return (
-                      <img
-                        src={identity.google_picture}
-                        alt={identity.display_name}
-                        className="w-9 h-9 rounded-full object-cover border-2 border-[var(--brand-primary)] shrink-0"
-                        onError={e => { (e.target as HTMLImageElement).style.display = 'none' }}
-                      />
-                    )
-                  }
-                  return avatarId ? (
-                    <div className="w-8 h-8 rounded-full overflow-hidden shrink-0 border border-[var(--color-border)]">
-                      <AvatarSVG id={avatarId} size={32} />
-                    </div>
-                  ) : (
-                    <div className="w-8 h-8 rounded-full bg-[var(--brand-primary)] flex items-center justify-center text-white text-[11px] font-bold tracking-wide shrink-0">
-                      {identity?.initials ?? 'P'}
-                    </div>
-                  )
-                })()}
-                {/* Online status */}
-                <span
-                  title={online ? 'Online' : 'Offline'}
-                  className={`flex items-center justify-center w-8 h-8 rounded-lg ${online ? 'text-[var(--color-text-muted)]' : 'text-amber-500'}`}
-                >
-                  {online ? (
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><circle cx="12" cy="20" r="1" fill="currentColor"/>
-                    </svg>
-                  ) : (
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <line x1="1" y1="1" x2="23" y2="23"/><path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"/><path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"/><path d="M10.71 5.05A16 16 0 0 1 22.56 9"/><path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><circle cx="12" cy="20" r="1" fill="currentColor"/>
-                    </svg>
-                  )}
-                </span>
-              </div>
-            </div>
-          </header>
-          <div className="flex-1 overflow-y-auto max-w-[560px] mx-auto w-full px-3.5 py-4">
-            <ParentSettingsTab familyId={familyId} onChildrenChange={setChildren} />
-            <p className="text-center text-[10px] text-[var(--color-text-muted)] opacity-50 tracking-wide mt-4 pb-2">
-              v{__APP_VERSION__}
-            </p>
-          </div>
-        </div>
-      )}
+      {/* Settings drawer — slide in from right */}
+      {/* Backdrop */}
+      <div
+        onClick={() => setShowSettings(false)}
+        className={`fixed inset-0 z-40 bg-black/40 transition-opacity duration-300 ${showSettings ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
+        aria-hidden="true"
+      />
+      {/* Drawer panel */}
+      <div
+        className={`fixed top-0 right-0 bottom-0 z-50 w-[min(360px,100vw)] bg-[var(--color-bg)] flex flex-col shadow-2xl transition-transform duration-300 ease-in-out ${showSettings ? 'translate-x-0' : 'translate-x-full'}`}
+        aria-modal="true"
+        role="dialog"
+        aria-label="Settings"
+      >
+        <ParentSettingsTab
+          familyId={familyId}
+          online={online}
+          onChildrenChange={setChildren}
+          onClose={() => setShowSettings(false)}
+        />
+        <p className="text-center text-[10px] text-[var(--color-text-muted)] opacity-40 tracking-wide pb-3">
+          v{__APP_VERSION__}
+        </p>
+      </div>
 
       {/* Content */}
       <main className="flex-1 max-w-[560px] mx-auto w-full px-3.5 py-4">

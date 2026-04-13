@@ -61,7 +61,7 @@
  * └─────────────────────────────────────────────────────────────────┘
  */
 
-import { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import {
   User, Users, Shield, Palette, CreditCard, Database,
   Gift, Info, ChevronRight, Clock, LogOut,
@@ -86,6 +86,7 @@ import { AppearanceSettings } from '../settings/sections/AppearanceSettings'
 import { BillingSettings }    from '../settings/sections/BillingSettings'
 import { DataSettings }       from '../settings/sections/DataSettings'
 import { AboutSettings }      from '../settings/sections/AboutSettings'
+import { AvatarSVG }          from '../../lib/avatars'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -106,7 +107,9 @@ type View =
 
 interface Props {
   familyId:         string
+  online:           boolean
   onChildrenChange: (children: ChildRecord[]) => void
+  onClose:          () => void
 }
 
 // ── Toast ─────────────────────────────────────────────────────────────────────
@@ -140,7 +143,7 @@ function SectionCard({ children }: { children: React.ReactNode }) {
 
 // ── Main component ────────────────────────────────────────────────────────────
 
-export function ParentSettingsTab({ familyId, onChildrenChange }: Props) {
+export function ParentSettingsTab({ familyId, online, onChildrenChange, onClose }: Props) {
   const identity        = getDeviceIdentity()
   const isLead          = identity?.parenting_role !== 'CO_PARENT'  // default to lead if unset (existing accounts)
   const { locale }      = useLocale()
@@ -269,8 +272,6 @@ export function ParentSettingsTab({ familyId, onChildrenChange }: Props) {
     }
   }
 
-  if (loading) return <div className="py-10 text-center text-[14px] text-[var(--color-text-muted)]">Loading…</div>
-
   // ── Section views ────────────────────────────────────────────────────────────
 
   const back = () => setView({ type: 'menu' })
@@ -278,197 +279,217 @@ export function ParentSettingsTab({ familyId, onChildrenChange }: Props) {
   if (view.type === 'section') {
     if (view.section === 'account')    return <ProfileSettings    profile={profile} settings={settings} identity={identity} family={family} isLead={isLead} leadCount={leadCount} onSaveName={handleSaveName} onSaveEmail={handleSaveEmail} onSetAvatar={handleSetAvatar} onBack={back} onComingSoon={comingSoon} toast={toast} />
     if (view.section === 'family')     return <FamilySettings     children={children} teenModes={teenModes} teenModeBusy={teenModeBusy} growthSettings={growthSettings} growthBusy={growthBusy} isLead={isLead} toast={toast} onBack={back} onComingSoon={comingSoon} onAddChild={handleAddChild} onTeenModeToggle={handleTeenModeToggle} onGrowthUpdate={handleGrowthUpdate} onGenerateInvite={handleGenerateInvite} />
-    if (view.section === 'security')   return <SecuritySettings   profile={profile} toast={toast} onBack={back} onComingSoon={comingSoon} />
-    if (view.section === 'appearance') return <AppearanceSettings toast={toast} onBack={back} />
-    if (view.section === 'billing')    return <BillingSettings    toast={toast} onBack={back} onComingSoon={comingSoon} />
-    if (view.section === 'data')       return <DataSettings       isLead={isLead} toast={toast} onBack={back} onComingSoon={comingSoon} />
-if (view.section === 'about')      return <AboutSettings      toast={toast} onBack={back} onComingSoon={comingSoon} />
+    if (view.section === 'security')   return <ProfileSection><SecuritySettings   profile={profile} toast={toast} onBack={back} onComingSoon={comingSoon} /></ProfileSection>
+    if (view.section === 'appearance') return <ProfileSection><AppearanceSettings toast={toast} onBack={back} /></ProfileSection>
+    if (view.section === 'billing')    return <ProfileSection><BillingSettings    toast={toast} onBack={back} onComingSoon={comingSoon} /></ProfileSection>
+    if (view.section === 'data')       return <ProfileSection><DataSettings       isLead={isLead} toast={toast} onBack={back} onComingSoon={comingSoon} /></ProfileSection>
+    if (view.section === 'about')      return <ProfileSection><AboutSettings      toast={toast} onBack={back} onComingSoon={comingSoon} /></ProfileSection>
   }
 
-  // ── Top-level menu ──────────────────────────────────────────────────────────
+  // ── Drawer: identity header + trial banner + grouped menu ───────────────────
 
-  const MENU_SECTIONS: {
-    id:          TopSection
-    icon:        React.ReactNode
-    label:       string
-    description: string
-    leadOnly?:   boolean
-    onAction?:   () => void
-  }[] = [
+  const pl = isPolish(locale)
+
+  // Avatar element
+  const avatarEl = (() => {
+    const avatarId = localStorage.getItem('mc_parent_avatar')
+    if (identity?.google_picture) {
+      return <img src={identity.google_picture} alt={identity.display_name} className="w-12 h-12 rounded-full object-cover border-2 border-[var(--brand-primary)]" onError={e => { (e.target as HTMLImageElement).style.display = 'none' }} />
+    }
+    return avatarId ? (
+      <div className="w-12 h-12 rounded-full overflow-hidden border border-[var(--color-border)]"><AvatarSVG id={avatarId} size={48} /></div>
+    ) : (
+      <div className="w-12 h-12 rounded-full bg-[var(--brand-primary)] flex items-center justify-center text-white text-[15px] font-bold">{identity?.initials ?? 'P'}</div>
+    )
+  })()
+
+  // Trial banner
+  const trialBanner = (() => {
+    if (trial?.has_lifetime_license) return null
+    const daysLeft    = trial?.days_remaining ?? null
+    const isActivated = trial?.is_activated ?? false
+
+    if (!isLead) return (
+      <div className="flex items-center gap-2 px-3 py-2 rounded-xl text-[12px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+        <Clock size={13} />
+        {pl ? 'Współrodzic — niektóre opcje są ograniczone' : 'Co-Parent — some options are restricted'}
+      </div>
+    )
+
+    if (!isActivated || daysLeft === null) return (
+      <div className="flex items-center gap-2 px-3 py-2 rounded-xl text-[12px] font-semibold bg-teal-50 text-teal-700 border border-teal-200">
+        <Clock size={13} />
+        {pl ? 'Rodzic — pełny dostęp' : 'Parent — full access'}
+      </div>
+    )
+
+    const urgentAmber = daysLeft <= 2
+    const pct   = Math.max(0, Math.min(100, (daysLeft / 14) * 100))
+    const label = pl
+      ? `Okres próbny: pozostało ${daysLeft} ${daysLeft === 1 ? 'dzień' : 'dni'}`
+      : `Trial: ${daysLeft} ${daysLeft === 1 ? 'day' : 'days'} remaining`
+
+    return (
+      <div className={cn('rounded-xl border overflow-hidden', urgentAmber ? 'bg-amber-50 border-amber-200 text-amber-700' : 'bg-teal-50 border-teal-200 text-teal-700')}>
+        <div className="flex items-center gap-2 px-3 pt-2 pb-1.5">
+          <Clock size={13} className="shrink-0" />
+          <span className="flex-1 text-[12px] font-semibold">{label}</span>
+          <button type="button" onClick={() => setView({ type: 'section', section: 'billing' })}
+            className={cn('flex items-center gap-0.5 text-[11px] font-semibold shrink-0', urgentAmber ? 'text-amber-600' : 'text-teal-600')}>
+            {pl ? 'Plany' : 'See Plans'}<ChevronRight size={12} />
+          </button>
+        </div>
+        <div className={cn('h-1', urgentAmber ? 'bg-amber-100' : 'bg-teal-100')}>
+          <div className={cn('h-full transition-all', urgentAmber ? 'bg-amber-400' : 'bg-teal-500')} style={{ width: `${pct}%` }} />
+        </div>
+      </div>
+    )
+  })()
+
+  type MenuItem = { id: TopSection; icon: React.ReactNode; label: string; description: string; leadOnly?: boolean; onAction?: () => void }
+  const GROUPS: { title: string; items: MenuItem[] }[] = [
     {
-      id:          'account',
-      icon:        <User size={17} />,
-      label:       'Account & Profile',
-      description: 'Name, email, avatar',
+      title: pl ? 'Osobiste' : 'Personal',
+      items: [
+        { id: 'account',  icon: <User size={16} />,   label: pl ? 'Konto i profil'       : 'Account & Profile',  description: pl ? 'Imię, e-mail, awatar'            : 'Name, email, avatar' },
+        { id: 'security', icon: <Shield size={16} />, label: pl ? 'Bezpieczeństwo'        : 'Security & Access',  description: pl ? 'PIN, aktywne sesje'               : 'PIN, active sessions' },
+      ],
     },
     {
-      id:          'family',
-      icon:        <Users size={17} />,
-      label:       'Manage Family',
-      description: 'Children, co-parenting, global rules',
+      title: pl ? 'Zarządzanie rodziną' : 'Family Management',
+      items: [
+        { id: 'family',     icon: <Users size={16} />,      label: pl ? 'Zarządzaj rodziną'    : 'Manage Family',            description: pl ? 'Dzieci, współrodzice, zasady' : 'Children, co-parenting, global rules' },
+        { id: 'billing',    icon: <CreditCard size={16} />, label: pl ? 'Rozliczenia'           : 'Billing & Subscriptions',  description: pl ? 'Okres próbny, plan, faktury'  : 'Trial, plan, invoices', leadOnly: true },
+        { id: 'appearance', icon: <Palette size={16} />,    label: pl ? 'Wygląd'                : 'Appearance & Display',     description: pl ? 'Motyw, język'                 : 'Theme, language' },
+      ],
     },
     {
-      id:          'security',
-      icon:        <Shield size={17} />,
-      label:       'Security & Access',
-      description: 'PIN, active sessions',
-    },
-    {
-      id:          'appearance',
-      icon:        <Palette size={17} />,
-      label:       'Appearance & Display',
-      description: 'Theme, language',
-    },
-    {
-      id:          'billing',
-      icon:        <CreditCard size={17} />,
-      label:       'Billing & Subscriptions',
-      description: 'Trial, plan, invoices',
-      leadOnly:    true,
-    },
-    {
-      id:          'data',
-      icon:        <Database size={17} />,
-      label:       'Data & Exports',
-      description: 'Download ledger, data pruning',
-    },
-    {
-      id:          'referrals',
-      icon:        <Gift size={17} />,
-      label:       'Referrals',
-      description: 'Refer a family, earn rewards',
-      onAction:    comingSoon,
-    },
-    {
-      id:          'about',
-      icon:        <Info size={17} />,
-      label:       'About & Support',
-      description: 'Version, legal, support',
+      title: pl ? 'Narzędzia' : 'Tools',
+      items: [
+        { id: 'data',      icon: <Database size={16} />, label: pl ? 'Dane i eksport'      : 'Data & Exports',    description: pl ? 'Pobierz księgę, archiwizacja'   : 'Download ledger, data pruning' },
+        { id: 'referrals', icon: <Gift size={16} />,     label: pl ? 'Polecenia'            : 'Referrals',         description: pl ? 'Poleć rodzinę, zdobądź nagrody' : 'Refer a family, earn rewards', onAction: comingSoon },
+        { id: 'about',     icon: <Info size={16} />,     label: pl ? 'O aplikacji i pomoc' : 'About & Support',   description: pl ? 'Wersja, prawo, pomoc'            : 'Version, legal, support' },
+      ],
     },
   ]
 
+  function MenuItem({ item }: { item: MenuItem }) {
+    return (
+      <button
+        type="button"
+        onClick={() => item.onAction ? item.onAction() : setView({ type: 'section', section: item.id })}
+        className="w-full flex items-center gap-3 px-4 py-3 border-b border-[var(--color-border)] last:border-0 hover:bg-[var(--color-surface-alt)] active:bg-[var(--color-surface-alt)] cursor-pointer transition-colors text-left"
+      >
+        <span className="shrink-0 w-8 h-8 rounded-xl flex items-center justify-center bg-[color-mix(in_srgb,var(--brand-primary)_10%,transparent)] text-[var(--brand-primary)]">
+          {item.icon}
+        </span>
+        <div className="flex-1 min-w-0">
+          <p className="text-[13px] font-semibold text-[var(--color-text)]">{item.label}</p>
+          <p className="text-[11px] text-[var(--color-text-muted)] mt-0.5 leading-snug">{item.description}</p>
+        </div>
+        <ChevronRight size={14} className="shrink-0 text-[var(--color-text-muted)]" />
+      </button>
+    )
+  }
+
   return (
-    <div className="space-y-4">
+    <div className="flex flex-col flex-1 overflow-hidden">
       {toast && <Toast message={toast} />}
 
-      {/* Trial status banner */}
-      {(() => {
-        const licensed = trial?.has_lifetime_license
-        if (licensed) return null
-
-        const pl = isPolish(locale)
-        const daysLeft = trial?.days_remaining ?? null
-        const isActivated = trial?.is_activated ?? false
-
-        // Only show banner during an active (or recently started) trial
-        if (!isLead) {
-          return (
-            <div className="flex items-center gap-2 px-3 py-2 rounded-xl text-[12px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">
-              <Clock size={13} />
-              {pl ? 'Współrodzic — niektóre opcje są ograniczone' : 'Co-Parent — some options are restricted'}
-            </div>
-          )
-        }
-
-        if (!isActivated || daysLeft === null) {
-          // Trial not yet started — show neutral full-access badge
-          return (
-            <div className="flex items-center gap-2 px-3 py-2 rounded-xl text-[12px] font-semibold bg-teal-50 text-teal-700 border border-teal-200">
-              <Clock size={13} />
-              {pl ? 'Rodzic — pełny dostęp' : 'Parent — full access'}
-            </div>
-          )
-        }
-
-        const urgentAmber = daysLeft <= 2
-        const pct = Math.max(0, Math.min(100, (daysLeft / 14) * 100))
-        const label = pl
-          ? `Okres próbny: pozostało ${daysLeft} ${daysLeft === 1 ? 'dzień' : 'dni'}`
-          : `Trial: ${daysLeft} ${daysLeft === 1 ? 'day' : 'days'} remaining`
-
-        return (
-          <div
-            className={cn(
-              'rounded-xl border overflow-hidden',
-              urgentAmber
-                ? 'bg-amber-50 border-amber-200 text-amber-700'
-                : 'bg-teal-50 border-teal-200 text-teal-700',
-            )}
-          >
-            <div className="flex items-center gap-2 px-3 pt-2 pb-1.5">
-              <Clock size={13} className="shrink-0" />
-              <span className="flex-1 text-[12px] font-semibold">{label}</span>
-              <button
-                type="button"
-                onClick={() => setView({ type: 'section', section: 'billing' })}
-                className={cn(
-                  'flex items-center gap-0.5 text-[11px] font-semibold shrink-0',
-                  urgentAmber ? 'text-amber-600' : 'text-teal-600',
-                )}
-              >
-                {pl ? 'Plany' : 'See Plans'}
-                <ChevronRight size={12} />
-              </button>
-            </div>
-            {/* Progress bar */}
-            <div className={cn('h-1', urgentAmber ? 'bg-amber-100' : 'bg-teal-100')}>
-              <div
-                className={cn('h-full transition-all', urgentAmber ? 'bg-amber-400' : 'bg-teal-500')}
-                style={{ width: `${pct}%` }}
-              />
-            </div>
-          </div>
-        )
-      })()}
-
-      {/* Main menu */}
-      <SectionCard>
-        {MENU_SECTIONS
-          .filter(s => !s.leadOnly || isLead)
-          .map(s => (
-            <button
-              key={s.id}
-              type="button"
-              onClick={() => s.onAction ? s.onAction() : setView({ type: 'section', section: s.id })}
-              className="w-full flex items-center gap-3 px-4 py-3.5 border-b border-[var(--color-border)] last:border-0 hover:bg-[var(--color-surface-alt)] active:bg-[var(--color-surface-alt)] cursor-pointer transition-colors text-left"
-            >
-              <span className="shrink-0 w-9 h-9 rounded-xl flex items-center justify-center bg-[color-mix(in_srgb,var(--brand-primary)_10%,transparent)] text-[var(--brand-primary)]">
-                {s.icon}
-              </span>
-              <div className="flex-1 min-w-0">
-                <p className="text-[14px] font-semibold text-[var(--color-text)]">{s.label}</p>
-                <p className="text-[12px] text-[var(--color-text-muted)] mt-0.5">{s.description}</p>
-              </div>
-              <ChevronRight size={15} className="shrink-0 text-[var(--color-text-muted)]" />
-            </button>
-          ))
-        }
-      </SectionCard>
-
-      {/* Log out */}
-      <SectionCard>
+      {/* Drawer header */}
+      <div className="flex items-center justify-between px-4 pt-5 pb-4 border-b border-[var(--color-border)]">
+        <h2 className="text-[17px] font-bold text-[var(--color-text)]">{pl ? 'Ustawienia' : 'Settings'}</h2>
         <button
           type="button"
-          onClick={() => {
-            if (!window.confirm("Log out? Your family's data stays safe.")) return
-            clearDeviceIdentity()
-            sessionStorage.removeItem('mc_parent_tab')
-            localStorage.removeItem('mc_parent_avatar')
-            window.location.replace('/')
-          }}
-          className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-[var(--color-surface-alt)] active:bg-[var(--color-surface-alt)] cursor-pointer transition-colors text-left rounded-xl"
+          onClick={onClose}
+          className="w-8 h-8 rounded-lg border border-[var(--color-border)] flex items-center justify-center text-[var(--color-text-muted)] hover:bg-[var(--color-surface-alt)] cursor-pointer"
+          aria-label="Close settings"
         >
-          <span className="shrink-0 w-9 h-9 rounded-xl flex items-center justify-center bg-red-600 text-white">
-            <LogOut size={17} />
-          </span>
-          <div className="flex-1 min-w-0">
-            <p className="text-[14px] font-semibold text-[var(--color-text)]">Log out</p>
-            <p className="text-[12px] text-[var(--color-text-muted)] mt-0.5">Your family's data stays safe</p>
-          </div>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+            <path d="M18 6 6 18M6 6l12 12"/>
+          </svg>
         </button>
-      </SectionCard>
+      </div>
+
+      {/* Scrollable content */}
+      <div className="flex-1 overflow-y-auto">
+        {/* Identity + status */}
+        <div className="px-4 py-4 space-y-3">
+          {/* Avatar + name/email */}
+          <div className="flex items-center gap-3">
+            {avatarEl}
+            <div className="flex-1 min-w-0">
+              <p className="text-[15px] font-bold text-[var(--color-text)] truncate">{identity?.display_name ?? 'Parent'}</p>
+              <p className="text-[12px] text-[var(--color-text-muted)] truncate">{profile?.email ?? ''}</p>
+            </div>
+            {/* System status */}
+            <div className="flex items-center gap-1 shrink-0">
+              {online ? (
+                <svg width="10" height="10" viewBox="0 0 10 10" className="text-gray-400" fill="currentColor"><circle cx="5" cy="5" r="4"/></svg>
+              ) : (
+                <svg width="10" height="10" viewBox="0 0 10 10" className="text-amber-400" fill="currentColor"><circle cx="5" cy="5" r="4"/></svg>
+              )}
+              <span className="text-[11px] text-[var(--color-text-muted)]">
+                {online ? (pl ? 'System online' : 'System online') : (pl ? 'Offline' : 'Offline')}
+              </span>
+            </div>
+          </div>
+
+          {/* Trial banner */}
+          {loading ? (
+            <div className="h-9 rounded-xl bg-[var(--color-surface-alt)] animate-pulse" />
+          ) : trialBanner}
+        </div>
+
+        {/* Grouped menu */}
+        <div className="px-4 pb-4 space-y-4">
+          {GROUPS.map(group => (
+            <div key={group.title}>
+              <p className="text-[11px] font-semibold text-[var(--color-text-muted)] uppercase tracking-wider mb-1.5 px-1">
+                {group.title}
+              </p>
+              <SectionCard>
+                {group.items
+                  .filter(item => !item.leadOnly || isLead)
+                  .map(item => <MenuItem key={item.id} item={item} />)
+                }
+              </SectionCard>
+            </div>
+          ))}
+        </div>
+
+        {/* Log out — footer with distinct tint */}
+        <div className="px-4 pb-6">
+          <div className="rounded-2xl bg-[var(--color-surface-alt)] border border-[var(--color-border)] overflow-hidden">
+            <button
+              type="button"
+              onClick={() => {
+                if (!window.confirm(pl ? 'Wylogować się? Dane rodziny są bezpieczne.' : "Log out? Your family's data stays safe.")) return
+                clearDeviceIdentity()
+                sessionStorage.removeItem('mc_parent_tab')
+                localStorage.removeItem('mc_parent_avatar')
+                window.location.replace('/')
+              }}
+              className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-red-50 active:bg-red-50 cursor-pointer transition-colors text-left"
+            >
+              <span className="shrink-0 w-8 h-8 rounded-xl flex items-center justify-center bg-red-600 text-white">
+                <LogOut size={15} />
+              </span>
+              <div className="flex-1 min-w-0">
+                <p className="text-[13px] font-semibold text-[var(--color-text)]">{pl ? 'Wyloguj się' : 'Log out'}</p>
+                <p className="text-[11px] text-[var(--color-text-muted)] mt-0.5">{pl ? 'Dane rodziny są bezpieczne' : "Your family's data stays safe"}</p>
+              </div>
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   )
+}
+
+// Thin wrapper to give section sub-pages the right scroll container inside the drawer
+function ProfileSection({ children }: { children: React.ReactNode }) {
+  return <div className="flex-1 overflow-y-auto px-3.5 py-4">{children}</div>
 }
 
 // Version injected at build time by Vite define
