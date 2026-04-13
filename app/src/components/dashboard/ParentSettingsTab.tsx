@@ -275,7 +275,7 @@ export function ParentSettingsTab({ familyId, onChildrenChange }: Props) {
     if (view.section === 'account')    return <ProfileSettings    profile={profile} settings={settings} identity={identity} family={family} isLead={isLead} leadCount={leadCount} onSaveName={handleSaveName} onSaveEmail={handleSaveEmail} onSetAvatar={handleSetAvatar} onBack={back} onComingSoon={comingSoon} toast={toast} />
     if (view.section === 'family')     return <FamilySettings     children={children} teenModes={teenModes} teenModeBusy={teenModeBusy} growthSettings={growthSettings} growthBusy={growthBusy} isLead={isLead} toast={toast} onBack={back} onComingSoon={comingSoon} onAddChild={handleAddChild} onTeenModeToggle={handleTeenModeToggle} onGrowthUpdate={handleGrowthUpdate} onGenerateInvite={handleGenerateInvite} />
     if (view.section === 'security')   return <SecuritySettings   profile={profile} toast={toast} onBack={back} onComingSoon={comingSoon} />
-    if (view.section === 'appearance') return <AppearanceSettings toast={toast} onBack={back} onComingSoon={comingSoon} />
+    if (view.section === 'appearance') return <AppearanceSettings toast={toast} onBack={back} />
     if (view.section === 'billing')    return <BillingSettings    toast={toast} onBack={back} onComingSoon={comingSoon} />
     if (view.section === 'data')       return <DataSettings       isLead={isLead} toast={toast} onBack={back} onComingSoon={comingSoon} />
     if (view.section === 'referrals')  return <ReferralsSettings  toast={toast} onBack={back} onComingSoon={comingSoon} />

@@ -1,7 +1,7 @@
 /**
  * Stage 2 — Family Setup
  *
- * Collects: base_currency (GBP | PLN)
+ * Collects: base_currency (GBP | USD | PLN)
  * For co-parenting only: governance_mode (amicable | standard)
  * Single-parent accounts always use amicable — no choice shown.
  *

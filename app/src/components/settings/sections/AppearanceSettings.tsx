@@ -9,9 +9,8 @@ import { Toast, SectionCard, SectionHeader } from '../shared'
 import { cn } from '../../../lib/utils'
 
 interface Props {
-  toast:        string | null
-  onBack:       () => void
-  onComingSoon: () => void
+  toast:  string | null
+  onBack: () => void
 }
 
 const LANGUAGE_OPTIONS: { value: AppLocale; flag: string; label: string }[] = [
