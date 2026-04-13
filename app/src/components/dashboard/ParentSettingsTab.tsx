@@ -85,7 +85,6 @@ import { SecuritySettings }   from '../settings/sections/SecuritySettings'
 import { AppearanceSettings } from '../settings/sections/AppearanceSettings'
 import { BillingSettings }    from '../settings/sections/BillingSettings'
 import { DataSettings }       from '../settings/sections/DataSettings'
-import { ReferralsSettings }  from '../settings/sections/ReferralsSettings'
 import { AboutSettings }      from '../settings/sections/AboutSettings'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -97,7 +96,6 @@ type TopSection =
   | 'appearance'
   | 'billing'
   | 'data'
-  | 'referrals'
   | 'about'
 
 type View =
@@ -284,8 +282,7 @@ export function ParentSettingsTab({ familyId, onChildrenChange }: Props) {
     if (view.section === 'appearance') return <AppearanceSettings toast={toast} onBack={back} />
     if (view.section === 'billing')    return <BillingSettings    toast={toast} onBack={back} onComingSoon={comingSoon} />
     if (view.section === 'data')       return <DataSettings       isLead={isLead} toast={toast} onBack={back} onComingSoon={comingSoon} />
-    if (view.section === 'referrals')  return <ReferralsSettings  toast={toast} onBack={back} onComingSoon={comingSoon} />
-    if (view.section === 'about')      return <AboutSettings      toast={toast} onBack={back} onComingSoon={comingSoon} />
+if (view.section === 'about')      return <AboutSettings      toast={toast} onBack={back} onComingSoon={comingSoon} />
   }
 
   // ── Top-level menu ──────────────────────────────────────────────────────────
@@ -296,6 +293,7 @@ export function ParentSettingsTab({ familyId, onChildrenChange }: Props) {
     label:       string
     description: string
     leadOnly?:   boolean
+    onAction?:   () => void
   }[] = [
     {
       id:          'account',
@@ -339,6 +337,7 @@ export function ParentSettingsTab({ familyId, onChildrenChange }: Props) {
       icon:        <Gift size={17} />,
       label:       'Referrals',
       description: 'Refer a family, earn rewards',
+      onAction:    comingSoon,
     },
     {
       id:          'about',
@@ -430,7 +429,7 @@ export function ParentSettingsTab({ familyId, onChildrenChange }: Props) {
             <button
               key={s.id}
               type="button"
-              onClick={() => setView({ type: 'section', section: s.id })}
+              onClick={() => s.onAction ? s.onAction() : setView({ type: 'section', section: s.id })}
               className="w-full flex items-center gap-3 px-4 py-3.5 border-b border-[var(--color-border)] last:border-0 hover:bg-[var(--color-surface-alt)] active:bg-[var(--color-surface-alt)] cursor-pointer transition-colors text-left"
             >
               <span className="shrink-0 w-9 h-9 rounded-xl flex items-center justify-center bg-[color-mix(in_srgb,var(--brand-primary)_10%,transparent)] text-[var(--brand-primary)]">
