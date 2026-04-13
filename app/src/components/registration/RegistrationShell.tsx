@@ -18,6 +18,7 @@ import { Stage3SecureApp }          from './Stage3SecureApp'
 import { Stage4CoParentBridge }     from './Stage4CoParentBridge'
 import { WelcomeNudge }             from './WelcomeNudge'
 import { createFamily, requestMagicLink, saveRegistrationStep } from '@/lib/api'
+import { detectLocale, type AppLocale } from '@/lib/locale'
 
 // ── Shared state ─────────────────────────────────────────────────────────────
 
@@ -37,7 +38,8 @@ export interface RegistrationState {
   governance_mode?: 'amicable' | 'standard'
 
   // Step 2
-  base_currency?: 'GBP' | 'PLN'
+  base_currency?: 'GBP' | 'USD' | 'PLN'   // add USD
+  locale?:        AppLocale                 // new — no longer derived from currency
 
   // Step 3 — children added here; pin stored locally only
   children?: ChildRecord[]
@@ -103,7 +105,7 @@ export function RegistrationShell({ onComplete }: Props) {
             display_name:    merged.display_name!,
             email:           merged.email!,
             password:        merged.password!,
-            locale:          merged.base_currency === 'PLN' ? 'pl' : 'en',
+            locale:          merged.locale ?? detectLocale(),
             parenting_mode:  merged.parenting_mode!,
             governance_mode: merged.governance_mode ?? 'amicable',
             base_currency:   merged.base_currency ?? 'GBP',

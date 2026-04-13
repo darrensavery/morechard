@@ -34,8 +34,8 @@ function detectCurrency(): 'GBP' | 'PLN' | null {
 
 export function Stage2FamilyConstitution({ data, onNext, onBack }: Props) {
   // null = nothing confirmed yet (unconfirmed pre-selection may exist separately)
-  const [currency,    setCurrency]    = useState<'GBP' | 'PLN' | null>(data.base_currency ?? null)
-  const [suggested,   setSuggested]   = useState<'GBP' | 'PLN' | null>(null)
+  const [currency,    setCurrency]    = useState<'GBP' | 'USD' | 'PLN' | null>(data.base_currency ?? null)
+  const [suggested,   setSuggested]   = useState<'GBP' | 'USD' | 'PLN' | null>(null)
   const [govMode,     setGovMode]     = useState<'amicable' | 'standard'>(
     data.governance_mode ?? (data.parenting_mode === 'co-parenting' ? 'standard' : 'amicable')
   )
