@@ -1,36 +1,47 @@
 /**
- * useTone — returns age-appropriate copy based on teen_mode setting.
+ * useTone — returns age-appropriate copy based on teen_mode setting,
+ * and locale-aware terminology based on the current AppLocale.
  *
  * teen_mode = 0 (default): child view — orchard language, playful icons visible
  * teen_mode = 1:           mature view — fintech language, minimal icon set
  *
  * Usage:
  *   const tone = useTone(teenMode)
- *   tone.balance        → "Your Harvest"  |  "Total Balance"
- *   tone.isChild        → true            |  false
+ *   tone.balance          → "Your Harvest"  |  "Total Balance"
+ *   tone.terminology.money → "pocket money" | "allowance" | "kieszonkowe"
  */
+
+import { useLocale, type AppLocale } from './locale'
+
+export interface Terminology {
+  money:          string   // 'pocket money' | 'allowance' | 'kieszonkowe'
+  allowanceLabel: string   // UI-safe capitalised form: 'Allowance' | 'Kieszonkowe'
+}
 
 export interface Tone {
   isChild: boolean        // true = child view, false = mature/teen view
 
   // Labels
-  dashboard:     string   // section header for the main screen
-  balance:       string   // balance card eyebrow label
-  addToSchedule: string   // plant-button tooltip / label
-  allowance:     string   // regular/recurring payment label
-  rewards:       string   // bonus payment label
-  weekSection:   string   // weekly tracker section heading
-  weekSubtitle:  string   // weekly tracker sub-heading
-  emptyGrove:    string   // empty state headline
-  emptyGroveSub: string   // empty state body
-  nothingToday:  string   // no chores on selected day
-  doneButton:    string   // primary action button on each chore
-  submitButton:  string   // confirm-submission button in note drawer
-  waitingBadge:  string   // badge shown after submission while awaiting approval
-  allChores:     string   // "All my jobs" section heading
+  dashboard:     string
+  balance:       string
+  addToSchedule: string
+  allowance:     string
+  rewards:       string
+  weekSection:   string
+  weekSubtitle:  string
+  emptyGrove:    string
+  emptyGroveSub: string
+  nothingToday:  string
+  doneButton:    string
+  submitButton:  string
+  waitingBadge:  string
+  allChores:     string
+
+  // Locale-driven parent-side terminology
+  terminology: Terminology
 }
 
-const CHILD_TONE: Tone = {
+const CHILD_TONE_BASE = {
   isChild:       true,
   dashboard:     'The Orchard',
   balance:       'Your harvest',
@@ -48,7 +59,7 @@ const CHILD_TONE: Tone = {
   allChores:     'All my jobs',
 }
 
-const TEEN_TONE: Tone = {
+const TEEN_TONE_BASE = {
   isChild:       false,
   dashboard:     'My Account',
   balance:       'Total balance',
@@ -66,6 +77,15 @@ const TEEN_TONE: Tone = {
   allChores:     'All tasks',
 }
 
+function buildTerminology(locale: AppLocale): Terminology {
+  if (locale === 'pl') return { money: 'kieszonkowe', allowanceLabel: 'Kieszonkowe' }
+  if (locale === 'en-US') return { money: 'allowance', allowanceLabel: 'Allowance' }
+  return { money: 'pocket money', allowanceLabel: 'Allowance' }  // en-GB default
+}
+
 export function useTone(teenMode: number | boolean | undefined): Tone {
-  return teenMode ? TEEN_TONE : CHILD_TONE
+  const { locale } = useLocale()
+  const terminology = buildTerminology(locale)
+  const base = teenMode ? TEEN_TONE_BASE : CHILD_TONE_BASE
+  return { ...base, terminology }
 }
