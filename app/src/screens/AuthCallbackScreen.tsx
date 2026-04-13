@@ -3,6 +3,7 @@ import { useSearchParams, useNavigate } from 'react-router-dom'
 import { Loader2 } from 'lucide-react'
 import { exchangeSlt, setToken } from '../lib/api'
 import { setDeviceIdentity, toInitials } from '../lib/deviceIdentity'
+import { getLocale, isPolish } from '../lib/locale'
 
 type ScreenState = 'loading' | 'error'
 
@@ -13,10 +14,9 @@ export default function AuthCallbackScreen() {
   const [state, setState]   = useState<ScreenState>('loading')
   const [errorMsg, setErrorMsg] = useState('')
 
-  const locale = (localStorage.getItem('mc_locale') as string | null)
-    ?? (navigator.language.startsWith('pl') ? 'pl' : 'en')
+  const locale = getLocale()
 
-  const bridgeText = locale === 'pl' ? 'Logowanie do Sadu…' : 'Consulting the Orchard Lead…'
+  const bridgeText = isPolish(locale) ? 'Logowanie do Sadu…' : 'Consulting the Orchard Lead…'
 
   useEffect(() => {
     const slt = searchParams.get('slt')

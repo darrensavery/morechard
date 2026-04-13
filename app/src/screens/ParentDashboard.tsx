@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import type { ChildRecord } from '../lib/api'
 import { getChildren, getCompletions } from '../lib/api'
 import { getDeviceIdentity } from '../lib/deviceIdentity'
+import { getLocale, isPolish } from '../lib/locale'
 import { AvatarSVG } from '../lib/avatars'
 import { ChoresTab }   from '../components/dashboard/JobsTab'
 import { PendingTab }  from '../components/dashboard/PendingTab'
@@ -311,9 +312,9 @@ export function ParentDashboard() {
         ) : (
           (() => {
             const identity = getDeviceIdentity()
-            const locale   = localStorage.getItem('mc_locale') ?? (navigator.language.startsWith('pl') ? 'pl' : 'en')
+            const locale   = getLocale()
             const name     = identity?.display_name ?? ''
-            const welcome  = locale === 'pl'
+            const welcome  = isPolish(locale)
               ? `Witaj, ${name}. Zacznijmy uprawę Twojego sadu.`
               : `Welcome, ${name}. Let's grow your orchard.`
             return (
