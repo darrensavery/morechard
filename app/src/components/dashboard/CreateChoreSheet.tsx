@@ -66,7 +66,6 @@ const QUICK_AMOUNTS: Record<string, { label: string; value: number }[]> = {
   ],
 }
 
-
 export function CreateChoreSheet({ familyId, child, currency, onCreated, onClose }: Props) {
   const [form, setForm]             = useState<Form>(BLANK)
   const [saving, setSaving]         = useState(false)
