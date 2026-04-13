@@ -64,7 +64,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import {
   User, Users, Shield, Palette, CreditCard, Database,
-  Gift, Info, ChevronRight, TreePine, LogOut,
+  Gift, Info, ChevronRight, Clock, LogOut,
 } from 'lucide-react'
 import { clearDeviceIdentity, getDeviceIdentity, updateDeviceIdentity } from '../../lib/deviceIdentity'
 import type { ChildRecord, ChildGrowthSettings } from '../../lib/api'
@@ -77,6 +77,7 @@ import {
   type MeResult, type TrialStatus,
 } from '../../lib/api'
 import { track } from '../../lib/analytics'
+import { getLocale, isPolish } from '../../lib/locale'
 import { cn } from '../../lib/utils'
 import { ProfileSettings }    from '../settings/sections/ProfileSettings'
 import { FamilySettings }     from '../settings/sections/FamilySettings'
@@ -346,29 +347,73 @@ export function ParentSettingsTab({ familyId, onChildrenChange }: Props) {
     <div className="space-y-4">
       {toast && <Toast message={toast} />}
 
-      {/* Role badge */}
+      {/* Trial status banner */}
       {(() => {
         const licensed = trial?.has_lifetime_license
-        const trialLabel = (() => {
-          if (!isLead) return 'Co-Parent — some options are restricted'
-          if (licensed) return 'Parent — full access'
-          if (trial?.days_remaining != null) {
-            const endDate = new Date(Date.now() + trial.days_remaining * 86_400_000)
-            const formatted = endDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
-            return `Parent — free trial ends ${formatted}`
-          }
-          return 'Parent — full access'
-        })()
         if (licensed) return null
+
+        const locale = getLocale()
+        const pl = isPolish(locale)
+        const daysLeft = trial?.days_remaining ?? null
+        const isActivated = trial?.is_activated ?? false
+
+        // Only show banner during an active (or recently started) trial
+        if (!isLead) {
+          return (
+            <div className="flex items-center gap-2 px-3 py-2 rounded-xl text-[12px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+              <Clock size={13} />
+              {pl ? 'Współrodzic — niektóre opcje są ograniczone' : 'Co-Parent — some options are restricted'}
+            </div>
+          )
+        }
+
+        if (!isActivated || daysLeft === null) {
+          // Trial not yet started — show neutral full-access badge
+          return (
+            <div className="flex items-center gap-2 px-3 py-2 rounded-xl text-[12px] font-semibold bg-teal-50 text-teal-700 border border-teal-200">
+              <Clock size={13} />
+              {pl ? 'Rodzic — pełny dostęp' : 'Parent — full access'}
+            </div>
+          )
+        }
+
+        const urgentAmber = daysLeft <= 2
+        const pct = Math.max(0, Math.min(100, (daysLeft / 14) * 100))
+        const label = pl
+          ? `Okres próbny: pozostało ${daysLeft} ${daysLeft === 1 ? 'dzień' : 'dni'}`
+          : `Trial: ${daysLeft} ${daysLeft === 1 ? 'day' : 'days'} remaining`
+
         return (
-          <div className={cn(
-            'flex items-center gap-2 px-3 py-2 rounded-xl text-[12px] font-semibold',
-            isLead
-              ? 'bg-teal-50 text-teal-700 border border-teal-200'
-              : 'bg-amber-50 text-amber-700 border border-amber-200',
-          )}>
-            <TreePine size={13} />
-            {trialLabel}
+          <div
+            className={cn(
+              'rounded-xl border overflow-hidden',
+              urgentAmber
+                ? 'bg-amber-50 border-amber-200 text-amber-700'
+                : 'bg-teal-50 border-teal-200 text-teal-700',
+            )}
+          >
+            <div className="flex items-center gap-2 px-3 pt-2 pb-1.5">
+              <Clock size={13} className="shrink-0" />
+              <span className="flex-1 text-[12px] font-semibold">{label}</span>
+              <button
+                type="button"
+                onClick={() => setView({ type: 'section', section: 'billing' })}
+                className={cn(
+                  'flex items-center gap-0.5 text-[11px] font-semibold shrink-0',
+                  urgentAmber ? 'text-amber-600' : 'text-teal-600',
+                )}
+              >
+                {pl ? 'Plany' : 'See Plans'}
+                <ChevronRight size={12} />
+              </button>
+            </div>
+            {/* Progress bar */}
+            <div className={cn('h-1', urgentAmber ? 'bg-amber-100' : 'bg-teal-100')}>
+              <div
+                className={cn('h-full transition-all', urgentAmber ? 'bg-amber-400' : 'bg-teal-500')}
+                style={{ width: `${pct}%` }}
+              />
+            </div>
           </div>
         )
       })()}
