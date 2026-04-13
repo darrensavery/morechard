@@ -1,17 +1,19 @@
 /**
  * Stage 2 — Family Setup
  *
- * Collects: base_currency (GBP | USD | PLN)
+ * Collects: locale (en-GB | en-US | pl) and base_currency (GBP | USD | PLN)
+ * These are independent choices — language does not determine currency.
  * For co-parenting only: governance_mode (amicable | standard)
  * Single-parent accounts always use amicable — no choice shown.
  *
- * Smart detection: uses navigator.language to pre-highlight a currency card,
+ * Smart detection: uses navigator.language to pre-highlight cards,
  * but the user must tap to confirm. No selection = Continue is blocked.
  */
 
 import { useState, useEffect } from 'react'
 import { Info, Scale, Zap, BookOpen } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { detectLocale, type AppLocale } from '@/lib/locale'
 import type { RegistrationState } from './RegistrationShell'
 
 interface Props {
@@ -20,22 +22,37 @@ interface Props {
   onBack: () => void
 }
 
+type Currency = 'GBP' | 'USD' | 'PLN'
+
 /** Detect likely currency from browser locale. Returns null if ambiguous. */
-function detectCurrency(): 'GBP' | 'PLN' | null {
+function detectCurrency(): Currency | null {
   try {
     const lang = navigator.language ?? ''
     if (lang.startsWith('pl') || lang.includes('-PL')) return 'PLN'
+    if (lang.startsWith('en-US'))                       return 'USD'
     if (lang.startsWith('en-GB') || lang.includes('-GB')) return 'GBP'
-  } catch {
-    // ignore
-  }
+    if (lang.startsWith('en'))                          return 'GBP'
+  } catch { /* ignore */ }
   return null
 }
 
+const LANGUAGE_OPTIONS: { value: AppLocale; flag: string; label: string; region: string }[] = [
+  { value: 'en-GB', flag: '🇬🇧', label: 'UK English', region: 'United Kingdom' },
+  { value: 'en-US', flag: '🇺🇸', label: 'US English', region: 'United States'  },
+  { value: 'pl',    flag: '🇵🇱', label: 'Polish',     region: 'Poland'          },
+]
+
+const CURRENCY_OPTIONS: { value: Currency; symbol: string; label: string; region: string }[] = [
+  { value: 'GBP', symbol: '£',  label: 'British Pound', region: 'United Kingdom' },
+  { value: 'USD', symbol: '$',  label: 'US Dollar',     region: 'United States'  },
+  { value: 'PLN', symbol: 'zł', label: 'Polish Zloty',  region: 'Poland'          },
+]
+
 export function Stage2FamilyConstitution({ data, onNext, onBack }: Props) {
-  // null = nothing confirmed yet (unconfirmed pre-selection may exist separately)
-  const [currency,    setCurrency]    = useState<'GBP' | 'USD' | 'PLN' | null>(data.base_currency ?? null)
-  const [suggested,   setSuggested]   = useState<'GBP' | 'USD' | 'PLN' | null>(null)
+  const [locale,      setLocale]      = useState<AppLocale | null>(data.locale ?? null)
+  const [currency,    setCurrency]    = useState<Currency | null>(data.base_currency ?? null)
+  const [sugLocale,   setSugLocale]   = useState<AppLocale | null>(null)
+  const [sugCurrency, setSugCurrency] = useState<Currency | null>(null)
   const [govMode,     setGovMode]     = useState<'amicable' | 'standard'>(
     data.governance_mode ?? (data.parenting_mode === 'co-parenting' ? 'standard' : 'amicable')
   )
@@ -44,23 +61,26 @@ export function Stage2FamilyConstitution({ data, onNext, onBack }: Props) {
 
   const isCoParenting = data.parenting_mode === 'co-parenting'
 
-  // Detect region once on mount — only pre-suggest, never pre-select
   useEffect(() => {
-    if (data.base_currency) return // already set (came back from step 3)
-    const detected = detectCurrency()
-    if (detected) setSuggested(detected)
+    if (data.locale || data.base_currency) return  // came back from step 3
+    setSugLocale(detectLocale())
+    const detectedCurrency = detectCurrency()
+    if (detectedCurrency) setSugCurrency(detectedCurrency)
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   function handleNext() {
     setAttempted(true)
-    if (!currency) return
+    if (!locale || !currency) return
     onNext({
+      locale,
       base_currency:   currency,
       governance_mode: isCoParenting ? govMode : 'amicable',
     })
   }
 
-  const noSelection = !currency
+  const noSelection = !locale || !currency
+
+  const moneyWord = locale === 'pl' ? 'kieszonkowe' : locale === 'en-US' ? 'allowance' : 'pocket money'
 
   return (
     <div className="space-y-7">
@@ -69,60 +89,78 @@ export function Stage2FamilyConstitution({ data, onNext, onBack }: Props) {
       <div className="space-y-1.5">
         <h2 className="text-2xl font-bold tracking-tight">Family Setup</h2>
         <p className="text-[#6b6a66] text-sm leading-relaxed">
-          Choose the currency your family uses day-to-day. This becomes the base
-          currency for your ledger — all pocket money, chores, and savings goals
-          are tracked in this currency.
+          Choose your language and currency. These can be changed later in Settings.
         </p>
       </div>
 
-      {/* Currency selection */}
+      {/* Language selection */}
       <section className="space-y-3">
         <div className="flex items-center justify-between">
-          <span className="text-sm font-semibold text-[#1C1C1A]">Base currency</span>
-          {suggested && !currency && (
+          <span className="text-sm font-semibold text-[#1C1C1A]">Language</span>
+          {sugLocale && !locale && (
             <span className="text-[11px] text-teal-700 bg-teal-50 border border-teal-200 rounded-full px-2.5 py-0.5 font-medium">
               Detected from your device
             </span>
           )}
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
-          <CurrencyCard
-            active={currency === 'GBP'}
-            suggested={suggested === 'GBP' && !currency}
-            onClick={() => setCurrency('GBP')}
-            symbol="£"
-            label="British Pound"
-            region="United Kingdom"
-          />
-          <CurrencyCard
-            active={currency === 'PLN'}
-            suggested={suggested === 'PLN' && !currency}
-            onClick={() => setCurrency('PLN')}
-            symbol="zł"
-            label="Polish Zloty"
-            region="Poland"
-          />
+        <div className="grid grid-cols-3 gap-2">
+          {LANGUAGE_OPTIONS.map(opt => (
+            <SelectionCard
+              key={opt.value}
+              active={locale === opt.value}
+              suggested={sugLocale === opt.value && !locale}
+              onClick={() => setLocale(opt.value)}
+              symbol={opt.flag}
+              label={opt.label}
+              region={opt.region}
+            />
+          ))}
         </div>
 
-        {/* Validation error */}
-        {attempted && noSelection && (
-          <p className="text-xs font-semibold text-red-600 pl-1">
-            Please choose a currency to continue.
-          </p>
+        {attempted && !locale && (
+          <p className="text-xs font-semibold text-red-600 pl-1">Please choose a language to continue.</p>
+        )}
+      </section>
+
+      {/* Currency selection */}
+      <section className="space-y-3">
+        <div className="flex items-center justify-between">
+          <span className="text-sm font-semibold text-[#1C1C1A]">Base currency</span>
+          {sugCurrency && !currency && (
+            <span className="text-[11px] text-teal-700 bg-teal-50 border border-teal-200 rounded-full px-2.5 py-0.5 font-medium">
+              Detected from your device
+            </span>
+          )}
+        </div>
+
+        <div className="grid grid-cols-3 gap-2">
+          {CURRENCY_OPTIONS.map(opt => (
+            <SelectionCard
+              key={opt.value}
+              active={currency === opt.value}
+              suggested={sugCurrency === opt.value && !currency}
+              onClick={() => setCurrency(opt.value)}
+              symbol={opt.symbol}
+              label={opt.label}
+              region={opt.region}
+            />
+          ))}
+        </div>
+
+        {attempted && !currency && (
+          <p className="text-xs font-semibold text-red-600 pl-1">Please choose a currency to continue.</p>
         )}
 
-        {/* Ledger integrity notice — active, not just a warning */}
+        {/* Ledger integrity notice */}
         <div className="flex items-start gap-2.5 rounded-xl border border-gray-200 bg-gray-50 px-3.5 py-3">
           <BookOpen size={14} className="text-[#6b6a66] mt-0.5 shrink-0" />
           <div>
-            <p className="text-xs font-semibold text-[#1C1C1A]">
-              Locked to your current region
-            </p>
+            <p className="text-xs font-semibold text-[#1C1C1A]">Locked to your current region</p>
             <p className="text-xs text-[#6b6a66] mt-0.5 leading-relaxed">
               To keep your financial history accurate, all entries must use a single
-              currency. If you move country, a Relocation Audit entry can be added
-              to the ledger at any time.
+              currency. All {moneyWord}, chores, and savings goals are tracked in this currency.
+              If you move country, a Relocation Audit entry can be added to the ledger at any time.
             </p>
           </div>
         </div>
@@ -227,9 +265,9 @@ export function Stage2FamilyConstitution({ data, onNext, onBack }: Props) {
   )
 }
 
-// ── CurrencyCard ──────────────────────────────────────────────────────────────
+// ── SelectionCard (shared for both language and currency) ─────────────────────
 
-function CurrencyCard({
+function SelectionCard({
   active, suggested, onClick, symbol, label, region,
 }: {
   active: boolean
@@ -244,7 +282,7 @@ function CurrencyCard({
       type="button"
       onClick={onClick}
       className={cn(
-        'relative flex flex-col items-start gap-2.5 rounded-2xl border-2 p-4 text-left transition-all duration-150 cursor-pointer w-full',
+        'relative flex flex-col items-start gap-2 rounded-2xl border-2 p-3 text-left transition-all duration-150 cursor-pointer w-full',
         active
           ? 'border-teal-500 bg-teal-50 shadow-md'
           : suggested
@@ -258,14 +296,14 @@ function CurrencyCard({
         </span>
       )}
       <span className={cn(
-        'text-[28px] font-extrabold tabular-nums leading-none',
+        'text-[22px] font-extrabold tabular-nums leading-none',
         active ? 'text-teal-700' : 'text-[#1C1C1A]',
       )}>
         {symbol}
       </span>
       <div>
-        <p className={cn('text-sm font-bold', active ? 'text-teal-700' : 'text-[#1C1C1A]')}>{label}</p>
-        <p className="text-xs text-[#9b9a96] mt-0.5">{region}</p>
+        <p className={cn('text-xs font-bold', active ? 'text-teal-700' : 'text-[#1C1C1A]')}>{label}</p>
+        <p className="text-[10px] text-[#9b9a96] mt-0.5">{region}</p>
       </div>
     </button>
   )
@@ -303,9 +341,7 @@ function GovernanceCard({
       <div className="space-y-0.5">
         <div className="flex items-center gap-2 flex-wrap">
           <p className={cn('text-sm font-bold', active ? 'text-teal-700' : 'text-[#1C1C1A]')}>{title}</p>
-          <span className="text-[11px] text-[#9b9a96] border border-[#D3D1C7] rounded-full px-2 py-0.5">
-            {subtitle}
-          </span>
+          <span className="text-[11px] text-[#9b9a96] border border-[#D3D1C7] rounded-full px-2 py-0.5">{subtitle}</span>
         </div>
         <p className="text-xs text-[#6b6a66] leading-relaxed">{description}</p>
       </div>
