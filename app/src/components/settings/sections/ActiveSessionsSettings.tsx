@@ -215,7 +215,7 @@ export function ActiveSessionsSettings({ onBack }: Props) {
               type="button"
               onClick={handleRevokeAll}
               disabled={revokeAll}
-              className="w-full py-3 rounded-xl text-[14px] font-bold text-white bg-red-600 hover:bg-red-700 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed transition-colors"
+              className="w-full py-3 rounded-xl text-[14px] font-bold text-red-600 bg-transparent border border-red-200 hover:bg-red-50 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed transition-colors"
             >
               {revokeAll ? 'Revoking…' : 'Revoke All Other Devices'}
             </button>
