@@ -145,6 +145,7 @@ wrangler deploy
 - [ ] Build 'Court-Ready' PDF Audit Export for co-parents
 - [ ] Implement Ledger 'Seal' (Verification page for the PDF)
 - [ ] Finalize COPPA/GDPR-K Privacy Controls (Nicknames only)
+- [x] Delete Account (Uproot) — `DELETE /auth/family`; lead-only; soft-deletes family row (`deleted_at`), anonymises all user PII (name/email/hashes → NULL), hard-deletes invite codes & registration progress; ledger rows retained anonymised for hash-chain integrity; UI requires typing `UPROOT` to confirm; co-parents must leave before lead can delete
 
 ### **Phase 7: Monetization & Global Scale**
 - [ ] Integrate Stripe with PPP (Purchasing Power Parity) for GBP/USD/PLN
