@@ -15,6 +15,8 @@
  *
  * Authenticated — parent only:
  *   POST   /auth/child/set-pin          Set/reset child PIN
+ *   PATCH  /api/child/:id/display-name  Rename a child
+ *   GET    /api/child/:id/login-history Child's login history (last 50)
  *   POST   /api/ledger                  Create ledger entry
  *   GET    /api/ledger                  Query ledger
  *   POST   /api/ledger/:id/verify       Second parent verifies pending entry
@@ -75,6 +77,7 @@ import {
   handleAccountLock, handleAccountUnlock,
   handleParentMessageSet, handleParentMessageGet,
   handleChildGrowthGet, handleChildGrowthUpdate,
+  handleChildRename, handleChildLoginHistory,
 } from './routes/settings.js';
 import { handleLedgerPost, handleLedgerGet, handleLedgerDispute } from './routes/ledger.js';
 import { handleLedgerVerify } from './routes/verify.js';
@@ -322,6 +325,13 @@ async function route(request: Request, env: Env, method: string, path: string): 
   const childGrowthMatch = path.match(/^\/api\/child-growth\/([^/]+)$/);
   if (childGrowthMatch && method === 'GET')   return withAuth(request, auth, env, (req, e) => handleChildGrowthGet(req, e, childGrowthMatch[1]));
   if (childGrowthMatch && method === 'PATCH') return withAuth(request, auth, env, (req, e) => handleChildGrowthUpdate(req, e, childGrowthMatch[1]));
+
+  // Child rename + login history (parent only — placed before trial gate intentionally)
+  const childIdMatch = path.match(/^\/api\/child\/([^/]+)\/display-name$/);
+  if (childIdMatch && method === 'PATCH') return withAuth(request, auth, env, (req, e) => handleChildRename(req, e, childIdMatch[1]));
+
+  const childHistoryMatch = path.match(/^\/api\/child\/([^/]+)\/login-history$/);
+  if (childHistoryMatch && method === 'GET') return withAuth(request, auth, env, (req, e) => handleChildLoginHistory(req, e, childHistoryMatch[1]));
 
   // Chores — children can list & submit
   if (path === '/api/chores' && method === 'GET')     return withAuth(request, auth, env, handleChoreList);
