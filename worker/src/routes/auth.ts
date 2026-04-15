@@ -314,11 +314,18 @@ export async function handleChildLogin(request: Request, env: Env): Promise<Resp
   const now = Math.floor(Date.now() / 1000);
   const jti = nanoid();
 
-  await env.DB
-    .prepare(`INSERT INTO sessions (jti, user_id, family_id, role, issued_at, expires_at, ip_address)
-              VALUES (?,?,?,'child',?,?,?)`)
-    .bind(jti, user.id, family_id, now, now + CHILD_JWT_EXPIRY, ip)
-    .run();
+  const ua = request.headers.get('User-Agent') ?? null;
+
+  await env.DB.batch([
+    env.DB
+      .prepare(`INSERT INTO sessions (jti, user_id, family_id, role, issued_at, expires_at, ip_address, user_agent)
+                VALUES (?,?,?,'child',?,?,?,?)`)
+      .bind(jti, user.id, family_id, now, now + CHILD_JWT_EXPIRY, ip, ua),
+    env.DB
+      .prepare(`INSERT INTO child_logins (child_id, logged_at, ip_address, user_agent, session_jti)
+                VALUES (?,?,?,?,?)`)
+      .bind(user.id, now, ip, ua, jti),
+  ]);
 
   const token = await signJwt(
     { sub: user.id, jti, family_id, role: 'child', iat: now, exp: now + CHILD_JWT_EXPIRY },
