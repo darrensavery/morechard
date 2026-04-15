@@ -10,7 +10,7 @@ import { useState } from 'react'
 import type { FormEvent } from 'react'
 import {
   Shield, Calendar, AlertTriangle, Check,
-  TreePine, Eye, Lock,
+  TreePine, Lock,
 } from 'lucide-react'
 import type { ChildRecord, ChildGrowthSettings } from '../../../lib/api'
 import { renameChild, setChildPin as apiSetChildPin } from '../../../lib/api'
@@ -37,12 +37,9 @@ const FREQ_LABELS: Record<string, string> = {
 
 interface Props {
   child:             ChildRecord
-  isTeen:            boolean
-  isBusy:            boolean
   growth:            ChildGrowthSettings | undefined
   growthBusy:        string | null
   isLead:            boolean
-  onTeenModeToggle:  (childId: string) => void
   onGrowthUpdate:    (childId: string, patch: Partial<Pick<ChildGrowthSettings, 'earnings_mode' | 'allowance_amount' | 'allowance_frequency'>>) => void
   onRenameChild:     (childId: string, newName: string) => void
   onPinResetSuccess: () => void
@@ -167,8 +164,8 @@ function ResetPinSheet({
 type ActiveView = 'root' | 'login-history'
 
 export function ChildProfileSettings({
-  child, isTeen, isBusy, growth, growthBusy, isLead,
-  onTeenModeToggle, onGrowthUpdate, onRenameChild, onPinResetSuccess, onComingSoon, onBack,
+  child, growth, growthBusy, isLead,
+  onGrowthUpdate, onRenameChild, onPinResetSuccess, onComingSoon, onBack,
 }: Props) {
   const { terminology } = useTone(0)
   const [expanded,     setExpanded]     = useState(false)
@@ -282,38 +279,42 @@ export function ChildProfileSettings({
         <div>
           <p className="text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wide px-1 mb-2">Interface & Experience</p>
           <SectionCard>
-            <div className="px-4 py-3.5 border-b border-[var(--color-border)]">
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-3 min-w-0">
-                  <span className="shrink-0 w-8 h-8 rounded-xl flex items-center justify-center bg-[color-mix(in_srgb,var(--brand-primary)_10%,transparent)] text-[var(--brand-primary)]">
-                    <Eye size={15} />
-                  </span>
-                  <div className="min-w-0">
-                    <p className="text-[14px] font-semibold text-[var(--color-text)]">Interface Style</p>
-                    <p className="text-[12px] text-[var(--color-text-muted)] mt-0.5 leading-snug">
-                      {isTeen ? "Detailed 'Professional' view" : "Simplified 'Seedling' view"}
-                    </p>
+            {/*
+              Toggle switch pattern — reuse this for any future boolean setting row:
+
+              <div className="px-4 py-3.5 border-b border-[var(--color-border)]">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <span className="shrink-0 w-8 h-8 rounded-xl flex items-center justify-center bg-[color-mix(in_srgb,var(--brand-primary)_10%,transparent)] text-[var(--brand-primary)]">
+                      <Eye size={15} />
+                    </span>
+                    <div className="min-w-0">
+                      <p className="text-[14px] font-semibold text-[var(--color-text)]">Setting Label</p>
+                      <p className="text-[12px] text-[var(--color-text-muted)] mt-0.5 leading-snug">
+                        {checked ? 'On description' : 'Off description'}
+                      </p>
+                    </div>
                   </div>
+                  <button
+                    role="switch"
+                    aria-checked={checked}
+                    onClick={() => onToggle(child.id)}
+                    disabled={isBusy}
+                    className={cn(
+                      'shrink-0 relative w-11 h-6 rounded-full transition-colors duration-200 cursor-pointer',
+                      'focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)]',
+                      'disabled:opacity-50',
+                      checked ? 'bg-[var(--brand-primary)]' : 'bg-[var(--color-border)]',
+                    )}
+                  >
+                    <span className={cn(
+                      'absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200',
+                      checked ? 'translate-x-5' : 'translate-x-0',
+                    )} />
+                  </button>
                 </div>
-                <button
-                  role="switch"
-                  aria-checked={isTeen}
-                  onClick={() => onTeenModeToggle(child.id)}
-                  disabled={isBusy}
-                  className={cn(
-                    'shrink-0 relative w-11 h-6 rounded-full transition-colors duration-200 cursor-pointer',
-                    'focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)]',
-                    'disabled:opacity-50',
-                    isTeen ? 'bg-[var(--brand-primary)]' : 'bg-[var(--color-border)]',
-                  )}
-                >
-                  <span className={cn(
-                    'absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200',
-                    isTeen ? 'translate-x-5' : 'translate-x-0',
-                  )} />
-                </button>
               </div>
-            </div>
+            */}
             <SettingsRow icon={<TreePine size={15} />} label="Experience Level" description="Seedling View (under 12) or Professional View (12+)" onClick={onComingSoon} />
           </SectionCard>
         </div>
