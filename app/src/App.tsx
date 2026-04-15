@@ -12,6 +12,7 @@ import { JoinFamilyScreen } from './screens/JoinFamilyScreen'
 import LoginScreen from './screens/LoginScreen'
 import AuthCallbackScreen from './screens/AuthCallbackScreen'
 import { getDeviceIdentity, setDeviceIdentity, toInitials } from './lib/deviceIdentity'
+import { LocaleProvider } from './lib/locale'
 import { analytics, track } from './lib/analytics'
 import { verifyMagicLink, setToken, getMe } from './lib/api'
 import * as Sentry from '@sentry/react'
@@ -208,6 +209,7 @@ export default function App() {
   const storedTeenMode = parseInt(localStorage.getItem('mc_teen_mode') ?? '0', 10)
 
   return (
+    <LocaleProvider>
     <ThemeProvider teenMode={storedTeenMode}>
     <BrowserRouter>
       <Routes>
@@ -233,5 +235,6 @@ export default function App() {
       </Routes>
     </BrowserRouter>
     </ThemeProvider>
+    </LocaleProvider>
   )
 }

@@ -1,5 +1,7 @@
 // app/src/lib/locale.ts
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useContext, createContext } from 'react'
+import type { ReactNode } from 'react'
+import { createElement } from 'react'
 import { updateSettings } from './api'
 
 export type AppLocale = 'en-GB' | 'en-US' | 'pl'
@@ -69,16 +71,21 @@ export function currencySymbol(currency: string): string {
   return '£'  // GBP default
 }
 
-// ── Hook ──────────────────────────────────────────────────────────────────────
+// ── Context ───────────────────────────────────────────────────────────────────
+
+interface LocaleContextValue {
+  locale:    AppLocale
+  setLocale: (l: AppLocale) => Promise<void>
+}
+
+const LocaleContext = createContext<LocaleContextValue | null>(null)
 
 /**
- * useLocale — single source of truth for reading and changing the app locale.
- *
- * - Initialised lazily from localStorage (one read at mount, not per render).
- * - setLocale: writes localStorage synchronously, then persists to D1 async.
- *   The UI reflects the change immediately; the API call is fire-and-forget.
+ * LocaleProvider — place once at the root of the app (inside App.tsx).
+ * All useLocale() callers share this single state, so a language change in
+ * AppearanceSettings re-renders every subscribed component immediately.
  */
-export function useLocale(): { locale: AppLocale; setLocale: (l: AppLocale) => Promise<void> } {
+export function LocaleProvider({ children }: { children: ReactNode }) {
   const [locale, setLocaleState] = useState<AppLocale>(getLocale)
 
   const setLocale = useCallback(async (l: AppLocale) => {
@@ -87,5 +94,15 @@ export function useLocale(): { locale: AppLocale; setLocale: (l: AppLocale) => P
     await updateSettings({ locale: l }).catch(() => {/* offline — localStorage written, syncs on next load */})
   }, [])
 
-  return { locale, setLocale }
+  return createElement(LocaleContext.Provider, { value: { locale, setLocale } }, children)
+}
+
+/**
+ * useLocale — reads from the shared LocaleProvider context.
+ * Requires <LocaleProvider> to be present in the tree.
+ */
+export function useLocale(): LocaleContextValue {
+  const ctx = useContext(LocaleContext)
+  if (!ctx) throw new Error('useLocale must be used within <LocaleProvider>')
+  return ctx
 }
