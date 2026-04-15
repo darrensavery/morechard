@@ -89,17 +89,22 @@ export function SectionCard({ children }: { children: React.ReactNode }) {
   )
 }
 
-export function SectionHeader({ title, onBack }: { title: string; onBack: () => void }) {
+export function SectionHeader({ title, subtitle, onBack }: { title: string; subtitle?: string; onBack?: () => void }) {
   return (
     <div className="flex items-center gap-3 mb-4">
-      <button
-        type="button"
-        onClick={onBack}
-        className="w-8 h-8 rounded-xl flex items-center justify-center bg-[var(--color-surface)] border border-[var(--color-border)] hover:bg-[var(--color-surface-alt)] cursor-pointer transition-colors"
-      >
-        <ChevronLeft size={16} className="text-[var(--color-text-muted)]" />
-      </button>
-      <h2 className="text-[16px] font-bold text-[var(--color-text)]">{title}</h2>
+      {onBack && (
+        <button
+          type="button"
+          onClick={onBack}
+          className="w-8 h-8 rounded-xl flex items-center justify-center bg-[var(--color-surface)] border border-[var(--color-border)] hover:bg-[var(--color-surface-alt)] cursor-pointer transition-colors shrink-0"
+        >
+          <ChevronLeft size={16} className="text-[var(--color-text-muted)]" />
+        </button>
+      )}
+      <div>
+        <h2 className="text-[16px] font-bold text-[var(--color-text)]">{title}</h2>
+        {subtitle && <p className="text-[12px] text-[var(--color-text-muted)] mt-0.5">{subtitle}</p>}
+      </div>
     </div>
   )
 }

@@ -551,6 +551,37 @@ export async function saveRegistrationStep(step: number, data: Record<string, un
 }
 
 // ----------------------------------------------------------------
+// Child identity management
+// ----------------------------------------------------------------
+
+export async function renameChild(childId: string, display_name: string): Promise<{ ok: boolean; display_name: string }> {
+  return request(`/api/child/${childId}/display-name`, {
+    method: 'PATCH',
+    body: JSON.stringify({ display_name }),
+  });
+}
+
+export interface LoginEntry {
+  id:           number;
+  logged_at:    number;   // unixepoch
+  ip_address:   string;
+  device_label: string;   // e.g. "iPhone · Safari"
+  device_type:  'mobile' | 'tablet' | 'desktop';
+  is_current:   boolean;
+}
+
+export async function getChildLoginHistory(childId: string): Promise<{ logins: LoginEntry[] }> {
+  return request(`/api/child/${childId}/login-history`);
+}
+
+export async function setChildPin(childId: string, pin: string): Promise<{ ok: boolean }> {
+  return request('/auth/child/set-pin', {
+    method: 'POST',
+    body: JSON.stringify({ child_id: childId, pin }),
+  });
+}
+
+// ----------------------------------------------------------------
 // Helpers
 // ----------------------------------------------------------------
 export function formatCurrency(amount: number, currency: string): string {
