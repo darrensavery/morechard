@@ -29,14 +29,14 @@ interface Props {
   childId:  string
   currency: string
   chores:   Chore[]
-  teenMode: number
+  appView: 'ORCHARD' | 'CLEAN'
   weeklyAllowancePence: number   // 0 if none
   onCreated: (goal: Goal) => void
   onClose:   () => void
 }
 
 export function SavingsGrove({
-  familyId, childId, currency, chores, teenMode,
+  familyId, childId, currency, chores, appView,
   weeklyAllowancePence, onCreated, onClose,
 }: Props) {
   const [title,      setTitle]      = useState('')
@@ -227,8 +227,8 @@ export function SavingsGrove({
             )}
           </div>
 
-          {/* Product URL — teen mode only */}
-          {teenMode === 1 && (
+          {/* Product URL — CLEAN (mature) view only */}
+          {appView === 'CLEAN' && (
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wide">
                 Product link <span className="font-normal normal-case">(optional)</span>

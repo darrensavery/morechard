@@ -6,7 +6,7 @@ import {
   formatCurrency, purchaseGoal, effectiveTarget,
 } from '../lib/api'
 import type { Chore, BalanceSummary, Goal, Completion } from '../lib/api'
-import { useTone } from '../lib/useTone'
+import { useAppView } from '../lib/useTone'
 import { ThemePicker } from '../lib/theme'
 import { SavingsGrove } from '../components/dashboard/SavingsGrove'
 import { FullLogo } from '../components/ui/Logo'
@@ -80,7 +80,7 @@ export function ChildDashboard() {
     loadGrovePlans(userId)
   )
   const [loading,      setLoading]      = useState(true)
-  const [teenMode,     setTeenMode]     = useState(0)
+  const [appView,      setAppView]      = useState<'ORCHARD' | 'CLEAN'>('ORCHARD')
   const [showSettings, setShowSettings] = useState(false)
   const [showGrove,    setShowGrove]    = useState(false)
   const [weeklyAllowancePence, setWeeklyAllowancePence] = useState(0)
@@ -113,8 +113,8 @@ export function ChildDashboard() {
       setBalance(b)
       setGoals(g)
       setPending(p)
-      const tm = s.teen_mode ?? 0
-      setTeenMode(tm)
+      const av = (s.app_view ?? 'ORCHARD') as 'ORCHARD' | 'CLEAN'
+      setAppView(av)
       // Estimate weekly allowance as sum of all weekly/daily chore rewards
       const weekly = c.reduce((sum, chore) => {
         if (chore.frequency === 'weekly') return sum + chore.reward_amount
@@ -125,7 +125,7 @@ export function ChildDashboard() {
       setWeeklyAllowancePence(weekly)
       // Keep localStorage in sync so the anti-flicker script and ThemeProvider
       // both see the latest value on the next cold start.
-      try { localStorage.setItem('mc_teen_mode', String(tm)) } catch { /* ignore */ }
+      try { localStorage.setItem('mc_app_view', av) } catch { /* ignore */ }
       // Pre-mark chores that already have a pending submission today
       const pendingChoreIds = new Set(p.map(cp => cp.chore_id))
       setSubmitted(pendingChoreIds)
@@ -209,7 +209,7 @@ export function ChildDashboard() {
   const unplannedChores = chores.filter(c => effectiveDays(c, grovePlans).length === 0)
 
   const activeTopGoal = goals[0] ?? null
-  const tone = useTone(teenMode)
+  const tone = useAppView(appView)
 
   // ── Render ─────────────────────────────────────────────────────────────────
 
@@ -361,7 +361,7 @@ export function ChildDashboard() {
           childId={userId}
           currency={balance ? (chores[0]?.currency ?? 'GBP') : 'GBP'}
           chores={chores}
-          teenMode={teenMode}
+          appView={appView}
           weeklyAllowancePence={weeklyAllowancePence}
           onCreated={() => { setShowGrove(false); load() }}
           onClose={() => setShowGrove(false)}

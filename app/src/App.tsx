@@ -204,13 +204,13 @@ export default function App() {
     window.location.href = '/parent'
   }
 
-  // Read teen_mode from localStorage so ThemeProvider can bias 'system' → 'dark'
-  // for mature-view users before any API call completes.
-  const storedTeenMode = parseInt(localStorage.getItem('mc_teen_mode') ?? '0', 10)
+  // Read app_view from localStorage so ThemeProvider can bias 'system' → 'dark'
+  // for CLEAN-view users before any API call completes.
+  const storedAppView = localStorage.getItem('mc_app_view') ?? 'ORCHARD'
 
   return (
     <LocaleProvider>
-    <ThemeProvider teenMode={storedTeenMode}>
+    <ThemeProvider appView={storedAppView}>
     <BrowserRouter>
       <Routes>
         <Route path="/"         element={<RootGate />} />
