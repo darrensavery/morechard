@@ -2,7 +2,7 @@
  * MilestoneOverlay — CelebrationEngine base renderer.
  * Sequences through MilestoneConfig stages with timed transitions.
  */
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { cn } from '../../lib/utils'
 import type { MilestoneConfig, MilestoneEvent } from './types'
 import { GRADUATION } from './achievements/graduation'
@@ -19,35 +19,42 @@ interface Props {
 type Phase = 'stage' | 'transition' | 'exit'
 
 export function MilestoneOverlay({ event, onComplete }: Props) {
-  const config    = CONFIGS[event.type]
-  const stages    = event.appView === 'CLEAN' ? config.clean : config.orchard
-  const isShimmer = config.transition === 'shimmer'
+  const config    = CONFIGS[event.type] ?? null
+  const stages    = config ? (event.appView === 'CLEAN' ? config.clean : config.orchard) : []
+  const isShimmer = config?.transition === 'shimmer'
 
   const [stageIdx, setStageIdx] = useState(0)
   const [phase,    setPhase]    = useState<Phase>('stage')
   const [visible,  setVisible]  = useState(true)
 
+  const onCompleteRef = useRef(onComplete)
+  useEffect(() => { onCompleteRef.current = onComplete })
+
   useEffect(() => {
-    if (!config) { onComplete(); return }
+    if (!config || stages.length === 0) { onCompleteRef.current(); return }
 
     const current = stages[stageIdx]
+    let tInner: ReturnType<typeof setTimeout> | null = null
 
     const tTransition = setTimeout(() => {
       if (stageIdx < stages.length - 1) {
         setPhase('transition')
-        setTimeout(() => {
+        tInner = setTimeout(() => {
           setStageIdx(i => i + 1)
           setPhase('stage')
         }, 1500)
       } else {
         setPhase('exit')
         setVisible(false)
-        setTimeout(onComplete, 600)
+        setTimeout(() => onCompleteRef.current(), 600)
       }
     }, current.durationMs)
 
-    return () => clearTimeout(tTransition)
-  }, [stageIdx, stages, config, onComplete])
+    return () => {
+      clearTimeout(tTransition)
+      if (tInner !== null) clearTimeout(tInner)
+    }
+  }, [stageIdx, stages, config])
 
   if (!config) return null
 
