@@ -278,54 +278,11 @@ export function ChildProfileSettings({
           </SectionCard>
         </div>
 
-        {/* Interface & Experience */}
+        {/* Rules & Experience */}
         <div>
-          <p className="text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wide px-1 mb-2">Interface & Experience</p>
+          <p className="text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wide px-1 mb-2">Rules & Experience</p>
           <SectionCard>
-            {/*
-              Toggle switch pattern — reuse this for any future boolean setting row:
-
-              <div className="px-4 py-3.5 border-b border-[var(--color-border)]">
-                <div className="flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <span className="shrink-0 w-8 h-8 rounded-xl flex items-center justify-center bg-[color-mix(in_srgb,var(--brand-primary)_10%,transparent)] text-[var(--brand-primary)]">
-                      <Eye size={15} />
-                    </span>
-                    <div className="min-w-0">
-                      <p className="text-[14px] font-semibold text-[var(--color-text)]">Setting Label</p>
-                      <p className="text-[12px] text-[var(--color-text-muted)] mt-0.5 leading-snug">
-                        {checked ? 'On description' : 'Off description'}
-                      </p>
-                    </div>
-                  </div>
-                  <button
-                    role="switch"
-                    aria-checked={checked}
-                    onClick={() => onToggle(child.id)}
-                    disabled={isBusy}
-                    className={cn(
-                      'shrink-0 relative w-11 h-6 rounded-full transition-colors duration-200 cursor-pointer',
-                      'focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)]',
-                      'disabled:opacity-50',
-                      checked ? 'bg-[var(--brand-primary)]' : 'bg-[var(--color-border)]',
-                    )}
-                  >
-                    <span className={cn(
-                      'absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200',
-                      checked ? 'translate-x-5' : 'translate-x-0',
-                    )} />
-                  </button>
-                </div>
-              </div>
-            */}
             <SettingsRow icon={<TreePine size={15} />} label="Experience Level" description="Seedling View (under 12) or Professional View (12+)" onClick={onComingSoon} />
-          </SectionCard>
-        </div>
-
-        {/* Individual Rules */}
-        <div>
-          <p className="text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wide px-1 mb-2">Individual Rules</p>
-          <SectionCard>
             <SettingsRow icon={<Check size={15} />} label="Approval Mode" description="Parental sign-off or self-reported (trust-based)" onClick={onComingSoon} />
             <SettingsRow icon={<Calendar size={15} />} label={`${terminology.allowanceLabel} Status`} description="Pause or resume the flow of funds to this account" onClick={onComingSoon} />
             <SettingsRow icon={<Shield size={15} />} label="Safety Net" description="Overdraft limit for this child — currently £0" onClick={onComingSoon} />
