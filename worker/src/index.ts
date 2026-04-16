@@ -125,6 +125,7 @@ import {
   handleSaveRegistrationStep,
 } from './routes/invite.js';
 import { handleInsights } from './routes/insights.js';
+import { handleChildChat } from './routes/chat.js';
 import { json, error } from './lib/response.js';
 import { JwtPayload } from './lib/jwt.js';
 
@@ -367,6 +368,9 @@ async function route(request: Request, env: Env, method: string, path: string): 
 
   // Insights — parent or child (child sees own data only, enforced in handler)
   if (path === '/api/insights'  && method === 'GET')  return withAuth(request, auth, env, handleInsights);
+
+  // Chat — child mentor (role check enforced in handler)
+  if (path === '/api/chat' && method === 'POST') return withAuth(request, auth, env, (req, e) => handleChildChat(req, e));
 
   // Spending — child logs, both read
   if (path === '/api/spending' && method === 'GET')   return withAuth(request, auth, env, handleSpendingList);
