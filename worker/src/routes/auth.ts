@@ -310,6 +310,21 @@ export async function handleChildLogin(request: Request, env: Env): Promise<Resp
   const valid = await verifyPassword(pin as string, user.pin_hash);
   if (!valid) return error('Invalid credentials', 401);
 
+  // Fetch current app_view for this child
+  const settingsRow = await env.DB
+    .prepare(`SELECT app_view FROM user_settings WHERE user_id = ?`)
+    .bind(user.id)
+    .first<{ app_view: string }>()
+  const appView = (settingsRow?.app_view ?? 'ORCHARD') as 'ORCHARD' | 'CLEAN'
+
+  // Compare to previous login to detect ORCHARD → CLEAN graduation
+  const prevLogin = await env.DB
+    .prepare(`SELECT app_view FROM child_logins WHERE child_id = ? ORDER BY logged_at DESC LIMIT 1`)
+    .bind(user.id)
+    .first<{ app_view: string | null }>()
+  const prevAppView = prevLogin?.app_view ?? 'ORCHARD'
+  const graduationPending = prevAppView === 'ORCHARD' && appView === 'CLEAN'
+
   const ip  = clientIp(request);
   const now = Math.floor(Date.now() / 1000);
   const jti = nanoid();
@@ -322,9 +337,9 @@ export async function handleChildLogin(request: Request, env: Env): Promise<Resp
                 VALUES (?,?,?,'child',?,?,?,?)`)
       .bind(jti, user.id, family_id, now, now + CHILD_JWT_EXPIRY, ip, ua),
     env.DB
-      .prepare(`INSERT INTO child_logins (child_id, logged_at, ip_address, user_agent, session_jti)
-                VALUES (?,?,?,?,?)`)
-      .bind(user.id, now, ip, ua, jti),
+      .prepare(`INSERT INTO child_logins (child_id, logged_at, ip_address, user_agent, session_jti, app_view)
+                VALUES (?,?,?,?,?,?)`)
+      .bind(user.id, now, ip, ua, jti, appView),
   ]);
 
   const token = await signJwt(
@@ -332,7 +347,7 @@ export async function handleChildLogin(request: Request, env: Env): Promise<Resp
     env.JWT_SECRET,
   );
 
-  return json({ token, expires_in: CHILD_JWT_EXPIRY });
+  return json({ token, expires_in: CHILD_JWT_EXPIRY, graduation_pending: graduationPending });
 }
 
 // ----------------------------------------------------------------
