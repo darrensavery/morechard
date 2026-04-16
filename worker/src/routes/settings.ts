@@ -30,16 +30,16 @@ export async function handleSettingsGet(request: Request, env: Env): Promise<Res
   if (!targetId) return error('user_id required or must be a parent', 403);
 
   const settings = await env.DB
-    .prepare('SELECT * FROM user_settings WHERE user_id = ?')
+    .prepare('SELECT user_id, avatar_id, theme, locale, app_view FROM user_settings WHERE user_id = ?')
     .bind(targetId).first();
 
   if (!settings) {
     const now = Math.floor(Date.now() / 1000);
     await env.DB
-      .prepare(`INSERT INTO user_settings (user_id, avatar_id, theme, locale, teen_mode, updated_at)
-                VALUES (?,?,?,?,0,?) ON CONFLICT(user_id) DO NOTHING`)
+      .prepare(`INSERT INTO user_settings (user_id, avatar_id, theme, locale, app_view, updated_at)
+                VALUES (?,?,?,?,'ORCHARD',?) ON CONFLICT(user_id) DO NOTHING`)
       .bind(targetId, 'bottts:spark', 'system', 'en', now).run();
-    return json({ user_id: targetId, avatar_id: 'bottts:spark', theme: 'system', locale: 'en', teen_mode: 0 });
+    return json({ user_id: targetId, avatar_id: 'bottts:spark', theme: 'system', locale: 'en', app_view: 'ORCHARD' });
   }
   return json(settings);
 }
@@ -58,8 +58,8 @@ export async function handleSettingsUpdate(request: Request, env: Env): Promise<
   const targetId = resolveTargetUserId(url, auth);
   if (!targetId) return error('user_id required or must be a parent', 403);
 
-  // teen_mode can only be changed by a parent acting on a child
-  if ('teen_mode' in body && auth.role !== 'parent') {
+  // app_view can only be changed by a parent
+  if ('app_view' in body && auth.role !== 'parent') {
     return error('Only parents can change the view mode', 403);
   }
 
@@ -96,9 +96,9 @@ export async function handleSettingsUpdate(request: Request, env: Env): Promise<
     await env.DB.prepare('UPDATE users SET locale = ? WHERE id = ?')
       .bind(body.locale, targetId).run();
   }
-  if ('teen_mode' in body) {
-    const val = body.teen_mode === 1 || body.teen_mode === true ? 1 : 0;
-    updates.push('teen_mode = ?'); values.push(val);
+  if ('app_view' in body) {
+    const val = (body.app_view as string) === 'CLEAN' ? 'CLEAN' : 'ORCHARD';
+    updates.push('app_view = ?'); values.push(val);
   }
 
   if (updates.length === 0) return error('No valid fields to update');
@@ -113,8 +113,8 @@ export async function handleSettingsUpdate(request: Request, env: Env): Promise<
     .catch(async () => {
       // Row may not exist yet — insert with defaults then retry
       await env.DB
-        .prepare(`INSERT INTO user_settings (user_id, avatar_id, theme, locale, teen_mode, updated_at)
-                  VALUES (?,?,?,?,0,?) ON CONFLICT(user_id) DO NOTHING`)
+        .prepare(`INSERT INTO user_settings (user_id, avatar_id, theme, locale, app_view, updated_at)
+                  VALUES (?,?,?,?,'ORCHARD',?) ON CONFLICT(user_id) DO NOTHING`)
         .bind(targetId, 'bottts:spark', 'system', 'en', now).run();
       await env.DB
         .prepare(`UPDATE user_settings SET ${updates.join(', ')} WHERE user_id = ?`)
