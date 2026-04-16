@@ -195,21 +195,21 @@ export async function getChildren(): Promise<{ children: ChildRecord[] }> {
 // ----------------------------------------------------------------
 // Settings
 // ----------------------------------------------------------------
-export async function getSettings(): Promise<{ avatar_id: string; theme: string; locale: string; teen_mode: number }> {
+export async function getSettings(): Promise<{ avatar_id: string; theme: string; locale: string; app_view: string }> {
   return request('/api/settings');
 }
 
-export async function updateSettings(body: { avatar_id?: string; theme?: string; locale?: string; teen_mode?: number }): Promise<void> {
+export async function updateSettings(body: { avatar_id?: string; theme?: string; locale?: string }): Promise<void> {
   await request('/api/settings', { method: 'PATCH', body: JSON.stringify(body) });
 }
 
 // Parent reads/writes settings for a specific child
-export async function getChildSettings(child_id: string): Promise<{ avatar_id: string; theme: string; locale: string; teen_mode: number }> {
-  return request(`/api/settings?user_id=${encodeURIComponent(child_id)}`);
+export async function getChildSettings(child_id: string): Promise<{ avatar_id: string; theme: string; locale: string; app_view: string }> {
+  return request(`/api/child/${child_id}/settings`);
 }
 
-export async function updateChildSettings(child_id: string, body: { teen_mode?: number }): Promise<void> {
-  await request(`/api/settings?user_id=${encodeURIComponent(child_id)}`, { method: 'PATCH', body: JSON.stringify(body) });
+export async function updateChildSettings(child_id: string, body: { app_view?: string }): Promise<void> {
+  return request(`/api/child/${child_id}/settings`, { method: 'PATCH', body: JSON.stringify(body) });
 }
 
 // ----------------------------------------------------------------

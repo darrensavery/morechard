@@ -1,27 +1,30 @@
 /**
- * useTone — returns age-appropriate copy based on teen_mode setting,
- * and locale-aware terminology based on the current AppLocale.
+ * useAppView — returns app-view-appropriate copy based on the child's
+ * app_view setting ('ORCHARD' | 'CLEAN'), and locale-aware terminology.
  *
- * teen_mode = 0 (default): child view — orchard language, playful icons visible
- * teen_mode = 1:           mature view — fintech language, minimal icon set
+ * app_view = 'ORCHARD' (default): nature metaphors, playful icons
+ * app_view = 'CLEAN':             standard financial terms, minimal icons
  *
  * Usage:
- *   const tone = useTone(teenMode)
- *   tone.balance          → "Your Harvest"  |  "Total Balance"
- *   tone.terminology.money → "pocket money" | "allowance" | "kieszonkowe"
+ *   const view = useAppView('ORCHARD')
+ *   view.balance   → "Your harvest"  |  "Total balance"
+ *
+ * useTone() is a legacy alias accepting the old teen_mode number — kept so
+ * parent-side callers (FamilySettings, ChildProfileSettings) don't break.
+ * Remove once all callers are updated.
  */
 
 import { useLocale, type AppLocale } from './locale'
 
+export type AppView = 'ORCHARD' | 'CLEAN'
+
 export interface Terminology {
-  money:          string   // 'pocket money' | 'allowance' | 'kieszonkowe'
-  allowanceLabel: string   // UI-safe capitalised form: 'Allowance' | 'Kieszonkowe'
+  money:          string
+  allowanceLabel: string
 }
 
-export interface Tone {
-  isChild: boolean        // true = child view, false = mature/teen view
-
-  // Labels
+export interface ViewCopy {
+  isChild:       boolean
   dashboard:     string
   balance:       string
   addToSchedule: string
@@ -36,12 +39,13 @@ export interface Tone {
   submitButton:  string
   waitingBadge:  string
   allChores:     string
-
-  // Locale-driven parent-side terminology
-  terminology: Terminology
+  terminology:   Terminology
 }
 
-const CHILD_TONE_BASE = {
+// Keep Tone as an alias so existing `import type { Tone }` don't break
+export type Tone = ViewCopy
+
+const ORCHARD_BASE = {
   isChild:       true,
   dashboard:     'The Orchard',
   balance:       'Your harvest',
@@ -59,7 +63,7 @@ const CHILD_TONE_BASE = {
   allChores:     'All my jobs',
 }
 
-const TEEN_TONE_BASE = {
+const CLEAN_BASE = {
   isChild:       false,
   dashboard:     'My Account',
   balance:       'Total balance',
@@ -80,12 +84,17 @@ const TEEN_TONE_BASE = {
 function buildTerminology(locale: AppLocale): Terminology {
   if (locale === 'pl') return { money: 'kieszonkowe', allowanceLabel: 'Kieszonkowe' }
   if (locale === 'en-US') return { money: 'allowance', allowanceLabel: 'Allowance' }
-  return { money: 'pocket money', allowanceLabel: 'Pocket money' }  // en-GB / en-AU fallback
+  return { money: 'pocket money', allowanceLabel: 'Pocket money' }
 }
 
-export function useTone(teenMode: number | boolean | undefined): Tone {
+export function useAppView(appView: AppView | string | undefined): ViewCopy {
   const { locale } = useLocale()
   const terminology = buildTerminology(locale)
-  const base = teenMode ? TEEN_TONE_BASE : CHILD_TONE_BASE
+  const base = appView === 'CLEAN' ? CLEAN_BASE : ORCHARD_BASE
   return { ...base, terminology }
+}
+
+/** Legacy alias — accepts old teen_mode number. Remove once all callers updated. */
+export function useTone(teenMode: number | boolean | undefined): ViewCopy {
+  return useAppView(teenMode ? 'CLEAN' : 'ORCHARD')
 }
