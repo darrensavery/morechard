@@ -77,7 +77,9 @@ export interface MentorResponse {
 
 ### `worker/src/routes/chat.ts`
 
-**Keyword-Pillar Unlock Matrix** — deterministic, no LLM involvement:
+**Keyword-Pillar Unlock Matrix** — deterministic, no LLM involvement.
+
+ID generation: use `crypto.randomUUID()` (standard in Cloudflare Workers runtime) — do NOT import nanoid to avoid a ReferenceError.
 
 ```typescript
 const UNLOCK_MATRIX: Array<{
@@ -88,7 +90,7 @@ const UNLOCK_MATRIX: Array<{
   {
     slug:     'compound-interest',
     pillar:   'CAPITAL_MANAGEMENT',
-    keywords: /interest|compound|snowball|grow|invest/,
+    keywords: /interest|compound|snowball|grow|invest/i,  // i flag: case-insensitive
   },
   // Phase 3 will add remaining 17 entries here
 ]
@@ -97,14 +99,21 @@ function detectUnlockSlug(
   message: string,
   pillar: FinancialPillar,
 ): string | null {
-  const lower = message.toLowerCase()
+  // Test against original message — regex carries /i flag, no need to lowercase
   for (const entry of UNLOCK_MATRIX) {
-    if (entry.pillar === pillar && entry.keywords.test(lower)) {
+    if (entry.pillar === pillar && entry.keywords.test(message)) {
       return entry.slug
     }
   }
   return null
 }
+```
+
+ID generation in the D1 writes uses `crypto.randomUUID()`:
+```typescript
+const historyId = crypto.randomUUID()
+// and for the unlock row:
+crypto.randomUUID()
 ```
 
 **Post-AI writes** (after AI reply is received):
@@ -276,6 +285,8 @@ const MODULE_CATALOGUE: ModuleDef[] = [
 
 Locked card: greyscale filter, lock icon, `triggerHint` text in muted style.
 Unlocked card: full brand colour, title + description, tappable → opens a bottom sheet (`<dialog>` element) with `content` text.
+
+The `<dialog>` bottom sheet MUST include a large, explicit close button (minimum 44×44px tap target) labelled "Close" positioned at the top-right. Do not rely solely on Esc key or backdrop click — mobile-first UX for 10–16 year olds requires a visible physical dismiss control.
 
 ### `app/src/screens/ChildDashboard.tsx`
 
