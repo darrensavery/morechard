@@ -51,11 +51,10 @@ interface MarketRateRow {
 }
 
 export async function handleMarketRateList(request: Request, env: Env): Promise<Response> {
-  const url    = new URL(request.url);
-  const auth   = (request as AuthedRequest).auth;
+  const url = new URL(request.url);
 
-  // Determine locale: query param overrides, else fall back to token locale
-  const localeParam = url.searchParams.get('locale') ?? (auth as unknown as Record<string, string>).locale ?? 'en-GB';
+  // Determine locale: query param overrides, else default
+  const localeParam = url.searchParams.get('locale') ?? 'en-GB';
 
   const rows = await env.DB
     .prepare('SELECT * FROM market_rates ORDER BY sort_order ASC')
@@ -128,7 +127,9 @@ export async function handleMarketRateSuggest(request: Request, env: Env): Promi
   const auth = (request as AuthedRequest).auth;
   if (auth.role !== 'child') return error('Only children can suggest chores', 403);
 
-  const body = await request.json() as Record<string, unknown>;
+  const body = await parseBody(request);
+  if (!body) return error('Invalid JSON');
+
   const { canonical_name, median_amount, currency, context } = body;
 
   if (!canonical_name || typeof canonical_name !== 'string')
@@ -171,4 +172,9 @@ export async function handleMarketRateCron(_request: Request, env: Env): Promise
   console.log(`[market-rate-cron] row_count=${rowCount}`);
 
   return json({ status: 'ok', row_count: rowCount, message: 'aggregation not yet implemented' });
+}
+
+async function parseBody(request: Request): Promise<Record<string, unknown> | null> {
+  try { return await request.json() as Record<string, unknown>; }
+  catch { return null; }
 }
