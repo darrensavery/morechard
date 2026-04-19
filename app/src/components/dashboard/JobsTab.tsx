@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import type { Chore, Suggestion, Plan, ChildRecord } from '../../lib/api'
 import {
   getChores, archiveChore, restoreChore,
-  getSuggestions, getPlans, createPlan, deletePlan,
+  getSuggestions, rejectSuggestion, getPlans, createPlan, deletePlan,
   formatCurrency, getMondayISO,
 } from '../../lib/api'
 import { CreateChoreSheet } from './CreateChoreSheet'
@@ -125,7 +125,7 @@ export function ChoresTab({ familyId, child }: Props) {
                     {hasModule ? 'Accept' : 'View'}
                   </button>
                   <button
-                    onClick={() => setSuggestions(prev => prev.filter(x => x.id !== s.id))}
+                    onClick={() => { rejectSuggestion(s.id); setSuggestions(prev => prev.filter(x => x.id !== s.id)) }}
                     className="rounded-lg px-3 py-1.5 text-xs font-medium text-[var(--color-text-muted)] hover:text-[var(--color-text)]"
                   >
                     Decline

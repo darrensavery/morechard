@@ -497,6 +497,9 @@ export async function getSuggestions(family_id: string, status?: string): Promis
 export async function createSuggestion(body: { family_id: string; title: string; proposed_amount: number; frequency?: string; reason?: string }): Promise<{ id: string }> {
   return request('/api/suggestions', { method: 'POST', body: JSON.stringify(body) });
 }
+export async function rejectSuggestion(id: string): Promise<void> {
+  await request(`/api/suggestions/${id}/reject`, { method: 'POST', body: JSON.stringify({}) });
+}
 
 // ----------------------------------------------------------------
 // Finance
