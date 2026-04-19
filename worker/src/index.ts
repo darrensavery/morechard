@@ -12,6 +12,8 @@
  * Authenticated — parent or child:
  *   GET    /auth/me                     Current user profile
  *   POST   /auth/logout                 Revoke session
+ *   GET    /api/market-rates            List canonical chores with locale-aware medians
+ *   POST   /api/market-rates/suggest    Child suggests a chore (writes to suggestions table)
  *
  * Authenticated — parent only:
  *   POST   /auth/child/set-pin          Set/reset child PIN
@@ -34,6 +36,9 @@
  *   POST   /auth/invite/generate        Generate typed 6-char invite code
  *   POST   /auth/child/add              Add child + auto-generate child invite code
  *   POST   /auth/registration/save-step Persist mid-flow registration state
+ *
+ * Public (no auth):
+ *   GET    /api/market-rates/cron       CRON health check — reports market_rates row count
  *
  * Public — invite redemption:
  *   POST   /auth/invite/peek            Validate code without redeeming → { role }
