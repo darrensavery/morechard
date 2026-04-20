@@ -11,6 +11,7 @@ import { ThemePicker } from '../lib/theme'
 import { SavingsGrove } from '../components/dashboard/SavingsGrove'
 import { FullLogo } from '../components/ui/Logo'
 import { EarnTab } from '../components/dashboard/EarnTab'
+import { LabTab } from '../components/dashboard/LabTab'
 import { MilestoneOverlay, consumeMilestonePending } from '../components/celebration'
 import type { MilestoneEvent } from '../components/celebration'
 
@@ -97,7 +98,7 @@ export function ChildDashboard() {
   const goalBarTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // Per-chore submission state
-  const [childTab,   setChildTab]   = useState<'home' | 'earn'>('home')
+  const [childTab,   setChildTab]   = useState<'home' | 'earn' | 'lab'>('home')
   const [submitting, setSubmitting] = useState<string | null>(null)
   const [submitted,  setSubmitted]  = useState<Set<string>>(new Set())
   const [noteChore,  setNoteChore]  = useState<string | null>(null)
@@ -260,7 +261,7 @@ export function ChildDashboard() {
 
         {/* Tab bar */}
         <div className="max-w-[560px] mx-auto border-t border-[var(--color-border)] flex">
-          {([['home', 'Home'], ['earn', 'Tasks']] as const).map(([id, label]) => (
+          {([['home', 'Home'], ['earn', 'Tasks'], ['lab', 'Lab']] as const).map(([id, label]) => (
             <button
               key={id}
               onClick={() => setChildTab(id)}
@@ -303,6 +304,8 @@ export function ChildDashboard() {
       <main className="flex-1 max-w-[560px] mx-auto w-full px-3.5 py-4 flex flex-col gap-4">
         {childTab === 'earn' ? (
           <EarnTab familyId={familyId} childId={userId} currency={chores[0]?.currency ?? 'GBP'} />
+        ) : childTab === 'lab' ? (
+          <LabTab childId={userId} appView={appView} />
         ) : loading ? (
           <div className="py-16 text-center text-[14px] text-[var(--color-text-muted)]">Loading…</div>
         ) : tone.isChild ? (

@@ -56,8 +56,13 @@ export function LockScreen() {
   useEffect(() => {
     if (!identity) { navigate('/', { replace: true }); return }
 
-    // No security set — pass straight through
-    if (identity.auth_method === 'none') { unlock('none'); return }
+    // No security set — pass straight through only if a token exists.
+    // If there's no token the session has expired; go to landing so the user can log in again.
+    if (identity.auth_method === 'none') {
+      if (!localStorage.getItem('mc_token')) { navigate('/', { replace: true }); return }
+      unlock('none')
+      return
+    }
 
     // Biometrics → auto-challenge on mount
     if (identity.auth_method === 'biometrics' && hasBiometricCredential()) {

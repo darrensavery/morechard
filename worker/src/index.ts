@@ -126,6 +126,8 @@ import {
 } from './routes/invite.js';
 import { handleInsights } from './routes/insights.js';
 import { handleChildChat } from './routes/chat.js';
+import { handleChatHistory } from './routes/chat-history.js';
+import { handleChatModules } from './routes/chat-modules.js';
 import { json, error } from './lib/response.js';
 import { JwtPayload } from './lib/jwt.js';
 
@@ -158,7 +160,7 @@ export default Sentry.withSentry(
     return new Response(response.body, { status: response.status, headers });
   },
 
-  async scheduled(_event: ScheduledEvent, env: Env): Promise<void> {
+  async scheduled(_event: ScheduledController, env: Env): Promise<void> {
     const now = Math.floor(Date.now() / 1000);
 
     // ── 1. Expire stale governance requests ────────────────────
@@ -371,6 +373,8 @@ async function route(request: Request, env: Env, method: string, path: string): 
 
   // Chat — child mentor (role check enforced in handler)
   if (path === '/api/chat' && method === 'POST') return withAuth(request, auth, env, (req, e) => handleChildChat(req, e));
+  if (path === '/api/chat/history' && method === 'GET') return withAuth(request, auth, env, handleChatHistory);
+  if (path === '/api/chat/modules' && method === 'GET') return withAuth(request, auth, env, handleChatModules);
 
   // Spending — child logs, both read
   if (path === '/api/spending' && method === 'GET')   return withAuth(request, auth, env, handleSpendingList);
@@ -525,7 +529,7 @@ async function route(request: Request, env: Env, method: string, path: string): 
   // ── Sessions ──────────────────────────────────────────────────────
   if (method === 'GET' && path === '/auth/sessions')
     return withAuth(request, auth, env, handleGetSessions);
-  if (method === 'DELETE' && path === '/auth/sessions' && url.searchParams.get('others') === 'true')
+  if (method === 'DELETE' && path === '/auth/sessions' && new URL(request.url).searchParams.get('others') === 'true')
     return withAuth(request, auth, env, handleRevokeOtherSessions);
   if (method === 'DELETE' && path.startsWith('/auth/sessions/'))
     return withAuth(request, auth, env, handleRevokeSession);

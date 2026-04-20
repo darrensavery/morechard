@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import type { ChildRecord } from '../lib/api'
-import { getChildren, getCompletions } from '../lib/api'
+import { getChildren, getCompletions, clearToken } from '../lib/api'
 import { getDeviceIdentity } from '../lib/deviceIdentity'
 import { useLocale, isPolish } from '../lib/locale'
 import { AvatarSVG } from '../lib/avatars'
@@ -68,7 +68,14 @@ export function ParentDashboard() {
     getChildren().then(r => {
       setChildren(r.children)
       if (r.children.length > 0 && !activeChild) setActiveChild(r.children[0])
-    }).catch(() => navigate('/'))
+    }).catch((err: unknown) => {
+      const msg = err instanceof Error ? err.message : String(err)
+      if (msg.includes('401') || msg.toLowerCase().includes('unauthorized') || msg.toLowerCase().includes('invalid') || msg.toLowerCase().includes('expired')) {
+        clearToken()
+        navigate('/lock', { replace: true })
+      }
+      // Non-auth errors (network, server): stay on the page, don't redirect
+    })
   }, [familyId])
 
   // Track online status
