@@ -5,6 +5,34 @@ import { useMarketRates, fuzzyMatch } from '../../hooks/useMarketRates';
 import { currencySymbol } from '../../lib/locale';
 import type { MarketRate } from '../../lib/api';
 
+type SortKey = 'alpha' | 'category' | 'price_asc' | 'price_desc' | 'popularity';
+
+const SORT_OPTIONS: { value: SortKey; label: string }[] = [
+  { value: 'alpha',      label: 'A–Z'        },
+  { value: 'category',   label: 'Category'   },
+  { value: 'price_asc',  label: 'Price ↑'    },
+  { value: 'price_desc', label: 'Price ↓'    },
+  { value: 'popularity', label: 'Popular'    },
+];
+
+function sortRates(rates: MarketRate[], sort: SortKey): MarketRate[] {
+  const sorted = [...rates];
+  switch (sort) {
+    case 'alpha':
+      return sorted.sort((a, b) => a.canonical_name.localeCompare(b.canonical_name));
+    case 'category':
+      return sorted.sort((a, b) =>
+        a.category.localeCompare(b.category) || a.canonical_name.localeCompare(b.canonical_name)
+      );
+    case 'price_asc':
+      return sorted.sort((a, b) => (a.median_amount ?? 0) - (b.median_amount ?? 0));
+    case 'price_desc':
+      return sorted.sort((a, b) => (b.median_amount ?? 0) - (a.median_amount ?? 0));
+    case 'popularity':
+      return sorted.sort((a, b) => b.sample_count - a.sample_count);
+  }
+}
+
 const CATEGORIES: { label: string; icon: string }[] = [
   { label: 'All',               icon: '✦'  },
   { label: 'Outdoor Work',      icon: '🌿' },
@@ -62,14 +90,16 @@ export function RateGuideSheet({ open, onClose, currency = 'GBP', onUse }: Props
 
   const [search,   setSearch]   = useState('');
   const [category, setCategory] = useState('All');
+  const [sort,     setSort]     = useState<SortKey>('alpha');
 
   const filtered: MarketRate[] = useMemo(() => {
-    return rates.filter(r => {
+    const base = rates.filter(r => {
       const matchesCategory = category === 'All' || r.category === category;
       const matchesSearch   = fuzzyMatch(r, search);
       return matchesCategory && matchesSearch;
     });
-  }, [rates, search, category]);
+    return sortRates(base, sort);
+  }, [rates, search, category, sort]);
 
   if (!open) return null;
 
@@ -174,6 +204,26 @@ export function RateGuideSheet({ open, onClose, currency = 'GBP', onUse }: Props
           {/* Rate rows */}
           {!loading && !error && filtered.length > 0 && (
             <div className="px-5 pb-8">
+              {/* Sort control */}
+              <div className="flex items-center justify-end gap-1.5 pt-3 pb-2">
+                <span className="text-[11px] text-[var(--color-text-muted)] font-medium shrink-0">Sort:</span>
+                <div className="flex gap-1 flex-wrap justify-end">
+                  {SORT_OPTIONS.map(opt => (
+                    <button
+                      key={opt.value}
+                      onClick={() => setSort(opt.value)}
+                      className={`px-2 py-1 rounded-md text-[11px] font-semibold transition-colors cursor-pointer
+                        ${sort === opt.value
+                          ? 'bg-[var(--brand-primary)] text-white'
+                          : 'bg-[var(--color-surface-alt)] text-[var(--color-text-muted)] hover:text-[var(--color-text)]'
+                        }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               {filtered.map(rate => {
                 const isCommunity = rate.median_is_local && rate.sample_count >= 5;
                 return (
