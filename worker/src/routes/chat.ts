@@ -7,6 +7,7 @@ import type { ChildIntelligence, FinancialPillar, MentorResponse } from '../type
 import { json } from '../lib/response.js'
 import type { JwtPayload } from '../lib/jwt.js'
 import { getChildIntelligence } from '../lib/intelligence.js'
+import { captureAiGeneration } from '../lib/posthog.js'
 
 type AuthedRequest = Request & { auth: JwtPayload }
 
@@ -353,32 +354,61 @@ export async function handleChildChat(
   const systemPrompt = buildSystemPrompt(intel, pillar)
   const dataPoints = buildDataPoints(intel, pillar)
 
-  // ── Call AI with AbortController timeout ──────────────────────
-  // AbortController cancels the underlying fetch (not just races it),
-  // preventing a hanging worker from burning AI credits after timeout.
-  const controller = new AbortController()
-  const timeoutId = setTimeout(() => controller.abort(), 5000)
+  // ── Call GPT-4o-mini ───────────────────────────────────────────
+  const chatMessages = [
+    { role: 'system', content: systemPrompt },
+    { role: 'user',   content: userMessage },
+  ]
+  const traceId = crypto.randomUUID()
+  const t0      = Date.now()
 
   let mentorReply: string
   try {
-    const aiResponse = await (env.AI.run as (
-      model: string,
-      inputs: { messages: Array<{ role: string; content: string }> },
-      options: { signal: AbortSignal },
-    ) => Promise<{ response?: string }>)(
-      '@cf/meta/llama-3-8b-instruct',
-      {
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user',   content: userMessage },
-        ],
+    const res = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type':  'application/json',
+        'Authorization': `Bearer ${env.OPENAI_API_KEY}`,
       },
-      { signal: controller.signal },
-    )
-    clearTimeout(timeoutId)
-    mentorReply = aiResponse.response?.trim() ?? fallbackReply(intel.locale, intel.app_view)
-  } catch {
-    clearTimeout(timeoutId)
+      body: JSON.stringify({
+        model:      'gpt-4o-mini',
+        messages:   chatMessages,
+        max_tokens: 400,
+      }),
+      signal: AbortSignal.timeout(10000),
+    })
+
+    if (!res.ok) throw new Error(`OpenAI ${res.status}`)
+
+    const data = await res.json() as {
+      choices: Array<{ message: { content: string } }>
+    }
+    const latency = (Date.now() - t0) / 1000
+    mentorReply   = data.choices[0]?.message?.content?.trim() ?? fallbackReply(intel.locale, intel.app_view)
+
+    captureAiGeneration(env, {
+      distinctId:     auth.sub,
+      traceId,
+      spanName:       'mentor_chat',
+      model:          'gpt-4o-mini',
+      provider:       'openai',
+      input:          chatMessages,
+      outputText:     mentorReply,
+      latencySeconds: latency,
+    })
+  } catch (err) {
+    const latency = (Date.now() - t0) / 1000
+    captureAiGeneration(env, {
+      distinctId:     auth.sub,
+      traceId,
+      spanName:       'mentor_chat',
+      model:          'gpt-4o-mini',
+      provider:       'openai',
+      input:          chatMessages,
+      latencySeconds: latency,
+      isError:        true,
+      errorMessage:   err instanceof Error ? err.message : String(err),
+    })
     mentorReply = fallbackReply(intel.locale, intel.app_view)
   }
 

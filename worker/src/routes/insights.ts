@@ -23,6 +23,7 @@
 import { Env } from '../types.js';
 import { json, error } from '../lib/response.js';
 import { JwtPayload } from '../lib/jwt.js';
+import { captureAiGeneration } from '../lib/posthog.js';
 
 type AuthedRequest = Request & { auth: JwtPayload };
 
@@ -324,7 +325,7 @@ export async function handleInsights(request: Request, env: Env): Promise<Respon
       };
     } else if (snapshotRow) {
       // Cache miss — run AI inference with 5-second timeout.
-      mentorBriefing = await generateBriefing(env, {
+      mentorBriefing = await generateBriefing(env, effectiveChildId, {
         consistencyScore,
         firstTimePassRate,
         planningHorizon,
@@ -747,7 +748,7 @@ function buildRuleBasedBriefing(input: BriefingInput): MentorBriefing {
   return { observation: obs, behavioral_root: root, the_nudge: nudge, source: 'fallback' };
 }
 
-async function generateBriefing(env: Env, input: BriefingInput): Promise<MentorBriefing> {
+async function generateBriefing(env: Env, childId: string, input: BriefingInput): Promise<MentorBriefing> {
   const isTeenMode   = input.velocityContext.mode === 'professional';
   const systemPrompt = buildSystemPrompt(input.locale, isTeenMode, input.childName, input.honorific);
 
@@ -773,29 +774,54 @@ async function generateBriefing(env: Env, input: BriefingInput): Promise<MentorB
     ? `Przeanalizuj te tygodniowe dane finansowego zachowania dziecka i zwróć briefing JSON:\n\n${userMessage}`
     : `Analyse this child's weekly financial behaviour data and return the JSON briefing:\n\n${userMessage}`;
 
+  const messages = [
+    { role: 'system', content: systemPrompt },
+    { role: 'user',   content: userPrompt },
+  ];
+  const traceId = crypto.randomUUID();
+  const t0      = Date.now();
+
   try {
-    const result = await Promise.race([
-      env.AI.run('@cf/meta/llama-3-8b-instruct', {
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user',   content: userPrompt },
-        ],
-        max_tokens: 350,
+    const res = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type':  'application/json',
+        'Authorization': `Bearer ${env.OPENAI_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model:           'gpt-4o-mini',
+        messages,
+        max_tokens:      350,
+        response_format: { type: 'json_object' },
       }),
-      new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error('AI timeout')), 5000)
-      ),
-    ]) as { response?: string };
+      signal: AbortSignal.timeout(10000),
+    });
 
-    const raw = result?.response ?? '';
-    // Extract the first JSON object from the response (model may include preamble).
-    const match = raw.match(/\{[\s\S]*?\}/);
-    if (!match) throw new Error('No JSON in AI response');
+    if (!res.ok) throw new Error(`OpenAI ${res.status}`);
 
-    const parsed = JSON.parse(match[0]) as Partial<MentorBriefing>;
+    const data = await res.json() as {
+      choices: Array<{ message: { content: string } }>;
+      usage?: { prompt_tokens: number; completion_tokens: number };
+    };
+
+    const latency      = (Date.now() - t0) / 1000;
+    const raw          = data.choices[0]?.message?.content ?? '';
+    const parsed       = JSON.parse(raw) as Partial<MentorBriefing>;
+
     if (!parsed.observation || !parsed.behavioral_root || !parsed.the_nudge) {
       throw new Error('Incomplete AI response schema');
     }
+
+    captureAiGeneration(env, {
+      distinctId:      childId,
+      traceId,
+      spanName:        'mentor_briefing',
+      model:           'gpt-4o-mini',
+      provider:        'openai',
+      input:           messages,
+      outputText:      raw,
+      latencySeconds:  latency,
+    });
 
     return {
       observation:     parsed.observation,
@@ -803,8 +829,21 @@ async function generateBriefing(env: Env, input: BriefingInput): Promise<MentorB
       the_nudge:       parsed.the_nudge,
       source:          'ai',
     };
-  } catch {
-    // Timeout or parse failure — return rule-based fallback.
+  } catch (err) {
+    const latency = (Date.now() - t0) / 1000;
+
+    captureAiGeneration(env, {
+      distinctId:     childId,
+      traceId,
+      spanName:       'mentor_briefing',
+      model:          'gpt-4o-mini',
+      provider:       'openai',
+      input:          messages,
+      latencySeconds: latency,
+      isError:        true,
+      errorMessage:   err instanceof Error ? err.message : String(err),
+    });
+
     return buildRuleBasedBriefing(input);
   }
 }

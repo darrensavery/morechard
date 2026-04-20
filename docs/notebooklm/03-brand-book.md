@@ -1,23 +1,27 @@
 FROM NOTEBOOKLM — BRAND BOOK EXPORT
 
 **1) Brand Essence**
-- **Brand mission (1 sentence):** To change the trajectory of family finance by modernising the financial relationship between co-parenting households.
-- **Brand promise (1 sentence):** Providing legal-grade, audit-ready financial records and neutral mediation to ensure family stability and literacy.
-- **Positioning statement (1–2 sentences):** Morechard is a "Truth Engine" that occupies the "Family Stability & Literacy" category, moving away from simple "Allowance Apps" to serve the high-friction niche of separated families.
+- **Brand mission (1 sentence):** To give every family — whatever its shape — a simple, trustworthy way to manage chores, money, and the financial lessons that come with them.
+- **Brand promise (1 sentence):** A chore tracker that works on day one for any family, with the financial literacy and audit-grade integrity to grow with them.
+- **Positioning statement (1–2 sentences):** Morechard is "the only chore tracker that doesn't need a debit card to work — and doubles as a court-ready ledger when families need it."
+- **Separated parents positioning statement:** Your data, your evidence, your life—owned by you, not rented from us.
+- **Refined Intro pitch for separated parents** Be one of the first 1,000 families to secure Lifetime Legal Integrity for £124.99. No monthly fees. No subscription traps. Just a permanent, cryptographic record of your family's history—for less than the cost of a single hour with a solicitor.
+
 - **Brand values (5 bullets max):**
+    - Chore-First Simplicity
     - Financial Integrity
-    - Behavioral Coaching
-    - Conflict Mediation
-    - Legal-Grade Accountability
+    - Behavioural Coaching
+    - Household Neutrality
     - Personal Agency
 
 **2) Audience & Use Cases**
-- **Primary audience:** Separated and co-parenting families, specifically the 80% of litigants unrepresented in family court.
-- **Secondary audience:** Children and adolescents (ages 10–16) and the UK-Polish expat corridor.
+- **Primary audience:** Any family with children aged 10–16 who want a fair, trackable chore and pocket money system — nuclear, single-parent, and co-parenting households alike.
+- **Secondary audience:** Separated and co-parenting families who need audit-grade records; the UK-Polish expat corridor.
 - **Key use cases (bullets):**
-    - Generating court-admissible PDF financial health reports.
-    - De-escalating parental conflict using an AI Tone Meter.
-    - Teaching youth financial independence through a dual-ledger chore system.
+    - Day-to-day chore assignment, completion, and parent approval for any household.
+    - Teaching financial literacy through modules triggered by the child's real earning and spending data.
+    - Providing co-parents with a shared, tamper-proof record of what was earned and when — no debit card required.
+    - Generating court-admissible PDF financial health reports for separated families.
     - Managing cross-border (GBP/PLN) family finances with immutable records.
 
 **3) Brand Personality**
@@ -31,11 +35,11 @@ FROM NOTEBOOKLM — BRAND BOOK EXPORT
 - **Words we avoid:** Bailout, Small Talk (in Polish context), Outcome Language (e.g., "Don't mess this up").
 
 **4) Messaging Architecture**
-- **Core message (1 sentence):** Modernise co-parenting finances with a legal-grade truth engine and behavioral AI coach.
+- **Core message (1 sentence):** The chore tracker for any family, with real financial literacy built in and an integrity layer that separated households can rely on.
 - **3 supporting pillars (bullets):**
-    - Legal-Grade Financial Integrity.
-    - AI-Driven Conflict Mediation.
-    - Autonomy-Supportive Youth Coaching.
+    - Chore-First Simplicity — works on day one for any family structure.
+    - Real-Data Financial Literacy — lessons triggered by the child's own earning and spending, not generic courses.
+    - Audit-Grade Integrity — cryptographic records that separated parents can trust and courts can read.
 - **Proof points (bullets):**
     - Cryptographic SHA-256 hashing for every ledger entry.
     - One-click, court-admissible PDF audit logs.
@@ -58,15 +62,19 @@ FROM NOTEBOOKLM — BRAND BOOK EXPORT
 - **UI style cues (e.g., spacing, corners, icon style):** 12px corner radius for all cards and buttons; high white-space; 4px Teal border for "Verified" records and Ochre border for "Action Needed."
 
 **6) Copy Examples (copy-ready)**
-- **App Store short description:** The "Truth Engine" for co-parenting: legal-grade financial records and AI-powered mediation for separated families.
-- **App Store full description (150–250 words):** Morechard is a premium Fintech tool designed specifically for the unique challenges of separated and co-parenting households. Far more than a simple allowance app, Morechard functions as a "Truth Engine," providing legal-grade, audit-ready financial records that can be used in mediation or court. Our immutable ledger utilizes cryptographic SHA-256 hashing to ensure data integrity, while the AI-powered Tone Meter scans communications to de-escalate conflict and suggest business-neutral rewrites. 
+- **App Store short description:** The chore tracker for families — with real financial literacy built in and an integrity layer separated households can trust.
+- **App Store full description (150–250 words):** Morechard is the chore tracker that works for every family. Assign jobs, mark them done, approve them — and watch your child’s pocket money balance update automatically, with a tamper-proof record underneath every entry. No debit card required. No bank account needed.
 
-For children and adolescents aged 10-16, Morechard serves as a behavioral mentor, using "Process Language" to teach financial independence and accountability. The app aligns with national financial education standards in both the UK and Poland, offering bilingual support and a dual-ledger system that respects the privacy of individual households. With a £34.99 lifetime license, families avoid subscription fatigue while gaining access to court-admissible PDF reports and a behavioral AI coach that flags digital risks like loot boxes and debt spirals. Build a foundation of financial peace and literacy without the friction of two-home management.
-- **Website hero headline + subhead:** Change the trajectory of your family’s finance. / A premium truth engine for co-parents to manage chores, money, and communication without the friction.
+For children aged 10–16, Morechard is also a financial literacy mentor. Every module is triggered by your child’s real behaviour — their first approved chore, their first savings goal, their first impulse purchase — so lessons land at exactly the right moment, grounded in data they recognise as their own.
+
+For separated and co-parenting families, Morechard goes further. Our immutable ledger uses cryptographic SHA-256 hashing to ensure data integrity, and one-click PDF reports are court-ready if you ever need them. Two households, one shared record, zero disputes about who paid what.
+
+With a £34.99 lifetime licence, families avoid subscription fatigue while gaining access to audit-ready PDF reports and an AI coach aligned with UK MaPS and Polish NSFE financial education standards.
+- **Website hero headline + subhead:** The chore tracker for any family. / Assign, approve, and pay — with financial literacy built in and a tamper-proof record underneath.
 - **3 feature blurbs:** 
-    - **The Truth Engine:** Immutable, hashed records for legal peace of mind.
-    - **AI Tone Meter:** Neutralize conflict before it starts with business-neutral rewrites.
-    - **Youth Mentor:** Behavioral coaching for kids aligned with official national standards.
+    - **Chore Tracker:** Assign, complete, approve. Pocket money updates automatically.
+    - **Real-Data Literacy:** Financial lessons triggered by your child’s own earning and spending — not generic slides.
+    - **Truth Engine:** Immutable, hashed records. Court-ready PDFs when separated families need them.
 - **5 microcopy lines (buttons/toasts/errors):**
     - "Verify Transaction"
     - "Review Neutral Suggestion"

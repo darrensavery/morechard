@@ -19,11 +19,14 @@ bucket_name = "morechard-evidence"
 ENVIRONMENT = "development"
 APP_URL = "https://app.morechard.com"
 FIREBASE_PROJECT_ID = "pocket-money-85878"
+POSTHOG_HOST = "https://eu.i.posthog.com"
 
 # Secrets — set via: wrangler secret put JWT_SECRET
 #                    wrangler secret put RESEND_API_KEY
 #                    wrangler secret put STRIPE_SECRET_KEY
 #                    wrangler secret put STRIPE_WEBHOOK_SECRET
+#                    wrangler secret put POSTHOG_API_KEY
+#                    wrangler secret put OPENAI_API_KEY
 # Do NOT put real values here. This file is committed to git.
 # For local dev, add to .dev.vars (see .dev.vars.example)
 
@@ -37,7 +40,7 @@ crons = ["0 8 * * 6"]
 # Deploy with: wrangler deploy --env production
 [env.production]
 name = "morechard-api"
-vars = { ENVIRONMENT = "production", APP_URL = "https://app.morechard.com", FIREBASE_PROJECT_ID = "pocket-money-85878" }
+vars = { ENVIRONMENT = "production", APP_URL = "https://app.morechard.com", FIREBASE_PROJECT_ID = "pocket-money-85878", POSTHOG_HOST = "https://eu.i.posthog.com" }
 
 [[env.production.d1_databases]]
 binding = "DB"

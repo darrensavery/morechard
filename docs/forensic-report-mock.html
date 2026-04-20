@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Morechard — Immutable Chain of Custody — Savery</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Courier New', monospace; font-size: 11px; color: #1a1a1a; padding: 32px; }
+  h1 { font-size: 20px; margin-bottom: 4px; font-family: 'Segoe UI', Arial, sans-serif; }
+  h2 { font-size: 13px; margin: 24px 0 8px; border-bottom: 1px solid #ccc; padding-bottom: 4px; font-family: 'Segoe UI', Arial, sans-serif; }
+  .meta { color: #666; font-size: 10px; margin-bottom: 8px; font-family: 'Segoe UI', Arial, sans-serif; }
+  .report-description { font-size:10px; color:#555; margin-bottom:16px; border-left:3px solid #bf360c; padding-left:8px; font-family: 'Segoe UI', Arial, sans-serif; line-height:1.5; }
+  .summary-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 12px 0; }
+  .summary-card { border: 1px solid #ddd; border-radius: 6px; padding: 10px 14px; border-left: 4px solid #bf360c; }
+  .summary-card .num { font-size: 20px; font-weight: 700; font-variant-numeric: tabular-nums; font-family: 'Segoe UI', Arial, sans-serif; }
+  .summary-card .label { font-size: 10px; color: #666; margin-top: 2px; font-family: 'Segoe UI', Arial, sans-serif; }
+  table { width: 100%; border-collapse: collapse; margin-bottom: 16px; font-size:10px; }
+  th { background: #f5f5f5; text-align: left; padding: 5px 8px; font-size: 10px; border: 1px solid #ddd; font-family: 'Segoe UI', Arial, sans-serif; }
+  td { padding: 4px 8px; border: 1px solid #eee; vertical-align: top; }
+  tr:nth-child(even) { background: #fafafa; }
+  .num-cell { text-align:right; font-variant-numeric:tabular-nums; }
+  .badge-auto     { background: #e8f5e9; color: #2e7d32; padding: 1px 6px; border-radius: 10px; font-size: 9px; font-family: 'Segoe UI', Arial, sans-serif; white-space: nowrap; }
+  .badge-manual   { background: #e3f2fd; color: #1565c0; padding: 1px 6px; border-radius: 10px; font-size: 9px; font-family: 'Segoe UI', Arial, sans-serif; white-space: nowrap; }
+  .badge-pending  { background: #fff8e1; color: #f57f17; padding: 1px 6px; border-radius: 10px; font-size: 9px; font-family: 'Segoe UI', Arial, sans-serif; }
+  .badge-disputed { background: #fce4ec; color: #b71c1c; padding: 1px 6px; border-radius: 10px; font-size: 9px; font-family: 'Segoe UI', Arial, sans-serif; }
+  .warn { color:#b71c1c; font-size:10px; margin-bottom:8px; font-family: 'Segoe UI', Arial, sans-serif; }
+  h1 span.tier-badge { background:#fff3e0; color:#e65100; font-size:12px; padding:2px 10px; border-radius:12px; font-weight:700; letter-spacing:.5px; vertical-align:middle; margin-left:8px; font-family: 'Segoe UI', Arial, sans-serif; }
+  .conf-high   { color: #2e7d32; font-weight:700; }
+  .conf-medium { color: #f57f17; font-weight:700; }
+  .conf-low    { color: #b71c1c; font-weight:700; }
+  .hash-cell   { font-family:monospace; font-size:8px; word-break:break-all; max-width:110px; }
+  .latency-warn { color:#f57f17; font-weight:700; }
+  .integrity-block { margin-top:24px; border:2px solid #bf360c; border-radius:4px; padding:14px; background:#fff8f5; }
+  .integrity-block .fp { font-family:monospace; font-size:10px; word-break:break-all; margin:6px 0; color:#1a1a1a; }
+  .declaration { margin-top:24px; padding:14px; border:2px solid #1a1a1a; border-radius:4px; font-size:10px; line-height:1.7; font-family: 'Segoe UI', Arial, sans-serif; }
+  .legal-basis { margin-top:12px; padding:10px 12px; background:#f5f5f5; border-left:3px solid #555; font-size:9px; line-height:1.6; }
+  .note { font-size:9px; color:#777; font-style:italic; margin-bottom:8px; font-family: 'Segoe UI', Arial, sans-serif; }
+  .baseline-table { width:auto; margin-bottom:16px; }
+  .baseline-table th { background:#fff3e0; }
+  @media print {
+    body { padding: 16px; }
+    .no-print { display: none; }
+    h2 { break-before: avoid; }
+    table { break-inside: auto; }
+    tr { break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+
+<div class="no-print" style="margin-bottom:24px; padding:12px 16px; background:#fff3e0; border:1px solid #ffcc80; border-radius:6px; font-family:'Segoe UI',Arial,sans-serif; font-size:12px; display:flex; align-items:center; gap:12px;">
+  <span>Mock forensic report — sample data only.</span>
+  <button onclick="window.print()" style="padding:6px 16px; background:#e65100; color:#fff; border:none; border-radius:6px; font-size:12px; font-weight:600; cursor:pointer;">Print / Save as PDF</button>
+</div>
+
+<h1>Morechard — Immutable Chain of Custody <span class="tier-badge">LEGAL VERSION</span></h1>
+<div class="meta">
+  Family: <strong>Savery</strong> &nbsp;|&nbsp;
+  Generated at: <strong>2026-04-19T14:32:07.000Z</strong> &nbsp;|&nbsp;
+  Currency: <strong>GBP</strong> &nbsp;|&nbsp;
+  UUID: <strong style="font-family:monospace">MCH-A3F2-91BC-44DE-7E12</strong>
+</div>
+<p class="report-description">
+  This document contains cryptographically secured data for judicial and mediation purposes.
+  GPS coordinates and IP addresses are rendered exclusively in this document and are never stored client-side.
+</p>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<h2>Verification Statistics</h2>
+<div class="summary-grid">
+  <div class="summary-card"><div class="num">£47.50</div><div class="label">Total Earned</div></div>
+  <div class="summary-card"><div class="num">12</div><div class="label">Evidence Log Entries</div></div>
+  <div class="summary-card"><div class="num conf-high">7</div><div class="label">High Confidence</div></div>
+  <div class="summary-card"><div class="num conf-medium">4</div><div class="label">Medium Confidence</div></div>
+  <div class="summary-card"><div class="num conf-low">1</div><div class="label">Low Confidence</div></div>
+  <div class="summary-card"><div class="num">1</div><div class="label">Disputed</div></div>
+</div>
+<p class="warn">⚠ 1 disputed entry — see row #4 in Evidence Log</p>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<h2>Verified Household Baseline</h2>
+<p class="note">Registered home coordinates used as the Haversine anchor for all GPS variance calculations. Without this fixed point, distances have no legal reference.</p>
+<table class="baseline-table">
+  <tbody>
+    <tr><th>Latitude</th><td style="font-family:monospace">53.483959</td></tr>
+    <tr><th>Longitude</th><td style="font-family:monospace">-2.244644</td></tr>
+    <tr><th>Address (from registration)</th><td>Manchester, United Kingdom</td></tr>
+    <tr><th>Anchor set at</th><td>2026-01-10 (account registration)</td></tr>
+  </tbody>
+</table>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<h2>Evidence Log with SHA-256 Hashes</h2>
+<p class="note">Each entry is attributed to the specific Contributor (child). The record_hash is chained to the previous entry — a broken chain indicates tampering.</p>
+<table>
+  <thead>
+    <tr>
+      <th>#</th>
+      <th>Date</th>
+      <th>Contributor</th>
+      <th>Description</th>
+      <th>Amount</th>
+      <th>Status</th>
+      <th>SHA-256 (record_hash)</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>1</td><td>2026-03-01</td><td><strong>Ellie Savery</strong></td>
+      <td>Wash up after dinner</td><td class="num-cell">£2.50</td>
+      <td><span class="badge-auto">Verified (Auto)</span></td>
+      <td class="hash-cell">a3f291bc44de7e12c8f03b1d9a2e5f67d1b8c9e04f25a36b47c58d69e70f81g</td>
+    </tr>
+    <tr>
+      <td>2</td><td>2026-03-04</td><td><strong>Ellie Savery</strong></td>
+      <td>Vacuum living room</td><td class="num-cell">£3.00</td>
+      <td><span class="badge-manual">Verified (Manual)</span></td>
+      <td class="hash-cell">b7c104da88ef2a31f9e04c2b0a3d6g78e2c9d0f15g36b47c58d69e70f81h92</td>
+    </tr>
+    <tr>
+      <td>3</td><td>2026-03-08</td><td><strong>Ellie Savery</strong></td>
+      <td>Take bins out</td><td class="num-cell">£1.50</td>
+      <td><span class="badge-auto">Verified (Auto)</span></td>
+      <td class="hash-cell">c9d215eb99f03b42g0f15d3c1b4e7h89f3d0e1g26h47c58d69e70f81i93k04</td>
+    </tr>
+    <tr style="background:#fff5f5">
+      <td>4</td><td>2026-03-10</td><td><strong>Ellie Savery</strong></td>
+      <td>Mow the lawn</td><td class="num-cell">£5.00</td>
+      <td><span class="badge-disputed">Disputed</span></td>
+      <td class="hash-cell">d0e326fc00g14c53h1g26e4d2c5f8i90g4e1f2h37i58d69e70f81j04l15m26</td>
+    </tr>
+    <tr>
+      <td>5</td><td>2026-03-15</td><td><strong>Ellie Savery</strong></td>
+      <td>Wash up after dinner</td><td class="num-cell">£2.50</td>
+      <td><span class="badge-auto">Verified (Auto)</span></td>
+      <td class="hash-cell">e1f437gd11h25d64i2h37f5e3d6g9j01h5f2g3i48j69e70f81k15n26o37p48</td>
+    </tr>
+    <tr>
+      <td>6</td><td>2026-03-18</td><td><strong>Ellie Savery</strong></td>
+      <td>Tidy bedroom</td><td class="num-cell">£2.00</td>
+      <td><span class="badge-manual">Verified (Manual)</span></td>
+      <td class="hash-cell">f2g548he22i36e75j3i48g6f4e7h0k12i6g3h4j59k70f81l26o37p48q59r60</td>
+    </tr>
+    <tr>
+      <td>7</td><td>2026-03-22</td><td><strong>Ellie Savery</strong></td>
+      <td>Walk the dog</td><td class="num-cell">£3.50</td>
+      <td><span class="badge-auto">Verified (Auto)</span></td>
+      <td class="hash-cell">g3h659if33j47f86k4j59h7g5f8i1l23j7h4i5k60l81m37p48q59r60s71t82</td>
+    </tr>
+    <tr>
+      <td>8</td><td>2026-03-25</td><td><strong>Ellie Savery</strong></td>
+      <td>Load and unload dishwasher</td><td class="num-cell">£2.00</td>
+      <td><span class="badge-auto">Verified (Auto)</span></td>
+      <td class="hash-cell">h4i760jg44k58g97l5k60i8h6g9j2m34k8i5j6l71m92n48q59r60s71u82v93</td>
+    </tr>
+    <tr>
+      <td>9</td><td>2026-03-29</td><td><strong>Ellie Savery</strong></td>
+      <td>Clean bathroom</td><td class="num-cell">£4.00</td>
+      <td><span class="badge-manual">Verified (Manual)</span></td>
+      <td class="hash-cell">i5j871kh55l69h08m6l71j9i7h0k3n45l9j6k7m82n03o59r60s71t82w93x04</td>
+    </tr>
+    <tr>
+      <td>10</td><td>2026-04-02</td><td><strong>Ellie Savery</strong></td>
+      <td>Vacuum living room</td><td class="num-cell">£3.00</td>
+      <td><span class="badge-auto">Verified (Auto)</span></td>
+      <td class="hash-cell">j6k982li66m70i19n7m82k0j8i1l4o56m0k7l8n93o14p60s71t82u93y04z15</td>
+    </tr>
+    <tr>
+      <td>11</td><td>2026-04-07</td><td><strong>Ellie Savery</strong></td>
+      <td>Take bins out</td><td class="num-cell">£1.50</td>
+      <td><span class="badge-auto">Verified (Auto)</span></td>
+      <td class="hash-cell">k7l093mj77n81j20o8n93l1k9j2m5p67n1l8m9o04p25q71t82u93v04a15b26</td>
+    </tr>
+    <tr>
+      <td>12</td><td>2026-04-12</td><td><strong>Ellie Savery</strong></td>
+      <td>Wash up after dinner</td><td class="num-cell">£2.50</td>
+      <td><span class="badge-auto">Verified (Auto)</span></td>
+      <td class="hash-cell">l8m104nk88o92k31p9o04m2l0k3n6q78o2m9n0p15q36r82u93v04w15b26c37</td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<h2>Task Completion Evidence — Device, Location &amp; Approval Latency</h2>
+<p class="note">Device Fingerprint is a SHA-256 hash of unique hardware identifiers — proves the same physical handset was used across entries. Approval Latency shows the gap between upload and parental verification. Latency exceeding 4 days is highlighted.</p>
+<table>
+  <thead>
+    <tr>
+      <th>#</th>
+      <th>Date</th>
+      <th>Contributor</th>
+      <th>Confidence</th>
+      <th>GPS Variance (km)</th>
+      <th>Network Location</th>
+      <th>IP Address</th>
+      <th>Device Model</th>
+      <th>Device Fingerprint (SHA-256)</th>
+      <th>Approval Latency</th>
+      <th>Proof Hash</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>1</td><td>2026-03-01</td><td><strong>Ellie Savery</strong></td>
+      <td class="conf-high">High</td><td>0.04</td><td>Manchester</td>
+      <td style="font-size:9px">82.45.112.33</td><td style="font-size:9px">iPhone 15 Pro</td>
+      <td class="hash-cell">9a3b2c1d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b</td>
+      <td style="font-size:9px">2h</td>
+      <td class="hash-cell">f2g548he22i36e75j3i48g6f4e7h0k12</td>
+    </tr>
+    <tr>
+      <td>2</td><td>2026-03-04</td><td><strong>Ellie Savery</strong></td>
+      <td class="conf-high">High</td><td>0.12</td><td>Manchester</td>
+      <td style="font-size:9px">82.45.112.33</td><td style="font-size:9px">iPhone 15 Pro</td>
+      <td class="hash-cell">9a3b2c1d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b</td>
+      <td style="font-size:9px">1h</td>
+      <td class="hash-cell">g3h659if33j47f86k4j59h7g5f8i1l23</td>
+    </tr>
+    <tr>
+      <td>3</td><td>2026-03-08</td><td><strong>Ellie Savery</strong></td>
+      <td class="conf-medium">Medium</td><td>1.87</td><td>Salford</td>
+      <td style="font-size:9px">86.12.204.17</td><td style="font-size:9px">Samsung Galaxy S24</td>
+      <td class="hash-cell">7f1e2d3c4b5a6f7e8d9c0b1a2f3e4d5c6b7a8f9e0d1c2b3a4f5e6d7c8b9a0f1e</td>
+      <td style="font-size:9px">3h</td>
+      <td class="hash-cell">h4i760jg44k58g97l5k60i8h6g9j2m34</td>
+    </tr>
+    <tr style="background:#fff5f5">
+      <td>4</td><td>2026-03-10</td><td><strong>Ellie Savery</strong></td>
+      <td class="conf-low">Low</td><td>14.23</td><td>Leeds</td>
+      <td style="font-size:9px">91.78.33.204</td><td style="font-size:9px">Samsung Galaxy S24</td>
+      <td class="hash-cell">7f1e2d3c4b5a6f7e8d9c0b1a2f3e4d5c6b7a8f9e0d1c2b3a4f5e6d7c8b9a0f1e</td>
+      <td style="font-size:9px" class="latency-warn">4d ⚠</td>
+      <td class="hash-cell">i5j871kh55l69h08m6l71j9i7h0k3n45</td>
+    </tr>
+    <tr>
+      <td>5</td><td>2026-03-15</td><td><strong>Ellie Savery</strong></td>
+      <td class="conf-high">High</td><td>0.08</td><td>Manchester</td>
+      <td style="font-size:9px">82.45.112.33</td><td style="font-size:9px">iPhone 15 Pro</td>
+      <td class="hash-cell">9a3b2c1d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b</td>
+      <td style="font-size:9px">2h</td>
+      <td class="hash-cell">j6k982li66m70i19n7m82k0j8i1l4o56</td>
+    </tr>
+    <tr>
+      <td>6</td><td>2026-03-18</td><td><strong>Ellie Savery</strong></td>
+      <td class="conf-high">High</td><td>0.21</td><td>Manchester</td>
+      <td style="font-size:9px">82.45.112.33</td><td style="font-size:9px">iPhone 15 Pro</td>
+      <td class="hash-cell">9a3b2c1d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b</td>
+      <td style="font-size:9px">45m</td>
+      <td class="hash-cell">k7l093mj77n81j20o8n93l1k9j2m5p67</td>
+    </tr>
+    <tr>
+      <td>7</td><td>2026-03-22</td><td><strong>Ellie Savery</strong></td>
+      <td class="conf-high">High</td><td>0.06</td><td>Manchester</td>
+      <td style="font-size:9px">82.45.112.33</td><td style="font-size:9px">iPhone 15 Pro</td>
+      <td class="hash-cell">9a3b2c1d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b</td>
+      <td style="font-size:9px">1h</td>
+      <td class="hash-cell">l8m104nk88o92k31p9o04m2l0k3n6q78</td>
+    </tr>
+    <tr>
+      <td>8</td><td>2026-03-25</td><td><strong>Ellie Savery</strong></td>
+      <td class="conf-medium">Medium</td><td>3.41</td><td>Salford</td>
+      <td style="font-size:9px">86.12.204.17</td><td style="font-size:9px">Samsung Galaxy S24</td>
+      <td class="hash-cell">7f1e2d3c4b5a6f7e8d9c0b1a2f3e4d5c6b7a8f9e0d1c2b3a4f5e6d7c8b9a0f1e</td>
+      <td style="font-size:9px">4h</td>
+      <td class="hash-cell">m9n215ol99p03l42q0q15e4d3c2b5r89</td>
+    </tr>
+    <tr>
+      <td>9</td><td>2026-03-29</td><td><strong>Ellie Savery</strong></td>
+      <td class="conf-high">High</td><td>0.09</td><td>Manchester</td>
+      <td style="font-size:9px">82.45.112.33</td><td style="font-size:9px">iPhone 15 Pro</td>
+      <td class="hash-cell">9a3b2c1d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b</td>
+      <td style="font-size:9px">30m</td>
+      <td class="hash-cell">n0o326pm00q14m53r1r26f5e4d3c6s90</td>
+    </tr>
+    <tr>
+      <td>10</td><td>2026-04-02</td><td><strong>Ellie Savery</strong></td>
+      <td class="conf-high">High</td><td>0.17</td><td>Manchester</td>
+      <td style="font-size:9px">82.45.112.33</td><td style="font-size:9px">iPhone 15 Pro</td>
+      <td class="hash-cell">9a3b2c1d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b</td>
+      <td style="font-size:9px">1h</td>
+      <td class="hash-cell">o1p437qn11r25n64s2s37g6f5e4d7t01</td>
+    </tr>
+    <tr>
+      <td>11</td><td>2026-04-07</td><td><strong>Ellie Savery</strong></td>
+      <td class="conf-medium">Medium</td><td>2.15</td><td>Salford</td>
+      <td style="font-size:9px">86.12.204.17</td><td style="font-size:9px">Samsung Galaxy S24</td>
+      <td class="hash-cell">7f1e2d3c4b5a6f7e8d9c0b1a2f3e4d5c6b7a8f9e0d1c2b3a4f5e6d7c8b9a0f1e</td>
+      <td style="font-size:9px">2h</td>
+      <td class="hash-cell">p2q548ro22s36o75t3t48h7g6f5e8u12</td>
+    </tr>
+    <tr>
+      <td>12</td><td>2026-04-12</td><td><strong>Ellie Savery</strong></td>
+      <td class="conf-high">High</td><td>0.05</td><td>Manchester</td>
+      <td style="font-size:9px">82.45.112.33</td><td style="font-size:9px">iPhone 15 Pro</td>
+      <td class="hash-cell">9a3b2c1d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b</td>
+      <td style="font-size:9px">1h</td>
+      <td class="hash-cell">q3r659sp33t47p86u4u59i8h7g6f9v23</td>
+    </tr>
+  </tbody>
+</table>
+<p class="note">Device Fingerprint note: Rows 1, 2, 5, 6, 7, 9, 10, 12 share fingerprint <code>9a3b…</code> (iPhone 15 Pro, Sarah's household device). Rows 3, 4, 8, 11 share fingerprint <code>7f1e…</code> (Samsung Galaxy S24, Mark's device). Row 4 (disputed, Leeds, 14.23 km) shares the same Samsung fingerprint as rows 3, 8, and 11 — confirming it was the same physical handset, not an impersonation from a different device.</p>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<h2>Governance Audit — Full Log</h2>
+<p class="note">Records every change to the family's verification mode. Both IPs are logged independently.</p>
+<table>
+  <thead>
+    <tr>
+      <th>#</th><th>Date</th><th>Requested by</th><th>Action</th>
+      <th>Status</th><th>Confirmed by</th><th>IP (request)</th><th>IP (confirm)</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>1</td><td>2026-01-15</td><td>Sarah Savery</td><td>Enabled Manual Approval</td>
+      <td>confirmed</td><td>Sarah Savery</td>
+      <td style="font-size:9px">82.45.112.33</td><td style="font-size:9px">82.45.112.33</td>
+    </tr>
+    <tr style="background:#fff8f0">
+      <td>2</td><td>2026-03-12</td><td>Mark Savery</td><td>Enabled Auto-Verify</td>
+      <td>confirmed</td><td>Sarah Savery</td>
+      <td style="font-size:9px">91.78.33.204</td><td style="font-size:9px">82.45.112.33</td>
+    </tr>
+  </tbody>
+</table>
+<p class="note">⚠ Governance row 2: co-parent requested mode change from 91.78.33.204 (Leeds) on 2026-03-12 — two days after the disputed completion from the same IP.</p>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<h2>Reward Override Audit</h2>
+<p class="note">Every Approver-initiated change to a chore's reward amount, with original figure, revised figure, and stated reason.</p>
+<table>
+  <thead>
+    <tr>
+      <th>Date</th><th>Chore</th><th>Approver</th>
+      <th>Previous Amount</th><th>New Amount</th><th>Reason</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>2026-03-11</td><td>Mow the lawn</td><td>Mark Savery</td>
+      <td class="num-cell">£5.00</td><td class="num-cell">£2.50</td>
+      <td>"Lawn wasn't fully completed"</td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<h2>Login History — Access Log</h2>
+<p class="note">Every login and upload action by any family member. Forensic version only — excluded from Basic and Behavioral reports. Cross-reference the Contributor column with the Evidence Log to verify identity continuity.</p>
+<table>
+  <thead>
+    <tr>
+      <th>Date / Time</th><th>User</th><th>Action</th><th>IP Address</th><th>Device</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="white-space:nowrap">2026-03-01 09:14</td><td>Sarah Savery</td><td>Login</td>
+      <td style="font-size:9px">82.45.112.33</td><td style="font-size:9px">iPhone 15 Pro</td>
+    </tr>
+    <tr>
+      <td style="white-space:nowrap">2026-03-01 09:22</td><td>Ellie Savery</td><td>Upload</td>
+      <td style="font-size:9px">82.45.112.33</td><td style="font-size:9px">iPhone 15 Pro</td>
+    </tr>
+    <tr>
+      <td style="white-space:nowrap">2026-03-04 16:05</td><td>Sarah Savery</td><td>Login</td>
+      <td style="font-size:9px">82.45.112.33</td><td style="font-size:9px">iPhone 15 Pro</td>
+    </tr>
+    <tr>
+      <td style="white-space:nowrap">2026-03-04 16:31</td><td>Ellie Savery</td><td>Upload</td>
+      <td style="font-size:9px">82.45.112.33</td><td style="font-size:9px">iPhone 15 Pro</td>
+    </tr>
+    <tr>
+      <td style="white-space:nowrap">2026-03-08 11:47</td><td>Mark Savery</td><td>Login</td>
+      <td style="font-size:9px">86.12.204.17</td><td style="font-size:9px">Samsung Galaxy S24</td>
+    </tr>
+    <tr>
+      <td style="white-space:nowrap">2026-03-08 11:53</td><td>Ellie Savery</td><td>Upload</td>
+      <td style="font-size:9px">86.12.204.17</td><td style="font-size:9px">Samsung Galaxy S24</td>
+    </tr>
+    <tr style="background:#fff5f5">
+      <td style="white-space:nowrap">2026-03-10 14:02</td><td>Mark Savery</td><td>Login</td>
+      <td style="font-size:9px">91.78.33.204</td><td style="font-size:9px">Samsung Galaxy S24</td>
+    </tr>
+    <tr style="background:#fff5f5">
+      <td style="white-space:nowrap">2026-03-10 14:15</td><td>Ellie Savery</td><td>Upload</td>
+      <td style="font-size:9px">91.78.33.204</td><td style="font-size:9px">Samsung Galaxy S24</td>
+    </tr>
+    <tr>
+      <td style="white-space:nowrap">2026-03-12 09:30</td><td>Mark Savery</td><td>Login</td>
+      <td style="font-size:9px">91.78.33.204</td><td style="font-size:9px">Samsung Galaxy S24</td>
+    </tr>
+    <tr>
+      <td style="white-space:nowrap">2026-03-15 18:44</td><td>Sarah Savery</td><td>Login</td>
+      <td style="font-size:9px">82.45.112.33</td><td style="font-size:9px">iPhone 15 Pro</td>
+    </tr>
+    <tr>
+      <td style="white-space:nowrap">2026-03-15 18:51</td><td>Ellie Savery</td><td>Upload</td>
+      <td style="font-size:9px">82.45.112.33</td><td style="font-size:9px">iPhone 15 Pro</td>
+    </tr>
+  </tbody>
+</table>
+<p class="note">⚠ 2026-03-10 14:02–14:15: Mark Savery logged in from Leeds (91.78.33.204, Samsung Galaxy S24) — Ellie Savery's Upload followed 13 minutes later from the same IP and device. Cross-reference: Evidence Log row #4 (disputed, Low confidence, 14.23 km GPS variance). The same IP appears again on 2026-03-12 for the governance mode-change request.</p>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="integrity-block">
+  <strong style="font-family:'Segoe UI',Arial,sans-serif">Document Integrity Seal</strong><br/>
+  <span class="fp">a3f291bc44de7e12c8f03b1d9a2e5f67d1b8c9e04f25a36b47c58d69e70f81g92h03i14j25k36l47</span>
+  <div style="font-size:9px;color:#666;margin-top:4px;font-family:'Segoe UI',Arial,sans-serif">
+    UUID: <span style="font-family:monospace">MCH-A3F2-91BC-44DE-7E12</span><br/>
+    This SHA-256 hash uniquely identifies this export. Any data change produces a different hash.
+  </div>
+</div>
+
+<div class="declaration">
+  <strong>Declaration of Accuracy</strong><br/><br/>
+  This document contains the complete and unaltered financial record for family <strong>Savery</strong>,
+  generated by Morechard on Sun Apr 19 2026. All transactions are cryptographically secured and immutable.<br/><br/>
+  <strong>Document UUID:</strong> <span style="font-family:monospace">MCH-A3F2-91BC-44DE-7E12</span><br/>
+  <strong>Integrity Seal:</strong> Each evidence entry is chained to the previous via SHA-256. Any post-export modification will invalidate this document.
+
+  <div class="legal-basis">
+    <strong>Legal Basis (United Kingdom):</strong> This document constitutes a computer-produced record under
+    <strong>Section 1 of the Civil Evidence Act 1995</strong>, which provides for the admissibility of documentary
+    evidence produced by computers. The cryptographic hash chain satisfies the requirement for records to be
+    produced in the course of activities of a regular nature and provides integrity verification consistent with
+    the Act's requirements for computer records tendered in Family Court proceedings.
+  </div>
+</div>
+
+</body>
+</html>

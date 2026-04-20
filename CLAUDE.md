@@ -1,9 +1,10 @@
 # Morechard PWA — Claude Code Context
 
 ## Project Overview
-Morechard is a family pocket money PWA.
-Parents manage chores, goals, approvals, and payments.
+Morechard is a chore tracker for families — including separated and co-parenting households.
+Parents assign chores, approve completions, and manage goals.
 Children track earnings, savings goals, and progress.
+An optional AI Mentor (annual subscription) delivers financial literacy lessons triggered by the child's real data.
 
 ---
 
@@ -121,7 +122,7 @@ wrangler deploy
 ### **Phase 4: Behavioral Education (The "Simulator" Logic)**
 - [x] Build 'Goal Planning' Module — Savings Grove with effort-to-earn mentor, goal creation sheet, purchase flow, parental boosting portal
 - [ ] Implement 'Real-World' explainers for Ledger entries (e.g., Inflation/Interest)
-- [ ] Create Child 'Equity' Dashboard (Unified view of all virtual assets)
+- [ ] Create Child Funds Dashboard (Unified view: Total Funds / Available Balance)
 
 ### **Phase 5: The AI Mentor (Behavioral Nudging)**
 - [ ] Integrate AI Personality for Child ('Coaching' tone)
@@ -129,7 +130,7 @@ wrangler deploy
 - [x] Build Parent 'Insights' AI (Summarizing child behavior for the week)
   - [x] `insight_snapshots` D1 table — weekly KPI snapshots with trend deltas (consistency, responsibility, planning horizon)
   - [x] Temporal context: delta calculation vs. prior week snapshot, direction indicators (up/down/flat)
-  - [x] Velocity context: Seedling (avg tasks/week) vs. Professional (avg £ earned/week)
+  - [x] Velocity context: Orchard mode (avg tasks/week) vs. Clean mode (avg £ earned/week)
   - [x] Orchard Lead AI briefing via `@cf/meta/llama-3-8b-instruct` with 5s timeout + rule-based fallback
   - [x] D1 briefing cache — AI runs once per week per child; subsequent loads return instantly
   - [x] Literacy Matrix integration — all briefings grounded in Pillars 1–5 with explicit Pillar naming
@@ -137,7 +138,7 @@ wrangler deploy
   - [x] Polish localisation — `getPolishHonorific()`, Pan/Pani formal address, Mistrz Sadu persona, "Honor i Obowiązek Zbiorów" Pillar 5 framing
   - [x] Two AI personas: Orchard Lead (EN, collaborative) vs. Mistrz Sadu (PL, direct/formal)
   - [x] InsightsTab UI — typewriter animation (source=ai only), trend indicators on KPI gauges, parchment-tinted briefing card
-  - [x] 'Copy for Child' modal — Seedling (visual/orchard metaphors) and Professional (velocity/streak) templates with "Drafted by your Orchard Mentor" attribution
+  - [x] 'Copy for Child' modal — Orchard experience (visual/orchard metaphors) and Clean experience (velocity/streak) templates with "Drafted by your Orchard Mentor" attribution
 - [ ] An AI-driven "Audit" of monthly spending across all children to identify family-wide trends
 - [ ] Linking "Seasonal" events (Birthdays, Holidays, School trips) to the Mentor's advice so it can predict future spending needs
 
@@ -149,7 +150,9 @@ wrangler deploy
 
 ### **Phase 7: Monetization & Global Scale**
 - [ ] Integrate Stripe with PPP (Purchasing Power Parity) for GBP/USD/PLN
-- [ ] Build 'Lifetime License' vs. 'Subscription' Paywall logic
+- [ ] Build Day 15 Paywall — Essential (Lifetime) + Pro Coach Bundle + Add AI Mentor later (see developer-bible §4/§4a)
+- [ ] Implement AI Mentor subscription add-on flow (dashboard upsell card for Essential-only users)
+- [ ] Implement subscription cancellation & renewal compliance (developer-bible §18)
 - [ ] Implement US/UK/PL specific tax/invoice generation (Stripe Tax)
 
 ### **Phase 8: Polish & Passive Automation**

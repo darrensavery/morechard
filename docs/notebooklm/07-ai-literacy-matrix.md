@@ -14,19 +14,34 @@ This document defines the core educational pillars and age-based milestones of t
 
 ## 2. Age-Based Sophistication Milestones
 
-### Seedling (Under 12)
+Four tiers structure the curriculum. **Level 1 is reserved for a Phase 2 expansion** and is greyed-out in the roadmap — modules are planned but not yet written. Levels 2–4 are the launch scope.
+
+| Level | Name | Age Range | Status |
+| :--- | :--- | :--- | :--- |
+| **Level 1** | Sprout | 6–9 | Phase 2 — planned, not built |
+| **Level 2** | Sapling | 10–12 | **Launch entry tier** |
+| **Level 3** | Oak | 13–15 | Launch middle tier |
+| **Level 4** | Canopy | 16+ | Launch top tier |
+
+---
+
+### Level 1 · Sprout (6–9) — Phase 2, reserved
+- **Status:** Curriculum structure designed; modules not yet written. 4–5 modules planned across Pillars 1–3.
+- **Design rule:** Trigger conditions and level-gate logic must accommodate Level 1 without rework when Phase 2 ships.
+
+### Level 2 · Sapling (10–12) — Launch entry tier
 - **Benchmark:** Moving from "Counting" to "Planning."
 - **The "Three-Grove" Framework:** Encourage a simple 70/20/10 split (Spend/Save/Give).
 - **Mentor Focus:** Translating £ into physical effort units (e.g., "10 car washes").
 - **Metric:** "One Goal at a Time" focus.
 
-### Professional (12 - 16)
+### Level 3 · Oak (13–15)
 - **Benchmark:** From "Price" to "Percentage."
 - **The "Allocation" Framework:** Introduce **Categorisation**. Managing multiple goals (Short-term vs. Long-term).
 - **Mentor Focus:** Opportunity Cost. Calculating "Velocity" (How fast am I growing?).
 - **Metric:** "Time to Goal" based on current spending habits.
 
-### Mature (16+)
+### Level 4 · Canopy (16+)
 - **Benchmark:** From "Savings" to "Strategy."
 - **The "Wealth" Framework:** Introduce **Purchasing Power**.
 - **Mentor Focus:** Compound Interest and Inflation. Understanding "Lazy Money" vs. "Active Growth."
@@ -35,6 +50,15 @@ This document defines the core educational pillars and age-based milestones of t
 ## 3. The "Choice Architect" Constraint
 The Mentor never dictates. It provides "Evidence of the Orchard" (data) and asks the user to make the final decision. 
 **Logic:** Data → Behavioral Root (The "Why") → The Nudge (Options).
+
+## 3a. Family-Neutral Language Rule
+All AI Mentor content — modules, nudges, hooks, and labs — must treat the child's family structure as none of the app's business.
+
+**Rules:**
+- **Never mention parents' situation.** The primary safeguard is silence: the app does not reference separation, divorce, custody, or co-parenting to the child.
+- **Use singular and plural interchangeably.** Write "your parent or parents" not "your mum and dad." Acceptable shorthand: "the adults at home," "a parent or carer."
+- **Avoid "your family" as a unit.** It implies a shared household. Use "your home" or "your household" where a physical location is needed; use "a parent or parents" when referring to people.
+- **Module labs and bonus challenges** must not assume two parents are present in the same house. "Ask your parent" is always correct; "Ask your mum and dad" is never correct.
 
 ## 4. Cultural Localization Logic (Hofstede Protocol)
 

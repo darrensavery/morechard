@@ -12,6 +12,9 @@ export interface Env {
   FIREBASE_PROJECT_ID: string;
   GOOGLE_CLIENT_ID:     string;
   GOOGLE_CLIENT_SECRET: string;
+  POSTHOG_API_KEY:      string;
+  POSTHOG_HOST:         string;
+  OPENAI_API_KEY:       string;
 }
 
 // Completion lifecycle statuses
@@ -39,6 +42,7 @@ export interface TrialStatus {
   is_expired: boolean;
   has_lifetime_license: boolean;
   ai_subscription_active: boolean;
+  has_legal_bundle: boolean;       // Legal Integrity Bundle add-on (Phase 7)
 }
 
 export type Currency = 'GBP' | 'PLN' | 'USD';

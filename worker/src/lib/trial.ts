@@ -71,6 +71,7 @@ export async function getTrialStatus(env: Env, family_id: string): Promise<Trial
       is_expired: false,
       has_lifetime_license: false,
       ai_subscription_active: false,
+      has_legal_bundle: false,
     };
   }
 
@@ -92,6 +93,7 @@ export async function getTrialStatus(env: Env, family_id: string): Promise<Trial
     is_expired: expired,
     has_lifetime_license: lifetimeLicense,
     ai_subscription_active: aiActive,
+    has_legal_bundle: false,   // Phase 7: wire to DB column when Legal Bundle SKU lands
   };
 }
 

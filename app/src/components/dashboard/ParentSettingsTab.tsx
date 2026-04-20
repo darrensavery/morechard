@@ -294,7 +294,7 @@ export function ParentSettingsTab({ familyId, online, onChildrenChange, onClose 
     if (view.section === 'security')   return <ProfileSection><SecuritySettings   profile={profile} toast={toast} onBack={back} onComingSoon={comingSoon} /></ProfileSection>
     if (view.section === 'appearance') return <ProfileSection><AppearanceSettings toast={toast} onBack={back} /></ProfileSection>
     if (view.section === 'billing')    return <ProfileSection><BillingSettings    toast={toast} onBack={back} onComingSoon={comingSoon} /></ProfileSection>
-    if (view.section === 'data')       return <ProfileSection><DataSettings       isLead={isLead} toast={toast} onBack={back} onComingSoon={comingSoon} /></ProfileSection>
+    if (view.section === 'data')       return <ProfileSection><DataSettings       isLead={isLead} hasLifetimeLicense={Boolean(trial?.has_lifetime_license)} hasAiMentor={Boolean(trial?.ai_subscription_active)} hasLegalBundle={Boolean(trial?.has_legal_bundle)} lang={isPolish(locale) ? 'pl' : 'en'} toast={toast} onBack={back} onComingSoon={comingSoon} /></ProfileSection>
     if (view.section === 'about')      return <ProfileSection><AboutSettings      toast={toast} onBack={back} onComingSoon={comingSoon} /></ProfileSection>
   }
 

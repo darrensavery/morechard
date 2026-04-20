@@ -176,6 +176,7 @@ export interface TrialStatus {
   is_expired:           boolean
   has_lifetime_license: boolean
   ai_subscription_active: boolean
+  has_legal_bundle:     boolean   // Legal Integrity Bundle add-on (Phase 7)
 }
 
 export async function getTrialStatus(): Promise<TrialStatus> {
