@@ -381,8 +381,8 @@ function ChoreCard({ chore, plans, onArchive, onTogglePlan }: {
         {/* Title + mini dots */}
         <div className="flex-1 text-left min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            {chore.is_flash && <span className="text-[11px] font-bold text-red-600 bg-red-100 rounded px-1.5 py-0.5">FLASH</span>}
-            {chore.is_priority && !chore.is_flash && <span className="text-[11px] font-bold text-amber-600 bg-amber-100 rounded px-1.5 py-0.5">PRIORITY</span>}
+            {!!chore.is_flash && <span className="text-[11px] font-bold text-red-600 bg-red-100 rounded px-1.5 py-0.5">FLASH</span>}
+            {!!chore.is_priority && !chore.is_flash && <span className="text-[11px] font-bold text-amber-600 bg-amber-100 rounded px-1.5 py-0.5">PRIORITY</span>}
             <span className="text-[15px] font-semibold text-[var(--color-text)]">{chore.title}</span>
           </div>
           {/* Mini read-only schedule dots */}
