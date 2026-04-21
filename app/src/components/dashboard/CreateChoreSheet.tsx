@@ -57,14 +57,14 @@ function IconBook()     { return <svg viewBox="0 0 24 24" fill="none" stroke="cu
 function IconBed()      { return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6"><path d="M2 4v16"/><path d="M22 4v16"/><path d="M2 8h20"/><path d="M2 20h20"/><path d="M2 12h6a2 2 0 0 1 2 2v4H2v-6z"/><path d="M16 12h6v8h-8v-4a2 2 0 0 1 2-2z"/></svg> }
 
 const TILE_ICONS: Record<string, () => React.ReactElement> = {
-  'Tidying Room':     IconTidying,
-  'Dishwashing':      IconDishes,
-  'Vacuuming':        IconVacuum,
-  'Taking Out Bins':  IconBins,
-  'Walking Dog':      IconDog,
-  'Washing Car':      IconCar,
-  'Homework/Reading': IconBook,
-  'Making Bed':       IconBed,
+  'Tidy the Room':      IconTidying,
+  'Wash the Dishes':    IconDishes,
+  'Vacuum the House':   IconVacuum,
+  'Take Out the Bins':  IconBins,
+  'Walk the Dog':       IconDog,
+  'Wash the Car':       IconCar,
+  'Do Homework / Read': IconBook,
+  'Make the Bed':       IconBed,
 }
 
 function TileIcon({ name }: { name: string }) {
