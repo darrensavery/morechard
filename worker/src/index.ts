@@ -31,6 +31,13 @@
  *   POST   /api/governance/:id/reject   Second parent rejects
  *   POST   /api/governance/expire       Expire stale requests (cron)
  *   GET    /api/governance              Fetch governance log
+ *   POST   /api/shared-expenses           Log a shared expense
+ *   GET    /api/shared-expenses           List shared expenses (non-deleted)
+ *   POST   /api/shared-expenses/:id/approve  Approve pending expense
+ *   POST   /api/shared-expenses/:id/reject   Reject pending expense
+ *   DELETE /api/shared-expenses/:id       Soft-delete (pending/rejected only)
+ *   POST   /api/shared-expenses/reconcile Monthly settlement reconcile
+ *   PATCH  /api/family/settings           Update threshold + split defaults
  *
  * Authenticated — parent only (invite + registration):
  *   POST   /auth/invite/generate        Generate typed 6-char invite code
@@ -141,6 +148,15 @@ import { handleChatHistory } from './routes/chat-history.js';
 import { handleChatModules } from './routes/chat-modules.js';
 import { json, error } from './lib/response.js';
 import { JwtPayload } from './lib/jwt.js';
+import {
+  handleCreateSharedExpense,
+  handleListSharedExpenses,
+  handleApproveSharedExpense,
+  handleRejectSharedExpense,
+  handleDeleteSharedExpense,
+  handleReconcileSharedExpenses,
+  handleUpdateFamilySettings,
+} from './routes/sharedExpenses.js';
 
 export default Sentry.withSentry(
   (env: Env) => ({
@@ -433,6 +449,18 @@ async function route(request: Request, env: Env, method: string, path: string): 
   // ── Parent-only routes ────────────────────────────────────────
   const parentCheck = requireRole(auth, 'parent');
   if (parentCheck) return parentCheck;
+
+  // Shared expenses (parent only)
+  if (path === '/api/shared-expenses'           && method === 'GET')    return withAuth(request, auth, env, handleListSharedExpenses);
+  if (path === '/api/shared-expenses'           && method === 'POST')   return withAuth(request, auth, env, handleCreateSharedExpense);
+  if (path === '/api/shared-expenses/reconcile' && method === 'POST')   return withAuth(request, auth, env, handleReconcileSharedExpenses);
+  const sharedExpenseIdMatch = path.match(/^\/api\/shared-expenses\/(\d+)$/);
+  if (sharedExpenseIdMatch && method === 'DELETE') return withAuth(request, auth, env, (req, e) => handleDeleteSharedExpense(req, e, sharedExpenseIdMatch[1]));
+  const sharedExpApproveMatch = path.match(/^\/api\/shared-expenses\/(\d+)\/approve$/);
+  if (sharedExpApproveMatch && method === 'POST') return withAuth(request, auth, env, (req, e) => handleApproveSharedExpense(req, e, sharedExpApproveMatch[1]));
+  const sharedExpRejectMatch = path.match(/^\/api\/shared-expenses\/(\d+)\/reject$/);
+  if (sharedExpRejectMatch && method === 'POST') return withAuth(request, auth, env, (req, e) => handleRejectSharedExpense(req, e, sharedExpRejectMatch[1]));
+  if (path === '/api/family/settings'           && method === 'PATCH')  return withAuth(request, auth, env, handleUpdateFamilySettings);
 
   // Child PIN management
   if (path === '/auth/child/set-pin' && method === 'POST') {
