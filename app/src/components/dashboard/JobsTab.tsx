@@ -68,13 +68,39 @@ export function ChoresTab({ familyId, child, children }: Props) {
   }
 
   async function togglePlan(chore: Chore, dayIndex: number) {
-    const existing = plans.find(p => p.chore_id === chore.id && p.day_of_week === dayIndex + 1)
+    const dayOfWeek = dayIndex + 1
+    const existing = plans.find(p => p.chore_id === chore.id && p.day_of_week === dayOfWeek)
+
     if (existing) {
-      await deletePlan(existing.id)
+      // Optimistic remove
+      setPlans(prev => prev.filter(p => p.id !== existing.id))
+      try {
+        await deletePlan(existing.id)
+      } catch {
+        // Rollback on failure
+        setPlans(prev => [...prev, existing])
+      }
     } else {
-      await createPlan({ family_id: familyId, chore_id: chore.id, child_id: child.id, day_of_week: dayIndex + 1, week_start: weekStart })
+      // Optimistic add — use a temp id until the real one comes back
+      const tempId = `temp-${chore.id}-${dayOfWeek}`
+      const tempPlan: Plan = {
+        id: tempId,
+        chore_id: chore.id,
+        day_of_week: dayOfWeek,
+        week_start: weekStart,
+        chore_title: chore.title,
+        reward_amount: chore.reward_amount,
+        currency: chore.currency,
+      }
+      setPlans(prev => [...prev, tempPlan])
+      try {
+        const { id: realId } = await createPlan({ family_id: familyId, chore_id: chore.id, child_id: child.id, day_of_week: dayOfWeek, week_start: weekStart })
+        setPlans(prev => prev.map(p => p.id === tempId ? { ...tempPlan, id: realId } : p))
+      } catch {
+        // Rollback on failure
+        setPlans(prev => prev.filter(p => p.id !== tempId))
+      }
     }
-    await load()
   }
 
   function handleSuggestionView(s: Suggestion) {
