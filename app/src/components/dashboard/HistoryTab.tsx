@@ -155,23 +155,117 @@ export function ActivityTab({ familyId, child, onCountChange, goalProgress }: Pr
 
   return (
     <div className="space-y-4">
-      {/* Action row */}
-      <div className="flex gap-2">
+      <GatekeeperModal />
+
+      {/* ── Sticky action row ────────────────────────────────────────────────── */}
+      <div className="sticky top-0 z-20 bg-[var(--color-bg)] pt-1 pb-2 -mx-3.5 px-3.5 flex gap-2 border-b border-[var(--color-border)]">
         <button
           onClick={() => setShowPayout(true)}
-          className="flex-1 bg-[var(--brand-primary)] text-white font-bold py-2.5 rounded-xl text-[14px] hover:opacity-90 cursor-pointer"
+          className="flex-1 bg-[var(--brand-primary)] text-white font-bold py-3 rounded-xl text-[14px] hover:opacity-90 active:scale-[0.98] transition-all cursor-pointer shadow-sm"
         >
           Pay out
         </button>
         <button
           onClick={() => setShowBonus(true)}
-          className="flex-1 border border-[var(--color-border)] text-[var(--color-text)] font-bold py-2.5 rounded-xl text-[14px] hover:bg-[var(--color-surface-alt)] cursor-pointer"
+          className="flex-1 border-2 border-[var(--brand-primary)] text-[var(--brand-primary)] font-bold py-3 rounded-xl text-[14px] bg-white hover:bg-[color-mix(in_srgb,var(--brand-primary)_6%,transparent)] active:scale-[0.98] transition-all cursor-pointer"
         >
           + Bonus
         </button>
       </div>
 
-      {/* Payout bottom sheet */}
+      {/* ── Pending approvals section (conditional) ──────────────────────────── */}
+      {!pendingLoading && completions.length > 0 && (
+        <section className="space-y-3">
+          <div className="flex items-center justify-between">
+            <p className="text-[12px] font-extrabold text-[var(--color-text-muted)] uppercase tracking-wider">
+              Pending Approvals
+            </p>
+            <span className="bg-red-500 text-white text-[10px] font-bold rounded-full px-2 py-0.5 leading-none">
+              {completions.length}
+            </span>
+          </div>
+
+          {/* Approve-all bulk action — only when >1 pending */}
+          {completions.length > 1 && (
+            <button
+              onClick={() => setShowApproveAllModal(true)}
+              disabled={approveAllBusy}
+              className="w-full bg-[var(--brand-primary)] text-white font-bold py-3.5 rounded-2xl text-[15px] hover:opacity-90 disabled:opacity-50 cursor-pointer shadow-sm active:scale-[0.98] transition-all"
+            >
+              {approveAllBusy ? (
+                <span className="flex items-center justify-center gap-2">
+                  <span className="w-4 h-4 border-2 border-white/60 border-t-white rounded-full animate-spin" />
+                  Approving…
+                </span>
+              ) : `Approve all ${completions.length} submissions`}
+            </button>
+          )}
+
+          {completions.map(c => (
+            <AuditCard
+              key={c.id}
+              completion={c}
+              isRevising={reviseId === c.id}
+              reviseNote={reviseNote}
+              busy={approveBusy === c.id}
+              anyBusy={!!approveBusy || approveAllBusy}
+              onApprove={() => challenge(() => handleApprove(c.id))}
+              onStartRevise={() => { setReviseId(c.id); setReviseNote('') }}
+              onCancelRevise={() => { setReviseId(null); setReviseNote('') }}
+              onReviseNoteChange={setReviseNote}
+              onConfirmRevise={() => handleRevise(c.id)}
+            />
+          ))}
+        </section>
+      )}
+
+      {/* ── Approve-all confirmation modal ───────────────────────────────────── */}
+      {showApproveAllModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+          <div className="absolute inset-0 bg-black/50" onClick={() => setShowApproveAllModal(false)} />
+          <div className="relative bg-[var(--color-surface)] rounded-2xl shadow-2xl w-full max-w-sm p-6 flex flex-col gap-4">
+            <div>
+              <p className="text-[18px] font-extrabold text-[var(--color-text)] tracking-tight">Confirm payment</p>
+              <p className="text-[13px] text-[var(--color-text-muted)] mt-1 leading-relaxed">
+                You are about to pay out <strong className="text-[var(--color-text)]">{completions.length} chore{completions.length !== 1 ? 's' : ''}</strong> totalling{' '}
+                <strong className="text-[var(--brand-primary)]">{formatCurrency(approveAllTotal, approveAllCurrency)}</strong>.
+                Have you verified that these chores meet the agreed standard?
+              </p>
+            </div>
+            <div className="max-h-48 overflow-y-auto rounded-xl border border-[var(--color-border)] divide-y divide-[var(--color-border)]">
+              {completions.map(c => (
+                <div key={c.id} className="flex items-center justify-between px-3.5 py-2.5">
+                  <span className="text-[13px] text-[var(--color-text)] truncate mr-3">{c.chore_title}</span>
+                  <span className="text-[13px] font-semibold tabular-nums text-[var(--brand-primary)] shrink-0">
+                    {formatCurrency(c.reward_amount, c.currency)}
+                  </span>
+                </div>
+              ))}
+            </div>
+            <div className="flex gap-2.5">
+              <button
+                onClick={() => setShowApproveAllModal(false)}
+                className="flex-1 border border-[var(--color-border)] rounded-xl py-3 text-[14px] font-semibold text-[var(--color-text-muted)] hover:bg-[var(--color-surface-alt)] cursor-pointer transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => challenge(handleConfirmApproveAll)}
+                className="flex-1 bg-[var(--brand-primary)] text-white rounded-xl py-3 text-[14px] font-bold hover:opacity-90 cursor-pointer active:scale-[0.98] transition-all shadow-sm"
+              >
+                Confirm &amp; pay
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── AI Mentor empty-state card (shown only when no pending approvals) ── */}
+      {!pendingLoading && completions.length === 0 && (
+        <MentorEmptyCard childName={child.display_name} goalProgress={goalProgress ?? null} />
+      )}
+
+      {/* ── Pay out bottom sheet ──────────────────────────────────────────────── */}
       {showPayout && (
         <div
           className="fixed inset-0 z-50 flex items-end justify-center"
@@ -213,15 +307,15 @@ export function ActivityTab({ familyId, child, onCountChange, goalProgress }: Pr
                 Cancel
               </button>
               <button type="submit" disabled={payoutBusy}
-                className="flex-1 bg-[var(--brand-primary)] text-white rounded-xl py-2.5 text-[14px] font-bold hover:opacity-90 disabled:opacity-50 cursor-pointer">
-                {payoutBusy ? 'Saving…' : 'Confirm'}
+                className="flex-1 bg-[var(--brand-primary)] text-white rounded-xl py-2.5 text-[14px] font-extrabold hover:opacity-90 disabled:opacity-50 cursor-pointer ring-2 ring-[var(--brand-primary)] ring-offset-1">
+                {payoutBusy ? 'Saving…' : '✓ Confirm payment'}
               </button>
             </div>
           </form>
         </div>
       )}
 
-      {/* Bonus bottom sheet */}
+      {/* ── Bonus bottom sheet ───────────────────────────────────────────────── */}
       {showBonus && (
         <div
           className="fixed inset-0 z-50 flex items-end justify-center"
@@ -272,7 +366,7 @@ export function ActivityTab({ familyId, child, onCountChange, goalProgress }: Pr
         </div>
       )}
 
-      {/* Recent payouts */}
+      {/* ── Recent payouts ───────────────────────────────────────────────────── */}
       {payouts.length > 0 && (
         <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl divide-y divide-[var(--color-border)]">
           <p className="px-4 py-2.5 text-[13px] font-bold text-[var(--color-text-muted)] uppercase tracking-wide">Recent payouts</p>
@@ -291,9 +385,9 @@ export function ActivityTab({ familyId, child, onCountChange, goalProgress }: Pr
         </div>
       )}
 
-      {/* Job history */}
+      {/* ── Chore history ────────────────────────────────────────────────────── */}
       <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl divide-y divide-[var(--color-border)]">
-        <p className="px-4 py-2.5 text-[13px] font-bold text-[var(--color-text-muted)] uppercase tracking-wide">Job history</p>
+        <p className="px-4 py-2.5 text-[13px] font-bold text-[var(--color-text-muted)] uppercase tracking-wide">Chore history</p>
         {loading && history.length === 0 ? (
           <div className="px-4 py-6 text-center text-[14px] text-[var(--color-text-muted)]">Loading…</div>
         ) : history.length === 0 ? (
@@ -302,15 +396,17 @@ export function ActivityTab({ familyId, child, onCountChange, goalProgress }: Pr
           <>
             {history.map(item => {
               const s = STATUS_STYLES[item.status] ?? { label: item.status, bg: 'bg-gray-100', text: 'text-gray-600' }
+              const itemDate = new Date(item.submitted_at * 1000)
               return (
                 <div key={item.id} className="px-4 py-3 flex items-center justify-between gap-2">
-                  <div className="min-w-0">
+                  <div className="min-w-0 flex-1">
                     <p className="text-[14px] font-semibold text-[var(--color-text)] truncate">{item.chore_title}</p>
                     <p className="text-[12px] text-[var(--color-text-muted)]">
                       {formatCurrency(item.reward_amount, item.currency)} ·{' '}
-                      {new Date(item.submitted_at * 1000).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+                      {itemDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
                       {item.rejection_note && <span className="ml-1 italic text-red-500">"{item.rejection_note}"</span>}
                     </p>
+                    <WeeklyRhythmDots submittedAt={item.submitted_at} history={history} choreTitle={item.chore_title} />
                   </div>
                   <span className={`shrink-0 text-[11px] font-bold rounded-full px-2 py-1 ${s.bg} ${s.text}`}>
                     {s.label}
