@@ -2,11 +2,16 @@ import { useState, useEffect, useCallback } from 'react'
 import type { Completion, PayoutRecord, ChildRecord } from '../../lib/api'
 import {
   getHistory, getPayouts, createPayout, createBonus, formatCurrency,
+  getCompletions, approveCompletion, reviseCompletion, approveAll, getProofUrl,
 } from '../../lib/api'
+import { useGatekeeper } from '../../hooks/useGatekeeper'
 
 interface Props {
   familyId: string
   child: ChildRecord
+  onCountChange: (n: number) => void
+  /** Reserved for next iteration — real goal progress data */
+  goalProgress?: { goalName: string; choresRemaining: number } | null
 }
 
 const LIMIT = 20
@@ -18,7 +23,17 @@ const STATUS_STYLES: Record<string, { label: string; bg: string; text: string }>
   suggestion: { label: 'Suggestion', bg: 'bg-blue-100',   text: 'text-blue-700' },
 }
 
-export function ActivityTab({ familyId, child }: Props) {
+export function ActivityTab({ familyId, child, onCountChange, goalProgress }: Props) {
+  // ── Pending completions (absorbed from PendingTab) ───────────────────────────
+  const { challenge, GatekeeperModal } = useGatekeeper()
+  const [completions,         setCompletions]         = useState<Completion[]>([])
+  const [pendingLoading,      setPendingLoading]      = useState(true)
+  const [reviseId,            setReviseId]            = useState<string | null>(null)
+  const [reviseNote,          setReviseNote]          = useState('')
+  const [approveBusy,         setApproveBusy]         = useState<string | null>(null)
+  const [approveAllBusy,      setApproveAllBusy]      = useState(false)
+  const [showApproveAllModal, setShowApproveAllModal] = useState(false)
+
   const [history, setHistory]   = useState<Completion[]>([])
   const [payouts, setPayouts]   = useState<PayoutRecord[]>([])
   const [loading, setLoading]   = useState(true)
@@ -38,6 +53,43 @@ export function ActivityTab({ familyId, child }: Props) {
   const [bonusReason, setBonusReason] = useState('')
   const [bonusBusy, setBonusBusy]   = useState(false)
   const [bonusError, setBonusError] = useState<string | null>(null)
+
+  const loadPending = useCallback(async () => {
+    setPendingLoading(true)
+    const r = await getCompletions({ family_id: familyId, child_id: child.id, status: 'awaiting_review' })
+    setCompletions(r.completions)
+    onCountChange(r.completions.length)
+    setPendingLoading(false)
+  }, [familyId, child.id, onCountChange])
+
+  useEffect(() => { loadPending() }, [loadPending])
+
+  async function handleApprove(id: string) {
+    setApproveBusy(id)
+    try { await approveCompletion(id); await loadPending() }
+    finally { setApproveBusy(null) }
+  }
+
+  async function handleRevise(id: string) {
+    if (!reviseNote.trim()) return
+    setApproveBusy(id)
+    try {
+      await reviseCompletion(id, reviseNote.trim())
+      setReviseId(null)
+      setReviseNote('')
+      await loadPending()
+    } finally { setApproveBusy(null) }
+  }
+
+  async function handleConfirmApproveAll() {
+    setShowApproveAllModal(false)
+    setApproveAllBusy(true)
+    try { await approveAll(familyId, child.id); await loadPending() }
+    finally { setApproveAllBusy(false) }
+  }
+
+  const approveAllTotal    = completions.reduce((s, c) => s + c.reward_amount, 0)
+  const approveAllCurrency = completions[0]?.currency ?? 'GBP'
 
   const load = useCallback(async (reset = false) => {
     setLoading(true)
