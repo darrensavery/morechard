@@ -37,6 +37,7 @@ export function ChoresTab({ familyId, child, children }: Props) {
   const [showArchived, setShowArchived]   = useState(false)
   const [rateGuideOpen, setRateGuideOpen] = useState(false)
   const [preFill, setPreFill]             = useState<{ title: string; reward_amount: number } | null>(null)
+  const [expandedId, setExpandedId]       = useState<string | null>(null)
   const weekStart = getMondayISO()
 
   const load = useCallback(async () => {
@@ -161,6 +162,8 @@ export function ChoresTab({ familyId, child, children }: Props) {
               key={chore.id}
               chore={chore}
               plans={plans.filter(p => p.chore_id === chore.id)}
+              expanded={expandedId === chore.id}
+              onToggle={() => setExpandedId(expandedId === chore.id ? null : chore.id)}
               onArchive={() => handleArchive(chore.id)}
               onTogglePlan={(day) => togglePlan(chore, day)}
             />
@@ -343,13 +346,14 @@ function EmptyChoresState({ childName, onAdd }: { childName: string; onAdd: () =
   )
 }
 
-function ChoreCard({ chore, plans, onArchive, onTogglePlan }: {
+function ChoreCard({ chore, plans, expanded, onToggle, onArchive, onTogglePlan }: {
   chore: Chore
   plans: Plan[]
+  expanded: boolean
+  onToggle: () => void
   onArchive: () => void
   onTogglePlan: (dayIndex: number) => void
 }) {
-  const [expanded, setExpanded] = useState(false)
   const isOverdue = chore.due_date && new Date(chore.due_date) < new Date()
   const plannedDays = plans.map(p => p.day_of_week - 1)
 
@@ -371,7 +375,7 @@ function ChoreCard({ chore, plans, onArchive, onTogglePlan }: {
     <div className={`${bgClass} border border-[var(--color-border)] ${borderClass} rounded-xl overflow-hidden`}>
       <button
         className="w-full px-4 py-3 flex items-start gap-3 cursor-pointer"
-        onClick={() => setExpanded(v => !v)}
+        onClick={onToggle}
       >
         {/* Category icon */}
         <div className="shrink-0 w-9 h-9 rounded-lg bg-[var(--color-surface-alt)] flex items-center justify-center text-[var(--brand-primary)] mt-0.5">
