@@ -312,10 +312,10 @@ export function LabTab({ appView }: LabTabProps) {
               <h3 className="text-[18px] font-extrabold text-[var(--color-text)]">{activeModule.title}</h3>
               <button
                 onClick={() => setActiveModule(null)}
-                className="w-11 h-11 flex items-center justify-center rounded-full text-[var(--color-text-muted)] hover:text-[var(--color-text)] hover:bg-[var(--color-border)] text-[22px] leading-none flex-shrink-0 cursor-pointer"
+                className="w-8 h-8 rounded-lg border border-[var(--color-border)] flex items-center justify-center text-[var(--color-text-muted)] hover:bg-[var(--color-surface-alt)] flex-shrink-0 cursor-pointer"
                 aria-label="Close"
               >
-                ×
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
               </button>
             </div>
             {/* Content */}
