@@ -636,6 +636,15 @@ export async function handleLeaveFamily(request: Request & { auth?: JwtPayload }
 
   if (promotionStmt) batch.unshift(promotionStmt); // promote first, then remove
 
+  // Void any pending shared expenses that can no longer be approved
+  batch.push(
+    env.DB.prepare(
+      `UPDATE shared_expenses
+       SET verification_status = 'voided'
+       WHERE family_id = ? AND verification_status = 'pending'`,
+    ).bind(familyId)
+  );
+
   await env.DB.batch(batch);
 
   return json({ ok: true, action: 'left' });
