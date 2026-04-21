@@ -548,16 +548,29 @@ export async function lazyGenerateCompletions(
   ).getTime() / 1000);
 
   const SKIP = new Set(['as_needed', 'quarterly']);
+  const SCHOOL_DAYS = new Set([1, 2, 3, 4, 5]); // Mon–Fri
 
   for (const chore of chores) {
     if (SKIP.has(chore.frequency)) continue;
 
-    // If the parent has set a weekly plan for this chore, only generate
-    // a completion on the planned days. If no plan exists, generate every day
-    // (legacy behaviour — parent hasn't used the planner yet).
-    if (plannedDays) {
-      const days = plannedDays.get(chore.id);
-      if (days && days.size > 0 && !days.has(todayDow)) continue;
+    // Determine whether today is an active day for this chore:
+    //
+    // 1. Parent has explicitly planned days → only generate on those days.
+    // 2. No parent plan set:
+    //    - daily       → generate every day (no gate)
+    //    - school_days → generate Mon–Fri only
+    //    - everything else (weekly, bi_weekly, monthly) → generate today so
+    //      the chore appears in the child's list, but don't force a day —
+    //      the child can add it to their planner themselves.
+    const parentPlan = plannedDays?.get(chore.id);
+    if (parentPlan && parentPlan.size > 0) {
+      // Parent has planned specific days — respect them exactly
+      if (!parentPlan.has(todayDow)) continue;
+    } else {
+      // No parent plan — apply frequency defaults
+      if (chore.frequency === 'school_days' && !SCHOOL_DAYS.has(todayDow)) continue;
+      // 'daily' → no gate (always generate)
+      // all other frequencies → generate today (child-led planner)
     }
 
     const periodStart =
