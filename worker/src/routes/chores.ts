@@ -147,12 +147,30 @@ export async function handleChoreList(request: Request, env: Env): Promise<Respo
   const { results } = await stmt.all();
 
   // Lazy generation: for child requests, ensure every recurring chore has an
-  // 'available' completion record for the current period.
+  // 'available' completion record for the current period — but only on days
+  // the parent has planned for that chore (if any plans exist for it).
   if (auth.role === 'child' && effectiveChildId) {
+    const d = new Date();
+    const diff = (d.getDay() === 0 ? -6 : 1 - d.getDay());
+    d.setDate(d.getDate() + diff);
+    const monday = d.toISOString().split('T')[0];
+    const { results: planRows } = await env.DB.prepare(
+      `SELECT chore_id, day_of_week FROM plans
+       WHERE family_id = ? AND child_id = ? AND week_start = ?`
+    ).bind(family_id, effectiveChildId, monday).all<{ chore_id: string; day_of_week: number }>();
+
+    // Build map: chore_id → Set of planned days (1=Mon…7=Sun)
+    const plannedDays = new Map<string, Set<number>>();
+    for (const row of planRows) {
+      if (!plannedDays.has(row.chore_id)) plannedDays.set(row.chore_id, new Set());
+      plannedDays.get(row.chore_id)!.add(row.day_of_week);
+    }
+
     await lazyGenerateCompletions(
       env, family_id,
       effectiveChildId,
       (results as { id: string; frequency: string }[]),
+      plannedDays,
     );
   }
 
@@ -507,8 +525,12 @@ export async function lazyGenerateCompletions(
   familyId: string,
   childId: string,
   chores: { id: string; frequency: string }[],
+  plannedDays?: Map<string, Set<number>>, // chore_id → Set<1–7 (Mon–Sun)>
 ): Promise<void> {
   const now = new Date();
+
+  // Today's day of week: 1=Mon … 7=Sun
+  const todayDow = now.getDay() === 0 ? 7 : now.getDay();
 
   // Period start timestamps (epoch seconds)
   const dayStart = Math.floor(new Date(
@@ -529,6 +551,14 @@ export async function lazyGenerateCompletions(
 
   for (const chore of chores) {
     if (SKIP.has(chore.frequency)) continue;
+
+    // If the parent has set a weekly plan for this chore, only generate
+    // a completion on the planned days. If no plan exists, generate every day
+    // (legacy behaviour — parent hasn't used the planner yet).
+    if (plannedDays) {
+      const days = plannedDays.get(chore.id);
+      if (days && days.size > 0 && !days.has(todayDow)) continue;
+    }
 
     const periodStart =
       chore.frequency === 'daily' || chore.frequency === 'school_days' ? dayStart :

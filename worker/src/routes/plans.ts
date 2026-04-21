@@ -55,8 +55,8 @@ export async function handlePlanCreate(request: Request, env: Env): Promise<Resp
   if (!family_id || family_id !== auth.family_id) return error('Forbidden', 403);
   if (!chore_id  || typeof chore_id !== 'string') return error('chore_id required');
   if (!child_id  || typeof child_id !== 'string') return error('child_id required');
-  if (!Number.isInteger(day_of_week) || (day_of_week as number) < 0 || (day_of_week as number) > 6)
-    return error('day_of_week must be 0–6 (Mon–Sun)');
+  if (!Number.isInteger(day_of_week) || (day_of_week as number) < 1 || (day_of_week as number) > 7)
+    return error('day_of_week must be 1–7 (Mon=1, Sun=7)');
 
   // Child can only plan their own chores
   if (auth.role === 'child' && child_id !== auth.sub) return error('Forbidden', 403);
