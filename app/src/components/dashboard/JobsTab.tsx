@@ -334,11 +334,15 @@ function EmptyChoresState({ childName, onAdd }: { childName: string; onAdd: () =
   return (
     <div className="space-y-4">
       {/* Mentor card */}
-      <div className="rounded-2xl overflow-hidden" style={{
+      <div className="relative rounded-2xl overflow-hidden" style={{
         background: 'linear-gradient(#0f1a14, #0f1a14) padding-box, linear-gradient(135deg, #0d9488 0%, #d4a017 50%, #0d9488 100%) border-box',
         border: '1.5px solid transparent',
+        boxShadow: '0 0 32px rgba(13,148,136,0.15), 0 4px 16px rgba(0,0,0,0.3)',
       }}>
-        <div className="px-4 pt-4 pb-3">
+        {/* Radial glow layer */}
+        <div className="absolute inset-0 pointer-events-none"
+             style={{ background: 'radial-gradient(ellipse 80% 50% at 50% 0%, rgba(13,148,136,0.12) 0%, transparent 70%)' }} />
+        <div className="relative z-10 px-4 pt-4 pb-3">
           <div className="flex items-center gap-2 mb-2">
             <div className="w-6 h-6 rounded-full bg-[var(--brand-primary)] flex items-center justify-center text-[11px]">🌱</div>
             <span className="text-[10px] font-extrabold text-[#0d9488] uppercase tracking-widest">Orchard Mentor</span>
@@ -351,7 +355,7 @@ function EmptyChoresState({ childName, onAdd }: { childName: string; onAdd: () =
             Once you add chores I can track {childName}'s consistency, spot patterns, and give you genuinely useful coaching — not generic tips.
           </p>
         </div>
-        <div className="px-4 pb-4">
+        <div className="relative z-10 px-4 pb-4">
           <p className="text-[11px] font-extrabold text-white/40 uppercase tracking-widest mb-2">Get started</p>
           <div className="space-y-1.5 text-[12px] text-white/70">
             <p className="flex items-start gap-2"><span className="text-[#0d9488] font-bold shrink-0">01</span> Add 2–3 small daily chores so I can spot {childName}'s consistency patterns.</p>
