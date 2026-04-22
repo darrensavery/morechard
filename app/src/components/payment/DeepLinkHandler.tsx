@@ -1,7 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { Capacitor } from '@capacitor/core';
-
-type Status = 'pending' | 'opened' | 'fallback';
 
 type Props = {
   url: string;
@@ -10,15 +8,14 @@ type Props = {
 };
 
 // Best-effort detection of whether a custom-scheme or https deep link
-// actually opened an external app.
-// - Capacitor native: window.open(url, '_system') hands the URI to the OS;
-//   we then rely on visibilitychange — if the page hides, the OS switched apps.
-// - PWA: same visibilitychange sentinel. If the page never hides within ~1.5s,
-//   the scheme didn't resolve and we fall back to Smart Copy.
+// actually opened an external app. @capacitor/app v8 does NOT expose openUrl
+// (see node_modules/@capacitor/app/dist/esm/definitions.d.ts), so both paths
+// rely on the same visibilitychange sentinel:
+// - Native: window.open(url, '_system') hands the URI to the OS.
+// - PWA: window.location.href triggers the scheme.
+// If the page hides within ~1.5s, the OS switched apps → success.
+// If it never hides, the scheme didn't resolve → fall back to Smart Copy.
 export function DeepLinkHandler({ url, onOpened, onFallback }: Props) {
-  // Preserved intentionally: status is unused now but reserved for future
-  // extensions that may surface it (e.g. loading spinners, analytics).
-  const [_status, setStatus] = useState<Status>('pending');
   const firedRef = useRef(false);
 
   useEffect(() => {
@@ -32,28 +29,19 @@ export function DeepLinkHandler({ url, onOpened, onFallback }: Props) {
 
     (async () => {
       if (Capacitor.isNativePlatform()) {
-        // On Capacitor native, window.open(url, '_system') instructs the OS
-        // to handle the URI externally (opens the target app if installed).
         window.open(url, '_system');
-
-        await new Promise((r) => setTimeout(r, 1500));
-        if (cancelled) return;
-        fire(pageHidden ? 'opened' : 'fallback');
-        return;
+      } else {
+        window.location.href = url;
       }
-
-      // Web/PWA path.
-      window.location.href = url;
 
       await new Promise((r) => setTimeout(r, 1500));
       if (cancelled) return;
       fire(pageHidden ? 'opened' : 'fallback');
     })();
 
-    function fire(s: Status) {
+    function fire(s: 'opened' | 'fallback') {
       if (firedRef.current) return;
       firedRef.current = true;
-      setStatus(s);
       if (s === 'opened') onOpened();
       else onFallback();
     }
@@ -64,6 +52,5 @@ export function DeepLinkHandler({ url, onOpened, onFallback }: Props) {
     };
   }, [url, onOpened, onFallback]);
 
-  // Invisible — parent component owns the UI.
   return null;
 }
