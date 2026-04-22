@@ -1,7 +1,9 @@
 // Temporary per-device storage of child bank details.
 // KNOWN TEMPORARY: Spec B replaces this with an encrypted IndexedDB vault.
-// Contract (getDetails / setDetails / clearDetails) is preserved so Spec B
-// is a drop-in swap — no call-site changes.
+// Function NAMES (getDetails / setDetails / clearDetails) and the
+// StoredBankDetails shape are preserved. Signatures will become async
+// (Promise-returning) in Spec B, so call sites will need `await` added
+// when the swap happens — plan to grep for these three names.
 
 export type StoredBankDetails = {
   childId: string;
