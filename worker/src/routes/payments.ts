@@ -36,7 +36,7 @@ export async function handleMarkPaid(
   if (row.status !== 'completed')
     return error(`Cannot mark paid — completion is '${row.status}'`, 409);
 
-  // Idempotent: first write wins.
+  // Idempotent path A: already stamped at read time.
   if (row.paid_out_at != null) {
     return json({
       completion_id: row.id,
@@ -45,11 +45,25 @@ export async function handleMarkPaid(
     });
   }
 
+  // Conditional UPDATE — wins the race against a concurrent request.
   const now = Math.floor(Date.now() / 1000);
-  await env.DB
-    .prepare('UPDATE completions SET paid_out_at = ? WHERE id = ?')
+  const res = await env.DB
+    .prepare('UPDATE completions SET paid_out_at = ? WHERE id = ? AND paid_out_at IS NULL')
     .bind(now, completionId)
     .run();
+
+  // Idempotent path B: a concurrent caller stamped first. Re-read and return their timestamp.
+  if (res.meta.changes === 0) {
+    const fresh = await env.DB
+      .prepare('SELECT paid_out_at FROM completions WHERE id = ?')
+      .bind(completionId)
+      .first<{ paid_out_at: number | null }>();
+    return json({
+      completion_id: completionId,
+      paid_out_at: fresh?.paid_out_at ?? null,
+      was_already_paid: true,
+    });
+  }
 
   return json({
     completion_id: completionId,
@@ -111,7 +125,10 @@ export async function handleMarkPaidBatch(
     await env.DB.batch(stmts);
   }
 
-  return json({ stamped: toStamp.length, paid_out_at: now });
+  return json({
+    stamped: toStamp.length,
+    paid_out_at: toStamp.length > 0 ? now : null,
+  });
 }
 
 // ----------------------------------------------------------------
@@ -141,6 +158,7 @@ export async function handleUnpaidSummary(
         WHERE comp.family_id = ?
           AND comp.status = 'completed'
           AND comp.paid_out_at IS NULL
+          AND (ch.archived IS NULL OR ch.archived = 0)
         GROUP BY comp.child_id, ch.currency`,
     )
     .bind(familyId)
