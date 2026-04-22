@@ -779,3 +779,18 @@ export async function getUnpaidSummary(
 ): Promise<{ children: UnpaidSummaryRow[] }> {
   return request(`/api/completions/unpaid-summary?family_id=${encodeURIComponent(familyId)}`);
 }
+
+export async function setPaymentHandles(
+  childId: string,
+  handles: Partial<{
+    monzo_handle: string | null;
+    revolut_handle: string | null;
+    paypal_handle: string | null;
+    venmo_handle: string | null;
+  }>,
+): Promise<{ child_id: string; updated: string[] }> {
+  return request(`/api/child/${childId}/payment-handles`, {
+    method: 'PATCH',
+    body: JSON.stringify(handles),
+  });
+}

@@ -166,3 +166,51 @@ export async function handleUnpaidSummary(
 
   return json({ children: rows.results });
 }
+
+// ----------------------------------------------------------------
+// PATCH /api/child/:id/payment-handles
+// Body: { monzo_handle?, revolut_handle?, paypal_handle?, venmo_handle? }
+// Pass null to clear a handle. Parent-only.
+// ----------------------------------------------------------------
+export async function handleSetPaymentHandles(
+  request: Request,
+  env: Env,
+  childId: string,
+): Promise<Response> {
+  const auth = (request as AuthedRequest).auth;
+  if (auth.role !== 'parent') return error('Only parents can edit handles', 403);
+
+  let body: Record<string, unknown>;
+  try { body = await request.json(); } catch { return error('Invalid JSON body'); }
+
+  // Morechard uses `users` + `family_roles` — verify the target is a child
+  // in the caller's family in one query (pattern from chores.ts:61-65).
+  const child = await env.DB
+    .prepare(`SELECT u.id FROM users u JOIN family_roles fr ON fr.user_id = u.id
+              WHERE u.id = ? AND fr.family_id = ? AND fr.role = 'child'`)
+    .bind(childId, auth.family_id)
+    .first<{ id: string }>();
+  if (!child) return error('Child not found in this family', 404);
+
+  const allowed = ['monzo_handle', 'revolut_handle', 'paypal_handle', 'venmo_handle'];
+  const updates: { col: string; val: string | null }[] = [];
+  for (const col of allowed) {
+    if (col in body) {
+      const v = body[col];
+      if (v !== null && typeof v !== 'string') return error(`${col} must be string or null`);
+      // Strip leading '@' and whitespace — handles are the bare username.
+      const clean = v === null ? null : String(v).trim().replace(/^@/, '');
+      updates.push({ col, val: clean });
+    }
+  }
+  if (updates.length === 0) return error('No fields to update');
+
+  const set = updates.map((u) => `${u.col} = ?`).join(', ');
+  const vals = updates.map((u) => u.val);
+  await env.DB
+    .prepare(`UPDATE users SET ${set} WHERE id = ?`)
+    .bind(...vals, childId)
+    .run();
+
+  return json({ child_id: childId, updated: updates.map((u) => u.col) });
+}

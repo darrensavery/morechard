@@ -65,6 +65,7 @@ import {
 } from './routes/completions.js';
 import {
   handleMarkPaid, handleMarkPaidBatch, handleUnpaidSummary,
+  handleSetPaymentHandles,
 } from './routes/payments.js';
 import { handleProofUpload, handleProofGet } from './routes/proof.js';
 import {
@@ -380,6 +381,9 @@ async function route(request: Request, env: Env, method: string, path: string): 
 
   const childHistoryMatch = path.match(/^\/api\/child\/([^/]+)\/login-history$/);
   if (childHistoryMatch && method === 'GET') return withAuth(request, auth, env, (req, e) => handleChildLoginHistory(req, e, childHistoryMatch[1]));
+
+  const childHandlesMatch = path.match(/^\/api\/child\/([^/]+)\/payment-handles$/);
+  if (childHandlesMatch && method === 'PATCH') return withAuth(request, auth, env, (req, e) => handleSetPaymentHandles(req, e, childHandlesMatch[1]));
 
   // Chores — children can list & submit
   if (path === '/api/chores' && method === 'GET')     return withAuth(request, auth, env, handleChoreList);
