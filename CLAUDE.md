@@ -157,6 +157,7 @@ wrangler deploy
 
 ### **Phase 7: Monetization & Global Scale**
 - [ ] Integrate Stripe with PPP (Purchasing Power Parity) for GBP/USD/PLN
+- [x] Payment Bridge V1 — deep-link (Monzo/Revolut/PayPal/Venmo) + Smart Copy (UK bank transfer, Zelle). `paid_out_at` delivery flag, not a ledger write. BLIK deferred to PL market push. Bank-details localStorage is temporary — Spec B replaces with encrypted vault.
 - [ ] Build Day 15 Paywall — Essential (Lifetime) + Pro Coach Bundle + Add AI Mentor later (see developer-bible §4/§4a)
 - [ ] Implement AI Mentor subscription add-on flow (dashboard upsell card for Essential-only users)
 - [ ] Implement subscription cancellation & renewal compliance (developer-bible §18)
