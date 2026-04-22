@@ -1,5 +1,11 @@
 // app/src/components/dashboard/PoolTab.tsx
 import { useEffect, useState } from 'react';
+import { getToken } from '../../lib/api';
+
+function authHeaders(): HeadersInit {
+  const token = getToken();
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
 
 type VerificationStatus =
   | 'committed_auto'
@@ -68,7 +74,7 @@ export function PoolTab({ familyId, currentUserId, onAddClick, onReconcileClick 
   async function load() {
     setLoading(true);
     try {
-      const res = await fetch('/api/shared-expenses', { credentials: 'include' });
+      const res = await fetch('/api/shared-expenses', { headers: authHeaders() });
       if (!res.ok) throw new Error(await res.text());
       const data = await res.json() as { expenses: SharedExpense[] };
       setExpenses(data.expenses);
@@ -82,18 +88,18 @@ export function PoolTab({ familyId, currentUserId, onAddClick, onReconcileClick 
   useEffect(() => { load(); }, [familyId]);
 
   async function handleApprove(id: number) {
-    await fetch(`/api/shared-expenses/${id}/approve`, { method: 'POST', credentials: 'include' });
+    await fetch(`/api/shared-expenses/${id}/approve`, { method: 'POST', headers: authHeaders() });
     load();
   }
 
   async function handleReject(id: number) {
-    await fetch(`/api/shared-expenses/${id}/reject`, { method: 'POST', credentials: 'include' });
+    await fetch(`/api/shared-expenses/${id}/reject`, { method: 'POST', headers: authHeaders() });
     load();
   }
 
   async function handleRemove(id: number) {
     if (!confirm('Remove this flagged expense?')) return;
-    await fetch(`/api/shared-expenses/${id}`, { method: 'DELETE', credentials: 'include' });
+    await fetch(`/api/shared-expenses/${id}`, { method: 'DELETE', headers: authHeaders() });
     load();
   }
 

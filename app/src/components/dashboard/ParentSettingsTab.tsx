@@ -74,6 +74,7 @@ import {
   getChildSettings, updateChildSettings,
   getChildGrowth, updateChildGrowth,
   getMe, updateProfile, getLeadCount, getTrialStatus,
+  getToken,
   type MeResult, type TrialStatus,
 } from '../../lib/api'
 import { track } from '../../lib/analytics'
@@ -290,10 +291,13 @@ export function ParentSettingsTab({ familyId, online, onChildrenChange, onClose 
   async function handleSaveCoParentSettings() {
     setSavingSettings(true)
     try {
+      const token = getToken()
       await fetch('/api/family/settings', {
         method: 'PATCH',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify({
           shared_expense_threshold: threshold,
           shared_expense_split_bp:  splitBp,

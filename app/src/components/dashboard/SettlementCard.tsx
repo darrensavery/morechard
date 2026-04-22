@@ -1,5 +1,6 @@
 // app/src/components/dashboard/SettlementCard.tsx
 import { useState } from 'react';
+import { getToken } from '../../lib/api';
 
 type Expense = {
   id: number;
@@ -38,10 +39,13 @@ export function SettlementCard({ period, onClose, onReconciled }: Props) {
     setLoading(true);
     setError(null);
     try {
+      const token = getToken();
       const res = await fetch('/api/shared-expenses/reconcile', {
         method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify({ period }),
       });
       if (!res.ok) {

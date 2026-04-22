@@ -1,5 +1,6 @@
 // app/src/components/dashboard/AddExpenseSheet.tsx
 import { useState } from 'react';
+import { getToken } from '../../lib/api';
 
 const CATEGORIES = [
   { value: 'education', label: '📚 Education' },
@@ -43,10 +44,13 @@ export function AddExpenseSheet({ defaultSplitBp, currency, onClose, onSaved }: 
     setSaving(true);
     setError(null);
     try {
+      const token = getToken();
       const res = await fetch('/api/shared-expenses', {
         method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify({
           description: description.trim(),
           category,
