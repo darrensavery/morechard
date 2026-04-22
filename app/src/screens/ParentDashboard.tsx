@@ -1,17 +1,21 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import type { ChildRecord } from '../lib/api'
-import { getChildren, getCompletions, clearToken } from '../lib/api'
+import { getChildren, getCompletions, clearToken, getUnpaidSummary, type UnpaidSummaryRow } from '../lib/api'
 import { getDeviceIdentity } from '../lib/deviceIdentity'
 import { useLocale, isPolish } from '../lib/locale'
 import { AvatarSVG } from '../lib/avatars'
 import { ChoresTab }   from '../components/dashboard/JobsTab'
-import { PendingTab }  from '../components/dashboard/PendingTab'
 import { ActivityTab } from '../components/dashboard/HistoryTab'
 import { InsightsTab } from '../components/dashboard/InsightsTab'
 import { ParentSettingsTab } from '../components/dashboard/ParentSettingsTab'
+import { PoolTab }         from '../components/dashboard/PoolTab'
+import { AddExpenseSheet } from '../components/dashboard/AddExpenseSheet'
+import { SettlementCard }  from '../components/dashboard/SettlementCard'
 import { GoalBoostingTab }  from '../components/dashboard/GoalBoostingTab'
 import { FullLogo } from '../components/ui/Logo'
+import { UnpaidIndicator } from '../components/payment/UnpaidIndicator'
+import { PaymentBridgeSheet } from '../components/payment/PaymentBridgeSheet'
 
 // Offline signal SVG
 function OfflineIcon() {
@@ -28,7 +32,7 @@ function OfflineIcon() {
   )
 }
 
-type Tab = 'chores' | 'approvals' | 'activity' | 'insights' | 'goals'
+type Tab = 'chores' | 'activity' | 'pool' | 'insights' | 'goals'
 
 export function ParentDashboard() {
   const navigate   = useNavigate()
@@ -37,10 +41,12 @@ export function ParentDashboard() {
 
   const [tab,        setTab]        = useState<Tab>(() => {
     const saved = sessionStorage.getItem('mc_parent_tab')
-    const valid: Tab[] = ['chores', 'approvals', 'activity', 'insights', 'goals']
+    const valid: Tab[] = ['chores', 'activity', 'pool', 'insights', 'goals']
     return valid.includes(saved as Tab) ? (saved as Tab) : 'chores'
   })
   const [showSettings, setShowSettings] = useState(false)
+  const [showAddExpense,  setShowAddExpense]  = useState(false)
+  const [showSettlement,  setShowSettlement]  = useState(false)
 
   function handleTabChange(t: Tab) {
     setTab(t)
@@ -48,8 +54,37 @@ export function ParentDashboard() {
   }
   const [children,   setChildren]   = useState<ChildRecord[]>([])
   const [activeChild, setActiveChild] = useState<ChildRecord | null>(null)
+  const [childrenLoaded, setChildrenLoaded] = useState(false)
   const [pendingCount, setPendingCount] = useState(0)
   const [online,     setOnline]     = useState(navigator.onLine)
+  const [unpaid, setUnpaid] = useState<UnpaidSummaryRow[]>([])
+  const [bridgeCtx, setBridgeCtx] = useState<null | {
+    child: ChildRecord; completionIds: string[]; total: number; currency: string;
+  }>(null)
+
+  async function refreshUnpaid() {
+    if (!familyId) return
+    try { setUnpaid((await getUnpaidSummary(familyId)).children) }
+    catch { /* non-fatal */ }
+  }
+
+  useEffect(() => { refreshUnpaid() }, [familyId])
+
+  async function openBridgeForChild(child: ChildRecord, row: UnpaidSummaryRow) {
+    const r = await getCompletions({
+      family_id: familyId, child_id: child.id, status: 'completed',
+    })
+    const unpaidIds = r.completions
+      .filter((c) => c.paid_out_at == null)
+      .map((c) => c.id)
+    if (unpaidIds.length === 0) { refreshUnpaid(); return }
+    setBridgeCtx({
+      child,
+      completionIds: unpaidIds,
+      total: row.unpaid_total,
+      currency: row.currency,
+    })
+  }
 
   // Trial nudge: shown once after first child is added (set by WelcomeOrchardScreen)
   const [showTrialNudge, setShowTrialNudge] = useState(() => {
@@ -68,7 +103,9 @@ export function ParentDashboard() {
     getChildren().then(r => {
       setChildren(r.children)
       if (r.children.length > 0 && !activeChild) setActiveChild(r.children[0])
+      setChildrenLoaded(true)
     }).catch((err: unknown) => {
+      setChildrenLoaded(true)
       const msg = err instanceof Error ? err.message : String(err)
       if (msg.includes('401') || msg.toLowerCase().includes('unauthorized') || msg.toLowerCase().includes('invalid') || msg.toLowerCase().includes('expired')) {
         clearToken()
@@ -99,11 +136,11 @@ export function ParentDashboard() {
   }, [familyId, activeChild])
 
   const TABS: { id: Tab; label: string; badge?: number }[] = [
-    { id: 'chores',    label: 'Chores' },
-    { id: 'approvals', label: 'Approvals', badge: pendingCount || undefined },
-    { id: 'activity',  label: 'Activity' },
-    { id: 'insights',  label: 'Insights' },
-    { id: 'goals',     label: 'Goals' },
+    { id: 'chores',   label: 'Chores' },
+    { id: 'activity', label: 'Activity', badge: pendingCount || undefined },
+    { id: 'pool',     label: 'Pool' },
+    { id: 'insights', label: 'Insights' },
+    { id: 'goals',    label: 'Goals' },
   ]
 
   return (
@@ -166,22 +203,33 @@ export function ParentDashboard() {
         {/* Child selector */}
         {children.length > 1 && (
           <div className="max-w-[560px] mx-auto px-3.5 pb-2.5 flex gap-2 overflow-x-auto scrollbar-hide">
-            {children.map(child => (
-              <button
-                key={child.id}
-                onClick={() => setActiveChild(child)}
-                className={`
-                  shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[13px] font-semibold
-                  transition-colors duration-100 cursor-pointer
-                  ${activeChild?.id === child.id
-                    ? 'bg-[var(--brand-primary)] text-white'
-                    : 'bg-[var(--color-surface-alt)] text-[var(--color-text-muted)] hover:opacity-80'}
-                `}
-              >
-                <AvatarSVG id={child.avatar_id ?? 'bottts:spark'} size={20} />
-                {child.display_name}
-              </button>
-            ))}
+            {children.map(child => {
+              const row = unpaid.find((u) => u.child_id === child.id)
+              return (
+                <div key={child.id} className="shrink-0 flex items-center gap-1.5">
+                  <button
+                    onClick={() => setActiveChild(child)}
+                    className={`
+                      shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[13px] font-semibold
+                      transition-colors duration-100 cursor-pointer
+                      ${activeChild?.id === child.id
+                        ? 'bg-[var(--brand-primary)] text-white'
+                        : 'bg-[var(--color-surface-alt)] text-[var(--color-text-muted)] hover:opacity-80'}
+                    `}
+                  >
+                    <AvatarSVG id={child.avatar_id ?? 'bottts:spark'} size={20} />
+                    {child.display_name}
+                  </button>
+                  {row && (
+                    <UnpaidIndicator
+                      unpaidMinorUnits={row.unpaid_total}
+                      currency={row.currency}
+                      onClick={() => openBridgeForChild(child, row)}
+                    />
+                  )}
+                </div>
+              )
+            })}
           </div>
         )}
 
@@ -263,13 +311,20 @@ export function ParentDashboard() {
 
       {/* Content */}
       <main className="flex-1 max-w-[560px] mx-auto w-full px-3.5 py-4">
-        {activeChild ? (
+        {!childrenLoaded ? null : activeChild ? (
           <>
-            {tab === 'chores'    && <ChoresTab        familyId={familyId} child={activeChild} children={children} />}
-            {tab === 'approvals' && <PendingTab        familyId={familyId} child={activeChild} onCountChange={setPendingCount} />}
-            {tab === 'activity'  && <ActivityTab       familyId={familyId} child={activeChild} />}
-            {tab === 'insights'  && <InsightsTab       familyId={familyId} child={activeChild} children={children} />}
-            {tab === 'goals'     && <GoalBoostingTab   familyId={familyId} child={activeChild} />}
+            {tab === 'chores'   && <ChoresTab       familyId={familyId} child={activeChild} children={children} />}
+            {tab === 'activity' && <ActivityTab     familyId={familyId} child={activeChild} onCountChange={setPendingCount} />}
+            {tab === 'pool'     && (
+              <PoolTab
+                familyId={familyId}
+                currentUserId={getDeviceIdentity()?.user_id ?? ''}
+                onAddClick={() => setShowAddExpense(true)}
+                onReconcileClick={() => setShowSettlement(true)}
+              />
+            )}
+            {tab === 'insights' && <InsightsTab     familyId={familyId} child={activeChild} children={children} />}
+            {tab === 'goals'    && <GoalBoostingTab familyId={familyId} child={activeChild} />}
           </>
         ) : (
           (() => {
@@ -335,6 +390,34 @@ export function ParentDashboard() {
           v{__APP_VERSION__}
         </p>
       </footer>
+
+        {showAddExpense && (
+          <AddExpenseSheet
+            defaultSplitBp={5000}
+            currency="GBP"
+            onClose={() => setShowAddExpense(false)}
+            onSaved={() => { setShowAddExpense(false) }}
+          />
+        )}
+        {showSettlement && (
+          <SettlementCard
+            period={new Date().toISOString().slice(0, 7)}
+            onClose={() => setShowSettlement(false)}
+            onReconciled={() => { setShowSettlement(false) }}
+          />
+        )}
+        {bridgeCtx && (
+          <PaymentBridgeSheet
+            open={true}
+            onClose={() => setBridgeCtx(null)}
+            familyId={familyId}
+            child={bridgeCtx.child}
+            completionIds={bridgeCtx.completionIds}
+            totalMinorUnits={bridgeCtx.total}
+            currency={bridgeCtx.currency}
+            onPaid={() => { refreshUnpaid(); setBridgeCtx(null) }}
+          />
+        )}
     </div>
   )
 }

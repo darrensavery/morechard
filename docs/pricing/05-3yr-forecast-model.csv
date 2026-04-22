@@ -1,0 +1,46 @@
+scenario,monthly_budget_gbp,annual_budget_gbp,year,market,channel,paid_ctr_pct,paid_cvr_click_install,paid_cvr_install_trial,paid_cvr_trial_paid,organic_monthly_signups,paid_monthly_signups,total_monthly_signups,monthly_complete_buyers,monthly_shield_buyers,monthly_ai_attach,annual_complete_revenue_gbp,annual_shield_revenue_gbp,annual_ai_revenue_gbp,annual_total_revenue_gbp,annual_marketing_spend_gbp,annual_net_revenue_gbp,cumulative_3yr_net_revenue_gbp,notes
+zero_budget,0,0,Y1,UK,organic,0,0,0,0,12,0,12,0.72,0.32,0.20,389,572,48,1009,0,1009,,Cold start Y1 — very slow organic compounding
+zero_budget,0,0,Y1,US,organic,0,0,0,0,18,0,18,1.08,0.48,0.30,648,1032,77,1757,0,1757,,"Larger pop base = more organic impressions"
+zero_budget,0,0,Y1,PL,organic,0,0,0,0,3,0,3,0.06,0,0.03,6,0,3,9,0,9,,Nearly zero
+zero_budget,0,0,Y2,UK,organic,0,0,0,0,38,0,38,2.28,1.04,0.64,1231,1860,153,3244,0,3244,,SEO compounds in Y2
+zero_budget,0,0,Y2,US,organic,0,0,0,0,52,0,52,3.12,1.44,0.87,1872,3096,222,5190,0,5190,,
+zero_budget,0,0,Y2,PL,organic,0,0,0,0,7,0,7,0.14,0,0.07,13,0,7,20,0,20,,
+zero_budget,0,0,Y3,UK,organic,0,0,0,0,72,0,72,4.32,2.08,1.21,2334,3720,290,6344,0,6344,,Y3 organic plateau begins
+zero_budget,0,0,Y3,US,organic,0,0,0,0,96,0,96,5.76,2.88,1.61,3456,6192,411,10059,0,10059,,
+zero_budget,0,0,Y3,PL,organic,0,0,0,0,13,0,13,0.26,0,0.13,20,0,13,33,0,33,,
+bootstrap_50,50,600,Y1,UK,meta+organic,1.0,0.20,0.50,0.12,12,7,19,1.05,0.42,0.29,566,751,70,1387,600,787,,"Meta spend £40/mo; £10/mo content; CAC ~£57 per install, ~£476 per paying buyer — WAY above LTV"
+bootstrap_50,50,600,Y1,US,meta+organic,1.0,0.20,0.50,0.12,18,9,27,1.50,0.60,0.42,900,1290,107,2297,0,2297,,"US allocation minimal from £50 total"
+bootstrap_50,50,600,Y1,PL,organic,0,0,0,0,3,0,3,0.06,0,0.03,6,0,3,9,0,9,,No paid allocation
+bootstrap_50,50,600,Y2,UK,meta+organic,1.0,0.20,0.50,0.12,38,11,49,2.94,1.28,0.82,1587,2288,196,4071,600,3471,,
+bootstrap_50,50,600,Y2,US,meta+organic,1.0,0.20,0.50,0.12,52,15,67,4.02,1.80,1.13,2412,3870,287,6569,0,6569,,
+bootstrap_50,50,600,Y2,PL,organic,0,0,0,0,7,0,7,0.14,0,0.07,13,0,7,20,0,20,,
+bootstrap_50,50,600,Y3,UK,meta+organic,1.0,0.20,0.50,0.12,72,15,87,5.22,2.40,1.46,2819,4290,350,7459,600,6859,10717,Y3 paid efficiency improves
+bootstrap_50,50,600,Y3,US,meta+organic,1.0,0.20,0.50,0.12,96,20,116,6.96,3.20,1.95,4176,6880,468,11524,0,11524,20390,
+bootstrap_50,50,600,Y3,PL,organic,0,0,0,0,13,0,13,0.26,0,0.13,20,0,13,33,0,33,62,
+lean_100,100,1200,Y1,UK,meta+forums,1.0,0.20,0.50,0.12,14,12,26,1.56,0.80,0.44,842,1431,106,2379,900,1479,,"£75/mo UK Meta + £25/mo UK Reddit Shield; CAC slightly better"
+lean_100,100,1200,Y1,US,meta+forums,1.0,0.20,0.50,0.12,20,8,28,1.68,0.72,0.47,1008,1548,120,2676,300,2376,,
+lean_100,100,1200,Y1,PL,organic,0,0,0,0,3,0,3,0.06,0,0.03,6,0,3,9,0,9,,Still organic only
+lean_100,100,1200,Y2,UK,meta+forums,1.0,0.20,0.50,0.12,45,18,63,3.78,1.92,1.06,2041,3437,254,5732,900,4832,,
+lean_100,100,1200,Y2,US,meta+forums,1.0,0.20,0.50,0.12,62,14,76,4.56,2.16,1.28,2736,4644,307,7687,300,7387,,
+lean_100,100,1200,Y2,PL,organic,0,0,0,0,7,0,7,0.14,0,0.07,13,0,7,20,0,20,,
+lean_100,100,1200,Y3,UK,meta+forums,1.0,0.20,0.50,0.12,85,25,110,6.60,3.36,1.85,3564,6014,443,10021,900,9121,15432,
+lean_100,100,1200,Y3,US,meta+forums,1.0,0.20,0.50,0.12,116,22,138,8.28,3.96,2.32,4968,8514,557,14039,300,13739,23502,
+lean_100,100,1200,Y3,PL,organic,0,0,0,0,13,0,13,0.26,0,0.13,20,0,13,33,0,33,62,
+targeted_150,150,1800,Y1,UK,meta+forums+seo,1.0,0.20,0.50,0.12,18,18,36,2.16,1.22,0.60,1167,2184,145,3496,1200,2296,,"£100 UK + £50 US; UK forum ads for Shield"
+targeted_150,150,1800,Y1,US,meta+forums+seo,1.0,0.20,0.50,0.12,25,10,35,2.10,0.90,0.58,1260,1935,150,3345,600,2745,,
+targeted_150,150,1800,Y1,PL,organic,0,0,0,0,4,0,4,0.08,0,0.04,8,0,4,12,0,12,,
+targeted_150,150,1800,Y2,UK,meta+forums+seo,1.0,0.20,0.50,0.12,58,26,84,5.04,2.80,1.40,2727,5010,335,8072,1200,6872,,
+targeted_150,150,1800,Y2,US,meta+forums+seo,1.0,0.20,0.50,0.12,78,18,96,5.76,2.70,1.60,3456,5805,383,9644,600,9044,,
+targeted_150,150,1800,Y2,PL,organic,0,0,0,0,9,0,9,0.18,0,0.09,17,0,9,26,0,26,,
+targeted_150,150,1800,Y3,UK,meta+forums+seo,1.0,0.20,0.50,0.12,110,34,144,8.64,4.80,2.41,4676,8592,576,13844,1200,12644,21812,
+targeted_150,150,1800,Y3,US,meta+forums+seo,1.0,0.20,0.50,0.12,148,26,174,10.44,4.80,2.90,6264,10320,695,17279,600,16679,28468,
+targeted_150,150,1800,Y3,PL,organic,0,0,0,0,16,0,16,0.32,0,0.16,25,0,16,41,0,41,79,
+max_budget,200,2400,Y1,UK,meta+forums+seo+content,1.0,0.20,0.50,0.12,22,24,46,2.76,1.60,0.77,1493,2864,185,4542,1500,3042,,"£125 UK + £75 US; Shield focus on legal forums"
+max_budget,200,2400,Y1,US,meta+forums+seo+content,1.0,0.20,0.50,0.12,32,14,46,2.76,1.26,0.77,1656,2709,198,4563,900,3663,,
+max_budget,200,2400,Y1,PL,organic+content,0,0,0,0,5,0,5,0.10,0,0.05,10,0,5,15,0,15,,Still no paid; modest PL content
+max_budget,200,2400,Y2,UK,meta+forums+seo+content,1.0,0.20,0.50,0.12,72,36,108,6.48,3.60,1.81,3506,6440,432,10378,1500,8878,,
+max_budget,200,2400,Y2,US,meta+forums+seo+content,1.0,0.20,0.50,0.12,96,24,120,7.20,3.60,2.02,4320,7740,482,12542,900,11642,,
+max_budget,200,2400,Y2,PL,organic+content,0,0,0,0,11,0,11,0.22,0,0.11,21,0,11,32,0,32,,
+max_budget,200,2400,Y3,UK,meta+forums+seo+content,1.0,0.20,0.50,0.12,135,48,183,10.98,6.40,3.07,5940,11456,733,18129,1500,16629,28549,
+max_budget,200,2400,Y3,US,meta+forums+seo+content,1.0,0.20,0.50,0.12,180,34,214,12.84,6.24,3.59,7704,13416,862,21982,900,21082,36387,
+max_budget,200,2400,Y3,PL,organic+content,0,0,0,0,20,0,20,0.40,0,0.20,31,0,20,51,0,51,98,

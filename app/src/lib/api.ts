@@ -203,6 +203,10 @@ export async function updateFamily(body: Record<string, unknown>): Promise<void>
 
 export interface ChildRecord {
   id: string; display_name: string; avatar_id: string | null; locked_until: number | null;
+  monzo_handle: string | null;
+  revolut_handle: string | null;
+  paypal_handle: string | null;
+  venmo_handle: string | null;
 }
 export async function getChildren(): Promise<{ children: ChildRecord[] }> {
   return request('/api/children');
@@ -312,6 +316,7 @@ export interface Completion {
   attempt_count: number;         // > 1 means resubmission
   status: 'awaiting_review' | 'completed' | 'needs_revision' | 'pending';
   rating: number; submitted_at: number; resolved_at: number | null;
+  paid_out_at: number | null;
 }
 
 export async function getCompletions(params: {
@@ -737,5 +742,55 @@ export async function suggestChore(body: {
   return request('/api/market-rates/suggest', {
     method: 'POST',
     body: JSON.stringify(body),
+  });
+}
+
+// ── Payment Bridge ─────────────────────────────────────────────────
+
+export type MarkPaidResult = {
+  completion_id: string;
+  paid_out_at: number | null;
+  was_already_paid: boolean;
+};
+
+export async function markPaid(completionId: string): Promise<MarkPaidResult> {
+  return request(`/api/completions/${completionId}/mark-paid`, { method: 'POST' });
+}
+
+export async function markPaidBatch(
+  familyId: string,
+  completionIds: string[],
+): Promise<{ stamped: number; paid_out_at: number | null }> {
+  return request('/api/completions/mark-paid-batch', {
+    method: 'POST',
+    body: JSON.stringify({ family_id: familyId, completion_ids: completionIds }),
+  });
+}
+
+export type UnpaidSummaryRow = {
+  child_id: string;
+  unpaid_total: number;
+  unpaid_count: number;
+  currency: string;
+};
+
+export async function getUnpaidSummary(
+  familyId: string,
+): Promise<{ children: UnpaidSummaryRow[] }> {
+  return request(`/api/completions/unpaid-summary?family_id=${encodeURIComponent(familyId)}`);
+}
+
+export async function setPaymentHandles(
+  childId: string,
+  handles: Partial<{
+    monzo_handle: string | null;
+    revolut_handle: string | null;
+    paypal_handle: string | null;
+    venmo_handle: string | null;
+  }>,
+): Promise<{ child_id: string; updated: string[] }> {
+  return request(`/api/child/${childId}/payment-handles`, {
+    method: 'PATCH',
+    body: JSON.stringify(handles),
   });
 }

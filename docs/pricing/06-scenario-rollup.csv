@@ -1,0 +1,6 @@
+scenario,monthly_budget_gbp,y1_total_revenue_gbp,y2_total_revenue_gbp,y3_total_revenue_gbp,y1_net_revenue_gbp,y2_net_revenue_gbp,y3_net_revenue_gbp,cumulative_3yr_net_gbp,y3_monthly_run_rate_gbp,y3_pct_of_200k_target,notes
+zero_budget,0,2775,8454,16436,2775,8454,16436,27665,1370,0.8%,Organic only — slow but pure margin
+bootstrap_50,50,3693,10660,19016,3093,10060,18416,31569,1585,0.9%,Marginal improvement over zero; CAC bleeds
+lean_100,100,5064,13439,24093,3864,12239,22893,38997,2008,1.2%,Split UK/US paid
+targeted_150,150,6853,17742,31164,5053,16542,29364,50959,2597,1.5%,Best targeted allocation
+max_budget,200,9120,22952,40162,6720,20552,37762,65034,3347,2.0%,Max affordable budget

@@ -1,0 +1,62 @@
+year,market,competitor,plan_tier,category,monthly_local,annual_local,local_currency,annual_gbp_nominal,card_required,kids_included,notes,source_type,confidence
+2024,UK,GoHenry,Everyday,kids-debit,3.99,47.88,GBP,47.88,Y,1,"Post-Acorns acquisition pricing; was £2.99 in 2022",scraped,high
+2024,UK,GoHenry,Plus,kids-debit,5.99,71.88,GBP,71.88,Y,1,"Interest on savings; premium tier",scraped,high
+2024,UK,GoHenry,Max,kids-debit,9.99,119.88,GBP,119.88,Y,4,"Family plan up to 4 kids",scraped,high
+2024,UK,RoosterMoney,Virtual Tracker,chore-tracker,0,0,GBP,0,N,unlimited,"NatWest-owned; free chore/allowance tracker",scraped,high
+2024,UK,RoosterMoney,Rooster Card,kids-debit,1.99,19.99,GBP,19.99,Y,unlimited,"Free for NatWest/RBS customers",scraped,high
+2024,UK,Revolut <18,Standard,kids-debit,0,0,GBP,0,Y,1,"Free if parent has Standard Revolut; delivery fee applies",scraped,high
+2024,UK,Starling Kite,Standard,kids-debit,0,0,GBP,0,Y,1,"Became free Oct 2023 (was £2/mo)",scraped,high
+2024,UK,HyperJar,Kids,kids-debit,0,0,GBP,0,Y,unlimited,"Fully free; monetised via merchant partnerships",scraped,high
+2024,UK,OurFamilyWizard,Essentials,coparent-legal,8.99,107.99,GBP,107.99,N,n/a,"PER PARENT; both parents pay separately = £216/yr household",scraped,high
+2024,UK,OurFamilyWizard,Premium,coparent-legal,12.99,155.99,GBP,155.99,N,n/a,"PER PARENT",scraped,high
+2024,UK,OurFamilyWizard,Max,coparent-legal,17.99,215.99,GBP,215.99,N,n/a,"PER PARENT",scraped,high
+2024,US,Greenlight,Core,kids-debit,4.99,59.88,USD,47.19,Y,5,"Family plan — 5 kids included",scraped,high
+2024,US,Greenlight,Max,kids-debit,9.98,119.76,USD,94.37,Y,5,"Investing + priority support",scraped,high
+2024,US,Greenlight,Infinity,kids-debit,14.98,179.76,USD,141.65,Y,5,"Adds location sharing + SOS",scraped,high
+2024,US,GoHenry US,Standard,kids-debit,4.99,59.88,USD,47.19,Y,1,"Rebranded to Acorns Early post-acquisition",scraped,high
+2024,US,GoHenry US,Family (2-4),kids-debit,9.99,119.88,USD,94.47,Y,4,"Family tier 2-4 kids",scraped,high
+2024,US,Modak,Free,kids-debit,0,0,USD,0,Y,unlimited,"Free tier — no monthly fee",scraped,high
+2024,US,Modak,MoGold,kids-debit,5.99,71.88,USD,56.63,Y,unlimited,"Free top-ups + 2% cashback",scraped,high
+2024,US,Homey,Free,chore-tracker,0,0,USD,0,N,3,"Free for up to 3 accounts",scraped,high
+2024,US,Homey,Premium,chore-tracker,4.99,49.99,USD,39.39,N,unlimited,"Annual option = 17% discount vs monthly",scraped,high
+2024,US,Homey,Unlimited,chore-tracker,6.99,83.88,USD,66.08,N,unlimited,"Estimated annual from monthly",scraped,medium
+2024,US,OurFamilyWizard,Essentials,coparent-legal,12.5,150,USD,118.2,N,n/a,"PER PARENT; $150/yr annual billing",scraped,high
+2024,US,OurFamilyWizard,Premium,coparent-legal,16.58,199,USD,156.81,N,n/a,"PER PARENT",scraped,high
+2024,US,OurFamilyWizard,Max,coparent-legal,24.99,299.88,USD,236.31,N,n/a,"PER PARENT",scraped,high
+2024,US,AppClose,Free,coparent-legal,0,0,USD,0,N,n/a,"Monetised via payment processing",scraped,high
+2024,PL,Revolut <18,Standard,kids-debit,0,0,PLN,0,Y,1,"Free with parent's Standard account",scraped,high
+2024,PL,Gimi,Premium,kids-debit,17,199.99,PLN,39.68,Y,unlimited,"~€45/yr → ~PLN 200; estimated PL pricing",scraped,medium
+2024,PL,Millennium Junior,Konto 360 Junior,kids-debit,0,0,PLN,0,Y,1,"Free; uses parent's Millennium account",scraped,high
+2024,PL,PKO Junior,Standard,kids-debit,0,0,PLN,0,Y,1,"Free; bank app",scraped,high
+2024,PL,Planaro,n/a,chore-tracker,NA,NA,PLN,NA,N,NA,"User-referenced but not found in public search; may be niche/regional/rebranded",research-gap,low
+2024,PL,OurFamilyWizard,Essentials (via USD),coparent-legal,NA,600,PLN,118.2,N,n/a,"No native PLN pricing; forced FX conversion; no PL marketing",estimated,medium
+2025,UK,GoHenry,Everyday,kids-debit,3.99,47.88,GBP,47.88,Y,1,"Price held nominal 2024-2025",scraped,high
+2025,UK,GoHenry,Plus,kids-debit,5.99,71.88,GBP,71.88,Y,1,"",scraped,high
+2025,UK,GoHenry,Max,kids-debit,9.99,119.88,GBP,119.88,Y,4,"",scraped,high
+2025,UK,RoosterMoney,Rooster Card,kids-debit,1.99,19.99,GBP,19.99,Y,unlimited,"",scraped,high
+2025,UK,Starling Kite,Standard,kids-debit,0,0,GBP,0,Y,1,"",scraped,high
+2025,UK,OurFamilyWizard,Essentials,coparent-legal,8.99,107.99,GBP,107.99,N,n/a,"",scraped,high
+2025,UK,OurFamilyWizard,Premium,coparent-legal,12.99,155.99,GBP,155.99,N,n/a,"",scraped,high
+2025,UK,OurFamilyWizard,Max,coparent-legal,17.99,215.99,GBP,215.99,N,n/a,"",scraped,high
+2025,US,Greenlight,Core,kids-debit,4.99,59.88,USD,46.71,Y,5,"",scraped,high
+2025,US,Greenlight,Max,kids-debit,9.98,119.76,USD,93.41,Y,5,"",scraped,high
+2025,US,Greenlight,Infinity,kids-debit,14.98,179.76,USD,140.22,Y,5,"",scraped,high
+2025,US,OurFamilyWizard,Essentials,coparent-legal,12.5,150,USD,117,N,n/a,"",scraped,high
+2025,US,OurFamilyWizard,Premium,coparent-legal,16.58,199,USD,155.22,N,n/a,"",scraped,high
+2025,US,OurFamilyWizard,Max,coparent-legal,24.99,299.88,USD,233.91,N,n/a,"",scraped,high
+2026,UK,GoHenry,Everyday,kids-debit,4.13,49.56,GBP,49.56,Y,1,"CPI-projected 3.5% 2025→2026",projected-cpi,medium
+2026,UK,GoHenry,Max,kids-debit,10.34,124.08,GBP,124.08,Y,4,"CPI-projected",projected-cpi,medium
+2026,UK,RoosterMoney,Rooster Card,kids-debit,2.06,20.69,GBP,20.69,Y,unlimited,"CPI-projected",projected-cpi,medium
+2026,UK,OurFamilyWizard,Essentials,coparent-legal,9.31,111.77,GBP,111.77,N,n/a,"CPI-projected",projected-cpi,medium
+2026,UK,OurFamilyWizard,Premium,coparent-legal,13.44,161.45,GBP,161.45,N,n/a,"CPI-projected",projected-cpi,medium
+2026,UK,AppClose,All-Inclusive,coparent-legal,8.99,98.99,USD,78.2,N,n/a,"Jan 2026 launch pricing",scraped,high
+2026,US,Greenlight,Core,kids-debit,5.16,61.92,USD,48.91,Y,5,"CPI-projected 2.7% 2025→2026",projected-cpi,medium
+2026,US,Greenlight,Max,kids-debit,10.33,123.96,USD,97.91,Y,5,"CPI-projected",projected-cpi,medium
+2026,US,Greenlight,Infinity,kids-debit,15.49,185.88,USD,146.85,Y,5,"CPI-projected",projected-cpi,medium
+2026,US,OurFamilyWizard,Essentials,coparent-legal,12.93,155.16,USD,122.58,N,n/a,"CPI-projected",projected-cpi,medium
+2027,UK,GoHenry,Everyday,kids-debit,4.23,50.79,GBP,50.79,Y,1,"CPI-projected 2.5% 2026→2027",projected-cpi,medium
+2027,UK,GoHenry,Max,kids-debit,10.59,127.17,GBP,127.17,Y,4,"CPI-projected",projected-cpi,medium
+2027,UK,OurFamilyWizard,Essentials,coparent-legal,9.53,114.56,GBP,114.56,N,n/a,"CPI-projected",projected-cpi,medium
+2027,US,Greenlight,Core,kids-debit,5.27,63.24,USD,49.95,Y,5,"CPI-projected 2.1%",projected-cpi,medium
+2027,US,Greenlight,Max,kids-debit,10.55,126.6,USD,99.99,Y,5,"CPI-projected",projected-cpi,medium
+2027,US,OurFamilyWizard,Essentials,coparent-legal,13.2,158.4,USD,125.1,N,n/a,"CPI-projected",projected-cpi,medium

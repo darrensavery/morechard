@@ -1,5 +1,5 @@
 /**
- * Stage 1 — Parent Custodian (Identity)
+ * Stage 1 — Lead Parent (Identity)
  * Polished fintech UI: floating labels, real-time validation,
  * password strength meter, teal active states, haptic feedback on CTA.
  */

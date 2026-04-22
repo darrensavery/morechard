@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Morechard</string>
+    <string name="title_activity_main">Morechard</string>
+    <string name="package_name">com.morechard.app</string>
+    <string name="custom_url_scheme">com.morechard.app</string>
+</resources>
