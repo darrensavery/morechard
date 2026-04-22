@@ -13,7 +13,8 @@ import {
   TreePine, Lock,
 } from 'lucide-react'
 import type { ChildRecord, ChildGrowthSettings } from '../../../lib/api'
-import { renameChild, setChildPin as apiSetChildPin, setPaymentHandles } from '../../../lib/api'
+import { renameChild, setChildPin as apiSetChildPin, setPaymentHandles, getFamilyId } from '../../../lib/api'
+import { getDetails, setDetails, clearDetails } from '../../../lib/localBankDetails'
 import { cn } from '../../../lib/utils'
 import { SettingsRow, SectionCard, SectionHeader } from '../shared'
 import { useTone } from '../../../lib/useTone'
@@ -171,6 +172,7 @@ export function ChildProfileSettings({
   onAppViewToggle, onGrowthUpdate, onRenameChild, onPinResetSuccess, onComingSoon, onBack,
 }: Props) {
   const { terminology } = useTone(0)
+  const familyId = getFamilyId()
   const [expanded,     setExpanded]     = useState(false)
   const [activeView,   setActiveView]   = useState<ActiveView>('root')
   const [editingName,  setEditingName]  = useState(false)
@@ -178,6 +180,29 @@ export function ChildProfileSettings({
   const [nameSaving,   setNameSaving]   = useState(false)
   const [nameError,    setNameError]    = useState<string | null>(null)
   const [showPinSheet, setShowPinSheet] = useState(false)
+  const [sortCode, setSortCode] = useState(
+    () => getDetails(familyId, child.id)?.sortCode ?? '',
+  )
+  const [acctNum, setAcctNum] = useState(
+    () => getDetails(familyId, child.id)?.accountNumber ?? '',
+  )
+  const [zelle, setZelle] = useState(
+    () => getDetails(familyId, child.id)?.zelleHandle ?? '',
+  )
+
+  function saveBankDetails() {
+    if (!sortCode && !acctNum && !zelle) {
+      clearDetails(familyId, child.id)
+      return
+    }
+    setDetails(familyId, child.id, {
+      childId: child.id,
+      sortCode: sortCode || undefined,
+      accountNumber: acctNum || undefined,
+      zelleHandle: zelle || undefined,
+      updatedAt: Date.now(),
+    })
+  }
 
   if (activeView === 'login-history') {
     return (
@@ -302,6 +327,44 @@ export function ChildProfileSettings({
                   />
                 </label>
               ))}
+            </div>
+          </SectionCard>
+        </div>
+
+        {/* Bank Transfer Details */}
+        <div>
+          <p className="text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wide px-1 mb-2">Bank Transfer Details</p>
+          <SectionCard>
+            <div className="px-4 py-3">
+              <div className="rounded-xl bg-neutral-50 border border-neutral-200 px-3 py-2 text-[11px] text-neutral-600 mb-3">
+                Stored on this device only — never sent to our servers. If you switch
+                phones, you&apos;ll re-enter them. We&apos;ll upgrade this to encrypted
+                storage in a future release.
+              </div>
+              <label className="flex items-center gap-3 py-2 border-b border-[var(--color-border)]">
+                <span className="w-32 text-[13px] text-[var(--color-text)]">Sort code</span>
+                <input inputMode="numeric" pattern="[0-9]{6}" maxLength={6}
+                  value={sortCode} onChange={(e) => setSortCode(e.target.value.replace(/\D/g, ''))}
+                  onBlur={saveBankDetails}
+                  placeholder="201575"
+                  className="flex-1 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-alt)] px-2 py-1 font-mono text-[14px] text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]" />
+              </label>
+              <label className="flex items-center gap-3 py-2 border-b border-[var(--color-border)]">
+                <span className="w-32 text-[13px] text-[var(--color-text)]">Account number</span>
+                <input inputMode="numeric" pattern="[0-9]{8}" maxLength={8}
+                  value={acctNum} onChange={(e) => setAcctNum(e.target.value.replace(/\D/g, ''))}
+                  onBlur={saveBankDetails}
+                  placeholder="12345678"
+                  className="flex-1 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-alt)] px-2 py-1 font-mono text-[14px] text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]" />
+              </label>
+              <label className="flex items-center gap-3 py-2">
+                <span className="w-32 text-[13px] text-[var(--color-text)]">Zelle (US)</span>
+                <input type="text"
+                  value={zelle} onChange={(e) => setZelle(e.target.value)}
+                  onBlur={saveBankDetails}
+                  placeholder="alex@example.com"
+                  className="flex-1 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-alt)] px-2 py-1 text-[14px] text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]" />
+              </label>
             </div>
           </SectionCard>
         </div>

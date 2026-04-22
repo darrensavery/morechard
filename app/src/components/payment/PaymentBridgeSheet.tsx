@@ -29,6 +29,7 @@ type Row = { label: string; value: string };
 
 type View =
   | { kind: 'grid' }
+  | { kind: 'bank-empty' }
   | { kind: 'deep-link-pending'; provider: Provider; url: string }
   | { kind: 'deep-link-fallback'; provider: Provider; rows: Row[] }
   | { kind: 'bank-copy'; rows: Row[] }
@@ -96,9 +97,8 @@ export function PaymentBridgeSheet(props: Props) {
         });
         return;
       }
-      // No saved details — prompt the parent inline. V1 minimal form:
-      // eslint-disable-next-line no-alert
-      alert(`No bank details saved for ${child.display_name}. Add them in the child's profile first.`);
+      // No saved details — show inline empty-state.
+      setView({ kind: 'bank-empty' });
       return;
     }
     if (p === 'monzo' && child.monzo_handle) {
@@ -163,6 +163,23 @@ export function PaymentBridgeSheet(props: Props) {
 
           {view.kind === 'grid' && (
             <PaymentTileGrid onSelect={handleTileSelect} availability={availability} />
+          )}
+
+          {view.kind === 'bank-empty' && (
+            <div className="px-4 py-8 text-center">
+              <div className="text-[14px] font-semibold">No bank details saved</div>
+              <div className="mt-1 text-[13px] text-neutral-500">
+                Add {child.display_name}&apos;s sort code and account number in their
+                profile first.
+              </div>
+              <button
+                type="button"
+                onClick={() => setView({ kind: 'grid' })}
+                className="mt-4 rounded-2xl bg-neutral-100 px-4 py-2 text-[13px] font-semibold"
+              >
+                Back
+              </button>
+            </div>
           )}
 
           {view.kind === 'deep-link-pending' && (
