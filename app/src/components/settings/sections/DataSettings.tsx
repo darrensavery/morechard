@@ -13,7 +13,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react'
 import { Database, FileText, Scale, AlertTriangle, Download } from 'lucide-react'
 import { Toast, useToast, SettingsRow, SectionCard, SectionHeader } from '../shared'
 import { getFamilyId } from '../../../lib/api'
-import { useExportManager } from '../../hooks/useExportManager'
+import { useExportManager } from '../../../hooks/useExportManager'
 
 interface Props {
   isLead:           boolean
