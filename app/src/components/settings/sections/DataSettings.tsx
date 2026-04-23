@@ -9,7 +9,7 @@
  * Data Pruning is Lead-parent only with a two-step inline confirm.
  */
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { Database, FileText, Scale, AlertTriangle, Download } from 'lucide-react'
 import { Toast, useToast, SettingsRow, SectionCard, SectionHeader } from '../shared'
 import { getFamilyId } from '../../../lib/api'
@@ -19,7 +19,6 @@ interface Props {
   isLead:           boolean
   hasAiMentor:      boolean
   hasShield:        boolean
-  lang:             string
   toast:            string | null
   onBack:           () => void
   onNavigateToPlan: (sku: 'AI_ANNUAL' | 'SHIELD') => void
@@ -29,9 +28,9 @@ type PruneStep = 'idle' | 'confirm' | 'pruning'
 
 export function DataSettings({
   isLead, hasAiMentor, hasShield,
-  lang, toast, onBack, onNavigateToPlan,
+  toast, onBack, onNavigateToPlan,
 }: Props) {
-  const familyId = getFamilyId()
+  const familyId = useMemo(() => getFamilyId(), [])
   const { stateOf, errorOf, triggerExport, triggerPrune, prunedCount } =
     useExportManager(familyId)
 
@@ -42,13 +41,28 @@ export function DataSettings({
   useEffect(() => {
     const state = stateOf('prune')
     if (pruneStep === 'pruning' && state === 'success') {
-      showToast(`Archived ${prunedCount ?? 0} records`)
+      showToast(prunedCount ? `Archived ${prunedCount} records` : 'Nothing to archive')
       setPruneStep('idle')
     } else if (pruneStep === 'pruning' && state === 'error') {
       showToast(errorOf('prune') ?? 'Prune failed')
       setPruneStep('idle')
     }
-  }, [stateOf('prune')]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [pruneStep, stateOf, errorOf, showToast, prunedCount])
+
+  const handleBehavioralClick = useCallback(() => {
+    if (hasAiMentor) triggerExport('pdf', 'behavioral')
+    else onNavigateToPlan('AI_ANNUAL')
+  }, [hasAiMentor, triggerExport, onNavigateToPlan])
+
+  const handleForensicClick = useCallback(() => {
+    if (hasShield) triggerExport('pdf', 'forensic')
+    else onNavigateToPlan('SHIELD')
+  }, [hasShield, triggerExport, onNavigateToPlan])
+
+  const handlePruneConfirm = useCallback(() => {
+    triggerPrune()
+    setPruneStep('pruning')
+  }, [triggerPrune])
 
   function exportLabel(key: Parameters<typeof stateOf>[0], idleLabel: string) {
     const s = stateOf(key)
@@ -59,7 +73,7 @@ export function DataSettings({
 
   function exportRightSlot(key: Parameters<typeof stateOf>[0], locked: boolean, lockBadgeLabel: string) {
     const s = stateOf(key)
-    if (s === 'generating') return <Spinner />
+    if (s === 'generating') return <Spinner aria-hidden="true" />
     if (locked)             return <LockedBadge label={lockBadgeLabel} />
     if (s === 'success')    return <Download size={14} className="text-[var(--brand-primary)]" />
     return <Download size={14} className="text-gray-400" />
@@ -118,9 +132,7 @@ export function DataSettings({
           icon={<FileText size={15} className="text-purple-500" />}
           label={exportLabel('pdf-behavioral', 'Growth & Learning Report')}
           description="Adds Learning Lab modules and Behavioural Pulse"
-          onClick={hasAiMentor
-            ? () => triggerExport('pdf', 'behavioral')
-            : () => onNavigateToPlan('AI_ANNUAL')}
+          onClick={handleBehavioralClick}
           disabled={stateOf('pdf-behavioral') === 'generating'}
           rightSlot={exportRightSlot('pdf-behavioral', !hasAiMentor, 'Add AI Mentor')}
         />
@@ -133,9 +145,7 @@ export function DataSettings({
           icon={<Scale size={15} className="text-orange-600" />}
           label={exportLabel('pdf-forensic', 'Forensic Report')}
           description="Tamper-evident record with secure digital signatures and device verification"
-          onClick={hasShield
-            ? () => triggerExport('pdf', 'forensic')
-            : () => onNavigateToPlan('SHIELD')}
+          onClick={handleForensicClick}
           disabled={stateOf('pdf-forensic') === 'generating'}
           rightSlot={exportRightSlot('pdf-forensic', !hasShield, 'Add Shield')}
         />
@@ -176,10 +186,7 @@ export function DataSettings({
               <div className="flex gap-2 pl-11">
                 <button
                   type="button"
-                  onClick={() => {
-                    triggerPrune()
-                    setPruneStep('pruning')
-                  }}
+                  onClick={handlePruneConfirm}
                   className="flex-1 py-2 rounded-xl bg-red-600 text-white text-[13px] font-semibold hover:bg-red-700 active:bg-red-700 transition-colors cursor-pointer"
                 >
                   Yes, archive old records
@@ -198,7 +205,7 @@ export function DataSettings({
           {pruneStep === 'pruning' && (
             <div className="flex items-center gap-3 px-4 py-4">
               <span className="shrink-0 w-8 h-8 rounded-xl flex items-center justify-center bg-[color-mix(in_srgb,var(--brand-primary)_10%,transparent)] text-[var(--brand-primary)]">
-                <Spinner />
+                <Spinner aria-hidden="true" />
               </span>
               <p className="text-[14px] font-semibold text-[var(--color-text-muted)]">
                 Archiving records…
@@ -213,9 +220,10 @@ export function DataSettings({
 
 // ── Sub-components ────────────────────────────────────────────────────────────
 
-function Spinner() {
+function Spinner({ 'aria-hidden': ariaHidden }: { 'aria-hidden'?: boolean | 'true' | 'false' }) {
   return (
     <svg
+      aria-hidden={ariaHidden}
       className="animate-spin h-4 w-4 text-[var(--brand-primary)]"
       xmlns="http://www.w3.org/2000/svg"
       fill="none"
