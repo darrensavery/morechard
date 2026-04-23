@@ -64,7 +64,7 @@ export async function handleSettingsUpdate(request: Request, env: Env): Promise<
   }
 
   const VALID_THEMES  = ['light','dark','system'];
-  const VALID_LOCALES = ['en','pl'];
+  const VALID_LOCALES = ['en', 'en-GB', 'en-US', 'pl'];
   const VALID_AVATARS = [
     'adventurer:felix','adventurer:luna','adventurer:jasper','adventurer:nova','adventurer:orion','adventurer:sage',
     'bottts:spark','bottts:volt','bottts:byte','bottts:nano','bottts:pixel','bottts:core',

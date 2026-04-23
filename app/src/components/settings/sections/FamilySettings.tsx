@@ -23,6 +23,10 @@ interface Props {
   growthSettings:    Record<string, ChildGrowthSettings>
   growthBusy:        string | null
   isLead:            boolean
+  hasCoParent:       boolean
+  sharedExpenseThreshold:       number
+  sharedExpenseSplitBp:         number
+  savingSharedExpense:          boolean
   toast:             string | null
   onBack:            () => void
   onComingSoon:      () => void
@@ -32,24 +36,31 @@ interface Props {
   onRenameChild:     (childId: string, newName: string) => void
   onPinResetSuccess: () => void
   onGenerateInvite:  () => Promise<{ code: string; expires_at: number }>
+  onSharedExpenseThresholdChange: (v: number) => void
+  onSharedExpenseSplitChange:     (v: number) => void
+  onSaveSharedExpense:            () => Promise<void>
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export function FamilySettings({
   children, appViews, appViewBusy, growthSettings, growthBusy,
-  isLead, toast, onBack, onComingSoon,
+  isLead, hasCoParent,
+  sharedExpenseThreshold, sharedExpenseSplitBp, savingSharedExpense,
+  toast, onBack, onComingSoon,
   onAddChild, onAppViewToggle, onGrowthUpdate, onRenameChild, onPinResetSuccess, onGenerateInvite,
+  onSharedExpenseThresholdChange, onSharedExpenseSplitChange, onSaveSharedExpense,
 }: Props) {
   const { terminology } = useTone(0)  // parent settings — never teen view
-  const [activeChildId,  setActiveChildId]  = useState<string | null>(null)
-  const [showAddChild,   setShowAddChild]   = useState(false)
-  const [newChildName,   setNewChildName]   = useState('')
-  const [addingChild,    setAddingChild]    = useState(false)
-  const [addChildResult, setAddChildResult] = useState<{ child_id: string; invite_code: string } | null>(null)
-  const [inviteCode,     setInviteCode]     = useState<string | null>(null)
-  const [inviteExpiry,   setInviteExpiry]   = useState<string | null>(null)
-  const [genningInvite,  setGenningInvite]  = useState(false)
+  const [activeChildId,       setActiveChildId]       = useState<string | null>(null)
+  const [showAddChild,        setShowAddChild]        = useState(false)
+  const [newChildName,        setNewChildName]        = useState('')
+  const [addingChild,         setAddingChild]         = useState(false)
+  const [addChildResult,      setAddChildResult]      = useState<{ child_id: string; invite_code: string } | null>(null)
+  const [inviteCode,          setInviteCode]          = useState<string | null>(null)
+  const [inviteExpiry,        setInviteExpiry]        = useState<string | null>(null)
+  const [genningInvite,       setGenningInvite]       = useState(false)
+  const [showSharedExpenses,  setShowSharedExpenses]  = useState(false)
 
   async function handleAddChild(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -76,6 +87,64 @@ export function FamilySettings({
   }
 
   const activeChild = activeChildId ? children.find(c => c.id === activeChildId) ?? null : null
+
+  if (showSharedExpenses) {
+    return (
+      <div className="space-y-4">
+        {toast && <Toast message={toast} />}
+        <SectionHeader title="Shared Expenses" onBack={() => setShowSharedExpenses(false)} />
+
+        <SectionCard>
+          {/* Approval threshold */}
+          <div className="px-4 py-3.5 border-b border-[var(--color-border)]">
+            <p className="text-[13px] font-semibold text-[var(--color-text)] mb-0.5">Approval Threshold</p>
+            <p className="text-[12px] text-[var(--color-text-muted)] mb-2.5">
+              Expenses above this amount require the other parent's approval (Verification mode only).
+            </p>
+            <div className="flex items-center gap-2">
+              <span className="text-[14px] text-[var(--color-text-muted)]">£</span>
+              <input
+                type="number"
+                inputMode="decimal"
+                step="1"
+                min="0"
+                value={(sharedExpenseThreshold / 100).toFixed(0)}
+                onChange={e => onSharedExpenseThresholdChange(Math.round(parseFloat(e.target.value || '0') * 100))}
+                className="border border-[var(--color-border)] rounded-xl px-4 py-2 text-[14px] bg-[var(--color-surface)] w-28 tabular-nums focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]"
+              />
+            </div>
+          </div>
+
+          {/* Default split */}
+          <div className="px-4 py-3.5">
+            <p className="text-[13px] font-semibold text-[var(--color-text)] mb-0.5">
+              Default Split — {(sharedExpenseSplitBp / 100).toFixed(0)}% / {(100 - sharedExpenseSplitBp / 100).toFixed(0)}%
+            </p>
+            <p className="text-[12px] text-[var(--color-text-muted)] mb-2.5">
+              Your share vs. the co-parent's share for new shared expenses.
+            </p>
+            <input
+              type="range"
+              min={0}
+              max={10000}
+              step={100}
+              value={sharedExpenseSplitBp}
+              onChange={e => onSharedExpenseSplitChange(Number(e.target.value))}
+              className="w-full"
+            />
+          </div>
+        </SectionCard>
+
+        <button
+          onClick={onSaveSharedExpense}
+          disabled={savingSharedExpense}
+          className="w-full bg-[var(--brand-primary)] text-white font-semibold text-[14px] py-3 rounded-xl disabled:opacity-50 cursor-pointer"
+        >
+          {savingSharedExpense ? 'Saving…' : 'Save Changes'}
+        </button>
+      </div>
+    )
+  }
 
   if (activeChild) {
     return (
@@ -185,7 +254,15 @@ export function FamilySettings({
               </button>
             )}
           </div>
-          {isLead && (
+          {hasCoParent && (
+            <SettingsRow
+              icon={<Users size={15} />}
+              label="Shared Expenses"
+              description="Approval threshold and default split with your co-parent"
+              onClick={() => setShowSharedExpenses(true)}
+            />
+          )}
+          {isLead && hasCoParent && (
             <SettingsRow icon={<Users size={15} />} label="Remove Co-Parent" description="Revoke access for the secondary manager" onClick={onComingSoon} destructive />
           )}
         </SectionCard>

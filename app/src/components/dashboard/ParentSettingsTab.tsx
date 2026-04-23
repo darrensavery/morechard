@@ -149,7 +149,7 @@ function SectionCard({ children }: { children: React.ReactNode }) {
 export function ParentSettingsTab({ familyId, online, onChildrenChange, onClose }: Props) {
   const identity        = getDeviceIdentity()
   const isLead          = identity?.parenting_role !== 'CO_PARENT'  // default to lead if unset (existing accounts)
-  const { locale }      = useLocale()
+  const { locale, setLocale } = useLocale()
 
   const [view,          setView]          = useState<View>({ type: 'menu' })
   useAndroidBack(true, () => {
@@ -213,10 +213,15 @@ export function ParentSettingsTab({ familyId, online, onChildrenChange, onClose 
     setLeadCount(leads)
     setTrial(t)
     if (s?.avatar_id) localStorage.setItem('mc_parent_avatar', s.avatar_id)
-    // Only seed from D1 if localStorage has no valid locale yet (avoids clobbering a recent user change)
-    const validLocales = ['en-GB', 'en-US', 'pl']
-    if (s?.locale && !validLocales.includes(localStorage.getItem('mc_locale') ?? '')) {
-      localStorage.setItem('mc_locale', s.locale)
+    // Seed locale from D1 only if localStorage has no valid locale yet.
+    // Normalise legacy 2-char 'en' → 'en-GB' before applying.
+    const validLocales: string[] = ['en-GB', 'en-US', 'pl']
+    const stored = localStorage.getItem('mc_locale') ?? ''
+    if (s?.locale && !validLocales.includes(stored)) {
+      const normalised = s.locale === 'en' ? 'en-GB' : s.locale
+      if (validLocales.includes(normalised)) {
+        setLocale(normalised as import('../../lib/locale').AppLocale)
+      }
     }
     const [views, growths] = await Promise.all([
       Promise.all(
@@ -315,7 +320,7 @@ export function ParentSettingsTab({ familyId, online, onChildrenChange, onClose 
 
   if (view.type === 'section') {
     if (view.section === 'account')    return <ProfileSection><ProfileSettings    profile={profile} settings={settings} identity={identity} family={family} isLead={isLead} leadCount={leadCount} onSaveName={handleSaveName} onSaveEmail={handleSaveEmail} onSetAvatar={handleSetAvatar} onBack={back} onComingSoon={comingSoon} toast={toast} /></ProfileSection>
-    if (view.section === 'family')     return <ProfileSection><FamilySettings     children={children} appViews={appViews} appViewBusy={appViewBusy} growthSettings={growthSettings} growthBusy={growthBusy} isLead={isLead} toast={toast} onBack={back} onComingSoon={comingSoon} onAddChild={handleAddChild} onAppViewToggle={handleAppViewToggle} onGrowthUpdate={handleGrowthUpdate} onRenameChild={handleRenameChild} onPinResetSuccess={handlePinResetSuccess} onGenerateInvite={handleGenerateInvite} /></ProfileSection>
+    if (view.section === 'family')     return <ProfileSection><FamilySettings     children={children} appViews={appViews} appViewBusy={appViewBusy} growthSettings={growthSettings} growthBusy={growthBusy} isLead={isLead} hasCoParent={family?.parenting_mode === 'co-parenting'} sharedExpenseThreshold={threshold} sharedExpenseSplitBp={splitBp} savingSharedExpense={savingSettings} toast={toast} onBack={back} onComingSoon={comingSoon} onAddChild={handleAddChild} onAppViewToggle={handleAppViewToggle} onGrowthUpdate={handleGrowthUpdate} onRenameChild={handleRenameChild} onPinResetSuccess={handlePinResetSuccess} onGenerateInvite={handleGenerateInvite} onSharedExpenseThresholdChange={setThreshold} onSharedExpenseSplitChange={setSplitBp} onSaveSharedExpense={handleSaveCoParentSettings} /></ProfileSection>
     if (view.section === 'security')   return <ProfileSection><SecuritySettings   profile={profile} toast={toast} onBack={back} onComingSoon={comingSoon} /></ProfileSection>
     if (view.section === 'appearance') return <ProfileSection><AppearanceSettings toast={toast} onBack={back} /></ProfileSection>
     if (view.section === 'billing')    return <ProfileSection><BillingSettings    toast={toast} onBack={back} onComingSoon={comingSoon} /></ProfileSection>
@@ -353,10 +358,25 @@ export function ParentSettingsTab({ familyId, online, onChildrenChange, onClose 
       </div>
     )
 
+    // Trial not yet started — clock hasn't begun, show "14 days free" at full bar
     if (!isActivated || daysLeft === null) return (
-      <div className="flex items-center gap-2 px-3 py-2 rounded-xl text-[12px] font-semibold bg-teal-50 text-teal-700 border border-teal-200">
-        <Clock size={13} />
-        {pl ? 'Rodzic — pełny dostęp' : 'Parent — full access'}
+      <div className="rounded-xl border overflow-hidden bg-teal-50 border-teal-200 text-teal-700">
+        <div className="flex items-center gap-2 px-3 pt-2 pb-1.5">
+          <Clock size={13} className="shrink-0" />
+          <span className="flex-1 text-[12px] font-semibold">
+            {pl ? 'Rodzic — 14 dni bezpłatnie' : 'Parent — 14 days free'}
+          </span>
+          <button
+            type="button"
+            onClick={() => setView({ type: 'section', section: 'billing' })}
+            className="flex items-center gap-0.5 text-[11px] font-semibold shrink-0 text-teal-600"
+          >
+            {pl ? 'Plan' : 'Manage Plan'}<ChevronRight size={12} />
+          </button>
+        </div>
+        <div className="h-1 bg-teal-100">
+          <div className="h-full bg-teal-500 w-full" />
+        </div>
       </div>
     )
 
@@ -373,7 +393,7 @@ export function ParentSettingsTab({ familyId, online, onChildrenChange, onClose 
           <span className="flex-1 text-[12px] font-semibold">{label}</span>
           <button type="button" onClick={() => setView({ type: 'section', section: 'billing' })}
             className={cn('flex items-center gap-0.5 text-[11px] font-semibold shrink-0', urgentAmber ? 'text-amber-600' : 'text-teal-600')}>
-            {pl ? 'Plany' : 'See Plans'}<ChevronRight size={12} />
+            {pl ? 'Plan' : 'Manage Plan'}<ChevronRight size={12} />
           </button>
         </div>
         <div className={cn('h-1', urgentAmber ? 'bg-amber-100' : 'bg-teal-100')}>
@@ -493,61 +513,6 @@ export function ParentSettingsTab({ familyId, online, onChildrenChange, onClose 
               </SectionCard>
             </div>
           ))}
-        </div>
-
-        {/* Shared Expense Settings */}
-        <div className="px-4 pb-4">
-          <div className="mt-6 flex flex-col gap-3">
-            <h3 className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wide">
-              Shared Expenses
-            </h3>
-
-            {/* Trust Threshold */}
-            <div className="flex flex-col gap-1">
-              <label className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wide">
-                Approval threshold
-              </label>
-              <p className="text-xs text-[var(--color-text-muted)]">
-                Expenses above this amount require the other parent's approval (Verification mode only).
-              </p>
-              <div className="flex items-center gap-2 mt-1">
-                <span className="text-sm">£</span>
-                <input
-                  type="number"
-                  inputMode="decimal"
-                  step="1"
-                  min="0"
-                  value={(threshold / 100).toFixed(0)}
-                  onChange={e => setThreshold(Math.round(parseFloat(e.target.value || '0') * 100))}
-                  className="border border-[var(--color-border)] rounded-xl px-4 py-2 text-sm bg-[var(--color-surface-raised)] w-28 tabular-nums"
-                />
-              </div>
-            </div>
-
-            {/* Default Split */}
-            <div className="flex flex-col gap-1 mt-2">
-              <label className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wide">
-                Default split — {(splitBp / 100).toFixed(0)}% / {(100 - splitBp / 100).toFixed(0)}%
-              </label>
-              <input
-                type="range"
-                min={0}
-                max={10000}
-                step={100}
-                value={splitBp}
-                onChange={e => setSplitBp(Number(e.target.value))}
-                className="w-full mt-1"
-              />
-            </div>
-
-            <button
-              onClick={handleSaveCoParentSettings}
-              disabled={savingSettings}
-              className="mt-2 bg-[var(--brand-primary)] text-white font-semibold text-sm py-2 px-6 rounded-xl disabled:opacity-50 self-start"
-            >
-              {savingSettings ? 'Saving…' : 'Save'}
-            </button>
-          </div>
         </div>
 
         {/* Log out — footer with distinct tint */}
