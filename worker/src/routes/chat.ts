@@ -187,6 +187,7 @@ Response length: 2–4 sentences.
 
 CHILD DATA — ground every response in these real numbers, never teach in the abstract:
 - Name: ${intel.display_name}
+- Earnings mode: ${intel.earnings_mode === 'ALLOWANCE' ? 'fixed allowance (not chore-dependent)' : intel.earnings_mode === 'HYBRID' ? 'hybrid (allowance + chores)' : 'chores only'}
 - Balance (their grove): ${balance}${isOrchard ? ` (${choresToPhysical(intel.balance_minor, intel.currency)})` : ''}
 - ${goalLine}
 - ${velocityLine}
@@ -194,8 +195,9 @@ CHILD DATA — ground every response in these real numbers, never teach in the a
 - Chores completed this week: ${intel.completed_7d} of ${intel.assigned_chore_count} assigned
 - Spent this week: ${formatMinor(intel.spent_minor_7d, intel.currency)} (${intel.spend_to_balance_pct}% of balance)
 - Planning horizon: ${intel.planning_horizon_days} days ahead
+${intel.bonus_pence_7d > 0 ? `- Bonus received this week: ${formatMinor(intel.bonus_pence_7d, intel.currency)} (parent recognised something special)` : ''}
 ${scramblerNote}
-${intel.has_parent_message ? `Parent message for ${intel.display_name}: "${intel.parent_message}"` : ''}
+${intel.has_parent_message ? `PARENT MESSAGE (priority — acknowledge this first before any financial topic): "${intel.parent_message}"` : ''}
 ${integrityNote}
 ${batchingNote}
 ${burnerNote}
@@ -267,6 +269,7 @@ Response length: 2–4 sentences.
 
 CHILD DATA — ground every lesson in these real numbers:
 - Name: ${intel.display_name}
+- Earnings mode: ${intel.earnings_mode === 'ALLOWANCE' ? 'fixed allowance — do not suggest "complete more chores to earn faster"' : intel.earnings_mode === 'HYBRID' ? 'hybrid (allowance + chores)' : 'chores only'}
 - Balance: ${balance}
 - ${goalLine}
 - Reliability Rating: ${intel.reliability_rating}% — this is their simulated "Credit Score." Above 90% = eligible for Parental Boost.
@@ -274,7 +277,9 @@ CHILD DATA — ground every lesson in these real numbers:
 - Quality failures (needs revision): ${intel.needs_revision_7d} this week
 - Weekly velocity: ${formatMinor(intel.velocity_7d * 7, intel.currency)} earned
 - Spent this week: ${formatMinor(intel.spent_minor_7d, intel.currency)} (${intel.spend_to_balance_pct}% of balance)
+${intel.bonus_pence_7d > 0 ? `- Bonus received this week: ${formatMinor(intel.bonus_pence_7d, intel.currency)} — parent recognised exceptional effort or behaviour.` : ''}
 ${intel.is_sunday_scrambler ? `- Scrambler alert: ${intel.display_name} batches chores on ${intel.scrambler_day}s — habit distribution opportunity.` : ''}
+${intel.has_parent_message ? `PARENT MESSAGE (priority — acknowledge this first before any financial topic): "${intel.parent_message}"` : ''}
 ${usIntegrityNote}
 ${usBatchingNote}
 ${usBurnerNote}
@@ -353,8 +358,11 @@ DANE DZIECKA — każdą lekcję opieraj na tych konkretnych liczbach:
 - Wskaźnik niezawodności: ${intel.reliability_rating}%
 - Zadania wykonane w tym tygodniu: ${intel.completed_7d} z ${intel.assigned_chore_count}
 - Prędkość zarobków: ${formatMinor(intel.velocity_7d * 7, intel.currency)} w tym tygodniu
+- Tryb zarobków: ${intel.earnings_mode === 'ALLOWANCE' ? 'stałe kieszonkowe (niezależne od zadań — nie sugeruj "wykonaj więcej zadań, aby zarobić więcej")' : intel.earnings_mode === 'HYBRID' ? 'hybrydowy (kieszonkowe + zadania)' : 'tylko zadania'}
 - Wydane w tym tygodniu: ${formatMinor(intel.spent_minor_7d, intel.currency)} (${intel.spend_to_balance_pct}% salda)
+${intel.bonus_pence_7d > 0 ? `- Premia otrzymana w tym tygodniu: ${formatMinor(intel.bonus_pence_7d, intel.currency)} (rodzic wyróżnił coś wyjątkowego — warto to uznać)` : ''}
 ${intel.is_sunday_scrambler ? `- Wzorzec: ${formalAddress} wykonuje większość zadań w ${intel.scrambler_day}. Wymagana jest poprawa planowania.` : ''}
+${intel.has_parent_message ? `WIADOMOŚĆ OD RODZICA (priorytet — odnieś się do niej ZANIM przejdziesz do tematów finansowych): "${intel.parent_message}"` : ''}
 ${intel.consecutive_low_confidence >= 3 ? `WYZWALACZ INTEGRALNOŚCI: Wykryto ${intel.consecutive_low_confidence} kolejne przesłania zdjęć o niskiej wiarygodności. Dostarcz lekcję "Ciężka Praca vs. Skróty." Podejście: autorytatywne, ale konstruktywne. Rama: honor i jakość pracy są fundamentem wiarygodności. NIE używaj słów "oszustwo" ani "złapany." Powiedz: "Dane wskazują, że ostatnie dowody wymagają uwagi."` : ''}
 ${intel.batching_detected ? `WYZWALACZ GRUPOWANIA: Dane EXIF wskazują wykonanie wielu zadań w krótkim czasie. Dostarcz lekcję "Moc Małych Kroków." Rama: regularna praca buduje nawyki i wartość. Użyj analogii sadu — regularne podlewanie vs. jednorazowa powódź. Podejście autorytatywne: "Na podstawie danych, zalecana struktura to codzienna rutyna."` : ''}
 ${plBurnerNote}
