@@ -10,6 +10,7 @@ import { useAppView } from '../lib/useTone'
 import { ThemePicker } from '../lib/theme'
 import { SavingsGrove } from '../components/dashboard/SavingsGrove'
 import { FullLogo } from '../components/ui/Logo'
+import { GrowingTree } from '../components/ui/GrowingTree'
 import { EarnTab } from '../components/dashboard/EarnTab'
 import { LabTab } from '../components/dashboard/LabTab'
 import { MilestoneOverlay, consumeMilestonePending } from '../components/celebration'
@@ -753,8 +754,8 @@ function OrchardView({
         </div>
 
         {activeGoals.length === 0 ? (
-          <div className="px-4 pb-5 text-center">
-            <p className="text-[28px] mb-1">🌱</p>
+          <div className="px-4 pb-5 text-center flex flex-col items-center">
+            <GrowingTree pct={0} size={64} showLabel className="mb-1" />
             <p className="text-[13px] font-semibold text-[var(--color-text)]">No goals yet</p>
             <p className="text-[12px] text-[var(--color-text-muted)] mt-0.5">Tap "Plant Goal" to start saving for something exciting!</p>
           </div>
@@ -779,8 +780,8 @@ function OrchardView({
 
               return (
                 <div className="px-4 py-4 space-y-3">
-                  <div className="flex items-start gap-3">
-                    <span className="text-2xl mt-0.5">🎯</span>
+                  <div className="flex items-center gap-4">
+                    <GrowingTree pct={pct} size={72} showLabel />
                     <div className="flex-1 min-w-0">
                       <div className="text-[14px] font-semibold text-[var(--color-text)] truncate">{activeTopGoal.title}</div>
                       {activeTopGoal.parent_match_pct > 0 && (

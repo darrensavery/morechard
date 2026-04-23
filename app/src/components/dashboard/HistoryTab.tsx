@@ -6,6 +6,7 @@ import {
 } from '../../lib/api'
 import { useGatekeeper } from '../../hooks/useGatekeeper'
 import { useAndroidBack } from '../../hooks/useAndroidBack'
+import { PremiumShell, MentorAvatar, ProBadge, injectPremiumStyles } from '../ui/PremiumShell'
 
 interface Props {
   familyId: string
@@ -59,6 +60,8 @@ export function ActivityTab({ familyId, child, onCountChange, goalProgress }: Pr
   useAndroidBack(!!reviseId, () => { setReviseId(null); setReviseNote('') })
   useAndroidBack(showPayout, () => { setShowPayout(false); setPayoutError(null) })
   useAndroidBack(showBonus, () => { setShowBonus(false); setBonusError(null) })
+
+  useEffect(() => { injectPremiumStyles() }, [])
 
   const loadPending = useCallback(async () => {
     setPendingLoading(true)
@@ -511,32 +514,30 @@ function MentorEmptyCard({
     : `Keep an eye on ${childName}'s progress — their next goal milestone is coming up soon.`
 
   return (
-    <div
-      className="relative rounded-2xl overflow-hidden"
-      style={{
-        background: 'linear-gradient(#0f1a14, #0f1a14) padding-box, linear-gradient(135deg, #0d9488 0%, #d4a017 50%, #0d9488 100%) border-box',
-        border: '1.5px solid transparent',
-        boxShadow: '0 0 32px rgba(13,148,136,0.15), 0 4px 16px rgba(0,0,0,0.3)',
-      }}
-    >
-      <div
-        className="absolute inset-0 pointer-events-none"
-        style={{ background: 'radial-gradient(ellipse 80% 50% at 50% 0%, rgba(13,148,136,0.12) 0%, transparent 70%)' }}
-      />
-      <div className="relative z-10 px-4 py-4">
-        <div className="flex items-center gap-2 mb-2">
-          <div className="w-6 h-6 rounded-full bg-[var(--brand-primary)] flex items-center justify-center text-[11px]">🌱</div>
-          <span className="text-[10px] font-extrabold text-[#0d9488] uppercase tracking-widest">Orchard Mentor</span>
-          <span className="ml-auto text-[10px] font-bold text-[#d4a017] border border-[#d4a017]/40 rounded px-1.5 py-0.5">✦ PRO</span>
+    <PremiumShell>
+      <div className="relative z-10 px-4 pt-5 pb-4">
+        <div className="flex items-start justify-between gap-3 mb-3">
+          <div className="flex items-center gap-3">
+            <MentorAvatar />
+            <div>
+              <div className="flex items-center gap-2 mb-0.5">
+                <span className="text-[10px] font-bold tracking-widest uppercase" style={{ color: '#6b9e87' }}>
+                  Orchard Mentor
+                </span>
+                <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+              </div>
+              <p className="text-[15px] font-extrabold tracking-tight" style={{ color: '#f0fdf4' }}>
+                The kids are all caught up! 🎉
+              </p>
+            </div>
+          </div>
+          <ProBadge />
         </div>
-        <p className="text-[14px] font-bold text-white leading-snug mb-1">
-          The kids are all caught up! 🎉
-        </p>
-        <p className="text-[13px] text-white/70 leading-relaxed">
+        <p className="text-[13px] leading-relaxed" style={{ color: '#a7c4b5' }}>
           {mentorLine}
         </p>
       </div>
-    </div>
+    </PremiumShell>
   )
 }
 

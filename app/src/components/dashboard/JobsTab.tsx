@@ -7,6 +7,7 @@ import {
 } from '../../lib/api'
 import { CreateChoreSheet } from './CreateChoreSheet'
 import { RateGuideSheet } from './RateGuideSheet'
+import { PremiumShell, MentorAvatar, ProBadge, injectPremiumStyles } from '../ui/PremiumShell'
 
 const DAYS = ['M', 'T', 'W', 'T', 'F', 'S', 'S']
 const CURRENCY = 'GBP'
@@ -39,6 +40,8 @@ export function ChoresTab({ familyId, child, children }: Props) {
   const [preFill, setPreFill]             = useState<{ title: string; reward_amount: number } | null>(null)
   const [expandedId, setExpandedId]       = useState<string | null>(null)
   const weekStart = getMondayISO()
+
+  useEffect(() => { injectPremiumStyles() }, [])
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -334,36 +337,48 @@ function EmptyChoresState({ childName, onAdd }: { childName: string; onAdd: () =
   return (
     <div className="space-y-4">
       {/* Mentor card */}
-      <div className="relative rounded-2xl overflow-hidden" style={{
-        background: 'linear-gradient(#0f1a14, #0f1a14) padding-box, linear-gradient(135deg, #0d9488 0%, #d4a017 50%, #0d9488 100%) border-box',
-        border: '1.5px solid transparent',
-        boxShadow: '0 0 32px rgba(13,148,136,0.15), 0 4px 16px rgba(0,0,0,0.3)',
-      }}>
-        {/* Radial glow layer */}
-        <div className="absolute inset-0 pointer-events-none"
-             style={{ background: 'radial-gradient(ellipse 80% 50% at 50% 0%, rgba(13,148,136,0.12) 0%, transparent 70%)' }} />
-        <div className="relative z-10 px-4 pt-4 pb-3">
-          <div className="flex items-center gap-2 mb-2">
-            <div className="w-6 h-6 rounded-full bg-[var(--brand-primary)] flex items-center justify-center text-[11px]">🌱</div>
-            <span className="text-[10px] font-extrabold text-[#0d9488] uppercase tracking-widest">Orchard Mentor</span>
-            <span className="ml-auto text-[10px] font-bold text-[#d4a017] border border-[#d4a017]/40 rounded px-1.5 py-0.5">+ PRO</span>
+      <PremiumShell>
+        <div className="relative z-10 px-4 pt-5 pb-4 space-y-4">
+          {/* Header */}
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <MentorAvatar />
+              <div>
+                <div className="flex items-center gap-2 mb-0.5">
+                  <span className="text-[10px] font-bold tracking-widest uppercase" style={{ color: '#6b9e87' }}>
+                    Orchard Mentor
+                  </span>
+                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+                </div>
+                <p className="text-[15px] font-extrabold tracking-tight" style={{ color: '#f0fdf4' }}>
+                  No chores yet for <span style={{ color: '#4ade80' }}>{childName}</span>
+                </p>
+              </div>
+            </div>
+            <ProBadge />
           </div>
-          <p className="text-[14px] font-bold text-white leading-snug mb-1">
-            No chores yet for <span className="text-[#4ade80]">{childName}</span>
-          </p>
-          <p className="text-[12px] text-white/60 leading-relaxed">
+          {/* Body */}
+          <p className="text-[13px] leading-relaxed" style={{ color: '#a7c4b5' }}>
             Once you add chores I can track {childName}'s consistency, spot patterns, and give you genuinely useful coaching — not generic tips.
           </p>
-        </div>
-        <div className="relative z-10 px-4 pb-4">
-          <p className="text-[11px] font-extrabold text-white/40 uppercase tracking-widest mb-2">Get started</p>
-          <div className="space-y-1.5 text-[12px] text-white/70">
-            <p className="flex items-start gap-2"><span className="text-[#0d9488] font-bold shrink-0">01</span> Add 2–3 small daily chores so I can spot {childName}'s consistency patterns.</p>
-            <p className="flex items-start gap-2"><span className="text-[#0d9488] font-bold shrink-0">02</span> Try "Check Going Rates" above to set fair rewards instantly.</p>
-            <p className="flex items-start gap-2"><span className="text-[#0d9488] font-bold shrink-0">03</span> Plan the week once a chore is added — so {childName} knows what's expected.</p>
+          {/* Action list */}
+          <div className="space-y-2">
+            <p className="text-[10px] font-black uppercase tracking-widest" style={{ color: 'rgba(255,255,255,0.35)' }}>Get started</p>
+            {[
+              `Add 2–3 small daily chores so I can spot ${childName}'s consistency patterns.`,
+              'Try "Check Going Rates" above to set fair rewards instantly.',
+              `Plan the week once a chore is added — so ${childName} knows what's expected.`,
+            ].map((text, i) => (
+              <div key={i} className="flex items-start gap-3">
+                <span className="shrink-0 text-[9px] font-black tracking-wider tabular-nums mt-0.5" style={{ color: '#0d9488' }}>
+                  {String(i + 1).padStart(2, '0')}
+                </span>
+                <p className="text-[12px] leading-relaxed" style={{ color: '#a7c4b5' }}>{text}</p>
+              </div>
+            ))}
           </div>
         </div>
-      </div>
+      </PremiumShell>
 
       {/* Add chore CTA */}
       <button

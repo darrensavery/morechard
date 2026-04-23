@@ -16,60 +16,7 @@ import type { ChildRecord, InsightsData, TrendEntry, MentorBriefing } from '../.
 import { getInsights, formatCurrency } from '../../lib/api'
 import { AvatarSVG } from '../../lib/avatars'
 import { useAndroidBack } from '../../hooks/useAndroidBack'
-
-// ── Premium Shell CSS — injected once ────────────────────────────────────────
-// Animated gradient border uses a pseudo-element trick via a wrapper div +
-// a conic-gradient that rotates. Because Tailwind can't do this, we inject
-// a <style> block on first render.
-
-const PREMIUM_STYLES = `
-@keyframes premiumBorderSpin {
-  0%   { --border-angle: 0deg; }
-  100% { --border-angle: 360deg; }
-}
-@property --border-angle {
-  syntax: '<angle>';
-  initial-value: 0deg;
-  inherits: false;
-}
-.premium-shell {
-  --border-angle: 0deg;
-  animation: premiumBorderSpin 4s linear infinite;
-  background:
-    linear-gradient(#0f1a14, #0f1a14) padding-box,
-    conic-gradient(
-      from var(--border-angle),
-      #0d9488 0%,
-      #d4a017 30%,
-      #0d9488 60%,
-      #d4a017 80%,
-      #0d9488 100%
-    ) border-box;
-  border: 1.5px solid transparent;
-}
-.premium-shell-static {
-  background:
-    linear-gradient(#0f1a14, #0f1a14) padding-box,
-    linear-gradient(135deg, #0d9488 0%, #d4a017 50%, #0d9488 100%) border-box;
-  border: 1.5px solid transparent;
-}
-@media (prefers-reduced-motion: reduce) {
-  .premium-shell { animation: none; }
-  .premium-shell { background:
-    linear-gradient(#0f1a14, #0f1a14) padding-box,
-    linear-gradient(135deg, #0d9488 0%, #d4a017 50%, #0d9488 100%) border-box;
-  }
-}
-`
-
-let stylesInjected = false
-function injectPremiumStyles() {
-  if (stylesInjected || typeof document === 'undefined') return
-  const el = document.createElement('style')
-  el.textContent = PREMIUM_STYLES
-  document.head.appendChild(el)
-  stylesInjected = true
-}
+import { PremiumShell, MentorAvatar, ProBadge, injectPremiumStyles } from '../ui/PremiumShell'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -358,20 +305,6 @@ function MentorCarousel({
   )
 }
 
-// ── Premium Shell wrapper ─────────────────────────────────────────────────────
-
-function PremiumShell({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="relative rounded-2xl premium-shell overflow-hidden"
-         style={{ boxShadow: '0 0 32px rgba(13,148,136,0.15), 0 4px 16px rgba(0,0,0,0.3)' }}>
-      {/* Radial glow layer */}
-      <div className="absolute inset-0 pointer-events-none"
-           style={{ background: 'radial-gradient(ellipse 80% 50% at 50% 0%, rgba(13,148,136,0.12) 0%, transparent 70%)' }} />
-      {children}
-    </div>
-  )
-}
-
 // ── Discovery card ────────────────────────────────────────────────────────────
 
 function DiscoveryCard({ data, name }: { data: InsightsData; name: string }) {
@@ -584,40 +517,6 @@ function LiveBriefingCard({
         />
       )}
     </>
-  )
-}
-
-// ── Mentor Avatar ─────────────────────────────────────────────────────────────
-
-function MentorAvatar({ accent = '#0d9488' }: { accent?: string }) {
-  return (
-    <div className="shrink-0 w-9 h-9 rounded-full flex items-center justify-center"
-         style={{
-           background: `radial-gradient(circle at 35% 35%, rgba(255,255,255,0.15), transparent 60%), ${accent}22`,
-           border: `1.5px solid ${accent}55`,
-         }}>
-      {/* Leaf / spark mark */}
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={accent} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10z"/>
-        <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/>
-      </svg>
-    </div>
-  )
-}
-
-// ── PRO badge ─────────────────────────────────────────────────────────────────
-
-function ProBadge() {
-  return (
-    <span className="shrink-0 text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded-lg"
-          style={{
-            background: 'rgba(212,160,23,0.15)',
-            color:      '#d4a017',
-            border:     '1px solid rgba(212,160,23,0.3)',
-            letterSpacing: '0.1em',
-          }}>
-      ✦ Pro
-    </span>
   )
 }
 
