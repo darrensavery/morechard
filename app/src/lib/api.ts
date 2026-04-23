@@ -220,7 +220,7 @@ export async function getTrialStatus(): Promise<TrialStatus> {
 }
 
 export interface PaymentRecord {
-  payment_type: 'LIFETIME' | 'AI_ANNUAL'
+  payment_type: 'LIFETIME' | 'AI_ANNUAL' | 'COMPLETE' | 'SHIELD'
   amount_paid_int: number
   currency: string
   created_at: string
@@ -230,7 +230,7 @@ export async function getBillingHistory(): Promise<{ payments: PaymentRecord[] }
   return request('/api/billing/history')
 }
 
-export async function createCheckoutSession(payment_type: 'LIFETIME' | 'AI_ANNUAL'): Promise<{ url: string }> {
+export async function createCheckoutSession(payment_type: 'LIFETIME' | 'AI_ANNUAL' | 'COMPLETE' | 'SHIELD'): Promise<{ url: string }> {
   return request('/api/stripe/create-checkout', {
     method: 'POST',
     body: JSON.stringify({ payment_type }),
