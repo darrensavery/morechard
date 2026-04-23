@@ -3,7 +3,7 @@
 // for the AI Mentor at chat time. All queries are read-only.
 
 import type { D1Database } from '@cloudflare/workers-types'
-import type { ChildIntelligence, Currency, Locale } from '../types.js'
+import type { ChildIntelligence, Currency, Locale, FamilyContext } from '../types.js'
 
 const DAY_SECONDS = 86_400
 const WEEK_SECONDS = 7 * DAY_SECONDS
@@ -684,4 +684,101 @@ function detectScrambler(days: number[]): {
     return { is_scrambler: true, scrambler_day: DAYS[maxDay] }
   }
   return { is_scrambler: false, scrambler_day: null }
+}
+
+// ─────────────────────────────────────────────────────────────────
+// Family Context — queried fresh on every AI call (not cached)
+// ─────────────────────────────────────────────────────────────────
+
+export async function getFamilyContext(
+  db: D1Database,
+  familyId: string,
+): Promise<FamilyContext> {
+  const THIRTY_DAYS = 30 * 86_400
+  const cutoff = Math.floor(Date.now() / 1000) - THIRTY_DAYS
+
+  const [familyRow, parentRows, childRows, approvalRows] = await Promise.all([
+    // 1. Family metadata
+    db
+      .prepare(`SELECT parenting_mode, name, has_shield FROM families WHERE id = ?`)
+      .bind(familyId)
+      .first<{ parenting_mode: string; name: string | null; has_shield: number }>(),
+
+    // 2. Parent names (lead + co_parent roles)
+    db
+      .prepare(`
+        SELECT u.display_name
+        FROM   family_roles fr
+        JOIN   users u ON u.id = fr.user_id
+        WHERE  fr.family_id = ?
+          AND  fr.role = 'parent'
+        ORDER  BY CASE fr.parent_role WHEN 'lead' THEN 0 ELSE 1 END
+      `)
+      .bind(familyId)
+      .all<{ display_name: string }>(),
+
+    // 3. Child names
+    db
+      .prepare(`
+        SELECT display_name FROM users
+        WHERE  family_id = ? AND role = 'child'
+        ORDER  BY created_at ASC
+      `)
+      .bind(familyId)
+      .all<{ display_name: string }>(),
+
+    // 4. Approval counts per parent in last 30d (for skew + active detection)
+    db
+      .prepare(`
+        SELECT authorised_by, COUNT(*) AS cnt
+        FROM   ledger
+        WHERE  family_id = ?
+          AND  entry_type = 'credit'
+          AND  authorised_by IS NOT NULL
+          AND  created_at >= ?
+        GROUP  BY authorised_by
+      `)
+      .bind(familyId, cutoff)
+      .all<{ authorised_by: string; cnt: number }>(),
+  ])
+
+  // ── Derive values ──────────────────────────────────────────────
+  const parenting_mode = (familyRow?.parenting_mode ?? 'single') as 'single' | 'co-parenting'
+  const has_shield     = Boolean(familyRow?.has_shield)
+  const family_name    = familyRow?.name?.trim() || 'the family'
+
+  const parent_names = (parentRows.results ?? [])
+    .map(r => r.display_name.split(' ')[0] || '')
+    .filter(Boolean)
+
+  const child_names = (childRows.results ?? [])
+    .map(r => r.display_name.split(' ')[0] || '')
+    .filter(Boolean)
+
+  const child_count = Math.max(1, child_names.length)
+
+  // Approval skew: % held by the single most-active parent
+  const approvals = approvalRows.results ?? []
+  const totalApprovals = approvals.reduce((s, r) => s + r.cnt, 0)
+
+  let approval_skew: number | null = null
+  let co_parent_active = false
+
+  if (parenting_mode === 'co-parenting' && totalApprovals >= 5) {
+    const maxApprovals = Math.max(...approvals.map(r => r.cnt))
+    approval_skew = Math.round((maxApprovals / totalApprovals) * 100)
+    // Both parents active = at least 2 distinct approvers with ≥1 approval each
+    co_parent_active = approvals.length >= 2
+  }
+
+  return {
+    parenting_mode,
+    child_count,
+    child_names,
+    parent_names,
+    family_name,
+    co_parent_active,
+    approval_skew,
+    has_shield,
+  }
 }
