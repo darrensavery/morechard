@@ -86,6 +86,28 @@ which /docs/notebooklm files were consulted.
 ## Navigation Rule
 - **Stack Reset on Registration Complete:** Once registration is complete, transition to `/parent` using `window.location.href = '/parent'` (never `navigate('/parent')`). This performs a full-page navigation that clears the history stack so the user cannot swipe/go back to onboarding screens.
 
+## Outstanding — Android App Links on-device verification
+
+Wave 1 shipped deep-link support + `assetlinks.json` (Google's Digital Asset Links API confirms it's valid). Still to do on a real device/emulator before the feature is fully verified:
+
+1. Start an Android emulator (or attach a device) and confirm `adb devices` shows it.
+2. Install a fresh debug build — App Links verification only runs on install:
+   ```bash
+   cd android && ./gradlew installDebug
+   ```
+3. Confirm verification succeeded:
+   ```bash
+   adb shell pm get-app-links com.morechard.app
+   ```
+   Expect `app.morechard.com: verified` (not `ask` or `legacy_failure`).
+4. Fire a test deep link:
+   ```bash
+   adb shell am start -a android.intent.action.VIEW -d "https://app.morechard.com/auth/verify?token=test"
+   ```
+   Should open Morechard directly — no browser, no chooser.
+
+Before production release: replace the debug SHA-256 in `app/public/.well-known/assetlinks.json` with the **release cert fingerprint** from Play Console → App integrity → App signing. Keep the upload cert fingerprint.
+
 ## Common Commands
 
 ### Daily save routine
