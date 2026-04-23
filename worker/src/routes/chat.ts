@@ -3,10 +3,10 @@
 // Three locales: UK (Collaborative Coach), US (Performance Coach), PL (Master Mentor / Authority)
 
 import type { Env } from '../types.js'
-import type { ChildIntelligence, FinancialPillar, MentorResponse } from '../types.js'
+import type { ChildIntelligence, FamilyContext, FinancialPillar, MentorResponse } from '../types.js'
 import { json } from '../lib/response.js'
 import type { JwtPayload } from '../lib/jwt.js'
-import { getChildIntelligence } from '../lib/intelligence.js'
+import { getChildIntelligence, getFamilyContext } from '../lib/intelligence.js'
 import { captureAiGeneration } from '../lib/posthog.js'
 
 type AuthedRequest = Request & { auth: JwtPayload }
@@ -77,17 +77,53 @@ function selectPillar(intel: ChildIntelligence, message: string): FinancialPilla
 // System prompt builders — one per locale
 // ─────────────────────────────────────────────────────────────────
 
-function buildSystemPrompt(intel: ChildIntelligence, pillar: FinancialPillar): string {
+// ── Family Context block — injected at the top of every child-chat system prompt ──
+
+function buildFamilyContextBlock(familyCtx: FamilyContext, currentChildName: string, locale: string): string {
+  const isPl = locale === 'pl'
+  const siblings = familyCtx.child_names.filter(n => n !== currentChildName)
+  const hasSiblings = familyCtx.child_count > 1 && siblings.length > 0
+
+  const siblingBlock = hasSiblings
+    ? (isPl
+        ? `ZASADY DOTYCZĄCE RODZEŃSTWA (obowiązkowe):
+- Możesz wspomnieć o rodzeństwie WYŁĄCZNIE przy wspólnych rodzinnych kamieniach milowych lub niezależnych świętowaniach (np. "Świetny tydzień dla Sadu!").
+- Zakaz porównywania postępów. Zakaz ujawniania celów, kwot ani postępów rodzeństwa.
+- Pozytywne nastawienie: świętuj wspólnie, nigdy nie porównuj.
+- Imiona rodzeństwa: ${siblings.join(', ')}.`
+        : `SIBLING RULES (mandatory):
+- Reference siblings ONLY for shared family milestones or independent celebrations (e.g. "Great week for the Orchard!").
+- Never compare progress. Never disclose another child's goal name, target amount, or progress percentage.
+- Positive-only: celebrate together, never benchmark.
+- Sibling name(s): ${siblings.join(', ')}.`)
+    : ''
+
+  if (isPl) {
+    return `KONTEKST RODZINNY:
+- Tryb rodzicielski: ${familyCtx.parenting_mode === 'co-parenting' ? 'współrodzicielstwo' : 'jeden rodzic'}
+- Liczba dzieci w rodzinie: ${familyCtx.child_count}
+- Nazwa rodziny: ${familyCtx.family_name}
+${hasSiblings ? siblingBlock : '- To jedyne dziecko w tej rodzinie. Nie wspominaj o rodzeństwie.'}`
+  }
+
+  return `FAMILY CONTEXT:
+- Parenting mode: ${familyCtx.parenting_mode}
+- Number of children in this family: ${familyCtx.child_count}
+- Family name: ${familyCtx.family_name}
+${hasSiblings ? siblingBlock : '- This is the only child in this family. Do not reference siblings.'}`
+}
+
+function buildSystemPrompt(intel: ChildIntelligence, pillar: FinancialPillar, familyCtx: FamilyContext): string {
   switch (intel.locale) {
-    case 'en-US': return buildUSPrompt(intel, pillar)
-    case 'pl':    return buildPLPrompt(intel, pillar)
-    default:      return buildUKPrompt(intel, pillar)
+    case 'en-US': return buildUSPrompt(intel, pillar, familyCtx)
+    case 'pl':    return buildPLPrompt(intel, pillar, familyCtx)
+    default:      return buildUKPrompt(intel, pillar, familyCtx)
   }
 }
 
 // ── UK: Collaborative Coach (FCA / National Curriculum) ─────────────
 
-function buildUKPrompt(intel: ChildIntelligence, pillar: FinancialPillar): string {
+function buildUKPrompt(intel: ChildIntelligence, pillar: FinancialPillar, familyCtx: FamilyContext): string {
   const isOrchard = intel.app_view === 'ORCHARD'
   const balance = formatMinor(intel.balance_minor, intel.currency)
   const topGoal = intel.goals[0]
@@ -136,7 +172,11 @@ function buildUKPrompt(intel: ChildIntelligence, pillar: FinancialPillar): strin
     ? `DEVICE SWAPPER TRIGGER ACTIVE: ${intel.distinct_ips_7d} different devices/locations detected this week. Deliver the "Digital Safety" lesson — teach about account security, sharing passwords, and recognising phishing. Frame it as a superpower: "Knowing your digital footprint keeps your grove safe."`
     : ''
 
-  return `You are the Orchard Mentor — a warm, collaborative financial coach for UK children.
+  const familyBlock = buildFamilyContextBlock(familyCtx, intel.display_name.split(' ')[0], intel.locale)
+
+  return `${familyBlock}
+
+You are the Orchard Mentor — a warm, collaborative financial coach for UK children.
 
 PERSONA: Supportive Peer / Collaborative Coach. Egalitarian, first-name basis. You are a helpful colleague, NOT an authority figure.
 Tone: Supportive, encouraging, peer-to-peer. Formality: 3/5.
@@ -177,7 +217,7 @@ CHOICE ARCHITECT CONSTRAINT: Never dictate. Present the evidence, then invite ${
 
 // ── US: Performance Coach (Jump$tart / CEE Standards) ───────────────
 
-function buildUSPrompt(intel: ChildIntelligence, pillar: FinancialPillar): string {
+function buildUSPrompt(intel: ChildIntelligence, pillar: FinancialPillar, familyCtx: FamilyContext): string {
   const isOrchard = intel.app_view === 'ORCHARD'
   const balance = formatMinor(intel.balance_minor, intel.currency)
   const topGoal = intel.goals[0]
@@ -213,7 +253,11 @@ function buildUSPrompt(intel: ChildIntelligence, pillar: FinancialPillar): strin
     ? `DEVICE SWAPPER TRIGGER ACTIVE: ${intel.distinct_ips_7d} distinct IPs this week. Deliver the "Digital Safety" lesson — teach about credential security and phishing. Frame it as a financial risk: "Your account is your digital wallet. Protecting it is step one of financial literacy."`
     : ''
 
-  return `You are the Performance Coach — a direct, outcome-focused financial mentor for US children.
+  const familyBlock = buildFamilyContextBlock(familyCtx, intel.display_name.split(' ')[0], intel.locale)
+
+  return `${familyBlock}
+
+You are the Performance Coach — a direct, outcome-focused financial mentor for US children.
 
 PERSONA: Performance Coach. Energetic, achievement-oriented, goal-driven.
 Tone: Friendly but focused on outcomes. Formality: 2/5.
@@ -256,7 +300,7 @@ CHOICE ARCHITECT CONSTRAINT: Show the data, then let ${intel.display_name} make 
 
 // ── PL: Master Mentor (Polish National Financial Education Strategy) ─
 
-function buildPLPrompt(intel: ChildIntelligence, pillar: FinancialPillar): string {
+function buildPLPrompt(intel: ChildIntelligence, pillar: FinancialPillar, familyCtx: FamilyContext): string {
   const isOrchard = intel.app_view === 'ORCHARD'
   // Pan/Pani for CLEAN mode (proxy for 16+ / Mature), first name for younger
   const isMature = intel.app_view === 'CLEAN'
@@ -287,7 +331,11 @@ function buildPLPrompt(intel: ChildIntelligence, pillar: FinancialPillar): strin
     ? `WYZWALACZ BEZPIECZEŃSTWA: ${intel.distinct_ips_7d} różnych adresów IP w ciągu 7 dni. Dostarcz lekcję "Bezpieczeństwo Cyfrowe." Ramka: cyfrowy portfel wymaga ochrony. "Na podstawie danych, konto było używane z wielu lokalizacji. Wymagana weryfikacja bezpieczeństwa — to podstawa cyfrowej odpowiedzialności."`
     : ''
 
-  return `Jesteś Mistrzem Sadu — formalnym, bezpośrednim mentorem finansowym dla polskich dzieci.
+  const familyBlock = buildFamilyContextBlock(familyCtx, intel.display_name.split(' ')[0], intel.locale)
+
+  return `${familyBlock}
+
+Jesteś Mistrzem Sadu — formalnym, bezpośrednim mentorem finansowym dla polskich dzieci.
 
 PERSONA: Mistrz Sadu / Master Mentor. UWAGA: NIE jesteś rówieśnikiem ani przyjacielem. Jesteś AUTORYTETEM i MISTRZEM z doświadczeniem. Twoja rola to INSTRUOWAĆ i PROWADZIĆ z powagą.
 [ENGLISH FOR MODEL CLARITY: You are NOT a peer or friend. You are an Authority Figure and Master Mentor. Your role is to INSTRUCT and GUIDE with the weight of experience. Use declarative statements: "Based on the data, the required action is...", "We recommend the following structure." NOT suggestions like "You might want to..." The UK persona says "We've been thinking about..." (peer suggestion). The PL persona says "Based on the data, the required action is..." (authority directive).]
@@ -517,14 +565,28 @@ export async function handleChildChat(
   const userMessage = body.message.slice(0, 500)
 
   // ── Build intelligence snapshot ────────────────────────────────
-  const intel = await getChildIntelligence(env.DB, auth.sub)
+  const [intel, familyCtx] = await Promise.all([
+    getChildIntelligence(env.DB, auth.sub),
+    getFamilyContext(env.DB, auth.family_id).catch(() => null),
+  ])
   if (!intel) {
     return json({ error: 'Child profile not found' }, 404)
+  }
+  // Safe defaults if DB query failed
+  const resolvedFamilyCtx: FamilyContext = familyCtx ?? {
+    parenting_mode:   'single',
+    child_count:      1,
+    child_names:      [intel.display_name.split(' ')[0]],
+    parent_names:     [],
+    family_name:      'the family',
+    co_parent_active: false,
+    approval_skew:    null,
+    has_shield:       false,
   }
 
   // ── Select Pillar & build system prompt ────────────────────────
   const pillar = selectPillar(intel, userMessage)
-  const systemPrompt = buildSystemPrompt(intel, pillar)
+  const systemPrompt = buildSystemPrompt(intel, pillar, resolvedFamilyCtx)
   const dataPoints = buildDataPoints(intel, pillar)
 
   // ── Call GPT-4o-mini ───────────────────────────────────────────
