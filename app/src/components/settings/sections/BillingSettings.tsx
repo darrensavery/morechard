@@ -10,7 +10,7 @@
  */
 
 import { useState, useEffect } from 'react'
-import { CreditCard, Clock, Receipt, Zap, Shield, ChevronRight, Star, X, Check } from 'lucide-react'
+import { CreditCard, Clock, Receipt, Zap, Shield, Star, X, Check } from 'lucide-react'
 import { Toast, SettingsRow, SectionCard, SectionHeader } from '../shared'
 import {
   getTrialStatus, getBillingHistory, createCheckoutSession,
