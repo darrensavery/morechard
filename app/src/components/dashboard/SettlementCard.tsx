@@ -1,6 +1,7 @@
 // app/src/components/dashboard/SettlementCard.tsx
 import { useState } from 'react';
-import { getToken } from '../../lib/api';
+import { apiUrl, authHeaders } from '../../lib/api';
+import { useAndroidBack } from '../../hooks/useAndroidBack';
 
 type Expense = {
   id: number;
@@ -35,17 +36,15 @@ export function SettlementCard({ period, onClose, onReconciled }: Props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  useAndroidBack(true, onClose);
+
   async function handleReconcile() {
     setLoading(true);
     setError(null);
     try {
-      const token = getToken();
-      const res = await fetch('/api/shared-expenses/reconcile', {
+      const res = await fetch(apiUrl('/api/shared-expenses/reconcile'), {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
+        headers: authHeaders('application/json'),
         body: JSON.stringify({ period }),
       });
       if (!res.ok) {

@@ -19,6 +19,7 @@ import {
 } from '../../lib/api'
 import { PaymentBridgeSheet } from '../payment/PaymentBridgeSheet'
 import { useToast, Toast } from '../settings/shared'
+import { useAndroidBack } from '../../hooks/useAndroidBack'
 
 interface Props {
   familyId: string
@@ -35,6 +36,8 @@ export function PendingTab({ familyId, child, onCountChange }: Props) {
   const [busy, setBusy]               = useState<string | null>(null)
   const [approveAllBusy, setApproveAllBusy] = useState(false)
   const [showApproveAllModal, setShowApproveAllModal] = useState(false)
+  useAndroidBack(showApproveAllModal, () => setShowApproveAllModal(false))
+  useAndroidBack(!!reviseId, () => { setReviseId(null); setReviseNote('') })
   const { toast, showToast } = useToast()
   const [bridgeCtx, setBridgeCtx] = useState<null | {
     completionIds: string[];

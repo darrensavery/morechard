@@ -7,6 +7,7 @@ import type { ChildRecord, MarketRate } from '../../lib/api'
 import { createChore } from '../../lib/api'
 import { currencySymbol } from '../../lib/locale'
 import { useMarketRates, fuzzyMatch } from '../../hooks/useMarketRates'
+import { useAndroidBack } from '../../hooks/useAndroidBack'
 
 interface Props {
   familyId: string
@@ -96,6 +97,8 @@ export function CreateChoreSheet({
   const [conflictMsg, setConflictMsg] = useState(false)
   // Tooltip visibility for Skip Approval card
   const [showTooltip, setShowTooltip] = useState(false)
+
+  useAndroidBack(true, onClose)
 
   // ── Assignment state ────────────────────────────────────────────────────────
   const singleChild = children.length === 1 ? children[0] : null

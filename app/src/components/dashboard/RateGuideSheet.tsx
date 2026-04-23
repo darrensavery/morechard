@@ -2,6 +2,7 @@
 import { useState, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useMarketRates, fuzzyMatch } from '../../hooks/useMarketRates';
+import { useAndroidBack } from '../../hooks/useAndroidBack';
 import { currencySymbol } from '../../lib/locale';
 import type { MarketRate } from '../../lib/api';
 
@@ -91,6 +92,8 @@ export function RateGuideSheet({ open, onClose, currency = 'GBP', onUse }: Props
   const [search,   setSearch]   = useState('');
   const [category, setCategory] = useState('All');
   const [sort,     setSort]     = useState<SortKey>('alpha');
+
+  useAndroidBack(open, onClose);
 
   const filtered: MarketRate[] = useMemo(() => {
     const base = rates.filter(r => {

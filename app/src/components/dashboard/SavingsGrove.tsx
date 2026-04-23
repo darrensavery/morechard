@@ -13,6 +13,7 @@ import { useState, useMemo } from 'react'
 import type { Chore, Goal } from '../../lib/api'
 import { createGoal, formatCurrency } from '../../lib/api'
 import { currencySymbol } from '../../lib/locale'
+import { useAndroidBack } from '../../hooks/useAndroidBack'
 
 const CATEGORIES = [
   { id: 'Toys',     label: '🧸 Toys' },
@@ -46,6 +47,8 @@ export function SavingsGrove({
   const [productUrl, setProductUrl] = useState('')
   const [saving,     setSaving]     = useState(false)
   const [err,        setErr]        = useState<string | null>(null)
+
+  useAndroidBack(true, onClose)
 
   const targetPence = useMemo(() => {
     const n = parseFloat(amountStr)

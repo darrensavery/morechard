@@ -5,6 +5,7 @@ import {
   getCompletions, approveCompletion, reviseCompletion, approveAll, getProofUrl,
 } from '../../lib/api'
 import { useGatekeeper } from '../../hooks/useGatekeeper'
+import { useAndroidBack } from '../../hooks/useAndroidBack'
 
 interface Props {
   familyId: string
@@ -53,6 +54,11 @@ export function ActivityTab({ familyId, child, onCountChange, goalProgress }: Pr
   const [bonusReason, setBonusReason] = useState('')
   const [bonusBusy, setBonusBusy]   = useState(false)
   const [bonusError, setBonusError] = useState<string | null>(null)
+
+  useAndroidBack(showApproveAllModal, () => setShowApproveAllModal(false))
+  useAndroidBack(!!reviseId, () => { setReviseId(null); setReviseNote('') })
+  useAndroidBack(showPayout, () => { setShowPayout(false); setPayoutError(null) })
+  useAndroidBack(showBonus, () => { setShowBonus(false); setBonusError(null) })
 
   const loadPending = useCallback(async () => {
     setPendingLoading(true)

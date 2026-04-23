@@ -4,7 +4,29 @@
  * JWT is stored in localStorage under 'mc_token'.
  */
 
-const BASE = '';
+import { Capacitor } from '@capacitor/core';
+
+// On Cloudflare Pages, relative URLs work because Pages Functions proxy
+// /auth/* and /api/* to the Worker. Inside Capacitor (Android/iOS), the app
+// loads from http://localhost/ with no proxy, so we need an absolute URL.
+const BASE = Capacitor.isNativePlatform()
+  ? ((import.meta.env.VITE_WORKER_URL as string | undefined) ?? 'https://api.morechard.com')
+  : '';
+
+/** Build an absolute API URL. Pass the relative path (e.g. '/api/foo'); returns
+ *  the same string on web and a fully-qualified worker URL on native. */
+export function apiUrl(path: string): string {
+  return `${BASE}${path}`;
+}
+
+/** Standard auth + content-type headers for callers that bypass request(). */
+export function authHeaders(contentType?: string): Record<string, string> {
+  const token = getToken();
+  const h: Record<string, string> = {};
+  if (contentType) h['Content-Type'] = contentType;
+  if (token) h.Authorization = `Bearer ${token}`;
+  return h;
+}
 
 export function getToken(): string | null {
   return localStorage.getItem('mc_token');
@@ -351,14 +373,10 @@ export async function reviseCompletion(id: string, parent_notes: string): Promis
 }
 
 /** Upload photo evidence for a completion. Returns the R2 object key. */
-export async function uploadProof(completionId: string, file: File): Promise<{ proof_url: string }> {
-  const token = getToken();
-  const res = await fetch(`/api/completions/${completionId}/proof`, {
+export async function uploadProof(completionId: string, file: Blob): Promise<{ proof_url: string }> {
+  const res = await fetch(apiUrl(`/api/completions/${completionId}/proof`), {
     method: 'POST',
-    headers: {
-      'Content-Type': file.type,
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
+    headers: authHeaders(file.type || 'application/octet-stream'),
     body: file,
   });
   const data = await res.json() as { proof_url?: string; error?: string };

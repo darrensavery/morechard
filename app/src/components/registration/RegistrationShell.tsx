@@ -310,8 +310,8 @@ function RegistrationLayout({ step, totalSteps, progress, children }: {
   children: React.ReactNode
 }) {
   return (
-    <div className="min-h-svh bg-white flex flex-col">
-      <header className="sticky top-0 z-40 bg-white border-b border-gray-100 shadow-[0_1px_4px_rgba(0,0,0,0.06)]">
+    <div className="min-h-svh bg-[var(--color-bg)] flex flex-col">
+      <header className="safe-top sticky top-0 z-40 bg-[var(--color-surface)] border-b border-[var(--color-border)] shadow-[0_1px_4px_rgba(0,0,0,0.06)]">
         <div className="max-w-md mx-auto px-5 pt-4 pb-3 space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
@@ -319,16 +319,16 @@ function RegistrationLayout({ step, totalSteps, progress, children }: {
             </div>
             {step !== null && (
               <div className="text-right">
-                <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
+                <span className="text-[11px] font-semibold text-[var(--color-text-muted)] uppercase tracking-wider">
                   Step {step} of {totalSteps}
                 </span>
-                <p className="text-xs font-semibold text-gray-700 leading-none mt-0.5">
+                <p className="text-xs font-semibold text-[var(--color-text)] leading-none mt-0.5">
                   {STEP_LABELS[step]}
                 </p>
               </div>
             )}
           </div>
-          <div className="relative h-2 w-full rounded-full bg-gray-100 overflow-hidden">
+          <div className="relative h-2 w-full rounded-full bg-[var(--color-surface-alt)] overflow-hidden">
             <div
               className="absolute inset-y-0 left-0 rounded-full bg-teal-500 transition-all duration-500 ease-in-out"
               style={{ width: `${progress}%` }}
@@ -341,8 +341,8 @@ function RegistrationLayout({ step, totalSteps, progress, children }: {
         {children}
       </main>
 
-      <footer className="px-5 py-4 text-center border-t border-gray-100">
-        <p className="text-[11px] text-gray-400 tracking-wide">
+      <footer className="safe-bottom px-5 py-4 text-center border-t border-[var(--color-border)]">
+        <p className="text-[11px] text-[var(--color-text-muted)] tracking-wide">
           Your data is private and secure
         </p>
       </footer>

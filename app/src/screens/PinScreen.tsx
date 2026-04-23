@@ -88,8 +88,8 @@ export function PinScreen() {
   }
 
   return (
-    <div className="min-h-svh bg-[#F5F4F0] flex flex-col">
-      <header className="sticky top-0 bg-white border-b border-[#D3D1C7] shadow-[0_1px_4px_rgba(0,0,0,.05)] px-4 py-3 flex items-center gap-2.5">
+    <div className="min-h-svh bg-[var(--color-bg)] flex flex-col">
+      <header className="safe-top sticky top-0 bg-[var(--color-surface)] border-b border-[var(--color-border)] shadow-[0_1px_4px_rgba(0,0,0,.05)] px-4 py-3 flex items-center gap-2.5">
         <FullLogo iconSize={26} />
       </header>
 

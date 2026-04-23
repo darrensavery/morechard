@@ -1,5 +1,11 @@
 {
   "appId": "com.morechard.app",
   "appName": "Morechard",
-  "webDir": "dist"
+  "webDir": "dist",
+  "plugins": {
+    "StatusBar": {
+      "overlaysWebView": true,
+      "style": "DEFAULT"
+    }
+  }
 }

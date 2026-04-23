@@ -13,7 +13,7 @@
 import { useState } from 'react'
 import { Database, FileText, Scale, AlertTriangle, Download } from 'lucide-react'
 import { Toast, SettingsRow, SectionCard, SectionHeader } from '../shared'
-import { getFamilyId, getToken } from '../../../lib/api'
+import { getFamilyId, getToken, apiUrl, authHeaders } from '../../../lib/api'
 
 interface Props {
   isLead:              boolean
@@ -47,8 +47,8 @@ export function DataSettings({
 
     try {
       const params = new URLSearchParams({ family_id, lang, tier })
-      const res = await fetch(`/api/export/${format}?${params.toString()}`, {
-        headers: { Authorization: `Bearer ${token}` },
+      const res = await fetch(apiUrl(`/api/export/${format}?${params.toString()}`), {
+        headers: authHeaders(),
       })
 
       if (!res.ok) {

@@ -131,7 +131,7 @@ export function LockScreen() {
     <div className="min-h-svh bg-[var(--color-bg)] flex flex-col">
 
       {/* Header */}
-      <header className="sticky top-0 bg-[var(--color-surface)] border-b border-[var(--color-border)] shadow-[0_1px_4px_rgba(0,0,0,.05)] px-4 py-3 flex items-center gap-2.5">
+      <header className="safe-top sticky top-0 bg-[var(--color-surface)] border-b border-[var(--color-border)] shadow-[0_1px_4px_rgba(0,0,0,.05)] px-4 py-3 flex items-center gap-2.5">
         <FullLogo iconSize={26} />
         <div className="ml-auto">
           <Lock size={16} className="text-[var(--color-text-muted)]" />

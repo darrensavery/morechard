@@ -30,7 +30,7 @@ export function LandingGate() {
     <div className="h-svh bg-[var(--color-bg)] flex flex-col overflow-y-auto">
 
       {/* Header */}
-      <header className="sticky top-0 bg-[var(--color-surface)]/80 backdrop-blur border-b border-[var(--color-border)] px-4 py-3 flex items-center">
+      <header className="safe-top sticky top-0 bg-[var(--color-surface)]/80 backdrop-blur border-b border-[var(--color-border)] px-4 py-3 flex items-center">
         <FullLogo iconSize={28} />
       </header>
 

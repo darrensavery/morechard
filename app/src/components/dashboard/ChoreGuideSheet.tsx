@@ -2,6 +2,7 @@
 import { useState, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useMarketRates } from '../../hooks/useMarketRates';
+import { useAndroidBack } from '../../hooks/useAndroidBack';
 import { suggestChore } from '../../lib/api';
 import type { MarketRate } from '../../lib/api';
 import { currencySymbol } from '../../lib/locale';
@@ -36,6 +37,8 @@ export function ChoreGuideSheet({ open, onClose, context = null, currency = 'GBP
   const [suggested, setSuggested] = useState<string | null>(null); // id of just-suggested
   const [sending,   setSending]   = useState<string | null>(null);  // id currently sending
   const [success,   setSuccess]   = useState(false);
+
+  useAndroidBack(open, onClose);
 
   const grouped = useMemo(() => {
     const map: Record<string, MarketRate[]> = {};

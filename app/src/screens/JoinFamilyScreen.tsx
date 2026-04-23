@@ -18,6 +18,7 @@ import { cn }                           from '@/lib/utils'
 import { getDeviceIdentity, setDeviceIdentity, toInitials } from '@/lib/deviceIdentity'
 import { isBiometricsAvailable, registerBiometrics }        from '@/lib/biometrics'
 import { analytics, track }             from '@/lib/analytics'
+import { apiUrl }                       from '@/lib/api'
 import * as Sentry                      from '@sentry/react'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -110,7 +111,7 @@ export function JoinFamilyScreen() {
       // Worker: POST /auth/invite/peek { code } → { role }
       // Fallback: if peek isn't wired, we infer from the redeem response.
       // For now use a lightweight check endpoint (same as redeem but with peek=true).
-      const res = await fetch('/auth/invite/peek', {
+      const res = await fetch(apiUrl('/auth/invite/peek'), {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
         body:    JSON.stringify({ code: codeToCheck }),
@@ -166,7 +167,7 @@ export function JoinFamilyScreen() {
         body['password'] = password
       }
 
-      const res = await fetch('/auth/invite/redeem', {
+      const res = await fetch(apiUrl('/auth/invite/redeem'), {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
         body:    JSON.stringify(body),
@@ -308,9 +309,9 @@ export function JoinFamilyScreen() {
   // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
-    <div className="min-h-svh bg-[#F5F4F0] flex flex-col">
+    <div className="min-h-svh bg-[var(--color-bg)] flex flex-col">
 
-      <header className="sticky top-0 bg-white border-b border-[#D3D1C7] shadow-[0_1px_4px_rgba(0,0,0,.05)] px-4 py-3 flex items-center gap-2.5">
+      <header className="safe-top sticky top-0 bg-[var(--color-surface)] border-b border-[var(--color-border)] shadow-[0_1px_4px_rgba(0,0,0,.05)] px-4 py-3 flex items-center gap-2.5">
         <FullLogo iconSize={26} />
       </header>
 

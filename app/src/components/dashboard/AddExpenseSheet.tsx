@@ -1,6 +1,7 @@
 // app/src/components/dashboard/AddExpenseSheet.tsx
 import { useState } from 'react';
-import { getToken } from '../../lib/api';
+import { apiUrl, authHeaders } from '../../lib/api';
+import { useAndroidBack } from '../../hooks/useAndroidBack';
 
 const CATEGORIES = [
   { value: 'education', label: '📚 Education' },
@@ -26,6 +27,8 @@ export function AddExpenseSheet({ defaultSplitBp, currency, onClose, onSaved }: 
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  useAndroidBack(true, onClose);
+
   const symbol = currency === 'GBP' ? '£' : currency === 'USD' ? '$' : 'zł';
   const totalPence = Math.round(parseFloat(amountStr || '0') * 100);
   const loggedByAmount = Math.round((totalPence * splitBp) / 10000);
@@ -44,13 +47,9 @@ export function AddExpenseSheet({ defaultSplitBp, currency, onClose, onSaved }: 
     setSaving(true);
     setError(null);
     try {
-      const token = getToken();
-      const res = await fetch('/api/shared-expenses', {
+      const res = await fetch(apiUrl('/api/shared-expenses'), {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
+        headers: authHeaders('application/json'),
         body: JSON.stringify({
           description: description.trim(),
           category,

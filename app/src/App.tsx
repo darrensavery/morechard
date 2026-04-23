@@ -15,6 +15,9 @@ import { getDeviceIdentity, setDeviceIdentity, toInitials } from './lib/deviceId
 import { LocaleProvider } from './lib/locale'
 import { analytics, track } from './lib/analytics'
 import { verifyMagicLink, setToken, getMe } from './lib/api'
+import { AppUrlListener } from './components/AppUrlListener'
+import { AndroidBackController } from './components/AndroidBackController'
+import { AppAutoLock } from './components/AppAutoLock'
 import * as Sentry from '@sentry/react'
 
 /**
@@ -154,7 +157,7 @@ function MagicLinkVerifyScreen() {
   // phase === 'welcome' — Step 3 of 3 in the registration layout
   return (
     <div className="min-h-svh bg-[var(--color-bg)] flex flex-col">
-      <header className="sticky top-0 z-40 bg-[var(--color-surface)] border-b border-[var(--color-border)] shadow-[0_1px_4px_rgba(0,0,0,0.06)]">
+      <header className="safe-top sticky top-0 z-40 bg-[var(--color-surface)] border-b border-[var(--color-border)] shadow-[0_1px_4px_rgba(0,0,0,0.06)]">
         <div className="max-w-md mx-auto px-5 pt-4 pb-3 space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
@@ -246,6 +249,9 @@ export default function App() {
     <LocaleProvider>
     <ThemeProvider appView={storedAppView}>
     <BrowserRouter>
+      <AppUrlListener />
+      <AndroidBackController />
+      <AppAutoLock />
       <Routes>
         <Route path="/"         element={<RootGate />} />
         <Route path="/lock"     element={<LockScreen />} />

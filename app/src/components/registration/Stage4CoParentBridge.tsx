@@ -15,7 +15,7 @@ import { Input }                        from '@/components/ui/input'
 import { Label }                        from '@/components/ui/label'
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert'
 import { Badge }                        from '@/components/ui/badge'
-import { generateInvite }              from '@/lib/api'
+import { generateInvite, apiUrl, authHeaders } from '@/lib/api'
 import { cn }                           from '@/lib/utils'
 import type { RegistrationState }       from './RegistrationShell'
 
@@ -75,12 +75,9 @@ export function Stage4CoParentBridge({ data, onNext, onBack }: Props) {
     // For now we simulate success (the Worker endpoint is a thin Resend call).
     setLoading(true)
     try {
-      await fetch('/auth/invite/send-email', {
+      await fetch(apiUrl('/auth/invite/send-email'), {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('mc_token')}`,
-        },
+        headers: authHeaders('application/json'),
         body: JSON.stringify({ email, code: c, role: 'co-parent' }),
       })
       setEmailSent(true)

@@ -20,6 +20,8 @@ import {
   useCallback,
   type ReactNode,
 } from 'react'
+import { Capacitor } from '@capacitor/core'
+import { StatusBar, Style } from '@capacitor/status-bar'
 import { updateSettings } from './api'
 
 export type ThemePreference = 'light' | 'dark' | 'system'
@@ -73,6 +75,14 @@ function applyToDOM(resolved: ResolvedTheme) {
   // Keep the PWA chrome colour in sync
   const meta = document.getElementById('meta-theme-color')
   if (meta) meta.setAttribute('content', resolved === 'dark' ? '#1b2d2e' : '#00959c')
+
+  // Native status bar: dark theme = light icons, light theme = dark icons.
+  // We don't set backgroundColor — we let the WebView sit edge-to-edge behind
+  // a transparent status bar, and headers apply .safe-top to avoid overlap.
+  if (Capacitor.isNativePlatform()) {
+    StatusBar.setStyle({ style: resolved === 'dark' ? Style.Dark : Style.Light })
+      .catch(() => { /* plugin unavailable (web) */ })
+  }
 }
 
 // ─── Provider ─────────────────────────────────────────────────────────────────

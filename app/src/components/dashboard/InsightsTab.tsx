@@ -15,6 +15,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import type { ChildRecord, InsightsData, TrendEntry, MentorBriefing } from '../../lib/api'
 import { getInsights, formatCurrency } from '../../lib/api'
 import { AvatarSVG } from '../../lib/avatars'
+import { useAndroidBack } from '../../hooks/useAndroidBack'
 
 // ── Premium Shell CSS — injected once ────────────────────────────────────────
 // Animated gradient border uses a pseudo-element trick via a wrapper div +
@@ -689,6 +690,8 @@ function ShareNudgeModal({
 }) {
   const name = child.display_name.split(' ')[0]
   const [copied, setCopied] = useState(false)
+
+  useAndroidBack(true, onClose)
 
   const message = isTeenMode
     ? `Hey ${name}, your consistency this week is building real momentum. We're thinking of introducing a bonus for your next streak — it tracks first-time completions, which is the skill that matters most long-term. Worth a conversation? 🧭`

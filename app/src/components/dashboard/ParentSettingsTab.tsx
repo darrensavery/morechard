@@ -74,12 +74,13 @@ import {
   getChildSettings, updateChildSettings,
   getChildGrowth, updateChildGrowth,
   getMe, updateProfile, getLeadCount, getTrialStatus,
-  getToken,
+  apiUrl, authHeaders,
   type MeResult, type TrialStatus,
 } from '../../lib/api'
 import { track } from '../../lib/analytics'
 import { useLocale, isPolish } from '../../lib/locale'
 import { cn } from '../../lib/utils'
+import { useAndroidBack } from '../../hooks/useAndroidBack'
 import { ProfileSettings }    from '../settings/sections/ProfileSettings'
 import { FamilySettings }     from '../settings/sections/FamilySettings'
 import { SecuritySettings }   from '../settings/sections/SecuritySettings'
@@ -151,6 +152,10 @@ export function ParentSettingsTab({ familyId, online, onChildrenChange, onClose 
   const { locale }      = useLocale()
 
   const [view,          setView]          = useState<View>({ type: 'menu' })
+  useAndroidBack(true, () => {
+    if (view.type === 'section') setView({ type: 'menu' })
+    else onClose()
+  })
   const [children,      setChildren]      = useState<ChildRecord[]>([])
   const [family,        setFamily]        = useState<Record<string, unknown>>({})
   const [settings,      setSettings]      = useState<{ avatar_id: string; theme: string; locale: string } | null>(null)
@@ -291,13 +296,9 @@ export function ParentSettingsTab({ familyId, online, onChildrenChange, onClose 
   async function handleSaveCoParentSettings() {
     setSavingSettings(true)
     try {
-      const token = getToken()
-      await fetch('/api/family/settings', {
+      await fetch(apiUrl('/api/family/settings'), {
         method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
+        headers: authHeaders('application/json'),
         body: JSON.stringify({
           shared_expense_threshold: threshold,
           shared_expense_split_bp:  splitBp,

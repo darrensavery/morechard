@@ -1,0 +1,13 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.morechard.app",
+      "sha256_cert_fingerprints": [
+        "87:EF:09:32:F7:C6:4C:E4:11:10:F7:1F:C8:EB:08:32:EB:E1:7D:98:0E:B6:2E:A4:93:E6:A7:27:41:ED:1B:5B",
+        "B7:D1:DF:46:F8:5E:58:BC:2A:03:07:B6:03:70:D9:75:02:01:0D:32:0C:8E:7B:F9:62:96:CA:D0:2D:1C:BB:09"
+      ]
+    }
+  }
+]

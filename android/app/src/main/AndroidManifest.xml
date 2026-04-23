@@ -22,6 +22,17 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
+            <!-- Android App Links: deep-link https://app.morechard.com/* into this activity.
+                 android:autoVerify="true" enables automatic verification against
+                 https://app.morechard.com/.well-known/assetlinks.json so links open
+                 the app directly with no disambiguation prompt. -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" android:host="app.morechard.com" />
+            </intent-filter>
+
         </activity>
 
         <provider
