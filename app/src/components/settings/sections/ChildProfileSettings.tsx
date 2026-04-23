@@ -10,7 +10,7 @@ import { useState } from 'react'
 import type { FormEvent } from 'react'
 import {
   Shield, Calendar, AlertTriangle, Check,
-  TreePine, Lock,
+  TreePine, Lock, CreditCard,
 } from 'lucide-react'
 import type { ChildRecord, ChildGrowthSettings } from '../../../lib/api'
 import { renameChild, setChildPin as apiSetChildPin, setPaymentHandles, getFamilyId } from '../../../lib/api'
@@ -18,14 +18,15 @@ import { getDetails, setDetails, clearDetails } from '../../../lib/localBankDeta
 import { cn } from '../../../lib/utils'
 import { SettingsRow, SectionCard, SectionHeader } from '../shared'
 import { useTone } from '../../../lib/useTone'
+import { useLocale } from '../../../lib/locale'
 import { ChildLoginHistory } from './ChildLoginHistory'
 
 // ── Growth Path config ────────────────────────────────────────────────────────
 
 const GROWTH_PATHS = [
-  { mode: 'ALLOWANCE' as const, title: 'The Automated Harvest',  subtitle: 'Allowance only',      description: 'Fruit that grows on its own every season.',           icon: '🌧️' },
-  { mode: 'CHORES'    as const, title: 'The Labor of the Land',  subtitle: 'Chores only',          description: 'Fruit gathered only by tending to the trees.',        icon: '🪵' },
-  { mode: 'HYBRID'    as const, title: 'The Integrated Grove',   subtitle: 'Allowance + Chores',   description: 'A steady harvest with extra rewards for hard work.',   icon: '🌳' },
+  { mode: 'ALLOWANCE' as const, title: 'Only Allowance',    description: 'A fixed amount paid automatically on a regular schedule — no chores required.',   icon: '💰' },
+  { mode: 'CHORES'    as const, title: 'Only Chores',       description: 'Money is earned by completing tasks. Nothing is paid unless a chore is done.',      icon: '✅' },
+  { mode: 'HYBRID'    as const, title: 'Chores + Allowance', description: 'Regular allowance payments plus the option to earn extra by completing chores.',    icon: '⚖️' },
 ]
 
 const FREQ_LABELS: Record<string, string> = {
@@ -165,14 +166,21 @@ function ResetPinSheet({
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
-type ActiveView = 'root' | 'login-history'
+type ActiveView = 'root' | 'login-history' | 'payment-settings'
 
 export function ChildProfileSettings({
   child, appView, appViewBusy, growth, growthBusy, isLead,
   onAppViewToggle, onGrowthUpdate, onRenameChild, onPinResetSuccess, onComingSoon, onBack,
 }: Props) {
   const { terminology } = useTone(0)
+  const { locale } = useLocale()
   const familyId = getFamilyId()
+
+  // Derive currency symbol and minor-unit divisor from locale
+  const isUS = locale === 'en-US'
+  const isPL = locale === 'pl'
+  const currencySymbol = isUS ? '$' : isPL ? 'zł' : '£'
+  const minorDivisor   = isPL ? 100 : 100  // pence / grosz — always 100
   const [expanded,     setExpanded]     = useState(false)
   const [activeView,   setActiveView]   = useState<ActiveView>('root')
   const [editingName,  setEditingName]  = useState(false)
@@ -211,6 +219,108 @@ export function ChildProfileSettings({
         childName={child.display_name}
         onBack={() => setActiveView('root')}
       />
+    )
+  }
+
+  if (activeView === 'payment-settings') {
+    return (
+      <div className="space-y-4">
+        <SectionHeader title="Payment Settings" onBack={() => setActiveView('root')} />
+
+        {/* Payment Handles — locale-gated */}
+        {(() => {
+          // Channels available per locale
+          // en-GB: Monzo, Revolut, PayPal
+          // en-US: PayPal, Venmo
+          // pl:    PayPal
+          type Handle = 'monzo' | 'revolut' | 'paypal' | 'venmo'
+          const handles: { key: Handle; label: string; placeholder: string }[] = [
+            ...(!isUS && !isPL ? [
+              { key: 'monzo'   as const, label: 'Monzo',   placeholder: 'alexj' },
+              { key: 'revolut' as const, label: 'Revolut', placeholder: 'alexj' },
+            ] : []),
+            { key: 'paypal', label: 'PayPal', placeholder: 'alexj' },
+            ...(isUS ? [{ key: 'venmo' as const, label: 'Venmo', placeholder: 'alexj' }] : []),
+          ]
+          return (
+            <div>
+              <p className="text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wide px-1 mb-2">Payment Handles</p>
+              <SectionCard>
+                <div className="px-4 py-3">
+                  <p className="text-[12px] text-[var(--color-text-muted)] mb-3">
+                    Your child&apos;s username for their payment app — no @ sign. Used to
+                    deep-link into your banking app when you pay rewards.
+                  </p>
+                  {handles.map(({ key, label, placeholder }) => (
+                    <label key={key} className="flex items-center gap-3 py-2 border-b border-[var(--color-border)] last:border-0">
+                      <span className="w-20 text-[13px] text-[var(--color-text)]">{label}</span>
+                      <input
+                        type="text"
+                        defaultValue={child[`${key}_handle`] ?? ''}
+                        onBlur={async (e) => {
+                          const val = e.target.value.trim() || null
+                          await setPaymentHandles(child.id, { [`${key}_handle`]: val })
+                        }}
+                        placeholder={placeholder}
+                        className="flex-1 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-alt)] px-2 py-1 text-[14px] text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]"
+                      />
+                    </label>
+                  ))}
+                </div>
+              </SectionCard>
+            </div>
+          )
+        })()}
+
+        {/* Bank Transfer / Zelle — locale-gated */}
+        {(locale === 'en-GB' || locale === 'en-US') && (
+          <div>
+            <p className="text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wide px-1 mb-2">
+              {isUS ? 'Zelle' : 'Bank Transfer Details'}
+            </p>
+            <SectionCard>
+              <div className="px-4 py-3">
+                {!isUS && (
+                  <div className="rounded-xl bg-neutral-50 border border-neutral-200 px-3 py-2 text-[11px] text-neutral-600 mb-3">
+                    Stored on this device only — never sent to our servers. If you switch
+                    phones, you&apos;ll re-enter them.
+                  </div>
+                )}
+                {!isUS && (
+                  <>
+                    <label className="flex items-center gap-3 py-2 border-b border-[var(--color-border)]">
+                      <span className="w-32 text-[13px] text-[var(--color-text)]">Sort code</span>
+                      <input inputMode="numeric" pattern="[0-9]{6}" maxLength={6}
+                        value={sortCode} onChange={(e) => setSortCode(e.target.value.replace(/\D/g, ''))}
+                        onBlur={saveBankDetails}
+                        placeholder="201575"
+                        className="flex-1 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-alt)] px-2 py-1 font-mono text-[14px] text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]" />
+                    </label>
+                    <label className="flex items-center gap-3 py-2">
+                      <span className="w-32 text-[13px] text-[var(--color-text)]">Account number</span>
+                      <input inputMode="numeric" pattern="[0-9]{8}" maxLength={8}
+                        value={acctNum} onChange={(e) => setAcctNum(e.target.value.replace(/\D/g, ''))}
+                        onBlur={saveBankDetails}
+                        placeholder="12345678"
+                        className="flex-1 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-alt)] px-2 py-1 font-mono text-[14px] text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]" />
+                    </label>
+                  </>
+                )}
+                {isUS && (
+                  <label className="flex items-center gap-3 py-2">
+                    <span className="w-32 text-[13px] text-[var(--color-text)]">Email / phone</span>
+                    <input type="text"
+                      value={zelle} onChange={(e) => setZelle(e.target.value)}
+                      onBlur={saveBankDetails}
+                      placeholder="alex@example.com"
+                      className="flex-1 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-alt)] px-2 py-1 text-[14px] text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]" />
+                  </label>
+                )}
+              </div>
+            </SectionCard>
+          </div>
+        )}
+      </div>
     )
   }
 
@@ -303,69 +413,16 @@ export function ChildProfileSettings({
           </SectionCard>
         </div>
 
-        {/* Payment Handles */}
+        {/* Payment Settings */}
         <div>
-          <p className="text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wide px-1 mb-2">Payment Handles</p>
+          <p className="text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wide px-1 mb-2">Payments</p>
           <SectionCard>
-            <div className="px-4 py-3">
-              <p className="text-[12px] text-[var(--color-text-muted)] mb-3">
-                The child&apos;s Monzo.me, Revolut.me, PayPal.me, or Venmo username —
-                no @ sign. Used to deep-link into your banking apps when you pay rewards.
-              </p>
-              {(['monzo', 'revolut', 'paypal', 'venmo'] as const).map((p) => (
-                <label key={p} className="flex items-center gap-3 py-2 border-b border-[var(--color-border)] last:border-0">
-                  <span className="w-20 text-[13px] capitalize text-[var(--color-text)]">{p}</span>
-                  <input
-                    type="text"
-                    defaultValue={child[`${p}_handle`] ?? ''}
-                    onBlur={async (e) => {
-                      const val = e.target.value.trim() || null;
-                      await setPaymentHandles(child.id, { [`${p}_handle`]: val });
-                    }}
-                    placeholder={p === 'paypal' ? 'alexj' : `alex${p === 'venmo' ? 'j' : ''}`}
-                    className="flex-1 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-alt)] px-2 py-1 text-[14px] text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]"
-                  />
-                </label>
-              ))}
-            </div>
-          </SectionCard>
-        </div>
-
-        {/* Bank Transfer Details */}
-        <div>
-          <p className="text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wide px-1 mb-2">Bank Transfer Details</p>
-          <SectionCard>
-            <div className="px-4 py-3">
-              <div className="rounded-xl bg-neutral-50 border border-neutral-200 px-3 py-2 text-[11px] text-neutral-600 mb-3">
-                Stored on this device only — never sent to our servers. If you switch
-                phones, you&apos;ll re-enter them. We&apos;ll upgrade this to encrypted
-                storage in a future release.
-              </div>
-              <label className="flex items-center gap-3 py-2 border-b border-[var(--color-border)]">
-                <span className="w-32 text-[13px] text-[var(--color-text)]">Sort code</span>
-                <input inputMode="numeric" pattern="[0-9]{6}" maxLength={6}
-                  value={sortCode} onChange={(e) => setSortCode(e.target.value.replace(/\D/g, ''))}
-                  onBlur={saveBankDetails}
-                  placeholder="201575"
-                  className="flex-1 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-alt)] px-2 py-1 font-mono text-[14px] text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]" />
-              </label>
-              <label className="flex items-center gap-3 py-2 border-b border-[var(--color-border)]">
-                <span className="w-32 text-[13px] text-[var(--color-text)]">Account number</span>
-                <input inputMode="numeric" pattern="[0-9]{8}" maxLength={8}
-                  value={acctNum} onChange={(e) => setAcctNum(e.target.value.replace(/\D/g, ''))}
-                  onBlur={saveBankDetails}
-                  placeholder="12345678"
-                  className="flex-1 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-alt)] px-2 py-1 font-mono text-[14px] text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]" />
-              </label>
-              <label className="flex items-center gap-3 py-2">
-                <span className="w-32 text-[13px] text-[var(--color-text)]">Zelle (US)</span>
-                <input type="text"
-                  value={zelle} onChange={(e) => setZelle(e.target.value)}
-                  onBlur={saveBankDetails}
-                  placeholder="alex@example.com"
-                  className="flex-1 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-alt)] px-2 py-1 text-[14px] text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]" />
-              </label>
-            </div>
+            <SettingsRow
+              icon={<CreditCard size={15} />}
+              label="Payment Settings"
+              description="Payment handles and bank transfer details"
+              onClick={() => setActiveView('payment-settings')}
+            />
           </SectionCard>
         </div>
 
@@ -382,7 +439,7 @@ export function ChildProfileSettings({
                 <div>
                   <p className="text-[14px] font-semibold text-[var(--color-text)]">App View</p>
                   <p className="text-[12px] text-[var(--color-text-muted)] mt-0.5">
-                    {appView === 'ORCHARD' ? 'Orchard View — nature metaphors' : 'Clean View — professional terms'}
+                    {appView === 'ORCHARD' ? 'Orchard View — nature metaphors' : 'No Metaphors — plain language'}
                   </p>
                 </div>
               </div>
@@ -400,7 +457,7 @@ export function ChildProfileSettings({
                         : 'border-[var(--color-border)] text-[var(--color-text-muted)] hover:bg-[var(--color-surface-alt)]',
                     )}
                   >
-                    {v === 'ORCHARD' ? '🌳 Orchard' : '📊 Clean'}
+                    {v === 'ORCHARD' ? '🌳 Orchard' : '💬 No Metaphors'}
                   </button>
                 ))}
               </div>
@@ -417,15 +474,12 @@ export function ChildProfileSettings({
               >
                 <div className="flex items-center gap-3 min-w-0">
                   <span className="shrink-0 w-8 h-8 rounded-xl flex items-center justify-center bg-[color-mix(in_srgb,var(--brand-primary)_10%,transparent)] text-[var(--brand-primary)]">
-                    <span className="text-[15px]">🌳</span>
+                    <TreePine size={15} />
                   </span>
                   <div className="text-left min-w-0">
-                    <p className="text-[14px] font-semibold text-[var(--color-text)]">Growth Path</p>
+                    <p className="text-[14px] font-semibold text-[var(--color-text)]">Earning Method</p>
                     <p className="text-[12px] text-[var(--color-text-muted)] mt-0.5">
-                      {(() => {
-                        const path = GROWTH_PATHS.find(p => p.mode === (growth?.earnings_mode ?? 'HYBRID'))
-                        return path ? `${path.icon} ${path.subtitle}` : '🌳 Allowance + Chores'
-                      })()}
+                      {GROWTH_PATHS.find(p => p.mode === (growth?.earnings_mode ?? 'HYBRID'))?.title ?? 'Chores + Allowance'}
                     </p>
                   </div>
                 </div>
@@ -449,13 +503,15 @@ export function ChildProfileSettings({
                             : 'border-[var(--color-border)] hover:bg-[var(--color-surface-alt)]',
                         )}
                       >
-                        <div className="flex items-center gap-2">
-                          <span className="text-[16px]">{path.icon}</span>
-                          <div className="min-w-0">
+                        <div className="flex items-center gap-3">
+                          <span className="shrink-0 w-7 h-7 rounded-lg flex items-center justify-center bg-[color-mix(in_srgb,var(--brand-primary)_10%,transparent)] text-[var(--brand-primary)] text-[14px]">
+                            {path.icon}
+                          </span>
+                          <div className="min-w-0 flex-1">
                             <p className={cn('text-[13px] font-semibold', active ? 'text-[var(--brand-primary)]' : 'text-[var(--color-text)]')}>{path.title}</p>
                             <p className="text-[11px] text-[var(--color-text-muted)] leading-snug mt-0.5">{path.description}</p>
                           </div>
-                          {active && <Check size={14} className="ml-auto text-[var(--brand-primary)] shrink-0" />}
+                          {active && <Check size={14} className="shrink-0 text-[var(--brand-primary)]" />}
                         </div>
                       </button>
                     )
@@ -464,17 +520,19 @@ export function ChildProfileSettings({
                   {(growth?.earnings_mode ?? 'HYBRID') !== 'CHORES' && (
                     <div className="mt-2 grid grid-cols-2 gap-2">
                       <div>
-                        <label className="text-[11px] font-semibold text-[var(--color-text-muted)] uppercase tracking-wide">Amount (pence)</label>
+                        <label className="text-[11px] font-semibold text-[var(--color-text-muted)] uppercase tracking-wide">
+                          Amount ({currencySymbol})
+                        </label>
                         <input
-                          type="number" min={0} step={50}
-                          defaultValue={growth?.allowance_amount ?? 0}
+                          type="number" min={0} step={1}
+                          defaultValue={Math.round((growth?.allowance_amount ?? 0) / minorDivisor)}
                           onBlur={e => {
-                            const val = parseInt(e.target.value, 10)
-                            if (!isNaN(val) && val >= 0) onGrowthUpdate(child.id, { allowance_amount: val })
+                            const whole = parseFloat(e.target.value)
+                            if (!isNaN(whole) && whole >= 0)
+                              onGrowthUpdate(child.id, { allowance_amount: Math.round(whole * minorDivisor) })
                           }}
                           className="mt-1 w-full border border-[var(--color-border)] rounded-lg px-2 py-1.5 text-[13px] bg-[var(--color-surface)] text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]"
                         />
-                        <p className="text-[10px] text-[var(--color-text-muted)] mt-0.5">500 = £5.00</p>
                       </div>
                       <div>
                         <label className="text-[11px] font-semibold text-[var(--color-text-muted)] uppercase tracking-wide">Frequency</label>

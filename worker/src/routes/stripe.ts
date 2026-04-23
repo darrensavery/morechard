@@ -24,6 +24,7 @@ import { JwtPayload } from '../lib/jwt.js';
 const PRODUCTS: Record<PaymentType, { amount: number; currency: string; label: string }> = {
   LIFETIME:  { amount: 3499, currency: 'gbp', label: 'Morechard Lifetime Tracker' },
   AI_ANNUAL: { amount: 1999, currency: 'gbp', label: 'Morechard AI Coach — Annual' },
+  SHIELD:    { amount: 14999, currency: 'gbp', label: 'Shield — Legal Protection' },
 };
 
 // ----------------------------------------------------------------
@@ -37,8 +38,8 @@ export async function handleCreateCheckout(
   const body = await request.json() as { payment_type?: unknown };
   const payment_type = body.payment_type as PaymentType;
 
-  if (payment_type !== 'LIFETIME' && payment_type !== 'AI_ANNUAL') {
-    return error('payment_type must be LIFETIME or AI_ANNUAL', 400);
+  if (payment_type !== 'LIFETIME' && payment_type !== 'AI_ANNUAL' && payment_type !== 'SHIELD') {
+    return error('payment_type must be LIFETIME, AI_ANNUAL, or SHIELD', 400);
   }
 
   const product = PRODUCTS[payment_type];
@@ -112,7 +113,7 @@ export async function handleStripeWebhook(
 async function handleCheckoutCompleted(session: StripeSession, env: Env): Promise<void> {
   const { family_id, payment_type } = session.metadata ?? {};
 
-  if (!family_id || (payment_type !== 'LIFETIME' && payment_type !== 'AI_ANNUAL')) {
+  if (!family_id || (payment_type !== 'LIFETIME' && payment_type !== 'AI_ANNUAL' && payment_type !== 'SHIELD')) {
     console.error('Webhook: missing or invalid metadata', session.metadata);
     return;
   }
@@ -145,7 +146,7 @@ async function handleCheckoutCompleted(session: StripeSession, env: Env): Promis
       .prepare('UPDATE families SET has_lifetime_license = TRUE WHERE id = ?')
       .bind(family_id)
       .run();
-  } else {
+  } else if (payment_type === 'AI_ANNUAL') {
     // AI_ANNUAL: extend from today or from existing expiry (whichever is later)
     const existing = await env.DB
       .prepare('SELECT ai_subscription_expiry FROM families WHERE id = ?')
@@ -161,6 +162,13 @@ async function handleCheckoutCompleted(session: StripeSession, env: Env): Promis
     await env.DB
       .prepare('UPDATE families SET ai_subscription_expiry = ? WHERE id = ?')
       .bind(newExpiry, family_id)
+      .run();
+  }
+
+  if (payment_type === 'SHIELD') {
+    await env.DB
+      .prepare('UPDATE families SET has_shield = 1 WHERE id = ?')
+      .bind(family_id)
       .run();
   }
 

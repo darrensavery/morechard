@@ -212,11 +212,29 @@ export interface TrialStatus {
   is_expired:           boolean
   has_lifetime_license: boolean
   ai_subscription_active: boolean
-  has_legal_bundle:     boolean   // Legal Integrity Bundle add-on (Phase 7)
+  has_shield:           boolean   // Shield plan add-on (Phase 7)
 }
 
 export async function getTrialStatus(): Promise<TrialStatus> {
   return request('/api/trial/status')
+}
+
+export interface PaymentRecord {
+  payment_type: 'LIFETIME' | 'AI_ANNUAL'
+  amount_paid_int: number
+  currency: string
+  created_at: string
+}
+
+export async function getBillingHistory(): Promise<{ payments: PaymentRecord[] }> {
+  return request('/api/billing/history')
+}
+
+export async function createCheckoutSession(payment_type: 'LIFETIME' | 'AI_ANNUAL'): Promise<{ url: string }> {
+  return request('/api/stripe/create-checkout', {
+    method: 'POST',
+    body: JSON.stringify({ payment_type }),
+  })
 }
 
 export async function updateFamily(body: Record<string, unknown>): Promise<void> {
@@ -335,10 +353,13 @@ export interface Completion {
   rejection_note: string | null;
   parent_notes: string | null;
   proof_url: string | null;      // R2 object key — fetch presigned URL separately
+  proof_exif: Record<string, unknown> | null;  // EXIF metadata; null when pruned or not captured
+  system_verify: Record<string, unknown> | null; // GPS/device verification data; null when pruned
   attempt_count: number;         // > 1 means resubmission
   status: 'awaiting_review' | 'completed' | 'needs_revision' | 'pending';
   rating: number; submitted_at: number; resolved_at: number | null;
   paid_out_at: number | null;
+  pruned_at?: number | null;     // set by migration 0039 when evidence is archived (2+ years old)
 }
 
 export async function getCompletions(params: {

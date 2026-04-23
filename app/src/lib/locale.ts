@@ -33,8 +33,13 @@ const VALID: AppLocale[] = ['en-GB', 'en-US', 'pl']
  */
 export function getLocale(): AppLocale {
   try {
-    const stored = localStorage.getItem('mc_locale') as AppLocale | null
-    if (stored && VALID.includes(stored)) return stored
+    const stored = localStorage.getItem('mc_locale')
+    // Normalise legacy 2-char values written by older worker ('en' → 'en-GB')
+    if (stored === 'en') {
+      localStorage.setItem('mc_locale', 'en-GB')
+      return 'en-GB'
+    }
+    if (stored && VALID.includes(stored as AppLocale)) return stored as AppLocale
   } catch { /* storage blocked */ }
   return detectLocale()
 }
