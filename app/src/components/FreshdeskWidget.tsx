@@ -6,7 +6,7 @@ declare global {
     fdWidget?: {
       init: (config: { token: string; host: string; widgetId: string }) => void
       open: () => void
-      setCustomProperties: (props: Record<string, string>) => void
+      setCustomProperties: (props: Record<string, unknown>) => void
     }
   }
 }

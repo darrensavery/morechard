@@ -70,7 +70,7 @@ export function SettingsRow({
   icon?: React.ReactNode
   label: string
   description?: string
-  onClick: () => void
+  onClick?: () => void
   destructive?: boolean
   disabled?: boolean
   badge?: string

@@ -1,8 +1,3 @@
-declare global {
-  interface Window {
-    fdWidget?: { open: () => void }
-  }
-}
 
 export function HelpButton() {
   function openHelp() {
