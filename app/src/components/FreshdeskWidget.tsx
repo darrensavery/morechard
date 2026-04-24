@@ -3,23 +3,21 @@ import { getDeviceIdentity } from '../lib/deviceIdentity'
 
 declare global {
   interface Window {
-    FreshworksWidget?: (...args: unknown[]) => void
-    fwSettings?: { widget_id: string }
+    fdWidget?: {
+      init: (config: { token: string; host: string; widgetId: string }) => void
+      open: () => void
+      setCustomProperties: (props: Record<string, string>) => void
+    }
   }
 }
 
 export function FreshdeskWidget() {
   useEffect(() => {
     const identity = getDeviceIdentity()
-    if (!window.FreshworksWidget) return
+    if (!window.fdWidget) return
 
     const role = identity?.role === 'child' ? 'role_child' : 'role_parent'
-
-    window.FreshworksWidget('setTags', [role])
-    window.FreshworksWidget('prefill', 'ticketForm', {
-      subject: '',
-      description: '',
-    })
+    window.fdWidget.setCustomProperties({ role })
   }, [])
 
   return null

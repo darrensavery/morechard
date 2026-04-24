@@ -1,12 +1,12 @@
 declare global {
   interface Window {
-    FreshworksWidget?: (...args: unknown[]) => void
+    fdWidget?: { open: () => void }
   }
 }
 
 export function HelpButton() {
   function openHelp() {
-    window.FreshworksWidget?.('open')
+    window.fdWidget?.open()
   }
 
   return (
