@@ -44,5 +44,17 @@
   <body style="overscroll-behavior-y: none;">
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+    <!-- Freshdesk Help Widget — replace FRESHDESK_WIDGET_ID with your account widget ID from
+         Freshdesk Admin > Help Widget > Embed. Loads async, no render blocking.
+         Role-tag injection is handled by FreshdeskWidget.tsx. -->
+    <script
+      type="text/javascript"
+      src="https://widget.freshworks.com/widgets/FRESHDESK_WIDGET_ID.js"
+      async
+      defer
+    ></script>
+    <script type="text/javascript">
+      window.fwSettings = { widget_id: 'FRESHDESK_WIDGET_ID' };
+    </script>
   </body>
 </html>

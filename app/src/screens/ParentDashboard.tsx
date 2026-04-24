@@ -14,6 +14,7 @@ import { AddExpenseSheet } from '../components/dashboard/AddExpenseSheet'
 import { SettlementCard }  from '../components/dashboard/SettlementCard'
 import { GoalBoostingTab }  from '../components/dashboard/GoalBoostingTab'
 import { FullLogo } from '../components/ui/Logo'
+import { HelpButton } from '../components/ui/HelpButton'
 import { UnpaidIndicator } from '../components/payment/UnpaidIndicator'
 import { PaymentBridgeSheet } from '../components/payment/PaymentBridgeSheet'
 
@@ -156,6 +157,7 @@ export function ParentDashboard() {
         <div className="max-w-[560px] mx-auto px-3.5 py-3 flex items-center justify-between">
           <FullLogo iconSize={26} />
           <div className="flex items-center gap-2">
+            <HelpButton />
             {/* Offline indicator — only visible when offline */}
             {!online && (
               <span title="Offline" className="flex items-center justify-center w-8 h-8 rounded-lg text-amber-500">
