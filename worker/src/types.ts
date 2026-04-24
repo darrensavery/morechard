@@ -24,7 +24,7 @@ export interface Env {
 // 'needs_revision'  — parent sent back with notes
 export type CompletionStatus = 'available' | 'awaiting_review' | 'completed' | 'needs_revision';
 
-export type PaymentType = 'LIFETIME' | 'AI_ANNUAL' | 'SHIELD';
+export type PaymentType = 'LIFETIME' | 'COMPLETE' | 'AI_ANNUAL' | 'SHIELD';
 
 /** Shape returned by SELECT on the families table for trial/license checks. */
 export interface FamilyLicenseRow {
@@ -236,4 +236,11 @@ export interface MentorResponse {
   app_view: 'ORCHARD' | 'CLEAN';
   locale: Locale;
   unlock_slug?: string; // present only when this response triggered a module unlock
+}
+
+export interface ReferralStats {
+  clicks:          number;
+  sign_ups:        number;
+  conversions:     number;
+  rewards_pending: number;
 }

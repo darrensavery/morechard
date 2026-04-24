@@ -101,6 +101,7 @@ export interface CreateFamilyResult { family_id: string; user_id: string; email:
 export async function createFamily(body: {
   display_name: string; email: string; password?: string;
   governance_mode?: string; base_currency?: string; parenting_mode?: string; locale?: string;
+  referred_by_code?: string;
 }): Promise<CreateFamilyResult> {
   return request('/auth/create-family', { method: 'POST', body: JSON.stringify(body) });
 }
@@ -831,5 +832,27 @@ export async function setPaymentHandles(
   return request(`/api/child/${childId}/payment-handles`, {
     method: 'PATCH',
     body: JSON.stringify(handles),
+  });
+}
+
+// ── Referrals ─────────────────────────────────────────────────────────────────
+
+export async function getReferralCode(): Promise<{ code: string; share_url: string }> {
+  return request('/api/referrals/me');
+}
+
+export async function getReferralStats(): Promise<{
+  clicks: number;
+  sign_ups: number;
+  conversions: number;
+  rewards_pending: number;
+}> {
+  return request('/api/referrals/stats');
+}
+
+export async function trackReferralClick(code: string): Promise<void> {
+  await request('/api/referrals/click', {
+    method: 'POST',
+    body: JSON.stringify({ code }),
   });
 }

@@ -44,8 +44,13 @@
  *   POST   /auth/child/add              Add child + auto-generate child invite code
  *   POST   /auth/registration/save-step Persist mid-flow registration state
  *
+ * Authenticated — parent only (referrals):
+ *   GET    /api/referrals/me            Return caller's referral code + shareable URL
+ *   GET    /api/referrals/stats         Click + conversion counts for caller's referral code
+ *
  * Public (no auth):
  *   GET    /api/market-rates/cron       CRON health check — reports market_rates row count
+ *   POST   /api/referrals/click         Record a referral link click
  *
  * Public — invite redemption:
  *   POST   /auth/invite/peek            Validate code without redeeming → { role }
@@ -150,6 +155,11 @@ import { runMarketRateAggregation } from './jobs/marketRateAggregation.js';
 import { handleChildChat } from './routes/chat.js';
 import { handleChatHistory } from './routes/chat-history.js';
 import { handleChatModules } from './routes/chat-modules.js';
+import {
+  handleReferralMe,
+  handleReferralStats,
+  handleReferralClick,
+} from './routes/referrals.js';
 import { json, error } from './lib/response.js';
 import { JwtPayload } from './lib/jwt.js';
 import {
@@ -348,6 +358,9 @@ async function route(request: Request, env: Env, method: string, path: string): 
   // Market rates — CRON health check (no user auth)
   if (path === '/api/market-rates/cron' && method === 'GET') return handleMarketRateCron(request, env);
 
+  // Referral click tracking — public (no auth)
+  if (path === '/api/referrals/click' && method === 'POST') return handleReferralClick(request, env);
+
   // ── All authenticated routes require a valid JWT ─────────────
   const auth = await requireAuth(request, env);
   if (auth instanceof Response) return auth;
@@ -442,6 +455,10 @@ async function route(request: Request, env: Env, method: string, path: string): 
   // Market rates — any authenticated role
   if (path === '/api/market-rates' && method === 'GET')        return withAuth(request, auth, env, handleMarketRateList);
   if (path === '/api/market-rates/suggest' && method === 'POST') return withAuth(request, auth, env, handleMarketRateSuggest);
+
+  // Referrals — parent only (me + stats)
+  if (path === '/api/referrals/me'    && method === 'GET')  return withAuth(request, auth, env, handleReferralMe);
+  if (path === '/api/referrals/stats' && method === 'GET')  return withAuth(request, auth, env, handleReferralStats);
 
   // Spending — child logs, both read
   if (path === '/api/spending' && method === 'GET')   return withAuth(request, auth, env, handleSpendingList);
