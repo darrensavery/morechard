@@ -125,6 +125,20 @@ export async function handleReferralClick(request: Request, env: Env): Promise<R
       ).map(b => b.toString(16).padStart(2, '0')).join('')
     : null;
 
+  // Deduplicate: one click per IP hash per referral code per 24-hour window.
+  // We silently succeed rather than 429 — a household sharing a link shouldn't see errors.
+  if (ipHash) {
+    const recentClick = await env.DB
+      .prepare(`
+        SELECT id FROM referral_clicks
+        WHERE referral_code = ? AND ip_hash = ? AND clicked_at > ?
+        LIMIT 1
+      `)
+      .bind(code, ipHash, now - 86400)
+      .first();
+    if (recentClick) return json({ ok: true });
+  }
+
   await env.DB
     .prepare('INSERT INTO referral_clicks (referral_code, clicked_at, user_agent, ip_hash) VALUES (?, ?, ?, ?)')
     .bind(code, now, request.headers.get('User-Agent') ?? null, ipHash)

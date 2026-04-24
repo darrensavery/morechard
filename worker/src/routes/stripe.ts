@@ -18,8 +18,13 @@ import { Env, PaymentType } from '../types.js';
 import { json, error } from '../lib/response.js';
 import { JwtPayload } from '../lib/jwt.js';
 
+// Referral rewards are tied to a licence purchase, not the AI add-on.
+// AI_ANNUAL is an upgrade for an existing member — not a new family joining.
+// SHIELD is also an add-on, not an acquisition event.
+const REFERRAL_ELIGIBLE_PAYMENTS: string[] = ['LIFETIME', 'COMPLETE'];
+
 // ----------------------------------------------------------------
-// Referral conversion — fires on every successful checkout
+// Referral conversion — fires only for licence-acquisition payments
 // ----------------------------------------------------------------
 async function recordReferralConversion(
   env: Env,
@@ -28,6 +33,8 @@ async function recordReferralConversion(
   stripeSessionId: string,
   now: number,
 ): Promise<void> {
+  if (!REFERRAL_ELIGIBLE_PAYMENTS.includes(paymentType)) return;
+
   const family = await env.DB
     .prepare('SELECT referred_by_code FROM families WHERE id = ?')
     .bind(familyId)
