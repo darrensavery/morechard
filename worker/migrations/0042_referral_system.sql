@@ -1,7 +1,9 @@
 -- Migration 0042: referral system
 
 -- Unique referral code per family (set at registration)
-ALTER TABLE families ADD COLUMN referral_code TEXT UNIQUE;
+-- SQLite ALTER TABLE cannot add a UNIQUE column directly — add plain then create index
+ALTER TABLE families ADD COLUMN referral_code TEXT;
+CREATE UNIQUE INDEX IF NOT EXISTS idx_families_referral_code ON families(referral_code) WHERE referral_code IS NOT NULL;
 
 -- Code of the referrer who brought this family in (set at registration)
 ALTER TABLE families ADD COLUMN referred_by_code TEXT;
