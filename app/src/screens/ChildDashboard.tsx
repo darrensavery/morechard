@@ -10,7 +10,6 @@ import { useAppView } from '../lib/useTone'
 import { ThemePicker } from '../lib/theme'
 import { SavingsGrove } from '../components/dashboard/SavingsGrove'
 import { FullLogo } from '../components/ui/Logo'
-import { HelpButton } from '../components/ui/HelpButton'
 import { GrowingTree } from '../components/ui/GrowingTree'
 import { EarnTab } from '../components/dashboard/EarnTab'
 import { LabTab } from '../components/dashboard/LabTab'
@@ -238,7 +237,6 @@ export function ChildDashboard() {
         <div className="max-w-[560px] mx-auto px-3.5 py-3 flex items-center justify-between">
           <FullLogo iconSize={26} />
           <div className="flex items-center gap-2">
-            <HelpButton />
             <button
               onClick={() => setShowSettings(true)}
               className="w-8 h-8 rounded-lg border border-[var(--color-border)] flex items-center justify-center text-[var(--color-text-muted)] hover:bg-[var(--color-surface-alt)] cursor-pointer"

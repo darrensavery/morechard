@@ -8,7 +8,7 @@
 
 import { useState } from 'react'
 import {
-  Search, Sparkles,
+  Search, Sparkles, MessageCircle,
   FileText, ShieldCheck, ChevronRight, ExternalLink,
   Tag, Wrench,
 } from 'lucide-react'
@@ -18,7 +18,8 @@ declare const __APP_VERSION__: string | undefined
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 
-const FRESHDESK_SEARCH_URL = 'https://support.morechard.com'
+const FRESHDESK_SEARCH_URL  = 'https://support.morechard.com'
+const FRESHDESK_CONTACT_URL = 'https://support.morechard.com/support/tickets/new'
 const PRIVACY_URL          = 'https://morechard.com/privacy-policy'
 const TERMS_URL            = 'https://morechard.com/terms'
 
@@ -217,6 +218,16 @@ export function SupportSettings({ toast, onBack }: Props) {
         </div>
         <ExternalLink size={14} className="shrink-0 text-[var(--brand-primary)]" />
       </a>
+
+      {/* ── Contact support ── */}
+      <SectionCard>
+        <LinkRow
+          icon={<MessageCircle size={15} />}
+          label="Contact Support"
+          description="Submit a ticket — we reply within 24h"
+          href={FRESHDESK_CONTACT_URL}
+        />
+      </SectionCard>
 
       {/* ── App updates ── */}
       <div>

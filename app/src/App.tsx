@@ -18,7 +18,6 @@ import { verifyMagicLink, setToken, getMe } from './lib/api'
 import { AppUrlListener } from './components/AppUrlListener'
 import { AndroidBackController } from './components/AndroidBackController'
 import { AppAutoLock } from './components/AppAutoLock'
-import { FreshdeskWidget } from './components/FreshdeskWidget'
 import * as Sentry from '@sentry/react'
 
 /**
@@ -265,7 +264,6 @@ export default function App() {
       <AppUrlListener />
       <AndroidBackController />
       <AppAutoLock />
-      <FreshdeskWidget />
       <Routes>
         <Route path="/"         element={<RootGate />} />
         <Route path="/lock"     element={<LockScreen />} />
