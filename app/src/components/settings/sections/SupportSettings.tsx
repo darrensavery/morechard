@@ -203,16 +203,7 @@ export function SupportSettings({ toast, onBack }: Props) {
       {/* ── Search — open Freshdesk widget (retries until widget ready) ── */}
       <button
         type="button"
-        onClick={() => {
-          if (window.fdWidget) {
-            window.fdWidget.open()
-          } else {
-            const iv = setInterval(() => {
-              if (window.fdWidget) { window.fdWidget.open(); clearInterval(iv) }
-            }, 200)
-            setTimeout(() => clearInterval(iv), 5000)
-          }
-        }}
+        onClick={() => window.fdWidget?.open()}
         className="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] hover:bg-[var(--color-surface-alt)] active:bg-[var(--color-surface-alt)] transition-colors cursor-pointer"
       >
         <span className="shrink-0 w-9 h-9 rounded-xl flex items-center justify-center bg-[color-mix(in_srgb,var(--brand-primary)_15%,transparent)] text-[var(--brand-primary)]">
