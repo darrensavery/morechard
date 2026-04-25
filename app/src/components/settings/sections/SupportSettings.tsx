@@ -8,7 +8,7 @@
 
 import { useState } from 'react'
 import {
-  Search, Sparkles, MessageCircle,
+  Search, Sparkles,
   FileText, ShieldCheck, ChevronRight, ExternalLink,
   Tag, Wrench,
 } from 'lucide-react'
@@ -200,10 +200,19 @@ export function SupportSettings({ toast, onBack }: Props) {
       {toast && <Toast message={toast} />}
       <SectionHeader title="Help & Support" onBack={onBack} />
 
-      {/* ── Search / Contact — open Freshdesk widget ── */}
+      {/* ── Search — open Freshdesk widget (retries until widget ready) ── */}
       <button
         type="button"
-        onClick={() => window.fdWidget?.open()}
+        onClick={() => {
+          if (window.fdWidget) {
+            window.fdWidget.open()
+          } else {
+            const iv = setInterval(() => {
+              if (window.fdWidget) { window.fdWidget.open(); clearInterval(iv) }
+            }, 200)
+            setTimeout(() => clearInterval(iv), 5000)
+          }
+        }}
         className="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] hover:bg-[var(--color-surface-alt)] active:bg-[var(--color-surface-alt)] transition-colors cursor-pointer"
       >
         <span className="shrink-0 w-9 h-9 rounded-xl flex items-center justify-center bg-[color-mix(in_srgb,var(--brand-primary)_15%,transparent)] text-[var(--brand-primary)]">
@@ -215,24 +224,6 @@ export function SupportSettings({ toast, onBack }: Props) {
         </div>
         <ChevronRight size={14} className="shrink-0 text-[var(--brand-primary)]" />
       </button>
-
-      {/* ── Contact support ── */}
-      <SectionCard>
-        <button
-          type="button"
-          onClick={() => window.fdWidget?.open()}
-          className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-[var(--color-surface-alt)] active:bg-[var(--color-surface-alt)] transition-colors cursor-pointer"
-        >
-          <span className="shrink-0 w-8 h-8 rounded-xl flex items-center justify-center bg-[color-mix(in_srgb,var(--brand-primary)_10%,transparent)] text-[var(--brand-primary)]">
-            <MessageCircle size={15} />
-          </span>
-          <div className="flex-1 min-w-0">
-            <p className="text-[14px] font-semibold text-[var(--color-text)]">Contact Support</p>
-            <p className="text-[12px] text-[var(--color-text-muted)] mt-0.5 leading-snug">Submit a ticket — we reply within 24h</p>
-          </div>
-          <ChevronRight size={15} className="shrink-0 text-[var(--color-text-muted)]" />
-        </button>
-      </SectionCard>
 
       {/* ── App updates ── */}
       <div>

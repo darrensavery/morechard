@@ -14,10 +14,17 @@ declare global {
 export function FreshdeskWidget() {
   useEffect(() => {
     const identity = getDeviceIdentity()
-    if (!window.fdWidget) return
-
     const role = identity?.role === 'child' ? 'role_child' : 'role_parent'
-    window.fdWidget.setCustomProperties({ role })
+
+    // Widget loads async — poll until ready then set role tag
+    const iv = setInterval(() => {
+      if (window.fdWidget) {
+        window.fdWidget.setCustomProperties({ role })
+        clearInterval(iv)
+      }
+    }, 200)
+
+    return () => clearInterval(iv)
   }, [])
 
   return null
