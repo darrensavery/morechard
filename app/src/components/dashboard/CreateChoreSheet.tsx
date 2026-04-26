@@ -3,8 +3,8 @@
  */
 
 import React, { useState, useRef, useEffect, useCallback } from 'react'
-import type { ChildRecord, MarketRate } from '../../lib/api'
-import { createChore } from '../../lib/api'
+import type { ChildRecord, Chore, MarketRate } from '../../lib/api'
+import { createChore, updateChore } from '../../lib/api'
 import { currencySymbol } from '../../lib/locale'
 import { useMarketRates, fuzzyMatch } from '../../hooks/useMarketRates'
 import { useAndroidBack } from '../../hooks/useAndroidBack'
@@ -15,6 +15,7 @@ interface Props {
   currency: string
   initialTitle?: string
   initialRewardAmount?: number  // in minor units (pence/groszy)
+  editChore?: Chore             // when set, sheet is in edit mode
   onCreated: () => void
   onClose: () => void
 }
@@ -82,14 +83,29 @@ type AssignMode = 'named' | 'anyone' | 'everyone'
 
 export function CreateChoreSheet({
   familyId, children, currency,
-  initialTitle, initialRewardAmount,
+  initialTitle, initialRewardAmount, editChore,
   onCreated, onClose,
 }: Props) {
-  const [form, setForm] = useState<Form>(() => ({
-    ...BLANK,
-    ...(initialTitle        !== undefined ? { title: initialTitle } : {}),
-    ...(initialRewardAmount !== undefined ? { reward_amount: (initialRewardAmount / 100).toFixed(2) } : {}),
-  }))
+  const isEditMode = !!editChore
+  const [form, setForm] = useState<Form>(() => {
+    if (editChore) {
+      return {
+        title:          editChore.title,
+        reward_amount:  (editChore.reward_amount / 100).toFixed(2),
+        frequency:      editChore.frequency,
+        weekly_day:     1,
+        description:    editChore.description ?? '',
+        due_date:       editChore.due_date ?? '',
+        proof_required: !!editChore.proof_required,
+        auto_approve:   !!editChore.auto_approve,
+      }
+    }
+    return {
+      ...BLANK,
+      ...(initialTitle        !== undefined ? { title: initialTitle } : {}),
+      ...(initialRewardAmount !== undefined ? { reward_amount: (initialRewardAmount / 100).toFixed(2) } : {}),
+    }
+  })
   const [saving,   setSaving]   = useState(false)
   const [error,    setError]    = useState<string | null>(null)
   const [showDesc, setShowDesc] = useState(false)
@@ -141,7 +157,7 @@ export function CreateChoreSheet({
   const canSubmit = (
     form.title.trim() !== '' &&
     form.reward_amount !== '' &&
-    (assignMode === 'anyone' || assignMode === 'everyone' || selectedIds.size > 0)
+    (isEditMode || assignMode === 'anyone' || assignMode === 'everyone' || selectedIds.size > 0)
   )
 
   const titleRef       = useRef<HTMLInputElement>(null)
@@ -242,12 +258,14 @@ export function CreateChoreSheet({
         currency,
         frequency:      form.frequency,
         description:    form.description.trim() || undefined,
-        due_date:       isRecurring ? undefined : (form.due_date || undefined),
+        due_date:       isRecurring ? null : (form.due_date || null),
         proof_required: form.proof_required,
         auto_approve:   form.auto_approve,
       }
 
-      if (assignMode === 'anyone') {
+      if (isEditMode) {
+        await updateChore(editChore!.id, base)
+      } else if (assignMode === 'anyone') {
         await createChore({ ...base, assigned_to: 'anyone' } as Parameters<typeof createChore>[0])
       } else if (assignMode === 'everyone') {
         // Fan out — one record per child
@@ -289,8 +307,10 @@ export function CreateChoreSheet({
         {/* Header */}
         <div className="px-5 pt-1 pb-2 flex items-center justify-between shrink-0">
           <div>
-            <p className="text-[17px] font-extrabold text-[var(--color-text)] tracking-tight leading-tight">New chore</p>
-            {singleChild && (
+            <p className="text-[17px] font-extrabold text-[var(--color-text)] tracking-tight leading-tight">
+              {isEditMode ? 'Edit chore' : 'New chore'}
+            </p>
+            {!isEditMode && singleChild && (
               <p className="text-[12px] text-[var(--color-text-muted)]">
                 for <span className="font-semibold text-[var(--brand-primary)]">{singleChild.display_name}</span>
               </p>
@@ -305,8 +325,8 @@ export function CreateChoreSheet({
           </button>
         </div>
 
-        {/* Child selector pills — only shown when 2+ children */}
-        {children.length > 1 && (
+        {/* Child selector pills — only shown when 2+ children and not editing */}
+        {!isEditMode && children.length > 1 && (
           <div
             className="px-5 pb-3 flex gap-2 overflow-x-auto shrink-0"
             style={{ scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}
@@ -664,9 +684,9 @@ export function CreateChoreSheet({
             {saving ? (
               <span className="flex items-center justify-center gap-2">
                 <SpinnerIcon />
-                Creating…
+                {isEditMode ? 'Saving…' : 'Creating…'}
               </span>
-            ) : ctaLabel}
+            ) : isEditMode ? 'Save changes →' : ctaLabel}
           </button>
         </div>
 

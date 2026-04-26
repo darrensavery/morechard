@@ -38,6 +38,7 @@ export function ChoresTab({ familyId, child, children }: Props) {
   const [showArchived, setShowArchived]   = useState(false)
   const [rateGuideOpen, setRateGuideOpen] = useState(false)
   const [preFill, setPreFill]             = useState<{ title: string; reward_amount: number } | null>(null)
+  const [editingChore, setEditingChore]   = useState<Chore | null>(null)
   const [expandedId, setExpandedId]       = useState<string | null>(null)
   const weekStart = getMondayISO()
 
@@ -194,6 +195,7 @@ export function ChoresTab({ familyId, child, children }: Props) {
               expanded={expandedId === chore.id}
               onToggle={() => setExpandedId(expandedId === chore.id ? null : chore.id)}
               onArchive={() => handleArchive(chore.id)}
+              onEdit={() => setEditingChore(chore)}
               onTogglePlan={(day) => togglePlan(chore, day)}
             />
           ))}
@@ -220,6 +222,18 @@ export function ChoresTab({ familyId, child, children }: Props) {
           initialRewardAmount={preFill?.reward_amount}
           onCreated={() => { setShowSheet(false); setPreFill(null); load() }}
           onClose={() => { setShowSheet(false); setPreFill(null) }}
+        />
+      )}
+
+      {/* Edit chore sheet */}
+      {editingChore && (
+        <CreateChoreSheet
+          familyId={familyId}
+          children={children}
+          currency={CURRENCY}
+          editChore={editingChore}
+          onCreated={() => { setEditingChore(null); setExpandedId(null); load() }}
+          onClose={() => setEditingChore(null)}
         />
       )}
 
@@ -391,12 +405,13 @@ function EmptyChoresState({ childName, onAdd }: { childName: string; onAdd: () =
   )
 }
 
-function ChoreCard({ chore, plans, expanded, onToggle, onArchive, onTogglePlan }: {
+function ChoreCard({ chore, plans, expanded, onToggle, onArchive, onEdit, onTogglePlan }: {
   chore: Chore
   plans: Plan[]
   expanded: boolean
   onToggle: () => void
   onArchive: () => void
+  onEdit: () => void
   onTogglePlan: (dayIndex: number) => void
 }) {
   const dueDateObj = chore.due_date && /^\d{4}-\d{2}-\d{2}$/.test(chore.due_date) ? new Date(chore.due_date) : null
@@ -494,8 +509,17 @@ function ChoreCard({ chore, plans, expanded, onToggle, onArchive, onTogglePlan }
             </div>
           </div>
 
-          {/* Archive — bottom right, with folder icon */}
-          <div className="flex justify-end pt-1">
+          {/* Edit + Archive row */}
+          <div className="flex justify-between pt-1">
+            <button
+              onClick={onEdit}
+              className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-[var(--brand-primary)] hover:opacity-80 border border-[var(--brand-primary)] rounded-lg px-3 py-1.5 transition-colors cursor-pointer"
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+              </svg>
+              Edit chore
+            </button>
             <button
               onClick={onArchive}
               className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-red-500 hover:text-red-700 border border-red-200 hover:border-red-400 rounded-lg px-3 py-1.5 transition-colors cursor-pointer"
