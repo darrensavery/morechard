@@ -15,15 +15,19 @@ const CATEGORIES = [
 type Props = {
   defaultSplitBp: number;
   currency: string;
+  parentingMode: 'single' | 'co-parenting';
   onClose: () => void;
   onSaved: () => void;
 };
 
-export function AddExpenseSheet({ defaultSplitBp, currency, onClose, onSaved }: Props) {
+export function AddExpenseSheet({ defaultSplitBp, currency, parentingMode, onClose, onSaved }: Props) {
+  const isCoParenting = parentingMode === 'co-parenting';
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState('other');
   const [amountStr, setAmountStr] = useState('');
-  const [splitBp, setSplitBp] = useState(defaultSplitBp);
+  // Single-household: the household pays in full (split_bp = 10000 = 100%).
+  // Co-parenting: respect the configured default split.
+  const [splitBp, setSplitBp] = useState(parentingMode === 'co-parenting' ? defaultSplitBp : 10000);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -122,31 +126,33 @@ export function AddExpenseSheet({ defaultSplitBp, currency, onClose, onSaved }: 
             />
           </div>
 
-          <div>
-            <label className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wide">
-              Your share — {(splitBp / 100).toFixed(0)}%
-            </label>
-            <input
-              type="range"
-              min={0}
-              max={10000}
-              step={100}
-              value={splitBp}
-              onChange={e => setSplitBp(Number(e.target.value))}
-              className="w-full mt-2"
-            />
-            {totalPence > 0 && (
-              <div className="flex justify-between text-xs text-[var(--color-text-muted)] mt-1 tabular-nums">
-                <span>You: {formatP(loggedByAmount)}</span>
-                <span>Other parent: {formatP(otherAmount)}</span>
-              </div>
-            )}
-            {uneven && (
-              <p className="text-[10px] text-[var(--color-text-muted)] italic mt-1">
-                To keep things simple, we've rounded your share to {formatP(loggedByAmount)} and the other parent's to {formatP(otherAmount)}.
-              </p>
-            )}
-          </div>
+          {isCoParenting && (
+            <div>
+              <label className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wide">
+                Your share — {(splitBp / 100).toFixed(0)}%
+              </label>
+              <input
+                type="range"
+                min={0}
+                max={10000}
+                step={100}
+                value={splitBp}
+                onChange={e => setSplitBp(Number(e.target.value))}
+                className="w-full mt-2"
+              />
+              {totalPence > 0 && (
+                <div className="flex justify-between text-xs text-[var(--color-text-muted)] mt-1 tabular-nums">
+                  <span>You: {formatP(loggedByAmount)}</span>
+                  <span>Other parent: {formatP(otherAmount)}</span>
+                </div>
+              )}
+              {uneven && (
+                <p className="text-[10px] text-[var(--color-text-muted)] italic mt-1">
+                  To keep things simple, we've rounded your share to {formatP(loggedByAmount)} and the other parent's to {formatP(otherAmount)}.
+                </p>
+              )}
+            </div>
+          )}
 
           {error && <p className="text-sm text-red-500">{error}</p>}
 

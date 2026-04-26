@@ -57,11 +57,13 @@ function ledgerNote(
 type Props = {
   familyId: string;
   currentUserId: string;
+  parentingMode: 'single' | 'co-parenting';
   onAddClick: () => void;
   onReconcileClick: (expenses: SharedExpense[]) => void;
 };
 
-export function PoolTab({ familyId, currentUserId, onAddClick, onReconcileClick }: Props) {
+export function PoolTab({ familyId, currentUserId, parentingMode, onAddClick, onReconcileClick }: Props) {
+  const isCoParenting = parentingMode === 'co-parenting';
   const [expenses, setExpenses] = useState<SharedExpense[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -127,23 +129,31 @@ export function PoolTab({ familyId, currentUserId, onAddClick, onReconcileClick 
   return (
     <div className="flex flex-col gap-4 pb-24">
 
-      {/* Running balance chip */}
+      {/* Running balance / month summary chip */}
       {openExpenses.length > 0 && (
         <div className="mx-4 mt-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-raised)] p-4 flex items-center justify-between">
           <div>
             <p className="text-xs text-[var(--color-text-muted)] uppercase tracking-wide">This month</p>
-            <p className={`text-2xl font-bold tabular-nums ${netPence < 0 ? 'text-green-600' : netPence > 0 ? 'text-red-500' : 'text-[var(--color-text)]'}`}>
-              {netPence === 0 ? 'You are square' : netPence < 0
-                ? `You are owed ${formatAmount(Math.abs(netPence), currency)}`
-                : `You owe ${formatAmount(netPence, currency)}`}
-            </p>
+            {isCoParenting ? (
+              <p className={`text-2xl font-bold tabular-nums ${netPence < 0 ? 'text-green-600' : netPence > 0 ? 'text-red-500' : 'text-[var(--color-text)]'}`}>
+                {netPence === 0 ? 'You are square' : netPence < 0
+                  ? `You are owed ${formatAmount(Math.abs(netPence), currency)}`
+                  : `You owe ${formatAmount(netPence, currency)}`}
+              </p>
+            ) : (
+              <p className="text-2xl font-bold tabular-nums text-[var(--color-text)]">
+                {formatAmount(openExpenses.reduce((s, e) => s + e.total_amount, 0), currency)}
+              </p>
+            )}
           </div>
-          <button
-            onClick={() => onReconcileClick(openExpenses)}
-            className="text-sm font-semibold text-[var(--brand-primary)] border border-[var(--brand-primary)] rounded-lg px-3 py-1.5"
-          >
-            Reconcile
-          </button>
+          {isCoParenting && (
+            <button
+              onClick={() => onReconcileClick(openExpenses)}
+              className="text-sm font-semibold text-[var(--brand-primary)] border border-[var(--brand-primary)] rounded-lg px-3 py-1.5"
+            >
+              Reconcile
+            </button>
+          )}
         </div>
       )}
 
@@ -153,12 +163,12 @@ export function PoolTab({ familyId, currentUserId, onAddClick, onReconcileClick 
           onClick={onAddClick}
           className="w-full bg-[var(--brand-primary)] text-white font-semibold text-sm py-3 rounded-xl"
         >
-          + Log shared expense
+          {isCoParenting ? '+ Log shared expense' : '+ Log household expense'}
         </button>
       </div>
 
-      {/* Pending approvals */}
-      {pendingExpenses.length > 0 && (
+      {/* Pending approvals — only relevant in co-parenting mode */}
+      {isCoParenting && pendingExpenses.length > 0 && (
         <section className="px-4">
           <h3 className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wide mb-2">
             Needs your approval
@@ -246,7 +256,7 @@ export function PoolTab({ familyId, currentUserId, onAddClick, onReconcileClick 
                     <div className="flex-1">
                       <p className="font-semibold text-sm">{CATEGORY_EMOJI[e.category]} {e.description}</p>
                       <p className="text-xs text-[var(--color-text-muted)] mt-0.5">{ledgerNote(e, currentUserId)}</p>
-                      {uneven && (
+                      {isCoParenting && uneven && (
                         <p className="text-[10px] text-[var(--color-text-muted)] mt-0.5 italic">
                           To keep things simple, we've rounded your share to {formatAmount(myAmount, e.currency)}.
                         </p>
@@ -261,8 +271,8 @@ export function PoolTab({ familyId, currentUserId, onAddClick, onReconcileClick 
         </section>
       )}
 
-      {/* Voided expenses */}
-      {voidedExpenses.length > 0 && (
+      {/* Voided expenses — only relevant in co-parenting mode */}
+      {isCoParenting && voidedExpenses.length > 0 && (
         <section className="px-4">
           <h3 className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wide mb-2">Voided</h3>
           <div className="flex flex-col gap-2">
@@ -293,7 +303,9 @@ export function PoolTab({ familyId, currentUserId, onAddClick, onReconcileClick 
 
       {expenses.length === 0 && (
         <div className="px-4 pt-8 text-center text-[var(--color-text-muted)] text-sm">
-          No shared expenses yet. Log one to get started.
+          {isCoParenting
+            ? 'No shared expenses yet. Log one to get started.'
+            : 'No household expenses yet. Log one to keep a record of your spending.'}
         </div>
       )}
     </div>

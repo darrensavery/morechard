@@ -21,7 +21,7 @@ interface Props {
   hasShield:        boolean
   toast:            string | null
   onBack:           () => void
-  onNavigateToPlan: (sku: 'AI_ANNUAL' | 'SHIELD') => void
+  onNavigateToPlan: () => void
 }
 
 type PruneStep = 'idle' | 'confirm' | 'pruning'
@@ -51,12 +51,12 @@ export function DataSettings({
 
   const handleBehavioralClick = useCallback(() => {
     if (hasAiMentor) triggerExport('pdf', 'behavioral')
-    else onNavigateToPlan('AI_ANNUAL')
+    else onNavigateToPlan()
   }, [hasAiMentor, triggerExport, onNavigateToPlan])
 
   const handleForensicClick = useCallback(() => {
     if (hasShield) triggerExport('pdf', 'forensic')
-    else onNavigateToPlan('SHIELD')
+    else onNavigateToPlan()
   }, [hasShield, triggerExport, onNavigateToPlan])
 
   const handlePruneConfirm = useCallback(() => {
@@ -152,7 +152,7 @@ export function DataSettings({
             </span>
             <div className="flex-1 min-w-0">
               <p className="text-[12px] font-semibold text-violet-700 leading-snug">
-                Requires AI Mentor (£19.99/yr)
+                Requires AI Mentor
               </p>
               <p className="text-[11px] text-violet-500 leading-snug">
                 Tap to unlock — personalised learning insights for your child

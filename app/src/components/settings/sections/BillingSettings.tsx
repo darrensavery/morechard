@@ -1,24 +1,25 @@
 /**
- * BillingSettings — Billing & Subscriptions section.
- * Lead-parent only (enforced by menu, not here).
+ * BillingSettings — Billing section (lead-parent only).
  *
  * Sub-views:
- *   menu         — three rows (Trial Status / Plan Management / Payment History)
- *   trial        — visual trial tracker
- *   plan         — current plan + upgrade options
- *   history      — payment audit log
+ *   menu    — three rows (Trial Status / Plan Management / Payment History)
+ *   trial   — visual trial tracker
+ *   plan    — current plan + upgrade options
+ *   history — payment audit log
+ *
+ * All plans are one-time purchases. No subscriptions exist.
+ * Provider-specific URLs (e.g. Stripe portal) are intentionally excluded —
+ * direct users to support for billing queries.
  */
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { CreditCard, Clock, Receipt, Zap, Shield, Star, X, Check, ExternalLink } from 'lucide-react'
+import { CreditCard, Clock, Receipt, Zap, Shield, Star, X, Check, Mail } from 'lucide-react'
 import { Toast, SettingsRow, SectionCard, SectionHeader } from '../shared'
 import {
   getTrialStatus, getBillingHistory, createCheckoutSession,
   type TrialStatus, type PaymentRecord,
 } from '../../../lib/api'
 import { cn } from '../../../lib/utils'
-
-const STRIPE_PORTAL_URL = 'https://billing.stripe.com/p/login/morechard' // update once portal is live
 
 type SubView = 'menu' | 'trial' | 'plan' | 'history'
 
@@ -43,26 +44,37 @@ function formatDate(iso: string): string {
 }
 
 const PLAN_LABELS: Record<string, string> = {
-  LIFETIME:  'Complete — Lifetime',
-  COMPLETE:  'Complete — Lifetime',
-  AI_ANNUAL: 'AI Mentor — Annual',
-  SHIELD:    'Shield — Lifetime',
+  COMPLETE:    'Morechard Core',
+  COMPLETE_AI: 'Morechard Core AI',
+  SHIELD_AI:   'Morechard Shield',
+  AI_UPGRADE:  'AI Mentor + Learning Lab',
+  // legacy labels for payment history display
+  LIFETIME:    'Morechard Core (Legacy)',
+  AI_ANNUAL:   'AI Mentor (Legacy)',
+  SHIELD:      'Morechard Shield (Legacy)',
 }
 
 // ── Compare Plans modal ────────────────────────────────────────────────────────
 
-const COMPARE_ROWS: { feature: string; free: boolean; complete: boolean; shield: boolean }[] = [
-  { feature: 'Chore tracking & ledger',    free: true,  complete: true,  shield: true  },
-  { feature: 'Child 6-digit code access',  free: true,  complete: true,  shield: true  },
-  { feature: 'Savings goals (Savings Grove)', free: true, complete: true, shield: true },
-  { feature: 'Payment bridge (Monzo etc.)', free: true, complete: true,  shield: true  },
-  { feature: 'Parent insights AI',         free: false, complete: true,  shield: true  },
-  { feature: 'Rate Guide benchmarking',    free: false, complete: true,  shield: true  },
-  { feature: 'Unlimited children',         free: false, complete: true,  shield: true  },
-  { feature: 'AI Mentor add-on eligible',  free: false, complete: true,  shield: true  },
-  { feature: 'Tamper-evident PDF exports',        free: false, complete: false, shield: true  },
-  { feature: 'Digital tamper-seal on every export', free: false, complete: false, shield: true },
-  { feature: 'Co-parent verified sharing',          free: false, complete: false, shield: true },
+const COMPARE_ROWS: {
+  feature:    string
+  complete:   boolean
+  completeAi: boolean
+  shieldAi:   boolean
+}[] = [
+  { feature: 'Chore tracking & ledger',            complete: true,  completeAi: true,  shieldAi: true  },
+  { feature: 'Child 6-digit code access',           complete: true,  completeAi: true,  shieldAi: true  },
+  { feature: 'Savings goals (Savings Grove)',       complete: true,  completeAi: true,  shieldAi: true  },
+  { feature: 'Payment bridge (Monzo etc.)',         complete: true,  completeAi: true,  shieldAi: true  },
+  { feature: 'Rate Guide benchmarking',             complete: true,  completeAi: true,  shieldAi: true  },
+  { feature: 'Unlimited children',                  complete: true,  completeAi: true,  shieldAi: true  },
+  { feature: 'Parent Insights AI',                  complete: false, completeAi: true,  shieldAi: true  },
+  { feature: 'AI Mentor (financial coaching)',      complete: false, completeAi: true,  shieldAi: true  },
+  { feature: 'Learning Lab (20-module curriculum)', complete: false, completeAi: true,  shieldAi: true  },
+  { feature: 'Tamper-evident PDF exports',          complete: false, completeAi: false, shieldAi: true  },
+  { feature: 'Digital tamper-seal per export',      complete: false, completeAi: false, shieldAi: true  },
+  { feature: 'Co-parent verified sharing',          complete: false, completeAi: false, shieldAi: true  },
+  { feature: 'Court-admissible hashed records',     complete: false, completeAi: false, shieldAi: true  },
 ]
 
 function ComparePlansModal({ onClose }: { onClose: () => void }) {
@@ -76,11 +88,10 @@ function ComparePlansModal({ onClose }: { onClose: () => void }) {
         onClick={e => e.stopPropagation()}
         style={{ maxHeight: '85vh' }}
       >
-        {/* Header */}
         <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-[var(--color-border)]">
           <div>
             <p className="text-[16px] font-bold text-[var(--color-text)]">Compare Plans</p>
-            <p className="text-[12px] text-[var(--color-text-muted)] mt-0.5">Do you need your records to be verifiable?</p>
+            <p className="text-[12px] text-[var(--color-text-muted)] mt-0.5">All plans are one-time purchases — no renewals.</p>
           </div>
           <button
             type="button"
@@ -95,12 +106,12 @@ function ComparePlansModal({ onClose }: { onClose: () => void }) {
         <div className="grid grid-cols-4 gap-0 px-5 pt-3 pb-2">
           <div className="col-span-1" />
           <div className="text-center">
-            <p className="text-[10px] font-bold text-[var(--color-text-muted)] uppercase tracking-wide">Free</p>
-            <p className="text-[11px] font-semibold text-[var(--color-text)] mt-0.5">Trial</p>
+            <p className="text-[10px] font-bold text-teal-600 uppercase tracking-wide">Core</p>
+            <p className="text-[11px] font-semibold text-[var(--color-text)] mt-0.5">£44.99</p>
           </div>
           <div className="text-center">
-            <p className="text-[10px] font-bold text-teal-600 uppercase tracking-wide">Complete</p>
-            <p className="text-[11px] font-semibold text-[var(--color-text)] mt-0.5">£44.99</p>
+            <p className="text-[10px] font-bold text-violet-600 uppercase tracking-wide">Core AI</p>
+            <p className="text-[11px] font-semibold text-[var(--color-text)] mt-0.5">£64.99</p>
           </div>
           <div className="text-center">
             <p className="text-[10px] font-bold text-amber-600 uppercase tracking-wide">Shield</p>
@@ -108,36 +119,34 @@ function ComparePlansModal({ onClose }: { onClose: () => void }) {
           </div>
         </div>
 
-        {/* Rows */}
         <div className="overflow-y-auto px-5 pb-6" style={{ maxHeight: '55vh' }}>
           {COMPARE_ROWS.map(row => (
             <div key={row.feature} className="grid grid-cols-4 gap-0 py-2.5 border-b border-[var(--color-border)] last:border-0 items-center">
               <p className="col-span-1 text-[12px] text-[var(--color-text)] pr-2 leading-snug">{row.feature}</p>
-              <div className="flex justify-center">
-                {row.free
-                  ? <Check size={14} className="text-teal-500" />
-                  : <span className="w-3.5 h-px bg-[var(--color-border)] block mt-1.5" />}
-              </div>
               <div className="flex justify-center">
                 {row.complete
                   ? <Check size={14} className="text-teal-500" />
                   : <span className="w-3.5 h-px bg-[var(--color-border)] block mt-1.5" />}
               </div>
               <div className="flex justify-center">
-                {row.shield
+                {row.completeAi
+                  ? <Check size={14} className="text-violet-500" />
+                  : <span className="w-3.5 h-px bg-[var(--color-border)] block mt-1.5" />}
+              </div>
+              <div className="flex justify-center">
+                {row.shieldAi
                   ? <Check size={14} className="text-amber-500" />
                   : <span className="w-3.5 h-px bg-[var(--color-border)] block mt-1.5" />}
               </div>
             </div>
           ))}
 
-          {/* Mediation anchor + AI footnote */}
           <div className="mt-4 space-y-2">
             <p className="text-[11px] text-amber-700 bg-amber-50 rounded-lg px-3 py-2 leading-relaxed font-medium">
-              UK family mediation averages £140/hr. Shield is a one-time £149.99.
+              UK family mediation averages £140/hr. Morechard Shield is a one-time £149.99.
             </p>
-            <p className="text-[11px] text-[var(--color-text-muted)] leading-relaxed">
-              AI Mentor (£19.99/yr) is an optional add-on for Complete and Shield holders — see below.
+            <p className="text-[11px] text-violet-700 bg-violet-50 rounded-lg px-3 py-2 leading-relaxed font-medium">
+              Already on Core? Add AI Mentor + Learning Lab for £29.99 — one-time.
             </p>
           </div>
         </div>
@@ -149,7 +158,7 @@ function ComparePlansModal({ onClose }: { onClose: () => void }) {
 // ── Trial sub-view ─────────────────────────────────────────────────────────────
 
 function TrialView({ onBack }: { onBack: () => void }) {
-  const [trial, setTrial]   = useState<TrialStatus | null>(null)
+  const [trial, setTrial]     = useState<TrialStatus | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -159,8 +168,16 @@ function TrialView({ onBack }: { onBack: () => void }) {
   }, [])
 
   const daysLeft = trial?.days_remaining ?? null
-  const pct = daysLeft !== null ? Math.max(0, Math.min(100, (daysLeft / 14) * 100)) : 100
-  const urgent = daysLeft !== null && daysLeft <= 2
+  const pct      = daysLeft !== null ? Math.max(0, Math.min(100, (daysLeft / 14) * 100)) : 100
+  const urgent   = daysLeft !== null && daysLeft <= 2
+
+  const planLabel = trial?.has_shield
+    ? 'Morechard Shield'
+    : trial?.has_ai_mentor
+    ? 'Morechard Core AI'
+    : trial?.has_lifetime_license
+    ? 'Morechard Core'
+    : null
 
   return (
     <div className="space-y-4">
@@ -168,30 +185,16 @@ function TrialView({ onBack }: { onBack: () => void }) {
 
       {loading ? (
         <div className="h-32 rounded-xl bg-[var(--color-surface-alt)] animate-pulse" />
-      ) : trial?.has_lifetime_license ? (
+      ) : planLabel ? (
         <SectionCard>
           <div className="px-4 py-5 flex items-start gap-3">
             <span className="shrink-0 w-9 h-9 rounded-xl flex items-center justify-center bg-[color-mix(in_srgb,var(--brand-primary)_12%,transparent)] text-[var(--brand-primary)]">
               <Shield size={17} />
             </span>
             <div>
-              <p className="text-[14px] font-bold text-[var(--color-text)]">Lifetime licence active</p>
+              <p className="text-[14px] font-bold text-[var(--color-text)]">{planLabel} — active</p>
               <p className="text-[12px] text-[var(--color-text-muted)] mt-0.5 leading-snug">
-                Full access to Morechard forever — no renewals, no trial limits.
-              </p>
-            </div>
-          </div>
-        </SectionCard>
-      ) : trial?.ai_subscription_active ? (
-        <SectionCard>
-          <div className="px-4 py-5 flex items-start gap-3">
-            <span className="shrink-0 w-9 h-9 rounded-xl flex items-center justify-center bg-[color-mix(in_srgb,var(--brand-primary)_12%,transparent)] text-[var(--brand-primary)]">
-              <Zap size={17} />
-            </span>
-            <div>
-              <p className="text-[14px] font-bold text-[var(--color-text)]">AI Coach subscription active</p>
-              <p className="text-[12px] text-[var(--color-text-muted)] mt-0.5 leading-snug">
-                AI Mentor features are unlocked for your family.
+                One-time purchase. Full access, no renewals, no trial limits.
               </p>
             </div>
           </div>
@@ -212,7 +215,6 @@ function TrialView({ onBack }: { onBack: () => void }) {
               </p>
             </div>
 
-            {/* Progress bar */}
             <div className={cn('h-2.5 rounded-full overflow-hidden', urgent ? 'bg-amber-100' : 'bg-teal-100')}>
               <div
                 className={cn('h-full rounded-full transition-all', urgent ? 'bg-amber-400' : 'bg-teal-500')}
@@ -227,13 +229,13 @@ function TrialView({ onBack }: { onBack: () => void }) {
 
             {!trial?.is_activated && (
               <p className="text-[12px] text-[var(--color-text-muted)] mt-3 leading-snug">
-                Your trial starts automatically when the first chore is approved. The 14-day clock begins at that point.
+                Your trial starts automatically when the first chore is approved.
               </p>
             )}
 
             {trial?.is_expired && (
               <p className="text-[12px] text-amber-700 bg-amber-50 rounded-lg px-3 py-2 mt-3 leading-snug">
-                Your trial has ended. Upgrade to restore write access for your family.
+                Your trial has ended. Purchase a plan to restore access for your family.
               </p>
             )}
           </div>
@@ -243,8 +245,9 @@ function TrialView({ onBack }: { onBack: () => void }) {
       <SectionCard>
         <div className="px-4 py-3">
           <p className="text-[12px] text-[var(--color-text-muted)] leading-relaxed">
-            The trial covers full access to all features. When it ends, your data is safe — you can still
-            export your ledger at any time. Upgrade to a paid plan to continue using Morechard.
+            The trial covers full access to all features including AI Mentor and Learning Lab.
+            When it ends, your data is safe — you can still export your ledger at any time.
+            Purchase a plan to continue using Morechard.
           </p>
         </div>
       </SectionCard>
@@ -254,10 +257,12 @@ function TrialView({ onBack }: { onBack: () => void }) {
 
 // ── Plan management sub-view ───────────────────────────────────────────────────
 
+type PurchasableSku = 'COMPLETE' | 'COMPLETE_AI' | 'SHIELD_AI' | 'AI_UPGRADE'
+
 function PlanView({ onBack, showToast }: { onBack: () => void; showToast: (m: string) => void }) {
-  const [trial, setTrial]         = useState<TrialStatus | null>(null)
-  const [loading, setLoading]     = useState(true)
-  const [buying, setBuying]       = useState<string | null>(null)
+  const [trial, setTrial]             = useState<TrialStatus | null>(null)
+  const [loading, setLoading]         = useState(true)
+  const [buying, setBuying]           = useState<string | null>(null)
   const [showCompare, setShowCompare] = useState(false)
 
   useEffect(() => {
@@ -266,10 +271,10 @@ function PlanView({ onBack, showToast }: { onBack: () => void; showToast: (m: st
       .finally(() => setLoading(false))
   }, [])
 
-  async function handleUpgrade(type: 'COMPLETE' | 'SHIELD' | 'AI_ANNUAL') {
-    setBuying(type)
+  async function handlePurchase(sku: PurchasableSku) {
+    setBuying(sku)
     try {
-      const { url } = await createCheckoutSession(type)
+      const { url } = await createCheckoutSession(sku)
       window.location.href = url
     } catch {
       showToast('Could not start checkout — please try again')
@@ -278,9 +283,32 @@ function PlanView({ onBack, showToast }: { onBack: () => void; showToast: (m: st
     }
   }
 
-  const isLifetime = trial?.has_lifetime_license
-  const isShield   = trial?.has_shield
-  const isAI       = trial?.ai_subscription_active
+  const hasBase    = trial?.has_lifetime_license
+  const hasAi      = trial?.has_ai_mentor
+  const hasShield  = trial?.has_shield
+
+  // Derive current plan label
+  const currentPlan = hasShield
+    ? 'Morechard Shield'
+    : hasAi
+    ? 'Morechard Core AI'
+    : hasBase
+    ? 'Morechard Core'
+    : trial?.is_expired
+    ? 'Trial expired'
+    : trial?.is_activated
+    ? `Trial — ${trial.days_remaining ?? 0} days left`
+    : 'Free trial (not started)'
+
+  const planColor = hasShield
+    ? 'bg-amber-100 text-amber-700'
+    : hasAi
+    ? 'bg-violet-100 text-violet-700'
+    : hasBase
+    ? 'bg-[color-mix(in_srgb,var(--brand-primary)_12%,transparent)] text-[var(--brand-primary)]'
+    : trial?.is_expired
+    ? 'bg-red-100 text-red-600'
+    : 'bg-teal-100 text-teal-700'
 
   return (
     <>
@@ -296,92 +324,61 @@ function PlanView({ onBack, showToast }: { onBack: () => void; showToast: (m: st
           </div>
         ) : (
           <>
-            {/* Current plan status */}
+            {/* Current plan */}
             <SectionCard>
               <div className="px-4 py-3">
                 <p className="text-[11px] font-semibold text-[var(--color-text-muted)] uppercase tracking-wide mb-2">
                   Current plan
                 </p>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className={cn(
-                    'inline-block px-2.5 py-1 rounded-full text-[12px] font-bold',
-                    isShield
-                      ? 'bg-amber-100 text-amber-700'
-                      : isLifetime
-                      ? 'bg-[color-mix(in_srgb,var(--brand-primary)_12%,transparent)] text-[var(--brand-primary)]'
-                      : isAI
-                      ? 'bg-violet-100 text-violet-700'
-                      : trial?.is_expired
-                      ? 'bg-red-100 text-red-600'
-                      : 'bg-teal-100 text-teal-700',
-                  )}>
-                    {isShield
-                      ? 'Shield — Lifetime'
-                      : isLifetime
-                      ? 'Complete — Lifetime'
-                      : isAI
-                      ? 'AI Mentor Annual'
-                      : trial?.is_expired
-                      ? 'Trial expired'
-                      : trial?.is_activated
-                      ? `Trial — ${trial.days_remaining ?? 0} days left`
-                      : 'Free trial (not started)'}
-                  </span>
-                  {isAI && (
-                    <span className="inline-block px-2 py-0.5 rounded-full text-[11px] font-semibold bg-violet-100 text-violet-600">
-                      + AI Mentor
-                    </span>
-                  )}
-                </div>
+                <span className={cn('inline-block px-2.5 py-1 rounded-full text-[12px] font-bold', planColor)}>
+                  {currentPlan}
+                </span>
               </div>
             </SectionCard>
 
-            {/* Upgrade options */}
-            {!isShield && (
+            {/* Upgrade options — shown only when there's something left to purchase */}
+            {!hasShield && (
               <div className="space-y-3">
                 <div className="flex items-center justify-between px-1">
                   <p className="text-[11px] font-semibold text-[var(--color-text-muted)] uppercase tracking-wide">
-                    Upgrade
+                    {hasBase ? 'Upgrade' : 'Choose a plan'}
                   </p>
                   <button
                     type="button"
                     onClick={() => setShowCompare(true)}
                     className="text-[12px] font-semibold text-[var(--brand-primary)] hover:opacity-75 transition-opacity"
                   >
-                    Why professionals prefer Shield
+                    Compare all plans
                   </button>
                 </div>
 
-                {/* Complete plan */}
-                {!isLifetime && (
+                {/* Complete — shown only when no base license yet */}
+                {!hasBase && (
                   <div className="rounded-2xl border-2 border-[var(--color-border)] overflow-hidden relative">
-                    {/* Best Value badge */}
                     <div className="absolute top-3 right-3 flex items-center gap-1 px-2 py-0.5 rounded-full bg-teal-500 text-white text-[10px] font-bold">
                       <Star size={9} />
-                      Best Value
+                      Starter
                     </div>
-
                     <div className="px-4 pt-4 pb-3">
                       <div className="flex items-start gap-3">
                         <span className="shrink-0 w-9 h-9 rounded-xl flex items-center justify-center bg-[color-mix(in_srgb,var(--brand-primary)_12%,transparent)] text-[var(--brand-primary)]">
                           <Shield size={16} />
                         </span>
                         <div className="flex-1 min-w-0 pr-16">
-                          <p className="text-[15px] font-bold text-[var(--color-text)]">Complete</p>
+                          <p className="text-[15px] font-bold text-[var(--color-text)]">Morechard Core</p>
                           <p className="text-[20px] font-bold text-[var(--brand-primary)] leading-none mt-0.5">
                             £44.99
                             <span className="text-[12px] font-semibold text-[var(--color-text-muted)] ml-1">one-time</span>
                           </p>
                         </div>
                       </div>
-
                       <ul className="mt-3 space-y-1.5">
                         {[
-                          'Secure your family\'s ledger with one payment — no renewals, ever',
-                          'Unlimited children, unlimited chores',
-                          'Parent Insights AI included',
-                          'Rate Guide benchmarking for fair chore pricing',
-                          'AI Mentor add-on available (£19.99/yr)',
+                          'Full chore tracker, ledger & savings goals',
+                          'Unlimited children',
+                          'Rate Guide benchmarking',
+                          'Payment bridge (Monzo, Revolut, PayPal)',
+                          'AI Mentor + Learning Lab add-on available (£29.99)',
                         ].map(item => (
                           <li key={item} className="flex items-start gap-2">
                             <Check size={12} className="shrink-0 text-teal-500 mt-0.5" />
@@ -390,21 +387,85 @@ function PlanView({ onBack, showToast }: { onBack: () => void; showToast: (m: st
                         ))}
                       </ul>
                     </div>
-
                     <div className="px-4 pb-4">
                       <button
                         type="button"
                         disabled={buying !== null}
-                        onClick={() => handleUpgrade('COMPLETE')}
+                        onClick={() => handlePurchase('COMPLETE')}
                         className="w-full py-2.5 rounded-xl bg-[var(--brand-primary)] text-white text-[13px] font-bold hover:opacity-90 active:opacity-80 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        {buying === 'COMPLETE' ? 'Loading…' : 'Get Lifetime Access'}
+                        {buying === 'COMPLETE' ? 'Loading…' : 'Get Morechard Core — £44.99'}
                       </button>
                     </div>
                   </div>
                 )}
 
-                {/* Shield plan */}
+                {/* Complete AI — shown when no base yet, or when base exists but no AI */}
+                {!hasAi && (
+                  <div className="rounded-2xl border-2 border-violet-300 overflow-hidden bg-[color-mix(in_srgb,#7c3aed_4%,var(--color-surface))]">
+                    {!hasBase && (
+                      <div className="absolute top-3 right-3 flex items-center gap-1 px-2 py-0.5 rounded-full bg-violet-500 text-white text-[10px] font-bold">
+                        <Star size={9} />
+                        Best Value
+                      </div>
+                    )}
+                    <div className="px-4 pt-4 pb-3">
+                      <div className="flex items-start gap-3">
+                        <span className="shrink-0 w-9 h-9 rounded-xl flex items-center justify-center bg-violet-100 text-violet-600">
+                          <Zap size={16} />
+                        </span>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <p className="text-[15px] font-bold text-[var(--color-text)]">Morechard Core AI</p>
+                            <span className="px-1.5 py-0.5 rounded-md bg-violet-100 text-violet-700 text-[10px] font-bold uppercase tracking-wide">Includes AI</span>
+                          </div>
+                          <p className="text-[20px] font-bold text-violet-600 leading-none mt-0.5">
+                            {hasBase ? '£29.99' : '£64.99'}
+                            <span className="text-[12px] font-semibold text-[var(--color-text-muted)] ml-1">one-time</span>
+                          </p>
+                          {hasBase && (
+                            <p className="text-[11px] text-violet-600 font-medium mt-1">
+                              Upgrade price — you already have Morechard Core
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      <ul className="mt-3 space-y-1.5">
+                        {(hasBase ? [
+                          'AI Mentor — personalised financial coaching for your children',
+                          'Learning Lab — 20-module financial literacy curriculum',
+                          'Lessons grounded in your children\'s real earnings data',
+                        ] : [
+                          'Everything in Morechard Core',
+                          'AI Mentor — personalised financial coaching for your children',
+                          'Learning Lab — 20-module financial literacy curriculum',
+                          'Lessons grounded in your children\'s real earnings data',
+                        ]).map(item => (
+                          <li key={item} className="flex items-start gap-2">
+                            <Check size={12} className="shrink-0 text-violet-500 mt-0.5" />
+                            <span className="text-[12px] text-[var(--color-text-muted)] leading-snug">{item}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                    <div className="px-4 pb-4">
+                      <button
+                        type="button"
+                        disabled={buying !== null}
+                        onClick={() => handlePurchase(hasBase ? 'AI_UPGRADE' : 'COMPLETE_AI')}
+                        className="w-full py-2.5 rounded-xl bg-violet-500 text-white text-[13px] font-bold hover:opacity-90 active:opacity-80 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {buying === 'COMPLETE_AI' || buying === 'AI_UPGRADE'
+                          ? 'Loading…'
+                          : hasBase
+                          ? 'Add AI Mentor + Learning Lab — £29.99'
+                          : 'Get Morechard Core AI — £64.99'}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Shield AI */}
                 <div className="rounded-2xl border-2 border-amber-300 overflow-hidden bg-[color-mix(in_srgb,#f59e0b_6%,var(--color-surface))] shadow-[0_0_0_4px_color-mix(in_srgb,#f59e0b_8%,transparent)]">
                   <div className="px-4 pt-4 pb-3">
                     <div className="flex items-start gap-3">
@@ -413,7 +474,7 @@ function PlanView({ onBack, showToast }: { onBack: () => void; showToast: (m: st
                       </span>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
-                          <p className="text-[15px] font-bold text-[var(--color-text)]">Shield</p>
+                          <p className="text-[15px] font-bold text-[var(--color-text)]">Morechard Shield</p>
                           <span className="px-1.5 py-0.5 rounded-md bg-amber-100 text-amber-700 text-[10px] font-bold uppercase tracking-wide">Professional</span>
                         </div>
                         <p className="text-[20px] font-bold text-amber-600 leading-none mt-0.5">
@@ -425,17 +486,15 @@ function PlanView({ onBack, showToast }: { onBack: () => void; showToast: (m: st
                         </p>
                       </div>
                     </div>
-
                     <p className="mt-2 mb-3 text-[12px] text-[var(--color-text-muted)] leading-snug">
-                      Every export comes with a digital tamper-seal. If a single number is changed after export, the seal breaks — proving the record is authentic.
+                      Every export carries a cryptographic hash. If a single figure is altered after export, the seal breaks — proving the record is authentic to solicitors and mediators.
                     </p>
                     <ul className="space-y-1.5">
                       {[
-                        'Everything in Complete',
-                        'Tamper-evident PDF exports designed for professional review',
-                        'Digital seal on every export — any change breaks it',
+                        'Everything in Morechard Core AI',
+                        'Court-admissible hashed PDF exports',
+                        'Digital tamper-seal on every export',
                         'Share verified records with co-parents, mediators, or solicitors',
-                        'Professional-grade exports your whole family can rely on',
                       ].map(item => (
                         <li key={item} className="flex items-start gap-2">
                           <Check size={12} className="shrink-0 text-amber-500 mt-0.5" />
@@ -444,60 +503,16 @@ function PlanView({ onBack, showToast }: { onBack: () => void; showToast: (m: st
                       ))}
                     </ul>
                   </div>
-
                   <div className="px-4 pb-4">
                     <button
                       type="button"
                       disabled={buying !== null}
-                      onClick={() => handleUpgrade('SHIELD')}
+                      onClick={() => handlePurchase('SHIELD_AI')}
                       className="w-full py-2.5 rounded-xl bg-amber-500 text-white text-[13px] font-bold hover:opacity-90 active:opacity-80 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      {buying === 'SHIELD' ? 'Loading…' : 'Get Shield Protection'}
+                      {buying === 'SHIELD_AI' ? 'Loading…' : 'Get Morechard Shield — £149.99'}
                     </button>
                   </div>
-                </div>
-
-              </div>
-            )}
-
-            {/* ── Optional Family Add-Ons ────────────────────────────────────── */}
-            {!isAI && (
-              <div className="space-y-2">
-                <p className="text-[11px] font-semibold text-[var(--color-text-muted)] uppercase tracking-wide px-1">
-                  Optional Family Add-Ons
-                </p>
-                <div className="rounded-2xl border border-[var(--color-border)] overflow-hidden bg-[color-mix(in_srgb,#7c3aed_3%,var(--color-surface))]">
-                  <div className="flex items-start gap-3 px-4 pt-4 pb-3">
-                    <span className="shrink-0 w-9 h-9 rounded-xl flex items-center justify-center bg-violet-100 text-violet-600">
-                      <Zap size={16} />
-                    </span>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-baseline gap-2 flex-wrap">
-                        <p className="text-[14px] font-bold text-[var(--color-text)]">AI Mentor</p>
-                        <span className="text-[13px] font-bold text-violet-600">£19.99 / yr</span>
-                      </div>
-                      <p className="text-[12px] text-[var(--color-text-muted)] mt-0.5 leading-snug">
-                        Help your children build healthy money habits with a dedicated 24/7 AI coach — lessons grounded in their real earnings data.
-                      </p>
-                      {!isLifetime && !isShield && (
-                        <p className="text-[11px] text-violet-600 font-medium mt-1.5">
-                          Available for Complete and Shield members.
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                  {(isLifetime || isShield) && (
-                    <div className="px-4 pb-4">
-                      <button
-                        type="button"
-                        disabled={buying !== null}
-                        onClick={() => handleUpgrade('AI_ANNUAL')}
-                        className="w-full py-2.5 rounded-xl bg-violet-500 text-white text-[13px] font-bold hover:opacity-90 active:opacity-80 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        {buying === 'AI_ANNUAL' ? 'Loading…' : 'Add AI Mentor — £19.99/yr'}
-                      </button>
-                    </div>
-                  )}
                 </div>
               </div>
             )}
@@ -505,8 +520,9 @@ function PlanView({ onBack, showToast }: { onBack: () => void; showToast: (m: st
             <SectionCard>
               <div className="px-4 py-3">
                 <p className="text-[12px] text-[var(--color-text-muted)] leading-relaxed">
-                  Payments are processed securely by Stripe. Your card details are never stored by Morechard.
-                  To cancel a subscription contact support.
+                  All purchases are one-time payments — no subscriptions, no renewals.
+                  Payments are processed securely. Your card details are never stored by Morechard.
+                  For billing queries, contact support.
                 </p>
               </div>
             </SectionCard>
@@ -580,9 +596,9 @@ function HistoryView({ onBack }: { onBack: () => void }) {
 // ── Root billing menu ──────────────────────────────────────────────────────────
 
 export function BillingSettings({ toast, onBack, onComingSoon: _onComingSoon, initialView }: Props) {
-  const [sub, setSub] = useState<SubView>(initialView ?? 'menu')
+  const [sub, setSub]             = useState<SubView>(initialView ?? 'menu')
   const [localToast, setLocalToast] = useState<string | null>(null)
-  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const toastTimerRef             = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => () => {
     if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
@@ -603,43 +619,32 @@ export function BillingSettings({ toast, onBack, onComingSoon: _onComingSoon, in
   return (
     <div className="space-y-4">
       {activeToast && <Toast message={activeToast} />}
-      <SectionHeader title="Billing & Subscriptions" onBack={onBack} />
+      <SectionHeader title="Billing" onBack={onBack} />
       <SectionCard>
         <SettingsRow
           icon={<Clock size={15} />}
           label="Trial Status"
-          description="Visual tracker for the 14-day Professional trial"
+          description="View your 14-day trial or current plan"
           onClick={() => setSub('trial')}
         />
         <SettingsRow
           icon={<CreditCard size={15} />}
-          label="Plan Management"
-          description="Upgrade or view your current subscription"
+          label="Plans & Upgrades"
+          description="Purchase or upgrade your plan"
           onClick={() => setSub('plan')}
         />
         <SettingsRow
           icon={<Receipt size={15} />}
           label="Payment History"
-          description="View past invoices and payments"
+          description="View past purchases"
           onClick={() => setSub('history')}
         />
-        <a
-          href={STRIPE_PORTAL_URL}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="w-full flex items-center gap-3 px-4 py-3.5 text-left border-t border-[var(--color-border)] hover:bg-[var(--color-surface-alt)] active:bg-[var(--color-surface-alt)] transition-colors"
-        >
-          <span className="shrink-0 w-8 h-8 rounded-xl flex items-center justify-center bg-[color-mix(in_srgb,var(--brand-primary)_10%,transparent)] text-[var(--brand-primary)]">
-            <CreditCard size={15} />
-          </span>
-          <div className="flex-1 min-w-0">
-            <p className="text-[14px] font-semibold text-[var(--color-text)]">Manage My Subscription</p>
-            <p className="text-[12px] text-[var(--color-text-muted)] mt-0.5 leading-snug">
-              Update billing, download receipts, or cancel
-            </p>
-          </div>
-          <ExternalLink size={13} className="shrink-0 text-[var(--color-text-muted)]" />
-        </a>
+        <SettingsRow
+          icon={<Mail size={15} />}
+          label="Billing Support"
+          description="Contact us for refunds or billing queries"
+          onClick={() => window.open('mailto:support@morechard.com', '_blank')}
+        />
       </SectionCard>
     </div>
   )

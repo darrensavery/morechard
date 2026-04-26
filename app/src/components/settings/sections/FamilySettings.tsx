@@ -232,12 +232,21 @@ export function FamilySettings({
         </SectionCard>
       </div>
 
-      {/* Co-parenting */}
+      {/* Partner / Co-parenting */}
       <div>
-        <p className="text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wide px-1 mb-2">Co-parenting</p>
+        <p className="text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wide px-1 mb-2">
+          {hasCoParent ? 'Co-parenting' : 'Partner'}
+        </p>
         <SectionCard>
           <div className="px-4 py-3.5 border-b border-[var(--color-border)]">
-            <p className="text-[14px] font-semibold text-[var(--color-text)] mb-2">Invite a Co-Parent</p>
+            <p className="text-[14px] font-semibold text-[var(--color-text)] mb-2">
+              {hasCoParent ? 'Invite a Co-Parent' : 'Add a Partner'}
+            </p>
+            {!hasCoParent && (
+              <p className="text-[12px] text-[var(--color-text-muted)] mb-2 leading-snug">
+                Share an invite code so your partner can join the family.
+              </p>
+            )}
             {inviteCode ? (
               <div className="space-y-1">
                 <p className="text-[13px] text-[var(--color-text-muted)]">Share this code (expires {inviteExpiry}):</p>

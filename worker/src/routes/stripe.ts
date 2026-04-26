@@ -1,82 +1,140 @@
 /**
- * Stripe integration — Morechard
+ * Payment integration — Morechard (Stripe, UK Phase 1)
  *
- * POST /api/stripe/create-checkout  — create a Stripe Checkout session (authenticated)
- * POST /api/stripe/webhook          — receive Stripe events (public, signature-verified)
+ * POST /api/stripe/create-checkout  — create a Checkout session (authenticated)
+ * POST /api/stripe/webhook          — receive payment events (public, signature-verified)
  *
- * Products:
- *   LIFETIME_TRACKER  £34.99  — sets has_lifetime_license = TRUE permanently
- *   AI_COACH_ANNUAL   £19.99  — sets ai_subscription_expiry = NOW + 1 year
+ * All products are one-time payments. No subscriptions are issued.
  *
- * Idempotency: webhook handler checks payment_audit_log for duplicate stripe_session_id
+ * SKU catalogue:
+ *   COMPLETE     £44.99  — Morechard Core: base tracker; AI Mentor / Learning Lab locked after trial
+ *   COMPLETE_AI  £64.99  — Morechard Core AI: Core + AI Mentor + Learning Lab permanently unlocked
+ *   SHIELD_AI    £149.99 — Morechard Shield: Core AI + court-admissible hashed PDF exports
+ *   AI_UPGRADE   £29.99  — AI Mentor + Learning Lab one-time upgrade (existing Core purchasers)
+ *
+ * Legacy SKUs (no longer sold; handled in webhook for idempotency only):
+ *   LIFETIME     → treated as COMPLETE
+ *   AI_ANNUAL    → treated as AI_UPGRADE (permanent unlock, not time-limited)
+ *
+ * Idempotency: webhook checks payment_audit_log for duplicate stripe_session_id
  * before writing. Stripe may deliver the same event more than once.
  *
  * Signature verification uses STRIPE_WEBHOOK_SECRET from env (never hardcoded).
+ *
+ * Provider abstraction: all Stripe-specific logic is contained in this file.
+ * To migrate to a different payment provider, replace createCheckoutSession()
+ * and verifyWebhookSignature() — the license-grant logic below them is provider-neutral.
  */
 
 import { Env, PaymentType } from '../types.js';
 import { json, error } from '../lib/response.js';
 import { JwtPayload } from '../lib/jwt.js';
 
-// Referral rewards are tied to a licence purchase, not the AI add-on.
-// AI_ANNUAL is an upgrade for an existing member — not a new family joining.
-// SHIELD is also an add-on, not an acquisition event.
-const REFERRAL_ELIGIBLE_PAYMENTS: string[] = ['LIFETIME', 'COMPLETE'];
+// ----------------------------------------------------------------
+// Product catalogue
+// Price IDs are test-mode values. Swap for live IDs before go-live.
+// All modes are 'payment' (one-time). No 'subscription' mode used.
+// ----------------------------------------------------------------
+const PRICE_IDS: Partial<Record<PaymentType, string>> = {
+  COMPLETE:    'price_1TPqqZKGVFJVwtJFo37uEPPW',  // £44.99 one-time
+  COMPLETE_AI: 'price_1TQVUFKGVFJVwtJFmYUryKw6',  // £64.99 one-time
+  SHIELD_AI:   'price_1TQVVRKGVFJVwtJFbtozHn3b',  // £149.99 one-time
+  AI_UPGRADE:  'price_1TQVViKGVFJVwtJFLhSnEuh7',  // £29.99 one-time
+  // SHIELD legacy price retained so old sessions still resolve
+  SHIELD:      'price_1TPqqcKGVFJVwtJF6cFgzWf9',  // legacy alias → SHIELD_AI
+};
+
+// Amounts in minor units (pence), for audit log only.
+// Stripe is authoritative for the actual charge.
+const AUDIT_AMOUNTS: Partial<Record<PaymentType, number>> = {
+  COMPLETE:    4499,
+  COMPLETE_AI: 6499,
+  SHIELD_AI:   14999,
+  AI_UPGRADE:  2999,
+  LIFETIME:    4499,  // legacy: mapped to COMPLETE price
+  AI_ANNUAL:   2999,  // legacy: mapped to AI_UPGRADE price
+  SHIELD:      14999, // legacy alias
+};
+
+// SKUs accepted at checkout (legacy and alias SKUs not directly purchasable)
+const PURCHASABLE: PaymentType[] = ['COMPLETE', 'COMPLETE_AI', 'SHIELD_AI', 'AI_UPGRADE'];
 
 // ----------------------------------------------------------------
-// Referral conversion — fires only for licence-acquisition payments
+// Referral: only acquisition SKUs (not upgrades) earn referral credit
 // ----------------------------------------------------------------
-async function recordReferralConversion(
-  env: Env,
+const REFERRAL_ELIGIBLE: PaymentType[] = ['COMPLETE', 'COMPLETE_AI', 'SHIELD_AI', 'LIFETIME'];
+
+// ----------------------------------------------------------------
+// Provider layer — Stripe-specific. Replace this section to migrate.
+// ----------------------------------------------------------------
+
+async function createCheckoutSession(
+  priceId: string,
   familyId: string,
-  paymentType: string,
-  stripeSessionId: string,
-  now: number,
-): Promise<void> {
-  if (!REFERRAL_ELIGIBLE_PAYMENTS.includes(paymentType)) return;
+  paymentType: PaymentType,
+  appUrl: string,
+  stripeSecretKey: string,
+): Promise<{ url: string; sessionId: string }> {
+  const params = new URLSearchParams({
+    'payment_method_types[]':  'card',
+    'line_items[0][price]':    priceId,
+    'line_items[0][quantity]': '1',
+    'mode':                    'payment',
+    'metadata[family_id]':     familyId,
+    'metadata[payment_type]':  paymentType,
+    'success_url':             `${appUrl}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
+    'cancel_url':              `${appUrl}/paywall`,
+  });
 
-  const family = await env.DB
-    .prepare('SELECT referred_by_code FROM families WHERE id = ?')
-    .bind(familyId)
-    .first<{ referred_by_code: string | null }>();
+  const res = await fetch('https://api.stripe.com/v1/checkout/sessions', {
+    method: 'POST',
+    headers: {
+      Authorization:  `Bearer ${stripeSecretKey}`,
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: params.toString(),
+  });
 
-  if (!family?.referred_by_code) return;
+  if (!res.ok) {
+    const msg = await res.text();
+    console.error('Stripe create-checkout error:', msg);
+    throw new Error('Payment provider error');
+  }
 
-  // INSERT OR IGNORE — stripe_session_id has UNIQUE constraint for idempotency
-  await env.DB
-    .prepare(`
-      INSERT OR IGNORE INTO referral_conversions
-        (referral_code, referred_family, payment_type, stripe_session_id, converted_at)
-      VALUES (?, ?, ?, ?, ?)
-    `)
-    .bind(family.referred_by_code, familyId, paymentType, stripeSessionId, now)
-    .run();
+  const session = await res.json() as { url: string; id: string };
+  return { url: session.url, sessionId: session.id };
+}
+
+async function verifyWebhookSignature(
+  rawBody: string,
+  signatureHeader: string,
+  secret: string,
+): Promise<boolean> {
+  const parts = Object.fromEntries(
+    signatureHeader.split(',').map(p => p.split('=')).map(([k, ...v]) => [k, v.join('=')])
+  );
+
+  const timestamp = parts['t'];
+  const v1 = parts['v1'];
+  if (!timestamp || !v1) return false;
+
+  // Reject events older than 5 minutes (replay attack guard)
+  if (Math.abs(Date.now() / 1000 - parseInt(timestamp, 10)) > 300) return false;
+
+  const keyData = new TextEncoder().encode(secret);
+  const msgData = new TextEncoder().encode(`${timestamp}.${rawBody}`);
+
+  const key = await crypto.subtle.importKey(
+    'raw', keyData, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']
+  );
+  const sig = await crypto.subtle.sign('HMAC', key, msgData);
+  const hex = Array.from(new Uint8Array(sig)).map(b => b.toString(16).padStart(2, '0')).join('');
+
+  return hex === v1;
 }
 
 // ----------------------------------------------------------------
-// Product catalogue — Stripe price IDs (test mode)
-// Products created via API 2026-04-24. Switch to live price IDs before going live.
-// ----------------------------------------------------------------
-const PRICE_IDS: Record<PaymentType, string> = {
-  COMPLETE:  'price_1TPqqZKGVFJVwtJFo37uEPPW',  // £44.99 one-off
-  SHIELD:    'price_1TPqqcKGVFJVwtJF6cFgzWf9',  // £149.99 one-off
-  AI_ANNUAL: 'price_1TPqqfKGVFJVwtJFpkbuPGCh',  // £19.99/year recurring
-  LIFETIME:  '',  // legacy SKU — no Stripe product; kept for webhook backwards-compat
-};
-
-// AI_ANNUAL uses Stripe subscription mode; all others are one-time payments
-const SUBSCRIPTION_TYPES: PaymentType[] = ['AI_ANNUAL'];
-
-// Amounts kept for audit log only (price is authoritative in Stripe)
-const AUDIT_AMOUNTS: Record<PaymentType, number> = {
-  COMPLETE:  4499,
-  SHIELD:    14999,
-  AI_ANNUAL: 1999,
-  LIFETIME:  3499,
-};
-
-// ----------------------------------------------------------------
-// Create Checkout Session
+// Route: POST /api/stripe/create-checkout
 // ----------------------------------------------------------------
 export async function handleCreateCheckout(
   request: Request,
@@ -86,46 +144,28 @@ export async function handleCreateCheckout(
   const body = await request.json() as { payment_type?: unknown };
   const payment_type = body.payment_type as PaymentType;
 
-  if (!['COMPLETE', 'AI_ANNUAL', 'SHIELD'].includes(payment_type)) {
-    return error('payment_type must be COMPLETE, AI_ANNUAL, or SHIELD', 400);
+  if (!PURCHASABLE.includes(payment_type)) {
+    return error(`payment_type must be one of: ${PURCHASABLE.join(', ')}`, 400);
   }
 
   const priceId = PRICE_IDS[payment_type];
-  const mode    = SUBSCRIPTION_TYPES.includes(payment_type) ? 'subscription' : 'payment';
-
-  // Build Stripe Checkout session via REST API (no npm package — Workers-compatible)
-  const params = new URLSearchParams({
-    'payment_method_types[]':    'card',
-    'line_items[0][price]':      priceId,
-    'line_items[0][quantity]':   '1',
-    'mode':                      mode,
-    'metadata[family_id]':       auth.family_id,
-    'metadata[payment_type]':    payment_type,
-    'success_url':               `${env.APP_URL}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
-    'cancel_url':                `${env.APP_URL}/paywall`,
-  });
-
-  const stripeRes = await fetch('https://api.stripe.com/v1/checkout/sessions', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${env.STRIPE_SECRET_KEY}`,
-      'Content-Type': 'application/x-www-form-urlencoded',
-    },
-    body: params.toString(),
-  });
-
-  if (!stripeRes.ok) {
-    const err = await stripeRes.text();
-    console.error('Stripe create-checkout error:', err);
-    return error('Failed to create checkout session', 502);
+  if (!priceId || priceId.startsWith('price_PLACEHOLDER')) {
+    console.error(`No live price ID configured for ${payment_type}`);
+    return error('This product is not yet available for purchase', 503);
   }
 
-  const session = await stripeRes.json() as { url: string; id: string };
-  return json({ url: session.url, session_id: session.id });
+  try {
+    const { url, sessionId } = await createCheckoutSession(
+      priceId, auth.family_id, payment_type, env.APP_URL, env.STRIPE_SECRET_KEY,
+    );
+    return json({ url, session_id: sessionId });
+  } catch {
+    return error('Failed to create checkout session', 502);
+  }
 }
 
 // ----------------------------------------------------------------
-// Webhook Handler
+// Route: POST /api/stripe/webhook
 // ----------------------------------------------------------------
 export async function handleStripeWebhook(
   request: Request,
@@ -136,7 +176,7 @@ export async function handleStripeWebhook(
 
   const rawBody = await request.text();
 
-  const verified = await verifyStripeSignature(rawBody, signature, env.STRIPE_WEBHOOK_SECRET);
+  const verified = await verifyWebhookSignature(rawBody, signature, env.STRIPE_WEBHOOK_SECRET);
   if (!verified) return error('Invalid webhook signature', 401);
 
   let event: StripeEvent;
@@ -150,22 +190,26 @@ export async function handleStripeWebhook(
     await handleCheckoutCompleted(event.data.object, env);
   }
 
-  // Always return 200 to acknowledge receipt — Stripe will retry on non-2xx
+  // Always 200 — Stripe retries on non-2xx
   return json({ received: true });
 }
 
 // ----------------------------------------------------------------
-// Checkout completion logic (idempotent)
+// License grant logic — provider-neutral
 // ----------------------------------------------------------------
 async function handleCheckoutCompleted(session: StripeSession, env: Env): Promise<void> {
-  const { family_id, payment_type } = session.metadata ?? {};
+  const { family_id, payment_type: rawType } = session.metadata ?? {};
 
-  if (!family_id || !(['LIFETIME', 'COMPLETE', 'AI_ANNUAL', 'SHIELD'] as string[]).includes(payment_type)) {
+  const KNOWN: string[] = [...PURCHASABLE, 'LIFETIME', 'AI_ANNUAL', 'SHIELD'];
+  if (!family_id || !KNOWN.includes(rawType)) {
     console.error('Webhook: missing or invalid metadata', session.metadata);
     return;
   }
 
-  // Idempotency guard — skip if already processed
+  // Normalise legacy SKUs to current equivalents
+  const payment_type = normaliseSku(rawType as PaymentType);
+
+  // Idempotency guard
   const existing = await env.DB
     .prepare('SELECT id FROM payment_audit_log WHERE stripe_session_id = ?')
     .bind(session.id)
@@ -176,90 +220,103 @@ async function handleCheckoutCompleted(session: StripeSession, env: Env): Promis
     return;
   }
 
-  const now = Math.floor(Date.now() / 1000);
-
-  // Write audit log first (Truth Engine: never lose the payment record)
+  // Write audit record first — never lose the payment fact
   await env.DB
     .prepare(`
       INSERT INTO payment_audit_log (family_id, stripe_session_id, amount_paid_int, currency, payment_type)
       VALUES (?, ?, ?, ?, ?)
     `)
-    .bind(family_id, session.id, AUDIT_AMOUNTS[payment_type as PaymentType] ?? 0, 'GBP', payment_type)
+    .bind(family_id, session.id, AUDIT_AMOUNTS[payment_type] ?? 0, 'GBP', payment_type)
     .run();
 
-  // Record referral conversion if this family was referred
+  // Grant license flags
+  await grantLicense(env, family_id, payment_type);
+
+  // Record referral conversion if applicable
+  const now = Math.floor(Date.now() / 1000);
   await recordReferralConversion(env, family_id, payment_type, session.id, now);
 
-  // Update license columns on families table
-  if (payment_type === 'LIFETIME' || payment_type === 'COMPLETE') {
-    await env.DB
-      .prepare('UPDATE families SET has_lifetime_license = TRUE WHERE id = ?')
-      .bind(family_id)
-      .run();
-  } else if (payment_type === 'AI_ANNUAL') {
-    // AI_ANNUAL: extend from today or from existing expiry (whichever is later)
-    const existing = await env.DB
-      .prepare('SELECT ai_subscription_expiry FROM families WHERE id = ?')
-      .bind(family_id)
-      .first<{ ai_subscription_expiry: string | null }>();
+  console.log(`Webhook: processed ${rawType} (normalised: ${payment_type}) for family ${family_id}`);
+}
 
-    const base = existing?.ai_subscription_expiry
-      ? Math.max(new Date(existing.ai_subscription_expiry).getTime(), Date.now())
-      : Date.now();
+function normaliseSku(sku: PaymentType): PaymentType {
+  if (sku === 'LIFETIME') return 'COMPLETE';
+  if (sku === 'AI_ANNUAL') return 'AI_UPGRADE';
+  if (sku === 'SHIELD') return 'SHIELD_AI';
+  return sku;
+}
 
-    const newExpiry = new Date(base + 365 * 86_400_000).toISOString();
+async function grantLicense(env: Env, familyId: string, paymentType: PaymentType): Promise<void> {
+  switch (paymentType) {
+    case 'COMPLETE':
+      await env.DB
+        .prepare('UPDATE families SET has_lifetime_license = 1 WHERE id = ?')
+        .bind(familyId)
+        .run();
+      break;
 
-    await env.DB
-      .prepare('UPDATE families SET ai_subscription_expiry = ? WHERE id = ?')
-      .bind(newExpiry, family_id)
-      .run();
+    case 'COMPLETE_AI':
+      await env.DB
+        .prepare('UPDATE families SET has_lifetime_license = 1, has_ai_mentor = 1 WHERE id = ?')
+        .bind(familyId)
+        .run();
+      break;
+
+    case 'SHIELD_AI':
+      await env.DB
+        .prepare('UPDATE families SET has_lifetime_license = 1, has_ai_mentor = 1, has_shield = 1 WHERE id = ?')
+        .bind(familyId)
+        .run();
+      break;
+
+    case 'AI_UPGRADE':
+      // Only grant if family already holds a base license
+      await env.DB
+        .prepare('UPDATE families SET has_ai_mentor = 1 WHERE id = ? AND has_lifetime_license = 1')
+        .bind(familyId)
+        .run();
+      break;
   }
-
-  if (payment_type === 'SHIELD') {
-    await env.DB
-      .prepare('UPDATE families SET has_shield = 1 WHERE id = ?')
-      .bind(family_id)
-      .run();
-  }
-
-  console.log(`Webhook: processed ${payment_type} for family ${family_id}`);
 }
 
 // ----------------------------------------------------------------
-// Stripe webhook signature verification (Web Crypto — no npm required)
+// Referral conversion — cash-commission model
+// Fires only for acquisition SKUs (not upgrades).
+// Actual cash payout is handled externally (Rewardful or similar).
+// This records the conversion fact so the affiliate dashboard can settle.
 // ----------------------------------------------------------------
-async function verifyStripeSignature(
-  rawBody: string,
-  signatureHeader: string,
-  secret: string,
-): Promise<boolean> {
-  // stripe-signature format: t=timestamp,v1=hash[,v1=hash2...]
-  const parts = Object.fromEntries(
-    signatureHeader.split(',').map(p => p.split('=')).map(([k, ...v]) => [k, v.join('=')])
-  );
+async function recordReferralConversion(
+  env: Env,
+  familyId: string,
+  paymentType: PaymentType,
+  stripeSessionId: string,
+  now: number,
+): Promise<void> {
+  if (!REFERRAL_ELIGIBLE.includes(paymentType)) return;
 
-  const timestamp = parts['t'];
-  const v1 = parts['v1'];
-  if (!timestamp || !v1) return false;
+  const family = await env.DB
+    .prepare('SELECT referred_by_code FROM families WHERE id = ?')
+    .bind(familyId)
+    .first<{ referred_by_code: string | null }>();
 
-  // Reject events older than 5 minutes to guard against replay attacks
-  const ts = parseInt(timestamp, 10);
-  if (Math.abs(Date.now() / 1000 - ts) > 300) return false;
+  if (!family?.referred_by_code) return;
 
-  const signedPayload = `${timestamp}.${rawBody}`;
+  const result = await env.DB
+    .prepare(`
+      INSERT OR IGNORE INTO referral_conversions
+        (referral_code, referred_family, payment_type, stripe_session_id, converted_at)
+      VALUES (?, ?, ?, ?, ?)
+    `)
+    .bind(family.referred_by_code, familyId, paymentType, stripeSessionId, now)
+    .run();
 
-  const keyData = new TextEncoder().encode(secret);
-  const msgData = new TextEncoder().encode(signedPayload);
+  if (!result.meta.changes) return;
 
-  const cryptoKey = await crypto.subtle.importKey(
-    'raw', keyData, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']
-  );
-  const signature = await crypto.subtle.sign('HMAC', cryptoKey, msgData);
-  const hex = Array.from(new Uint8Array(signature))
-    .map(b => b.toString(16).padStart(2, '0'))
-    .join('');
-
-  return hex === v1;
+  // Mark as pending cash settlement (no AI-time grants — cash affiliate model)
+  await env.DB
+    .prepare('UPDATE referral_conversions SET reward_granted = 1 WHERE stripe_session_id = ?')
+    .bind(stripeSessionId)
+    .run();
 }
 
 // ----------------------------------------------------------------

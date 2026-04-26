@@ -25,7 +25,22 @@ export interface Env {
 // 'needs_revision'  — parent sent back with notes
 export type CompletionStatus = 'available' | 'awaiting_review' | 'completed' | 'needs_revision';
 
-export type PaymentType = 'LIFETIME' | 'COMPLETE' | 'AI_ANNUAL' | 'SHIELD';
+// Active SKUs (all one-time payments, UK Phase 1):
+//   COMPLETE     — £44.99  Morechard Core: base tracker; AI Mentor / Learning Lab locked after trial
+//   COMPLETE_AI  — £64.99  Morechard Core AI: Core + AI Mentor + Learning Lab bundled
+//   SHIELD_AI    — £149.99 Morechard Shield: Core AI + court-admissible hashed PDF exports
+//   AI_UPGRADE   — £29.99  AI Mentor + Learning Lab one-time upgrade (for existing Core purchasers)
+//
+// Legacy SKUs (retained for webhook idempotency only — never issued to new customers):
+//   LIFETIME     — superseded by COMPLETE
+//   AI_ANNUAL    — superseded by AI_UPGRADE (one-time)
+export type PaymentType =
+  | 'COMPLETE'
+  | 'COMPLETE_AI'
+  | 'SHIELD_AI'
+  | 'AI_UPGRADE'
+  | 'LIFETIME'    // legacy
+  | 'AI_ANNUAL';  // legacy
 
 /** Shape returned by SELECT on the families table for trial/license checks. */
 export interface FamilyLicenseRow {
@@ -33,18 +48,19 @@ export interface FamilyLicenseRow {
   trial_start_date: string | null;   // ISO datetime string from D1
   is_activated: number;              // D1 returns booleans as 0/1
   has_lifetime_license: number;
-  ai_subscription_expiry: string | null;
+  has_ai_mentor: number;             // 0 or 1 — permanent one-time unlock (migration 0043)
+  ai_subscription_expiry: string | null; // legacy — no longer written; retained for idempotency
   has_shield: number;                // 0 or 1
 }
 
-/** Result shape passed to the frontend for the TrialCountdown component. */
+/** Result shape passed to the frontend for billing/trial components. */
 export interface TrialStatus {
   is_activated: boolean;
   days_remaining: number | null;   // null = trial not yet started
   is_expired: boolean;
   has_lifetime_license: boolean;
-  ai_subscription_active: boolean;
-  has_shield: boolean;              // Shield plan add-on (£149.99 one-off)
+  has_ai_mentor: boolean;          // AI Mentor + Learning Lab permanently unlocked
+  has_shield: boolean;             // Shield AI plan — includes AI Mentor + PDF exports
 }
 
 export type Currency = 'GBP' | 'PLN' | 'USD';

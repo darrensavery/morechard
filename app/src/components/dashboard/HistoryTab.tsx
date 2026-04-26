@@ -518,7 +518,7 @@ function MentorEmptyCard({
     ? `It looks like ${childName} is ${goalProgress.choresRemaining} chore${goalProgress.choresRemaining !== 1 ? 's' : ''} away from their '${goalProgress.goalName}' goal.`
     : childCount === 1
       ? `Keep an eye on ${childName}'s progress — their next goal milestone is coming up soon.`
-      : `No pending tasks for ${childName} right now. Check the other children's tabs for any outstanding approvals.`
+      : `No pending tasks for ${childName} right now. Switch to another child above to check their pending approvals.`
 
   return (
     <PremiumShell>

@@ -33,7 +33,7 @@ export async function checkTrialStatus(
   if (!row) return null; // Unrecognised family — let route handlers surface the 404
 
   // If already licensed, nothing to do
-  if (row.has_lifetime_license || hasActiveAiSub(row)) return null;
+  if (row.has_lifetime_license) return null;
 
   // Activation: first ledger entry has occurred but trial not yet started
   if (!row.is_activated) {
@@ -70,15 +70,14 @@ export async function getTrialStatus(env: Env, family_id: string): Promise<Trial
       days_remaining: null,
       is_expired: false,
       has_lifetime_license: false,
-      ai_subscription_active: false,
+      has_ai_mentor: false,
       has_shield: false,
     };
   }
 
-  const activated      = Boolean(row.is_activated);
+  const activated       = Boolean(row.is_activated);
   const lifetimeLicense = Boolean(row.has_lifetime_license);
-  const aiActive       = hasActiveAiSub(row);
-  const expired        = activated ? isTrialExpired(row) : false;
+  const expired         = activated ? isTrialExpired(row) : false;
 
   let days_remaining: number | null = null;
   if (activated && row.trial_start_date && !lifetimeLicense) {
@@ -92,7 +91,7 @@ export async function getTrialStatus(env: Env, family_id: string): Promise<Trial
     days_remaining,
     is_expired: expired,
     has_lifetime_license: lifetimeLicense,
-    ai_subscription_active: aiActive,
+    has_ai_mentor: Boolean(row.has_ai_mentor),
     has_shield: Boolean(row.has_shield),
   };
 }
@@ -105,7 +104,7 @@ async function getFamilyRow(env: Env, family_id: string): Promise<FamilyLicenseR
   return env.DB
     .prepare(`
       SELECT id, trial_start_date, is_activated, has_lifetime_license,
-             ai_subscription_expiry, has_shield
+             has_ai_mentor, ai_subscription_expiry, has_shield
       FROM families WHERE id = ?
     `)
     .bind(family_id)
@@ -136,11 +135,6 @@ function isTrialExpired(row: FamilyLicenseRow): boolean {
   if (!row.trial_start_date) return false;
   const expiry = new Date(row.trial_start_date).getTime() + TRIAL_DAYS * 86_400_000;
   return Date.now() > expiry;
-}
-
-function hasActiveAiSub(row: FamilyLicenseRow): boolean {
-  if (!row.ai_subscription_expiry) return false;
-  return new Date(row.ai_subscription_expiry).getTime() > Date.now();
 }
 
 function paywallResponse(): Response {

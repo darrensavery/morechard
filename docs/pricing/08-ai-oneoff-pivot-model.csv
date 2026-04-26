@@ -1,0 +1,17 @@
+sku,market,income_band,price_local,price_gbp,complete_price_gbp,addon_to_complete_ratio,positioning_tier,attach_rate_pct,complete_buyer_base,units_sold,gross_revenue_gbp,vs_subs_3yr_revenue_gbp,delta_vs_subs_pct,notes
+AI_Oneoff,UK,A/B,14.99,14.99,44.99,0.33,bargain_addon,38.0,106080,40310,604253,1438155,-58.0,Cheap-feel; permanent access framing boosts attach vs subs
+AI_Oneoff,UK,A/B,19.99,19.99,44.99,0.44,fair_addon,32.0,106080,33946,678524,1438155,-52.8,Sweet spot: clear add-on signal; below half-Complete
+AI_Oneoff,UK,A/B,24.99,24.99,44.99,0.56,solid_addon,26.5,106080,28111,702493,1411257,-50.2,Still anchors below Complete; revenue peak
+AI_Oneoff,UK,A/B,29.99,29.99,44.99,0.67,heavy_addon,21.0,106080,22277,668086,1253961,-46.7,Approaches 2/3 of Complete — buyer hesitates
+AI_Oneoff,UK,A/B,34.99,34.99,44.99,0.78,near_main,15.0,106080,15912,556721,1062800,-47.6,Too close to Complete — cannibalisation risk
+AI_Oneoff,UK,A/B,39.99,39.99,44.99,0.89,price_collision,9.0,106080,9547,381743,835120,-54.3,Buyer asks: why not just buy Complete twice over?
+AI_Oneoff,US,A/B,19.99,15.59,34.99,0.45,fair_addon,34.0,529980,180193,2809211,5928854,-52.6,USD 19.99 maps clean to fair-addon tier
+AI_Oneoff,US,A/B,24.99,19.49,34.99,0.56,solid_addon,28.0,529980,148394,2891807,5948496,-51.4,USD 24.99 — revenue peak
+AI_Oneoff,US,A/B,29.99,23.39,34.99,0.67,heavy_addon,22.0,529980,116596,2727090,5574923,-51.1,USD 29.99
+AI_Oneoff,US,A/B,34.99,27.29,34.99,0.78,near_main,15.5,529980,82147,2241762,4914366,-54.4,USD 34.99 — cannibalises
+AI_Oneoff,US,A/B,39.99,31.19,34.99,0.89,price_collision,10.5,529980,55648,1735767,4032878,-57.0,USD 39.99 — collision
+AI_Oneoff,PL,B/C1,69.00,14.84,99.00,0.70,heavy_addon,18.0,21105,3799,56363,103296,-45.4,PL — heavier add-on framing typical
+AI_Oneoff,PL,B/C1,89.00,19.13,99.00,0.90,price_collision,12.0,21105,2533,48455,98158,-50.6,Too close to Complete PL
+AI_Oneoff,PL,B/C1,99.00,21.29,99.00,1.00,equals_main,7.0,21105,1477,31449,90236,-65.2,Pricing equality — strong cannibalisation
+AI_Oneoff,PL,B/C1,49.00,10.54,99.00,0.50,solid_addon,22.0,21105,4643,48935,93403,-47.6,PL revenue peak
+AI_Oneoff,PL,B/C1,39.00,8.39,99.00,0.39,fair_addon,26.0,21105,5487,46036,n/a,n/a,Below subs comparison range

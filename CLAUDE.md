@@ -180,9 +180,9 @@ wrangler deploy
 ### **Phase 7: Monetization & Global Scale**
 - [ ] Integrate Stripe with PPP (Purchasing Power Parity) for GBP/USD/PLN
 - [x] Payment Bridge V1 — deep-link (Monzo/Revolut/PayPal/Venmo) + Smart Copy (UK bank transfer, Zelle). `paid_out_at` delivery flag, not a ledger write. BLIK deferred to PL market push. Bank-details localStorage is temporary — Spec B replaces with encrypted vault.
-- [ ] Build Day 15 Paywall — Essential (Lifetime) + Pro Coach Bundle + Add AI Mentor later (see developer-bible §4/§4a)
-- [ ] Implement AI Mentor subscription add-on flow (dashboard upsell card for Essential-only users)
-- [ ] Implement subscription cancellation & renewal compliance (developer-bible §18)
+- [ ] Build Day 15 Paywall — Morechard Core (£44.99) + Core AI (£64.99) + Shield (£149.99); AI Mentor + Learning Lab upgrade (£29.99) for Core-only users (see developer-bible §4/§4a)
+- [ ] Implement AI Mentor + Learning Lab upsell card (dashboard upsell for Core-only users)
+- [ ] Remove subscription cancellation flow — all products are now one-time payments (developer-bible §18)
 - [ ] Implement US/UK/PL specific tax/invoice generation (Stripe Tax)
 
 ### **Phase 8: Polish & Passive Automation**

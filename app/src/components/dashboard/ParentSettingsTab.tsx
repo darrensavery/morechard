@@ -328,7 +328,7 @@ export function ParentSettingsTab({ familyId, online, onChildrenChange, onClose 
     if (view.section === 'security')   return <ProfileSection><SecuritySettings   profile={profile} toast={toast} onBack={back} onComingSoon={comingSoon} /></ProfileSection>
     if (view.section === 'appearance') return <ProfileSection><AppearanceSettings toast={toast} onBack={back} /></ProfileSection>
     if (view.section === 'billing')    return <ProfileSection><BillingSettings    toast={toast} onBack={back} onComingSoon={comingSoon} initialView={view.billingSubView} /></ProfileSection>
-    if (view.section === 'data')       return <ProfileSection><DataSettings       isLead={isLead} hasAiMentor={Boolean(trial?.ai_subscription_active)} hasShield={Boolean(trial?.has_shield)} toast={toast} onBack={back} onNavigateToPlan={() => setView({ type: 'section', section: 'billing', billingSubView: 'plan' })} /></ProfileSection>
+    if (view.section === 'data')       return <ProfileSection><DataSettings       isLead={isLead} hasAiMentor={Boolean(trial?.has_ai_mentor) || Boolean(trial?.has_shield)} hasShield={Boolean(trial?.has_shield)} toast={toast} onBack={back} onNavigateToPlan={() => setView({ type: 'section', section: 'billing', billingSubView: 'plan' })} /></ProfileSection>
     if (view.section === 'referrals')  return <ProfileSection><ReferralsSettings  toast={toast} onBack={back} onComingSoon={comingSoon} /></ProfileSection>
     if (view.section === 'about')      return <ProfileSection><AboutSettings      toast={toast} onBack={back} onComingSoon={comingSoon} /></ProfileSection>
   }
@@ -336,6 +336,7 @@ export function ParentSettingsTab({ familyId, online, onChildrenChange, onClose 
   // ── Drawer: identity header + trial banner + grouped menu ───────────────────
 
   const pl = isPolish(locale)
+  const isCoParenting = family?.parenting_mode === 'co-parenting'
 
   // Avatar element
   const avatarEl = (() => {
@@ -420,7 +421,7 @@ export function ParentSettingsTab({ familyId, online, onChildrenChange, onClose 
     {
       title: pl ? 'Zarządzanie rodziną' : 'Family Management',
       items: [
-        { id: 'family',     icon: <Users size={16} />,      label: pl ? 'Zarządzaj rodziną'    : 'Manage Family',            description: pl ? 'Dzieci, współrodzice, zasady' : 'Children, co-parenting, global rules' },
+        { id: 'family',     icon: <Users size={16} />,      label: pl ? 'Zarządzaj rodziną'    : 'Manage Family',            description: pl ? (isCoParenting ? 'Dzieci, współrodzice, zasady' : 'Dzieci, partner, zasady') : (isCoParenting ? 'Children, co-parenting, global rules' : 'Children, partner, global rules') },
         { id: 'billing',    icon: <CreditCard size={16} />, label: pl ? 'Rozliczenia'           : 'Billing & Subscriptions',  description: pl ? 'Okres próbny, plan, faktury'  : 'Trial, plan, invoices', leadOnly: true },
         { id: 'appearance', icon: <Palette size={16} />,    label: pl ? 'Wygląd'                : 'Appearance & Display',     description: pl ? 'Motyw, język'                 : 'Theme, language' },
       ],

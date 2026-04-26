@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import type { ChildRecord } from '../lib/api'
-import { getChildren, getCompletions, clearToken, getUnpaidSummary, type UnpaidSummaryRow } from '../lib/api'
+import { getChildren, getCompletions, clearToken, getUnpaidSummary, getFamily, type UnpaidSummaryRow } from '../lib/api'
 import { getDeviceIdentity } from '../lib/deviceIdentity'
 import { useLocale, isPolish } from '../lib/locale'
 import { AvatarSVG } from '../lib/avatars'
@@ -57,6 +57,7 @@ export function ParentDashboard() {
   const [childrenLoaded, setChildrenLoaded] = useState(false)
   const [pendingCount, setPendingCount] = useState(0)
   const [online,     setOnline]     = useState(navigator.onLine)
+  const [parentingMode, setParentingMode] = useState<'single' | 'co-parenting'>('single')
   const [unpaid, setUnpaid] = useState<UnpaidSummaryRow[]>([])
   const [bridgeCtx, setBridgeCtx] = useState<null | {
     child: ChildRecord; completionIds: string[]; total: number; currency: string;
@@ -69,6 +70,17 @@ export function ParentDashboard() {
   }
 
   useEffect(() => { refreshUnpaid() }, [familyId])
+
+  // Load family config to drive household-vs-co-parenting UX
+  useEffect(() => {
+    if (!familyId) return
+    getFamily()
+      .then(f => {
+        const mode = f?.parenting_mode === 'co-parenting' ? 'co-parenting' : 'single'
+        setParentingMode(mode)
+      })
+      .catch(() => { /* non-fatal — defaults to 'single' */ })
+  }, [familyId])
 
   async function openBridgeForChild(child: ChildRecord, row: UnpaidSummaryRow) {
     const r = await getCompletions({
@@ -141,10 +153,11 @@ export function ParentDashboard() {
     return () => { clearInterval(t); document.removeEventListener('visibilitychange', onVisible) }
   }, [familyId, activeChild])
 
+  const poolLabel = parentingMode === 'co-parenting' ? 'Pool' : 'Household'
   const TABS: { id: Tab; label: string; badge?: number }[] = [
     { id: 'chores',   label: 'Chores' },
     { id: 'activity', label: 'Activity', badge: pendingCount || undefined },
-    { id: 'pool',     label: 'Pool' },
+    { id: 'pool',     label: poolLabel },
     { id: 'insights', label: 'Insights' },
     { id: 'goals',    label: 'Goals' },
   ]
@@ -325,6 +338,7 @@ export function ParentDashboard() {
               <PoolTab
                 familyId={familyId}
                 currentUserId={getDeviceIdentity()?.user_id ?? ''}
+                parentingMode={parentingMode}
                 onAddClick={() => setShowAddExpense(true)}
                 onReconcileClick={() => setShowSettlement(true)}
               />
@@ -401,6 +415,7 @@ export function ParentDashboard() {
           <AddExpenseSheet
             defaultSplitBp={5000}
             currency="GBP"
+            parentingMode={parentingMode}
             onClose={() => setShowAddExpense(false)}
             onSaved={() => { setShowAddExpense(false) }}
           />

@@ -212,26 +212,37 @@ export interface TrialStatus {
   days_remaining:       number | null
   is_expired:           boolean
   has_lifetime_license: boolean
-  ai_subscription_active: boolean
-  has_shield:           boolean   // Shield plan add-on (Phase 7)
+  has_ai_mentor:        boolean  // AI Mentor + Learning Lab permanently unlocked
+  has_shield:           boolean  // Shield AI — includes AI Mentor + PDF exports
 }
 
 export async function getTrialStatus(): Promise<TrialStatus> {
   return request('/api/trial/status')
 }
 
+export type PaymentTypeSku =
+  | 'COMPLETE'
+  | 'COMPLETE_AI'
+  | 'SHIELD_AI'
+  | 'AI_UPGRADE'
+  | 'LIFETIME'    // legacy — appears in history only
+  | 'AI_ANNUAL'   // legacy — appears in history only
+  | 'SHIELD'      // legacy — appears in history only
+
 export interface PaymentRecord {
-  payment_type: 'LIFETIME' | 'AI_ANNUAL' | 'COMPLETE' | 'SHIELD'
+  payment_type:    PaymentTypeSku
   amount_paid_int: number
-  currency: string
-  created_at: string
+  currency:        string
+  created_at:      string
 }
 
 export async function getBillingHistory(): Promise<{ payments: PaymentRecord[] }> {
   return request('/api/billing/history')
 }
 
-export async function createCheckoutSession(payment_type: 'LIFETIME' | 'AI_ANNUAL' | 'COMPLETE' | 'SHIELD'): Promise<{ url: string }> {
+export async function createCheckoutSession(
+  payment_type: 'COMPLETE' | 'COMPLETE_AI' | 'SHIELD_AI' | 'AI_UPGRADE',
+): Promise<{ url: string }> {
   return request('/api/stripe/create-checkout', {
     method: 'POST',
     body: JSON.stringify({ payment_type }),

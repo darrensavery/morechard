@@ -10,7 +10,7 @@
  *   basic       — Family Orchard Summary (Standard £34.99 licence)
  *                 Summary cards, ledger table, status log.
  *
- *   behavioral  — Growth & Learning Curriculum (Basic + £19.99 AI Mentor)
+ *   behavioral  — Growth & Learning Curriculum (requires AI Mentor — Complete AI or Shield AI)
  *                 All basic content plus Learning Lab modules and Behavioural Pulse.
  *
  *   forensic    — Immutable Chain of Custody (Legal version)
@@ -130,12 +130,12 @@ export async function handleExportPdf(request: Request, env: Env): Promise<Respo
   // Server-side tier enforcement — prevents crafted requests bypassing frontend gates
   if (tier === 'behavioral') {
     const tierRow = await env.DB
-      .prepare('SELECT ai_subscription_expiry FROM families WHERE id = ?')
+      .prepare('SELECT has_ai_mentor, has_shield FROM families WHERE id = ?')
       .bind(family_id)
-      .first<{ ai_subscription_expiry: string | null }>();
-    const active = tierRow?.ai_subscription_expiry
-      && new Date(tierRow.ai_subscription_expiry).getTime() > Date.now();
-    if (!active) return error('AI Mentor subscription required', 403);
+      .first<{ has_ai_mentor: number; has_shield: number }>();
+    if (!tierRow?.has_ai_mentor && !tierRow?.has_shield) {
+      return error('AI Mentor required for behavioral exports', 403);
+    }
   }
 
   if (tier === 'forensic') {
