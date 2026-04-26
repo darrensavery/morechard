@@ -433,7 +433,7 @@ function ChoreCard({ chore, plans, expanded, onToggle, onArchive, onEdit, onTogg
     : 'bg-[var(--color-surface)]'
 
   return (
-    <div className={`${bgClass} border border-[var(--color-border)] ${borderClass} rounded-xl overflow-hidden`}>
+    <div className={`${bgClass} border border-[var(--color-border)] ${borderClass} rounded-xl overflow-hidden transition-all duration-200 ease-in`}>
       <button
         className="w-full px-4 py-3 flex items-start gap-3 cursor-pointer"
         onClick={onToggle}
@@ -489,9 +489,25 @@ function ChoreCard({ chore, plans, expanded, onToggle, onArchive, onEdit, onTogg
             <p className="text-[13px] text-[var(--color-text-muted)]">{chore.description}</p>
           )}
 
-          {/* Weekly planner strip — larger tap targets */}
+          {/* Overdue nudge — encouraging, not alarming */}
+          {isOverdue && (
+            <div className="flex items-center gap-2 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-xl px-3 py-2.5">
+              <span className="text-[12px] text-red-600 dark:text-red-400 flex-1">Missed the due date — no worries!</span>
+              <button
+                onClick={e => { e.stopPropagation(); onEdit() }}
+                className="shrink-0 inline-flex items-center gap-1 text-[11px] font-semibold text-[var(--brand-primary)] border border-[var(--brand-primary)] rounded-lg px-2.5 py-1 hover:bg-[color-mix(in_srgb,var(--brand-primary)_8%,transparent)] transition-colors cursor-pointer"
+              >
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/>
+                </svg>
+                Reschedule
+              </button>
+            </div>
+          )}
+
+          {/* Schedule planner strip */}
           <div>
-            <p className="text-[12px] font-semibold text-[var(--color-text-muted)] mb-2">Plan this week</p>
+            <p className="text-[12px] font-semibold text-[var(--color-text-muted)] mb-2">Set schedule</p>
             <div className="flex gap-2">
               {DAYS.map((day, i) => (
                 <button
@@ -510,24 +526,24 @@ function ChoreCard({ chore, plans, expanded, onToggle, onArchive, onEdit, onTogg
           </div>
 
           {/* Edit + Archive row */}
-          <div className="flex justify-between pt-1">
+          <div className="flex items-center justify-between pt-1">
             <button
               onClick={onEdit}
-              className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-[var(--brand-primary)] hover:opacity-80 border border-[var(--brand-primary)] rounded-lg px-3 py-1.5 transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[var(--brand-primary)] text-[var(--brand-primary)] text-[12px] font-semibold hover:bg-[color-mix(in_srgb,var(--brand-primary)_8%,transparent)] transition-colors cursor-pointer"
             >
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
               </svg>
               Edit chore
             </button>
             <button
               onClick={onArchive}
-              className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-red-500 hover:text-red-700 border border-red-200 hover:border-red-400 rounded-lg px-3 py-1.5 transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1.5 text-[12px] text-[var(--color-text-muted)] hover:text-red-500 transition-colors cursor-pointer"
             >
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/>
               </svg>
-              Archive chore
+              Archive
             </button>
           </div>
         </div>
