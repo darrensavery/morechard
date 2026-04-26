@@ -200,21 +200,22 @@ export function SupportSettings({ toast, onBack }: Props) {
       {toast && <Toast message={toast} />}
       <SectionHeader title="Help & Support" onBack={onBack} />
 
-      {/* ── Search — open Freshdesk widget (retries until widget ready) ── */}
-      <button
-        type="button"
-        onClick={() => window.fdWidget?.open()}
-        className="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] hover:bg-[var(--color-surface-alt)] active:bg-[var(--color-surface-alt)] transition-colors cursor-pointer"
+      {/* ── Search the help desk ── */}
+      <a
+        href="https://support.morechard.com"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex items-center gap-3 px-4 py-3.5 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] hover:bg-[var(--color-surface-alt)] active:bg-[var(--color-surface-alt)] transition-colors"
       >
         <span className="shrink-0 w-9 h-9 rounded-xl flex items-center justify-center bg-[color-mix(in_srgb,var(--brand-primary)_15%,transparent)] text-[var(--brand-primary)]">
           <Search size={17} />
         </span>
-        <div className="flex-1 min-w-0 text-left">
+        <div className="flex-1 min-w-0">
           <p className="text-[14px] font-bold text-[var(--color-text)]">Search the Help Desk</p>
           <p className="text-[12px] text-[var(--color-text-muted)] mt-0.5">Browse guides, FAQs, and tutorials</p>
         </div>
-        <ChevronRight size={14} className="shrink-0 text-[var(--brand-primary)]" />
-      </button>
+        <ExternalLink size={14} className="shrink-0 text-[var(--brand-primary)]" />
+      </a>
 
       {/* ── App updates ── */}
       <div>
