@@ -259,8 +259,8 @@ export function CreateChoreSheet({
         frequency:      form.frequency,
         description:    form.description.trim() || undefined,
         due_date:       isRecurring ? null : (form.due_date || null),
-        proof_required: form.proof_required,
-        auto_approve:   form.auto_approve,
+        proof_required: form.proof_required ? 1 : 0,
+        auto_approve:   form.auto_approve ? 1 : 0,
       }
 
       if (isEditMode) {
