@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import type { Chore, Suggestion, Plan, ChildRecord } from '../../lib/api'
 import {
   getChores, archiveChore, restoreChore,
@@ -40,6 +40,8 @@ export function ChoresTab({ familyId, child, children }: Props) {
   const [preFill, setPreFill]             = useState<{ title: string; reward_amount: number } | null>(null)
   const [editingChore, setEditingChore]   = useState<Chore | null>(null)
   const [expandedId, setExpandedId]       = useState<string | null>(null)
+  const [toast, setToast]                 = useState<{ choreId: string; title: string } | null>(null)
+  const toastTimerRef                     = useRef<ReturnType<typeof setTimeout> | null>(null)
   const weekStart = getMondayISO()
 
   useEffect(() => { injectPremiumStyles() }, [])
@@ -62,7 +64,28 @@ export function ChoresTab({ familyId, child, children }: Props) {
   useEffect(() => { load() }, [load])
 
   async function handleArchive(id: string) {
-    await archiveChore(id)
+    const chore = chores.find(c => c.id === id)
+    if (!chore) return
+
+    // Optimistic remove
+    setChores(prev => prev.filter(c => c.id !== id))
+    setExpandedId(null)
+
+    // Show toast
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
+    setToast({ choreId: id, title: chore.title })
+    toastTimerRef.current = setTimeout(async () => {
+      setToast(null)
+      await archiveChore(id)
+      await load()
+    }, 4000)
+  }
+
+  async function handleUndoArchive() {
+    if (!toast) return
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
+    // Restore chore to list without hitting the server (was never archived)
+    setToast(null)
     await load()
   }
 
@@ -275,6 +298,19 @@ export function ChoresTab({ familyId, child, children }: Props) {
           setShowSheet(true)
         }}
       />
+
+      {/* Archive undo toast */}
+      <div
+        className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-4 py-3 rounded-2xl bg-[var(--color-text)] text-[var(--color-surface)] text-[13px] font-medium shadow-xl transition-all duration-300 ${toast ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'}`}
+      >
+        <span>Chore archived.</span>
+        <button
+          onClick={handleUndoArchive}
+          className="font-bold text-[var(--brand-primary)] hover:opacity-80 transition-opacity cursor-pointer"
+        >
+          Undo
+        </button>
+      </div>
     </div>
   )
 }
