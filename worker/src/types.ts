@@ -14,7 +14,8 @@ export interface Env {
   GOOGLE_CLIENT_SECRET: string;
   POSTHOG_API_KEY:      string;
   POSTHOG_HOST:         string;
-  OPENAI_API_KEY:       string;
+  OPENAI_API_KEY:        string;
+  FRESHDESK_SSO_SECRET:  string;
 }
 
 // Completion lifecycle statuses

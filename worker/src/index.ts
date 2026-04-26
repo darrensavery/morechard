@@ -146,6 +146,7 @@ import {
   handleSaveRegistrationStep,
 } from './routes/invite.js';
 import { handleInsights } from './routes/insights.js';
+import { handleFreshdeskSso } from './routes/freshdesk-sso.js';
 import {
   handleMarketRateList,
   handleMarketRateSuggest,
@@ -448,6 +449,9 @@ async function route(request: Request, env: Env, method: string, path: string): 
 
   // Insights — parent or child (child sees own data only, enforced in handler)
   if (path === '/api/insights'  && method === 'GET')  return withAuth(request, auth, env, handleInsights);
+
+  // Freshdesk SSO — parent only
+  if (path === '/api/freshdesk-sso' && method === 'GET') return handleFreshdeskSso(request, env);
 
   // Chat — child mentor (role check enforced in handler)
   if (path === '/api/chat' && method === 'POST') return withAuth(request, auth, env, (req, e) => handleChildChat(req, e));

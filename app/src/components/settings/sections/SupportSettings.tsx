@@ -13,6 +13,7 @@ import {
   Tag, Wrench,
 } from 'lucide-react'
 import { Toast, SectionCard, SectionHeader } from '../shared'
+import { apiUrl, authHeaders } from '../../../lib/api'
 
 declare const __APP_VERSION__: string | undefined
 
@@ -200,22 +201,33 @@ export function SupportSettings({ toast, onBack }: Props) {
       {toast && <Toast message={toast} />}
       <SectionHeader title="Help & Support" onBack={onBack} />
 
-      {/* ── Search the help desk ── */}
-      <a
-        href="https://support.morechard.com"
-        target="_blank"
-        rel="noopener noreferrer"
-        className="flex items-center gap-3 px-4 py-3.5 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] hover:bg-[var(--color-surface-alt)] active:bg-[var(--color-surface-alt)] transition-colors"
+      {/* ── Search the help desk — SSO into Freshdesk portal ── */}
+      <button
+        type="button"
+        onClick={async () => {
+          try {
+            const res = await fetch(apiUrl('/api/freshdesk-sso'), { headers: authHeaders() })
+            if (res.ok) {
+              const { url } = await res.json() as { url: string }
+              window.open(url, '_blank', 'noopener,noreferrer')
+            } else {
+              window.open('https://support.morechard.com', '_blank', 'noopener,noreferrer')
+            }
+          } catch {
+            window.open('https://support.morechard.com', '_blank', 'noopener,noreferrer')
+          }
+        }}
+        className="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] hover:bg-[var(--color-surface-alt)] active:bg-[var(--color-surface-alt)] transition-colors cursor-pointer"
       >
         <span className="shrink-0 w-9 h-9 rounded-xl flex items-center justify-center bg-[color-mix(in_srgb,var(--brand-primary)_15%,transparent)] text-[var(--brand-primary)]">
           <Search size={17} />
         </span>
-        <div className="flex-1 min-w-0">
+        <div className="flex-1 min-w-0 text-left">
           <p className="text-[14px] font-bold text-[var(--color-text)]">Search the Help Desk</p>
           <p className="text-[12px] text-[var(--color-text-muted)] mt-0.5">Browse guides, FAQs, and tutorials</p>
         </div>
         <ExternalLink size={14} className="shrink-0 text-[var(--brand-primary)]" />
-      </a>
+      </button>
 
       {/* ── App updates ── */}
       <div>
