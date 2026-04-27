@@ -63,7 +63,7 @@ export function getRole(): 'parent' | 'child' | null {
   return localStorage.getItem('mc_role') as 'parent' | 'child' | null;
 }
 
-async function request<T>(path: string, options: RequestInit = {}, _retries = 2): Promise<T> {
+async function request<T>(path: string, options: RequestInit = {}, _retries = 2, skip402 = false): Promise<T> {
   const token = getToken();
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
@@ -76,7 +76,7 @@ async function request<T>(path: string, options: RequestInit = {}, _retries = 2)
   // D1 transient reset — retry up to twice with a short delay
   if (res.status === 503 && _retries > 0) {
     await new Promise(r => setTimeout(r, 800));
-    return request<T>(path, options, _retries - 1);
+    return request<T>(path, options, _retries - 1, skip402);
   }
 
   const text = await res.text();
@@ -89,7 +89,7 @@ async function request<T>(path: string, options: RequestInit = {}, _retries = 2)
   }
 
   // Trial expired — worker sends 402 with { redirect: '/paywall' }
-  if (res.status === 402) {
+  if (res.status === 402 && !skip402) {
     window.location.href = '/paywall';
     throw new Error('Trial expired');
   }
@@ -223,7 +223,7 @@ export interface TrialStatus {
 }
 
 export async function getTrialStatus(): Promise<TrialStatus> {
-  return request('/api/trial/status')
+  return request('/api/trial/status', {}, 2, true)
 }
 
 export type PaymentTypeSku =
