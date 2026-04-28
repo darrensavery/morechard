@@ -161,6 +161,7 @@ import {
   handleReferralStats,
   handleReferralClick,
 } from './routes/referrals.js';
+import { handleConsentPost, handleConsentGet } from './routes/consent.js';
 import { nanoid } from './lib/nanoid.js';
 import { json, error } from './lib/response.js';
 import { JwtPayload } from './lib/jwt.js';
@@ -373,6 +374,9 @@ async function route(request: Request, env: Env, method: string, path: string): 
   if (path === '/auth/family'       && method === 'DELETE') return withAuth(request, auth, env, handleDeleteFamily);
 
   // Settings (any role — children can update their own avatar/theme)
+  if (path === '/api/consent/marketing' && method === 'POST') return withAuth(request, auth, env, handleConsentPost)
+  if (path === '/api/consent/marketing' && method === 'GET')  return withAuth(request, auth, env, handleConsentGet)
+
   if (path === '/api/settings' && method === 'GET')   return withAuth(request, auth, env, handleSettingsGet);
   if (path === '/api/settings' && method === 'PATCH')  return withAuth(request, auth, env, handleSettingsUpdate);
 
