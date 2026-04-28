@@ -1,5 +1,6 @@
 # Marketing Consent & Email Re-engagement — Design Spec
 Date: 2026-04-28
+Revised: 2026-04-28 (v2 — incorporates business rule alignment review)
 
 ## Overview
 
@@ -35,9 +36,9 @@ One row per consent event. If wording changes, a new row is inserted with bumped
 | `created_at` | INTEGER NOT NULL DEFAULT (unixepoch()) | |
 | `sent_at` | INTEGER | NULL until sent |
 
-This table serves two purposes: GDPR accountability (what was sent to whom and when) and cron deduplication (prevents re-sending the same template to the same user).
+This table serves two purposes: GDPR accountability (what was sent to whom and when) and cron deduplication (prevents re-sending the same template to the same family).
 
-Index: `(user_id, template_id)` for fast duplicate checks.
+**Deduplication index:** `(family_id, template_id)` — deduplication is by household, not individual user, to prevent two parents in the same family both receiving the same "Trial Expiring" notice. Only one send per template per family is permitted.
 
 ---
 
@@ -59,6 +60,8 @@ Records the user's consent decision.
 - Returns `200 { ok: true }` regardless of the consent value — "No" is a valid recorded decision.
 - Called at the end of Stage 1's submit flow, after the auth response returns a `userId`. Failure is silent (logged, never blocks registration).
 
+**Silent failure & GDPR safety:** if this POST fails, the user has no `marketing_consents` row. The cron uses a strict `INNER JOIN` on `marketing_consents` — a missing row is treated identically to `consented = 0`. No consent record = no emails. This is the safe default.
+
 ### `GET /api/consent/marketing`
 
 Returns the user's current consent record.
@@ -69,7 +72,13 @@ Returns the user's current consent record.
 ```json
 { "consented": true | false | null, "consent_version": "v1" | null }
 ```
-`null` means no consent record exists yet. Used to pre-populate the radio if the user re-enters registration or for a future communication preferences page.
+
+`null` means no consent record exists yet — treated as unanswered, UI forces a choice.
+
+**Pre-population behaviour:** if the user re-enters the registration flow:
+- `consented: true` → pre-selects "Yes, that's fine"
+- `consented: false` → pre-selects "No thanks" — their previous "No" is honoured, not overridden
+- `consented: null` → no pre-selection, forced choice as normal
 
 ---
 
@@ -81,14 +90,19 @@ Returns the user's current consent record.
 
 ```typescript
 export const TEMPLATES = {
-  TRIAL_EXPIRING_SOON: 'trial_expiring_soon',  // day 12
-  TRIAL_EXPIRED:       'trial_expired',          // day 15
-  RE_ENGAGEMENT_W1:    're_engagement_w1',        // 7 days post-expiry
-  RE_ENGAGEMENT_W4:    're_engagement_w4',        // 28 days post-expiry
-  RE_ENGAGEMENT_W12:   're_engagement_w12',       // 84 days post-expiry
-  FEATURE_ANNOUNCE:    'feature_announce',        // ad-hoc
+  TRIAL_EXPIRING_SOON:   'trial_expiring_soon',   // day 12
+  TRIAL_EXPIRED:         'trial_expired',           // day 15
+  RE_ENGAGEMENT_W1:      're_engagement_w1',         // 7 days post-expiry
+  RE_ENGAGEMENT_W4:      're_engagement_w4',         // 28 days post-expiry
+  RE_ENGAGEMENT_W12:     're_engagement_w12',        // 84 days post-expiry
+  RE_ENGAGEMENT_W12_AI:  're_engagement_w12_ai',     // 84 days post-expiry, AI Mentor variant
+  FEATURE_ANNOUNCE:      'feature_announce',         // ad-hoc
 }
 ```
+
+`RE_ENGAGEMENT_W12` and `RE_ENGAGEMENT_W12_AI` are two variants of the same send slot — the cron selects one based on whether the family holds an AI Mentor licence. See Section 4.
+
+All template IDs use lowercase with underscores — no internal product jargon, no terms like "maker", "custodian", or plan code names that would be confusing if they leaked into provider dashboards.
 
 ### EmailService class
 
@@ -121,7 +135,7 @@ export const CONSENT_VERSIONS = {
 export const CURRENT_CONSENT_VERSION = 'v1'
 ```
 
-The registration UI imports `CURRENT_CONSENT_VERSION` to display the question. The API imports it to write `consent_version` into the DB. The two can never drift apart.
+The registration UI imports `CURRENT_CONSENT_VERSION` to display the question. The API imports it to write `consent_version` into the DB. The two can never drift apart. Wording is family-friendly — no internal terminology.
 
 ---
 
@@ -131,26 +145,40 @@ The registration UI imports `CURRENT_CONSENT_VERSION` to display the question. T
 
 **Schedule:** `0 6 * * *` (daily at 06:00 UTC) — registered in `wrangler.toml` alongside the existing market-rates cron.
 
+### Plan logic
+
+The `families` table tracks licences via three boolean columns:
+- `has_lifetime_license` — holds Complete (base tracker) or any higher plan
+- `has_ai_mentor` — AI Mentor add-on (not included in any base plan by default)
+- `has_shield` — Shield plan (forensic/legal bundle)
+
+For re-engagement purposes:
+- A family is a **re-engagement target** if `has_lifetime_license = 0` (trial ended, did not purchase).
+- The **AI Mentor variant** of the week-12 email is sent only if `has_ai_mentor = 0` — suggesting the AI Mentor as a reason to return only makes sense if they don't already have it. Shield users who lack the AI Mentor are eligible for this variant too (Shield does not bundle AI Mentor).
+
 ### Cohort queries
 
 Each cohort:
 1. Queries `families` filtered by `trial_start_date` offset and `has_lifetime_license = 0`.
-2. Joins `users` to get `email`.
-3. Joins `marketing_consents` (latest row per user) to filter `consented = 1` only.
-4. Left joins `email_sends` to exclude families already sent this `template_id`.
+2. **INNER JOINs** `marketing_consents` (latest row per `user_id`, `consented = 1`) — strict join, families with no consent record are excluded.
+3. Joins `users` (lead parent only — `role = 'parent'`, `granted_by IS NULL`) to get one email address per family.
+4. Left joins `email_sends` on `(family_id, template_id)` to exclude families already sent this template.
 5. Calls `EmailService.sendEmail()` for each match.
 
-| Cohort | Offset from `trial_start_date` | Template |
-|---|---|---|
-| Trial expiring soon | +12 days | `TRIAL_EXPIRING_SOON` |
-| Trial just expired | +15 days | `TRIAL_EXPIRED` |
-| Re-engagement week 1 | +21 days | `RE_ENGAGEMENT_W1` |
-| Re-engagement week 4 | +42 days | `RE_ENGAGEMENT_W4` |
-| Re-engagement week 12 | +98 days | `RE_ENGAGEMENT_W12` |
+| Cohort | Offset from `trial_start_date` | Template | Condition |
+|---|---|---|---|
+| Trial expiring soon | +12 days | `TRIAL_EXPIRING_SOON` | `has_lifetime_license = 0` |
+| Trial just expired | +15 days | `TRIAL_EXPIRED` | `has_lifetime_license = 0` |
+| Re-engagement week 1 | +21 days | `RE_ENGAGEMENT_W1` | `has_lifetime_license = 0` |
+| Re-engagement week 4 | +42 days | `RE_ENGAGEMENT_W4` | `has_lifetime_license = 0` |
+| Re-engagement week 12 (base) | +98 days | `RE_ENGAGEMENT_W12` | `has_lifetime_license = 0` |
+| Re-engagement week 12 (AI) | +98 days | `RE_ENGAGEMENT_W12_AI` | `has_lifetime_license = 0 AND has_ai_mentor = 0` |
 
-**Deduplication:** the `email_sends` left join is the sole guard against duplicate sends. No flags are added to `families`.
+The week-12 slot sends one of the two variants — the AI variant takes precedence if the condition is met; the base variant is the fallback. The `email_sends` deduplication check covers both template IDs so only one week-12 email is ever sent per family.
 
-**Consent enforcement:** the `marketing_consents` join means users who answered "No" are permanently excluded with no extra logic required.
+**Deduplication:** the `email_sends` left join on `(family_id, template_id)` is the sole guard against duplicate sends. One email per template per household.
+
+**Consent enforcement:** the strict `INNER JOIN` on `marketing_consents` means families with no consent record (failed POST, or answered "No") never receive emails.
 
 ---
 
@@ -173,6 +201,7 @@ A required radio group is added below the email field.
 - Selected value is passed forward in the registration `data` object.
 - After the auth response returns `userId` at the end of Stage 1's submit, `POST /api/consent/marketing` is called with the selected value.
 - If the consent POST fails, it fails silently (console error only) — registration is never blocked.
+- On re-entry to Stage 1 (e.g. magic link flow), `GET /api/consent/marketing` is called and the result pre-populates the radio. A previous "No thanks" is respected — the user is not forced to reconsider.
 
 ---
 
