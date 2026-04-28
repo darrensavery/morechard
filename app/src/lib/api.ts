@@ -255,6 +255,10 @@ export async function createCheckoutSession(
   })
 }
 
+export async function cancelPlan(): Promise<{ refunded: boolean }> {
+  return request('/api/billing/cancel', { method: 'DELETE' })
+}
+
 export async function updateFamily(body: Record<string, unknown>): Promise<void> {
   await request('/api/family', { method: 'PATCH', body: JSON.stringify(body) });
 }

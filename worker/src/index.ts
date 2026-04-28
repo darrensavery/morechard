@@ -136,7 +136,7 @@ import {
 } from './routes/auth.js';
 import { requireAuth, requireRole, requireFamilyMatch } from './lib/middleware.js';
 import { checkTrialStatus, getTrialStatus } from './lib/trial.js';
-import { handleCreateCheckout, handleStripeWebhook } from './routes/stripe.js';
+import { handleCreateCheckout, handleStripeWebhook, handleCancelPlan } from './routes/stripe.js';
 import { handleExchange } from './routes/exchange.js';
 import {
   handleGenerateInvite,
@@ -618,6 +618,10 @@ async function route(request: Request, env: Env, method: string, path: string): 
   // Stripe checkout (parent only, post-auth)
   if (path === '/api/stripe/create-checkout' && method === 'POST') {
     return handleCreateCheckout(request, env, auth);
+  }
+
+  if (path === '/api/billing/cancel' && method === 'DELETE') {
+    return handleCancelPlan(request, env, auth);
   }
 
   // Payment history (parent only)

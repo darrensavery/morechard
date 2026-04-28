@@ -13,10 +13,10 @@
  */
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { CreditCard, Clock, Receipt, Zap, Shield, Star, X, Check, Mail } from 'lucide-react'
+import { CreditCard, Clock, Receipt, Zap, Shield, Star, X, Check, Mail, AlertTriangle } from 'lucide-react'
 import { Toast, SettingsRow, SectionCard, SectionHeader } from '../shared'
 import {
-  getTrialStatus, getBillingHistory, createCheckoutSession,
+  getTrialStatus, getBillingHistory, createCheckoutSession, cancelPlan,
   type TrialStatus, type PaymentRecord,
 } from '../../../lib/api'
 import { cn } from '../../../lib/utils'
@@ -260,14 +260,17 @@ function TrialView({ onBack }: { onBack: () => void }) {
 type PurchasableSku = 'COMPLETE' | 'COMPLETE_AI' | 'SHIELD_AI' | 'AI_UPGRADE'
 
 function PlanView({ onBack, showToast }: { onBack: () => void; showToast: (m: string) => void }) {
-  const [trial, setTrial]             = useState<TrialStatus | null>(null)
-  const [loading, setLoading]         = useState(true)
-  const [buying, setBuying]           = useState<string | null>(null)
-  const [showCompare, setShowCompare] = useState(false)
+  const [trial, setTrial]               = useState<TrialStatus | null>(null)
+  const [payments, setPayments]         = useState<PaymentRecord[]>([])
+  const [loading, setLoading]           = useState(true)
+  const [buying, setBuying]             = useState<string | null>(null)
+  const [showCompare, setShowCompare]   = useState(false)
+  const [cancelling, setCancelling]     = useState(false)
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false)
 
   useEffect(() => {
-    getTrialStatus()
-      .then(setTrial)
+    Promise.all([getTrialStatus(), getBillingHistory()])
+      .then(([t, h]) => { setTrial(t); setPayments(h.payments) })
       .finally(() => setLoading(false))
   }, [])
 
@@ -282,6 +285,31 @@ function PlanView({ onBack, showToast }: { onBack: () => void; showToast: (m: st
       setBuying(null)
     }
   }
+
+  async function handleCancel() {
+    setCancelling(true)
+    try {
+      await cancelPlan()
+      showToast('Refund issued — your plan has been cancelled')
+      setShowCancelConfirm(false)
+      // Refresh trial status
+      const t = await getTrialStatus()
+      setTrial(t)
+    } catch (e: unknown) {
+      showToast(e instanceof Error ? e.message : 'Refund failed — please contact support')
+    } finally {
+      setCancelling(false)
+    }
+  }
+
+  // Determine if user is within 14-day cooling-off window
+  const mostRecentPurchase = payments[0]
+  const withinCoolingOff = mostRecentPurchase
+    ? (Date.now() - new Date(mostRecentPurchase.created_at).getTime()) < 14 * 24 * 60 * 60 * 1000
+    : false
+  const coolingOffDeadline = mostRecentPurchase
+    ? new Date(new Date(mostRecentPurchase.created_at).getTime() + 14 * 24 * 60 * 60 * 1000)
+    : null
 
   const hasBase    = trial?.has_lifetime_license
   const hasAi      = trial?.has_ai_mentor
@@ -515,6 +543,57 @@ function PlanView({ onBack, showToast }: { onBack: () => void; showToast: (m: st
                   </div>
                 </div>
               </div>
+            )}
+
+            {/* Cooling-off cancellation — only shown when a paid plan is active within 14 days */}
+            {(hasBase || hasAi || hasShield) && withinCoolingOff && coolingOffDeadline && (
+              <SectionCard>
+                <div className="px-4 py-3 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <AlertTriangle size={13} className="text-amber-500 shrink-0" />
+                    <p className="text-[12px] font-semibold text-[var(--color-text)]">14-day cooling-off period</p>
+                  </div>
+                  <p className="text-[12px] text-[var(--color-text-muted)] leading-relaxed">
+                    You can cancel and receive a full refund until{' '}
+                    <span className="font-semibold text-[var(--color-text)]">
+                      {coolingOffDeadline.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
+                    </span>.
+                  </p>
+                  {!showCancelConfirm ? (
+                    <button
+                      type="button"
+                      onClick={() => setShowCancelConfirm(true)}
+                      className="text-[12px] font-semibold text-red-500 hover:text-red-600 transition-colors"
+                    >
+                      Cancel plan & request refund
+                    </button>
+                  ) : (
+                    <div className="space-y-2 pt-1">
+                      <p className="text-[12px] text-red-600 font-medium">
+                        Are you sure? Your licence will be revoked immediately and a full refund issued to your original payment method.
+                      </p>
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          disabled={cancelling}
+                          onClick={handleCancel}
+                          className="flex-1 py-2 rounded-xl bg-red-500 text-white text-[12px] font-bold hover:bg-red-600 transition-colors disabled:opacity-50"
+                        >
+                          {cancelling ? 'Processing…' : 'Yes, cancel & refund'}
+                        </button>
+                        <button
+                          type="button"
+                          disabled={cancelling}
+                          onClick={() => setShowCancelConfirm(false)}
+                          className="flex-1 py-2 rounded-xl bg-[var(--color-surface-alt)] text-[var(--color-text)] text-[12px] font-bold hover:opacity-80 transition-opacity"
+                        >
+                          Keep my plan
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </SectionCard>
             )}
 
             <SectionCard>

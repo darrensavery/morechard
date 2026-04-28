@@ -19,6 +19,8 @@ import { AppUrlListener } from './components/AppUrlListener'
 import { AndroidBackController } from './components/AndroidBackController'
 import { AppAutoLock } from './components/AppAutoLock'
 import { FreshdeskWidget } from './components/FreshdeskWidget'
+import { PaywallScreen } from './screens/PaywallScreen'
+import { PaymentSuccessScreen } from './screens/PaymentSuccessScreen'
 import * as Sentry from '@sentry/react'
 
 /**
@@ -283,6 +285,8 @@ export default function App() {
         <Route path="/auth/verify"    element={<MagicLinkVerifyScreen />} />
         <Route path="/auth/login"    element={<LoginScreen />} />
         <Route path="/auth/callback" element={<AuthCallbackScreen />} />
+        <Route path="/paywall"          element={<PaywallScreen />} />
+        <Route path="/payment-success"  element={<PaymentSuccessScreen />} />
         <Route path="/parent" element={<RequireSession><ParentDashboard /></RequireSession>} />
         <Route path="/child"  element={<RequireSession><ChildDashboard /></RequireSession>} />
         <Route path="*"       element={<Navigate to="/" replace />} />

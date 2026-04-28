@@ -330,6 +330,105 @@ async function recordReferralConversion(
 }
 
 // ----------------------------------------------------------------
+// Route: DELETE /api/billing/cancel  (14-day cooling-off refund)
+// ----------------------------------------------------------------
+export async function handleCancelPlan(
+  request: Request,
+  env: Env,
+  auth: JwtPayload,
+): Promise<Response> {
+  // Only lead parent can cancel
+  if (auth.role !== 'parent') return error('Forbidden', 403);
+
+  // Find the most recent paid purchase for this family
+  const purchase = await env.DB
+    .prepare(`
+      SELECT id, stripe_session_id, payment_type, created_at
+      FROM payment_audit_log
+      WHERE family_id = ?
+      ORDER BY created_at DESC
+      LIMIT 1
+    `)
+    .bind(auth.family_id)
+    .first<{ id: number; stripe_session_id: string; payment_type: string; created_at: string }>();
+
+  if (!purchase) return error('No purchase found', 404);
+
+  // Enforce 14-day cooling-off window
+  const purchasedAt = new Date(purchase.created_at).getTime();
+  const daysSince = (Date.now() - purchasedAt) / (1000 * 60 * 60 * 24);
+  if (daysSince > 14) {
+    return error('The 14-day cooling-off period has expired', 403);
+  }
+
+  // Fetch the Stripe session to get the payment_intent
+  const sessionRes = await fetch(
+    `https://api.stripe.com/v1/checkout/sessions/${purchase.stripe_session_id}`,
+    { headers: { Authorization: `Bearer ${env.STRIPE_SECRET_KEY}` } },
+  );
+  if (!sessionRes.ok) {
+    console.error('Stripe session fetch failed:', await sessionRes.text());
+    return error('Could not retrieve payment details', 502);
+  }
+  const session = await sessionRes.json() as { payment_intent?: string };
+  if (!session.payment_intent) {
+    return error('No payment intent found for this session', 400);
+  }
+
+  // Issue the refund
+  const refundParams = new URLSearchParams({ payment_intent: session.payment_intent });
+  const refundRes = await fetch('https://api.stripe.com/v1/refunds', {
+    method: 'POST',
+    headers: {
+      Authorization:  `Bearer ${env.STRIPE_SECRET_KEY}`,
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: refundParams.toString(),
+  });
+  if (!refundRes.ok) {
+    console.error('Stripe refund failed:', await refundRes.text());
+    return error('Refund failed — please contact support', 502);
+  }
+
+  // Revoke licence flags
+  await revokeLicense(env, auth.family_id, purchase.payment_type as PaymentType);
+
+  // Mark the audit record as refunded
+  await env.DB
+    .prepare('UPDATE payment_audit_log SET refunded_at = datetime(\'now\') WHERE id = ?')
+    .bind(purchase.id)
+    .run();
+
+  console.log(`Refund issued for family ${auth.family_id}, session ${purchase.stripe_session_id}`);
+  return json({ refunded: true });
+}
+
+async function revokeLicense(env: Env, familyId: string, paymentType: PaymentType): Promise<void> {
+  switch (normaliseSku(paymentType)) {
+    case 'COMPLETE':
+      await env.DB
+        .prepare('UPDATE families SET has_lifetime_license = 0 WHERE id = ?')
+        .bind(familyId).run();
+      break;
+    case 'COMPLETE_AI':
+      await env.DB
+        .prepare('UPDATE families SET has_lifetime_license = 0, has_ai_mentor = 0 WHERE id = ?')
+        .bind(familyId).run();
+      break;
+    case 'SHIELD_AI':
+      await env.DB
+        .prepare('UPDATE families SET has_lifetime_license = 0, has_ai_mentor = 0, has_shield = 0 WHERE id = ?')
+        .bind(familyId).run();
+      break;
+    case 'AI_UPGRADE':
+      await env.DB
+        .prepare('UPDATE families SET has_ai_mentor = 0 WHERE id = ?')
+        .bind(familyId).run();
+      break;
+  }
+}
+
+// ----------------------------------------------------------------
 // Minimal Stripe type stubs
 // ----------------------------------------------------------------
 interface StripeEvent {
