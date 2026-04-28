@@ -53,18 +53,22 @@ export function Stage1ParentIdentity({ data, onNext }: Props) {
   const [parentingMode, setParentingMode] = useState<'single' | 'co-parenting'>(
     data.parenting_mode ?? 'single'
   )
+  const [marketingConsent, setMarketingConsent] = useState<boolean | null>(
+    data.marketing_consent ?? null
+  )
   const [touched, setTouch] = useState<Record<string, boolean>>({})
   const [submitted, setSubmitted] = useState(false)
 
   const strength = getStrength(password)
 
-  const canContinue = !!displayName.trim() && isValidEmail(email) && password.length >= 8
+  const canContinue = !!displayName.trim() && isValidEmail(email) && password.length >= 8 && marketingConsent !== null
 
   // Live validation — only show errors after field is touched or submit attempted
   const errors = {
-    displayName: !displayName.trim()      ? 'Your name is required' : '',
-    email:       !isValidEmail(email)     ? 'Enter a valid email address' : '',
-    password:    password.length < 8     ? 'Minimum 8 characters' : '',
+    displayName:      !displayName.trim()      ? 'Your name is required' : '',
+    email:            !isValidEmail(email)     ? 'Enter a valid email address' : '',
+    password:         password.length < 8     ? 'Minimum 8 characters' : '',
+    marketingConsent: marketingConsent === null ? 'Please make a selection' : '',
   }
 
   const showError = (field: keyof typeof errors) =>
@@ -76,14 +80,15 @@ export function Stage1ParentIdentity({ data, onNext }: Props) {
 
   function handleNext() {
     setSubmitted(true)
-    if (errors.displayName || errors.email || errors.password) return
+    if (errors.displayName || errors.email || errors.password || errors.marketingConsent) return
     vibrate()
     onNext({
-      display_name:    displayName.trim(),
-      email:           email.toLowerCase().trim(),
+      display_name:      displayName.trim(),
+      email:             email.toLowerCase().trim(),
       password,
-      parenting_mode:  parentingMode,
-      governance_mode: parentingMode === 'co-parenting' ? 'standard' : 'amicable',
+      parenting_mode:    parentingMode,
+      governance_mode:   parentingMode === 'co-parenting' ? 'standard' : 'amicable',
+      marketing_consent: marketingConsent!,
     })
   }
 
@@ -232,6 +237,52 @@ export function Stage1ParentIdentity({ data, onNext }: Props) {
           )}
         </div>
       </div>
+
+      {/* ── Marketing consent ────────────────────────────────────── */}
+      <fieldset>
+        <legend className={cn(
+          'text-sm font-semibold mb-3',
+          (submitted && errors.marketingConsent) ? 'text-red-500' : 'text-gray-700',
+        )}>
+          Can Morechard send you tips, updates, and offers by email?
+        </legend>
+        <div className="flex flex-col gap-2">
+          {([
+            { value: true,  label: "Yes, that's fine" },
+            { value: false, label: 'No thanks' },
+          ] as const).map(({ value, label }) => (
+            <label
+              key={String(value)}
+              className={cn(
+                'flex items-center gap-3 rounded-xl border-2 px-4 py-3 cursor-pointer transition-all duration-150',
+                marketingConsent === value
+                  ? 'border-teal-500 bg-teal-50'
+                  : 'border-gray-200 bg-white hover:border-teal-300',
+              )}
+            >
+              <input
+                type="radio"
+                name="marketing_consent"
+                value={String(value)}
+                checked={marketingConsent === value}
+                onChange={() => setMarketingConsent(value)}
+                className="accent-teal-600 w-4 h-4 shrink-0"
+              />
+              <span className={cn(
+                'text-sm font-medium',
+                marketingConsent === value ? 'text-teal-700' : 'text-gray-700',
+              )}>
+                {label}
+              </span>
+            </label>
+          ))}
+        </div>
+        {submitted && errors.marketingConsent && (
+          <p className="text-xs text-red-500 font-medium pl-1 mt-1.5">
+            {errors.marketingConsent}
+          </p>
+        )}
+      </fieldset>
 
       {/* ── CTA ──────────────────────────────────────────────────────── */}
       <button
