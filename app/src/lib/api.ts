@@ -877,3 +877,16 @@ export async function trackReferralClick(code: string): Promise<void> {
     body: JSON.stringify({ code }),
   });
 }
+
+export async function postMarketingConsent(consented: boolean): Promise<void> {
+  await request<{ ok: boolean }>('/api/consent/marketing', {
+    method: 'POST',
+    body: JSON.stringify({ consented }),
+  });
+}
+
+export async function getMarketingConsent(): Promise<{ consented: boolean | null; consent_version: string | null }> {
+  return request<{ consented: boolean | null; consent_version: string | null }>(
+    '/api/consent/marketing',
+  );
+}

@@ -17,7 +17,7 @@ import { Stage2FamilyConstitution } from './Stage2FamilyConstitution'
 import { Stage3SecureApp }          from './Stage3SecureApp'
 import { Stage4CoParentBridge }     from './Stage4CoParentBridge'
 import { WelcomeNudge }             from './WelcomeNudge'
-import { createFamily, requestMagicLink, saveRegistrationStep } from '@/lib/api'
+import { createFamily, requestMagicLink, saveRegistrationStep, postMarketingConsent } from '@/lib/api'
 import { detectLocale, type AppLocale } from '@/lib/locale'
 
 // ── Shared state ─────────────────────────────────────────────────────────────
@@ -36,6 +36,8 @@ export interface RegistrationState {
   password?:        string
   parenting_mode?:  'single' | 'co-parenting'
   governance_mode?: 'amicable' | 'standard'
+
+  marketing_consent?: boolean
 
   // Step 2
   base_currency?: 'GBP' | 'USD' | 'PLN'   // add USD
@@ -118,6 +120,13 @@ export function RegistrationShell({ onComplete }: Props) {
           merged.family_id = familyResult.family_id
           merged.user_id   = familyResult.user_id
           setState(merged)
+
+          // Post marketing consent — silent failure never blocks registration
+          if (typeof merged.marketing_consent === 'boolean') {
+            postMarketingConsent(merged.marketing_consent).catch(err => {
+              console.error('[consent] failed to record marketing consent:', err)
+            })
+          }
 
           // Send magic link — user must verify email before continuing
           await requestMagicLink(merged.email!)
