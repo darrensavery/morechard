@@ -153,6 +153,7 @@ import {
   handleMarketRateCron,
 } from './routes/market-rates.js';
 import { runMarketRateAggregation } from './jobs/marketRateAggregation.js';
+import { runMarketingEmails } from './cron/marketing-emails.js';
 import { handleChildChat } from './routes/chat.js';
 import { handleChatHistory } from './routes/chat-history.js';
 import { handleChatModules } from './routes/chat-modules.js';
@@ -233,6 +234,9 @@ export default Sentry.withSentry(
 
     // ── 4. Weekly market rate aggregation ──────────────────────
     await runMarketRateAggregation(env);
+
+    // ── 5. Marketing re-engagement emails ──────────────────────
+    await runMarketingEmails(env);
   },
 } satisfies ExportedHandler<Env>,
 );
