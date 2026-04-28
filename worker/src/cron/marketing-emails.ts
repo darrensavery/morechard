@@ -79,6 +79,7 @@ async function sendWeek12Cohort(env: Env, emailService: EmailService): Promise<v
 
   for (const row of rows.results) {
     if (!row.email) continue
+    // has_ai_mentor=0 means they don't have it yet — upsell them with the AI variant
     const templateId = row.has_ai_mentor === 0
       ? TEMPLATES.RE_ENGAGEMENT_W12_AI
       : TEMPLATES.RE_ENGAGEMENT_W12

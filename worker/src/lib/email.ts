@@ -30,7 +30,8 @@ export class EmailService {
     try {
       await this.dispatchEmail(to, templateId, data)
       await this.updateSendStatus(sendId, 'sent')
-    } catch {
+    } catch (err) {
+      console.error('[EmailService] send failed', { templateId, err })
       await this.updateSendStatus(sendId, 'failed')
     }
   }
