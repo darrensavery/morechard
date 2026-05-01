@@ -28,7 +28,8 @@ async function sendCohort(
     .prepare(`
       SELECT u.id AS user_id, f.id AS family_id, u.email, f.has_ai_mentor
       FROM families f
-      INNER JOIN users u ON u.family_id = f.id AND u.granted_by IS NULL
+      INNER JOIN family_roles fr ON fr.family_id = f.id AND fr.role = 'parent' AND fr.parent_role = 'lead'
+      INNER JOIN users u ON u.id = fr.user_id
       INNER JOIN (
         SELECT user_id, consented
         FROM marketing_consents
@@ -36,7 +37,7 @@ async function sendCohort(
           SELECT user_id, MAX(consented_at) FROM marketing_consents GROUP BY user_id
         )
       ) mc ON mc.user_id = u.id AND mc.consented = 1
-      LEFT JOIN email_sends es ON es.family_id = f.id AND es.template_id = ?
+      LEFT JOIN email_sends es ON es.family_id = f.id AND es.template_id = ? AND es.status != 'failed'
       WHERE f.has_lifetime_license = 0
         AND f.deleted_at IS NULL
         AND f.trial_start_date IS NOT NULL
@@ -57,7 +58,8 @@ async function sendWeek12Cohort(env: Env, emailService: EmailService): Promise<v
     .prepare(`
       SELECT u.id AS user_id, f.id AS family_id, u.email, f.has_ai_mentor
       FROM families f
-      INNER JOIN users u ON u.family_id = f.id AND u.granted_by IS NULL
+      INNER JOIN family_roles fr ON fr.family_id = f.id AND fr.role = 'parent' AND fr.parent_role = 'lead'
+      INNER JOIN users u ON u.id = fr.user_id
       INNER JOIN (
         SELECT user_id, consented
         FROM marketing_consents
@@ -65,8 +67,8 @@ async function sendWeek12Cohort(env: Env, emailService: EmailService): Promise<v
           SELECT user_id, MAX(consented_at) FROM marketing_consents GROUP BY user_id
         )
       ) mc ON mc.user_id = u.id AND mc.consented = 1
-      LEFT JOIN email_sends es_base ON es_base.family_id = f.id AND es_base.template_id = ?
-      LEFT JOIN email_sends es_ai   ON es_ai.family_id   = f.id AND es_ai.template_id   = ?
+      LEFT JOIN email_sends es_base ON es_base.family_id = f.id AND es_base.template_id = ? AND es_base.status != 'failed'
+      LEFT JOIN email_sends es_ai   ON es_ai.family_id   = f.id AND es_ai.template_id   = ? AND es_ai.status   != 'failed'
       WHERE f.has_lifetime_license = 0
         AND f.deleted_at IS NULL
         AND f.trial_start_date IS NOT NULL

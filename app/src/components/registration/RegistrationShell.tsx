@@ -17,7 +17,7 @@ import { Stage2FamilyConstitution } from './Stage2FamilyConstitution'
 import { Stage3SecureApp }          from './Stage3SecureApp'
 import { Stage4CoParentBridge }     from './Stage4CoParentBridge'
 import { WelcomeNudge }             from './WelcomeNudge'
-import { createFamily, requestMagicLink, saveRegistrationStep, postMarketingConsent } from '@/lib/api'
+import { createFamily, requestMagicLink, saveRegistrationStep } from '@/lib/api'
 import { detectLocale, type AppLocale } from '@/lib/locale'
 
 // ── Shared state ─────────────────────────────────────────────────────────────
@@ -121,11 +121,9 @@ export function RegistrationShell({ onComplete }: Props) {
           merged.user_id   = familyResult.user_id
           setState(merged)
 
-          // Post marketing consent — silent failure never blocks registration
+          // Store consent choice for posting after email verification (no JWT yet at this point)
           if (typeof merged.marketing_consent === 'boolean') {
-            postMarketingConsent(merged.marketing_consent).catch(err => {
-              console.error('[consent] failed to record marketing consent:', err)
-            })
+            localStorage.setItem('mc_pending_consent', String(merged.marketing_consent))
           }
 
           // Send magic link — user must verify email before continuing

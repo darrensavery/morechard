@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import { Loader2 } from 'lucide-react'
-import { exchangeSlt, setToken } from '../lib/api'
+import { exchangeSlt, setToken, postMarketingConsent } from '../lib/api'
 import { setDeviceIdentity, toInitials } from '../lib/deviceIdentity'
 import { getLocale, isPolish } from '../lib/locale'
 import { FullLogo } from '../components/ui/Logo'
@@ -36,6 +36,16 @@ export default function AuthCallbackScreen() {
       .then(result => {
         if (cancelled) return
         setToken(result.token)
+
+        // Flush any pending marketing consent recorded during registration
+        const pendingConsent = localStorage.getItem('mc_pending_consent')
+        if (pendingConsent !== null) {
+          localStorage.removeItem('mc_pending_consent')
+          postMarketingConsent(pendingConsent === 'true').catch(err => {
+            console.error('[consent] failed to record marketing consent:', err)
+          })
+        }
+
         setDeviceIdentity({
           user_id:        result.user.id,
           family_id:      result.user.family_id,

@@ -7,6 +7,7 @@
 import { useState } from 'react'
 import { Users, User, Eye, EyeOff, ShieldCheck, CheckCircle2, XCircle } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { CONSENT_VERSIONS, CURRENT_CONSENT_VERSION } from '@/lib/consent-versions'
 import type { RegistrationState } from './RegistrationShell'
 
 interface Props {
@@ -244,7 +245,7 @@ export function Stage1ParentIdentity({ data, onNext }: Props) {
           'text-sm font-semibold mb-3',
           (submitted && errors.marketingConsent) ? 'text-red-500' : 'text-gray-700',
         )}>
-          Can Morechard send you tips, updates, and offers by email?
+          {CONSENT_VERSIONS[CURRENT_CONSENT_VERSION]}
         </legend>
         <div className="flex flex-col gap-2">
           {([
