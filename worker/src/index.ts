@@ -148,6 +148,12 @@ import {
 import { handleInsights } from './routes/insights.js';
 import { handleFreshdeskSso } from './routes/freshdesk-sso.js';
 import {
+  handleDemoRegister,
+  handleDemoEnter,
+  handleDemoNotify,
+  handleDemoActive,
+} from './routes/demo.js';
+import {
   handleMarketRateList,
   handleMarketRateSuggest,
   handleMarketRateCron,
@@ -163,7 +169,6 @@ import {
   handleReferralClick,
 } from './routes/referrals.js';
 import { handleConsentPost, handleConsentGet } from './routes/consent.js';
-import { nanoid } from './lib/nanoid.js';
 import { json, error } from './lib/response.js';
 import { JwtPayload } from './lib/jwt.js';
 import {
@@ -299,39 +304,44 @@ async function runPaydaySweep(env: Env, nowEpoch: number): Promise<void> {
     // Compute chain hash for new ledger row
     const { computeRecordHash, GENESIS_HASH } = await import('./lib/hash.js');
 
+    // Fetch previous ledger row for this family (hash chain + next-id prediction).
+    // The cron runs single-threaded so max(id)+1 is a safe rowid estimate.
     const prevRow = await env.DB
-      .prepare('SELECT id, record_hash FROM ledger WHERE family_id = ? ORDER BY id DESC LIMIT 1')
-      .bind(child.family_id)
+      .prepare('SELECT id, record_hash FROM ledger ORDER BY id DESC LIMIT 1')
       .first<{ id: number; record_hash: string }>();
 
     const previousHash = prevRow?.record_hash ?? GENESIS_HASH;
+    const predictedId = (prevRow?.id ?? 0) + 1;
 
-    const newId = nanoid();
     const verificationStatus = child.verify_mode === 'amicable' ? 'verified_auto' : 'verified_manual';
 
     const recordHash = await computeRecordHash(
-      newId, child.family_id, child.child_id,
+      predictedId, child.family_id, child.child_id,
       child.allowance_amount, child.currency, 'credit', previousHash,
     );
 
-    // Atomic batch: ledger row + payday_log row (idempotency key)
-    await env.DB.batch([
+    // Atomic batch: ledger row (id omitted — AUTOINCREMENT) + payday_log idempotency row.
+    // last_row_id from the INSERT meta gives us the real ledger id for payday_log.
+    const [ledgerResult] = await env.DB.batch([
       env.DB.prepare(`
         INSERT INTO ledger
-          (id, family_id, child_id, entry_type, amount, currency,
+          (family_id, child_id, entry_type, amount, currency,
            description, verification_status, previous_hash, record_hash, ip_address)
-        VALUES (?,?,?,'credit',?,?,?,?,?,?,'cron')
+        VALUES (?,?,'credit',?,?,?,?,?,?,'cron')
       `).bind(
-        newId, child.family_id, child.child_id,
+        child.family_id, child.child_id,
         child.allowance_amount, child.currency,
         `Weekly allowance — w/c ${weekStart}`,
         verificationStatus, previousHash, recordHash,
       ),
-      env.DB.prepare(`
-        INSERT OR IGNORE INTO payday_log (family_id, child_id, week_start, ledger_id, paid_at)
-        VALUES (?,?,?,?,?)
-      `).bind(child.family_id, child.child_id, weekStart, newId, nowEpoch),
     ]);
+
+    const ledgerId = ledgerResult.meta.last_row_id as number;
+
+    await env.DB.prepare(`
+      INSERT OR IGNORE INTO payday_log (family_id, child_id, week_start, ledger_id, paid_at)
+      VALUES (?,?,?,?,?)
+    `).bind(child.family_id, child.child_id, weekStart, ledgerId, nowEpoch).run();
   }
 }
 
@@ -363,11 +373,18 @@ async function route(request: Request, env: Env, method: string, path: string): 
   // Referral click tracking — public (no auth)
   if (path === '/api/referrals/click' && method === 'POST') return handleReferralClick(request, env);
 
+  // Demo registration — public (professional path, no existing account)
+  if (path === '/auth/demo/register' && method === 'POST') return handleDemoRegister(request, env);
+
   // ── All authenticated routes require a valid JWT ─────────────
   const auth = await requireAuth(request, env);
   if (auth instanceof Response) return auth;
 
   // ── Authenticated — any role ──────────────────────────────────
+  if (path === '/auth/demo/enter'  && method === 'POST') return withAuth(request, auth, env, handleDemoEnter);
+  if (path === '/auth/demo/notify' && method === 'POST') return withAuth(request, auth, env, handleDemoNotify);
+  if (path === '/auth/demo/active' && method === 'GET')  return withAuth(request, auth, env, handleDemoActive);
+
   if (path === '/auth/me'     && method === 'GET')  return withAuth(request, auth, env, handleMe);
   if (path === '/auth/me'     && method === 'PATCH') return withAuth(request, auth, env, handleMePatch);
   if (path === '/auth/logout' && method === 'POST') return withAuth(request, auth, env, handleLogout);
