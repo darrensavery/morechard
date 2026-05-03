@@ -108,6 +108,16 @@ export function LandingGate() {
             </p>
 
             <p className="text-center text-[11px] text-[var(--color-text-muted)]">
+              A solicitor or mediator?{' '}
+              <button
+                onClick={() => navigate('/demo-register')}
+                className="text-[var(--brand-primary)] underline underline-offset-2 cursor-pointer"
+              >
+                Explore our professional demo →
+              </button>
+            </p>
+
+            <p className="text-center text-[11px] text-[var(--color-text-muted)]">
               🔒 Private by design — your data stays on your device and is never sold.
             </p>
           </div>
