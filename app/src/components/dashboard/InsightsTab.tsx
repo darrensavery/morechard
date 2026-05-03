@@ -5,10 +5,11 @@
  *  1. Child selector (multi-child only)
  *  2. Period toggle
  *  3. Balance bar (available | allocated savings | lifetime)
- *  4. KPI gauges (Responsibility · Consistency · Savings)
+ *  4. Sparkline cards  (Responsibility · Consistency · Savings)
  *  5. Effort preference tag
- *  6. PremiumMentorCard(s) — carousel when > 1 card
- *  7. Period breakdown stats
+ *  6. Mentor section   — carousel when > 1 card
+ *  7. Learning Lab     (learning_lab_enabled only)
+ *  8. Progress Summary stats
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react'
