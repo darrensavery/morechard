@@ -28,3 +28,7 @@ CREATE TABLE IF NOT EXISTS upgrade_interest (
   registered_at INTEGER NOT NULL,
   UNIQUE (user_id, feature)
 );
+
+-- Prevent duplicate registrations from the same email
+CREATE UNIQUE INDEX IF NOT EXISTS idx_demo_registrations_email
+  ON demo_registrations (email);
