@@ -51,6 +51,24 @@ export interface FamilyLicenseRow {
   has_ai_mentor: number;             // 0 or 1 — permanent one-time unlock (migration 0043)
   ai_subscription_expiry: string | null; // legacy — no longer written; retained for idempotency
   has_shield: number;                // 0 or 1
+  is_demo: number;                   // 0 or 1 — Thomson demo family
+}
+
+export interface DemoRegistrationRow {
+  id: string;
+  name: string;
+  email: string;
+  user_type: 'professional' | 'demo_parent';
+  marketing_consent: number;
+  registered_at: number;
+  last_active_at: number;
+}
+
+export interface UpgradeInterestRow {
+  id: string;
+  user_id: string;
+  feature: 'shield' | 'ai_mentor' | 'learning_lab';
+  registered_at: number;
 }
 
 /** Result shape passed to the frontend for billing/trial components. */

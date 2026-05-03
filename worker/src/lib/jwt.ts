@@ -11,6 +11,7 @@ export interface JwtPayload {
   jti: string;       // session id (for revocation)
   family_id: string;
   role: 'parent' | 'child';
+  demo_user_type?: 'professional' | 'demo_parent';
   iat: number;
   exp: number;
 }
