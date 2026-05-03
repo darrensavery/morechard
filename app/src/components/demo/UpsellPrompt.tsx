@@ -80,7 +80,7 @@ export function UpsellPrompt({ feature, title, description, children }: Props) {
               : 'bg-white border border-gray-200 text-gray-600 hover:border-teal-400 hover:text-teal-700 active:scale-[0.97] cursor-pointer'
           }`}
         >
-          {notified ? '✓ We'll let you know' : 'Notify me when this is available'}
+          {notified ? "✓ We'll let you know" : 'Notify me when this is available'}
         </button>
       </div>
     </div>
