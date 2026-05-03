@@ -25,14 +25,17 @@ export async function requireAuth(request: Request, env: Env): Promise<JwtPayloa
     return error('Invalid or expired token', 401);
   }
 
-  // Check session has not been revoked
-  const session = await env.DB
-    .prepare('SELECT revoked_at FROM sessions WHERE jti = ?')
-    .bind(payload.jti)
-    .first<{ revoked_at: number | null }>();
+  // Demo tokens are stateless — skip session lookup
+  if (!payload.demo_user_type) {
+    // Check session has not been revoked
+    const session = await env.DB
+      .prepare('SELECT revoked_at FROM sessions WHERE jti = ?')
+      .bind(payload.jti)
+      .first<{ revoked_at: number | null }>();
 
-  if (!session)             return error('Session not found', 401);
-  if (session.revoked_at)   return error('Session revoked — please log in again', 401);
+    if (!session)           return error('Session not found', 401);
+    if (session.revoked_at) return error('Session revoked — please log in again', 401);
+  }
 
   // Check the family has not been soft-deleted
   const family = await env.DB

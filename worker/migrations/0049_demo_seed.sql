@@ -27,26 +27,26 @@ INSERT OR IGNORE INTO users (id, family_id, display_name, email, locale, created
 VALUES ('demo-user-mark', 'demo-family-thomson', 'Mark Thomson', 'mark.thomson@demo.morechard.com', 'en', strftime('%s', '2025-11-01'));
 
 -- ── Family roles ──────────────────────────────────────────────────────────────
--- family_roles columns: user_id, family_id, role, granted_at, granted_by, parent_role
-INSERT OR IGNORE INTO family_roles (user_id, family_id, role, parent_role, granted_at, granted_by)
-VALUES ('demo-user-sarah', 'demo-family-thomson', 'parent', 'lead',   strftime('%s', '2025-11-01'), 'demo-user-sarah');
+-- family_roles columns: user_id, family_id, role, parent_role
+INSERT OR IGNORE INTO family_roles (user_id, family_id, role, parent_role)
+VALUES ('demo-user-sarah', 'demo-family-thomson', 'parent', 'lead');
 
-INSERT OR IGNORE INTO family_roles (user_id, family_id, role, parent_role, granted_at, granted_by)
-VALUES ('demo-user-mark',  'demo-family-thomson', 'parent', 'second', strftime('%s', '2025-11-03'), 'demo-user-sarah');
+INSERT OR IGNORE INTO family_roles (user_id, family_id, role, parent_role)
+VALUES ('demo-user-mark',  'demo-family-thomson', 'parent', 'co_parent');
 
 -- ── Child users ───────────────────────────────────────────────────────────────
 -- Children are users with role='child' in family_roles.
-INSERT OR IGNORE INTO users (id, family_id, display_name, locale, earnings_mode, created_at)
-VALUES ('demo-child-ellie', 'demo-family-thomson', 'Ellie', 'en', 'HYBRID', strftime('%s', '2025-11-01'));
+INSERT OR IGNORE INTO users (id, family_id, display_name, email, locale, earnings_mode, created_at)
+VALUES ('demo-child-ellie', 'demo-family-thomson', 'Ellie', 'ellie@demo.morechard.com', 'en', 'HYBRID', strftime('%s', '2025-11-01'));
 
-INSERT OR IGNORE INTO users (id, family_id, display_name, locale, earnings_mode, created_at)
-VALUES ('demo-child-jake', 'demo-family-thomson', 'Jake', 'en', 'HYBRID', strftime('%s', '2025-11-01'));
+INSERT OR IGNORE INTO users (id, family_id, display_name, email, locale, earnings_mode, created_at)
+VALUES ('demo-child-jake', 'demo-family-thomson', 'Jake', 'jake@demo.morechard.com', 'en', 'HYBRID', strftime('%s', '2025-11-01'));
 
-INSERT OR IGNORE INTO family_roles (user_id, family_id, role, granted_at, granted_by)
-VALUES ('demo-child-ellie', 'demo-family-thomson', 'child', strftime('%s', '2025-11-01'), 'demo-user-sarah');
+INSERT OR IGNORE INTO family_roles (user_id, family_id, role)
+VALUES ('demo-child-ellie', 'demo-family-thomson', 'child');
 
-INSERT OR IGNORE INTO family_roles (user_id, family_id, role, granted_at, granted_by)
-VALUES ('demo-child-jake', 'demo-family-thomson', 'child', strftime('%s', '2025-11-01'), 'demo-user-sarah');
+INSERT OR IGNORE INTO family_roles (user_id, family_id, role)
+VALUES ('demo-child-jake', 'demo-family-thomson', 'child');
 
 -- ── Chores ────────────────────────────────────────────────────────────────────
 -- NOT NULL cols: family_id, assigned_to, created_by, title, reward_amount,
