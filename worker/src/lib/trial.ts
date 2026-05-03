@@ -32,6 +32,9 @@ export async function checkTrialStatus(
   const row = await getFamilyRow(env, family_id);
   if (!row) return null; // Unrecognised family — let route handlers surface the 404
 
+  // Demo family bypasses all trial/paywall checks
+  if (row.is_demo) return null;
+
   // If already licensed, nothing to do
   if (row.has_lifetime_license) return null;
 
@@ -104,7 +107,7 @@ async function getFamilyRow(env: Env, family_id: string): Promise<FamilyLicenseR
   return env.DB
     .prepare(`
       SELECT id, trial_start_date, is_activated, has_lifetime_license,
-             has_ai_mentor, ai_subscription_expiry, has_shield
+             has_ai_mentor, ai_subscription_expiry, has_shield, is_demo
       FROM families WHERE id = ?
     `)
     .bind(family_id)
