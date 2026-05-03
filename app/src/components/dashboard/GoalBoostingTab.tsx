@@ -14,8 +14,9 @@ import type { ChildRecord, Goal } from '../../lib/api'
 import { currencySymbol } from '../../lib/locale'
 import {
   getGoals, updateGoal, contributeToGoal,
-  formatCurrency, effectiveTarget,
+  formatCurrency, effectiveTarget, getTrialStatus,
 } from '../../lib/api'
+import { GoalMentorNudge } from './GoalMentorNudge'
 
 const MATCH_OPTIONS = [0, 10, 25, 50, 100]
 
@@ -33,6 +34,13 @@ export function GoalBoostingTab({ familyId, child }: Props) {
   const [contribAmt, setContribAmt] = useState<Record<string, string>>({})
   const [contributing, setContributing] = useState<string | null>(null)
   const [contribMsg,   setContribMsg]   = useState<Record<string, string>>({})
+  const [hasAiMentor, setHasAiMentor] = useState(false)
+
+  useEffect(() => {
+    getTrialStatus()
+      .then(s => setHasAiMentor(s.has_ai_mentor))
+      .catch(() => { /* non-fatal — defaults to false */ })
+  }, [])
 
   async function load() {
     setLoading(true)
@@ -235,6 +243,13 @@ export function GoalBoostingTab({ familyId, child }: Props) {
                 </p>
               )}
             </div>
+
+            {/* AI Mentor nudge — AI plans only */}
+            {hasAiMentor && (
+              <div className="border-t border-[var(--color-border)]">
+                <GoalMentorNudge goal={goal} childName={child.display_name} />
+              </div>
+            )}
           </div>
         )
       })}
