@@ -377,6 +377,84 @@ export async function handleInsights(request: Request, env: Env): Promise<Respon
     env.DB, family_id, effectiveChildId, period, sparklinePointCount,
   );
 
+  // ── 11. Learning Lab data ─────────────────────────────────────────────────
+  const licenceRow = await env.DB.prepare(`
+    SELECT license_type FROM families WHERE id = ?
+  `).bind(family_id).first<{ license_type: string | null }>().catch(() => null);
+
+  const licenceType = licenceRow?.license_type ?? 'core';
+  const learningLabEnabled = ['core_ai', 'shield'].includes(licenceType);
+
+  let currentModule: { slug: string; title: string; progress_pct: number; pillar: string } | null = null;
+  let completedModuleSlugs: string[] = [];
+  let retentionScore: number | null = null;
+  const milestoneMarkers: { metric: 'responsibility'|'consistency'|'savings'; point_index: number; module_title: string; delta_after: number }[] = [];
+
+  if (learningLabEnabled) {
+    // Completed modules
+    const modRows = await env.DB.prepare(`
+      SELECT module_slug FROM module_completions
+      WHERE child_id = ? ORDER BY completed_at ASC
+    `).bind(effectiveChildId).all<{ module_slug: string }>().catch(() => ({ results: [] }));
+
+    completedModuleSlugs = modRows.results.map(r => r.module_slug);
+
+    // Current in-progress module
+    const inProgressRow = await env.DB.prepare(`
+      SELECT module_slug, progress_pct, pillar, title
+      FROM chat_module_progress
+      WHERE child_id = ? AND completed = 0
+      ORDER BY last_activity_at DESC
+      LIMIT 1
+    `).bind(effectiveChildId).first<{
+      module_slug: string; progress_pct: number; pillar: string; title: string;
+    }>().catch(() => null);
+
+    if (inProgressRow) {
+      currentModule = {
+        slug:         inProgressRow.module_slug,
+        title:        inProgressRow.title,
+        progress_pct: inProgressRow.progress_pct,
+        pillar:       inProgressRow.pillar,
+      };
+    }
+
+    // Retention score heuristic
+    if (completedModuleSlugs.length > 0 && savingsConsistency !== null) {
+      retentionScore = Math.min(100, Math.round(savingsConsistency * 1.1));
+    }
+
+    // Milestone markers
+    if (sparklinePoints) {
+      const completionDateRows = await env.DB.prepare(`
+        SELECT module_slug, title, completed_at FROM module_completions
+        WHERE child_id = ? ORDER BY completed_at ASC
+      `).bind(effectiveChildId).all<{ module_slug: string; title: string; completed_at: number }>()
+        .catch(() => ({ results: [] }));
+
+      const periodStartEpoch = getPeriodStart(period);
+      const periodEndEpoch   = Math.floor(Date.now() / 1000);
+      const periodDuration   = periodEndEpoch - (periodStartEpoch || (periodEndEpoch - 30 * 86400));
+      const bucketDuration   = periodDuration / sparklinePointCount;
+
+      for (const comp of completionDateRows.results) {
+        if (periodStartEpoch && comp.completed_at < periodStartEpoch) continue;
+        const idx = Math.min(
+          sparklinePointCount - 1,
+          Math.floor((comp.completed_at - (periodStartEpoch || (periodEndEpoch - 30 * 86400))) / bucketDuration),
+        );
+        const before = sparklinePoints.consistency[Math.max(0, idx - 1)] ?? 0;
+        const after  = sparklinePoints.consistency[Math.min(sparklinePointCount - 1, idx + 1)] ?? 0;
+        milestoneMarkers.push({
+          metric:       'consistency',
+          point_index:  idx,
+          module_title: comp.title,
+          delta_after:  Math.max(0, after - before),
+        });
+      }
+    }
+  }
+
   return json({
     period,
     period_start_epoch: periodStart || null,
@@ -415,12 +493,12 @@ export async function handleInsights(request: Request, env: Env): Promise<Respon
     // Sparkline data
     sparkline_points:       sparklinePoints,
 
-    // Learning Lab (stubbed — Task 4 wires real data)
-    learning_lab_enabled:   false,
-    current_module:         null,
-    completed_module_slugs: [],
-    retention_score:        null,
-    milestone_markers:      [],
+    // Learning Lab
+    learning_lab_enabled:   learningLabEnabled,
+    current_module:         currentModule,
+    completed_module_slugs: completedModuleSlugs,
+    retention_score:        retentionScore,
+    milestone_markers:      milestoneMarkers,
   });
 }
 
