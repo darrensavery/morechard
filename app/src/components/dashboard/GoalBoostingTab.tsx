@@ -17,6 +17,7 @@ import {
   formatCurrency, effectiveTarget, getTrialStatus,
 } from '../../lib/api'
 import { GoalMentorNudge } from './GoalMentorNudge'
+import { PremiumShell, MentorAvatar, ProBadge, injectPremiumStyles } from '../ui/PremiumShell'
 
 const MATCH_OPTIONS = [0, 10, 25, 50, 100]
 
@@ -35,6 +36,8 @@ export function GoalBoostingTab({ familyId, child }: Props) {
   const [contributing, setContributing] = useState<string | null>(null)
   const [contribMsg,   setContribMsg]   = useState<Record<string, string>>({})
   const [hasAiMentor, setHasAiMentor] = useState(false)
+
+  useEffect(() => { injectPremiumStyles() }, [])
 
   useEffect(() => {
     getTrialStatus()
@@ -100,10 +103,30 @@ export function GoalBoostingTab({ familyId, child }: Props) {
 
   if (goals.length === 0) {
     return (
-      <div className="py-12 text-center space-y-2">
-        <p className="text-[28px]">🌱</p>
-        <p className="text-[15px] font-semibold text-[var(--color-text)]">{child.display_name} has no active goals</p>
-        <p className="text-[13px] text-[var(--color-text-muted)]">They can plant a goal from their Savings Grove.</p>
+      <div className="space-y-4">
+        <div className="py-12 text-center space-y-2">
+          <p className="text-[28px]">🌱</p>
+          <p className="text-[15px] font-semibold text-[var(--color-text)]">{child.display_name} has no active goals</p>
+          <p className="text-[13px] text-[var(--color-text-muted)]">They can plant a goal from their Savings Grove.</p>
+        </div>
+        {hasAiMentor && (
+          <PremiumShell>
+            <div className="px-4 pt-4 pb-3 relative z-10">
+              <div className="flex items-center justify-between gap-3 mb-3">
+                <div className="flex items-center gap-2">
+                  <MentorAvatar />
+                  <span className="text-[10px] font-bold tracking-widest uppercase" style={{ color: '#9ca3af' }}>
+                    Orchard Mentor
+                  </span>
+                </div>
+                <ProBadge />
+              </div>
+              <p className="text-[13px] leading-relaxed" style={{ color: '#a7c4b5' }}>
+                {child.display_name} has no active goals yet. Goals unlock Learning Lab lessons on delayed gratification and needs vs. wants — two of the most important financial habits we can build. You can create one together from their Savings Grove.
+              </p>
+            </div>
+          </PremiumShell>
+        )}
       </div>
     )
   }
