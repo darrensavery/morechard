@@ -12,11 +12,16 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react'
-import type { ChildRecord, InsightsData, TrendEntry, MentorBriefing } from '../../lib/api'
+import { AnimatePresence } from 'framer-motion'
+import type { ChildRecord, InsightsData, MentorBriefing, SparklinePoints, MilestoneMarker, CurrentModule } from '../../lib/api'
 import { getInsights, formatCurrency } from '../../lib/api'
 import { AvatarSVG } from '../../lib/avatars'
 import { useAndroidBack } from '../../hooks/useAndroidBack'
 import { PremiumShell, MentorAvatar, ProBadge, injectPremiumStyles } from '../ui/PremiumShell'
+import { SparklineCard } from './SparklineCard'
+import { SparklineExpanded } from './SparklineExpanded'
+import { LabSection } from './LabSection'
+import { AnimatedStat } from './AnimatedStat'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -122,37 +127,42 @@ export function InsightsTab({ familyId, child, children }: Props) {
 function InsightsDashboard({
   data, child, currency,
 }: { data: InsightsData; child: ChildRecord; currency: string }) {
+  const [expandedMetric, setExpandedMetric] = useState<'responsibility' | 'consistency' | 'savings' | null>(null)
+
   return (
     <div className="space-y-4">
 
       {/* 1. Balance bar */}
       <BalanceBar data={data} currency={currency} />
 
-      {/* 2. KPI gauges — at-a-glance before the AI narrative */}
+      {/* 2. Sparkline cards */}
       <div className="grid grid-cols-3 gap-2.5">
-        <GaugeCard
+        <SparklineCard
           label="Responsibility"
-          sublabel="First-time pass rate"
           value={data.is_discovery_phase ? null : data.first_time_pass_rate}
-          isDiscovery={data.is_discovery_phase}
-          color="var(--brand-primary)"
           trend={data.trends?.responsibility ?? null}
+          points={data.sparkline_points?.responsibility ?? []}
+          isDiscovery={data.is_discovery_phase}
+          onExpand={() => setExpandedMetric('responsibility')}
+          milestones={(data.milestone_markers ?? []).filter(m => m.metric === 'responsibility')}
         />
-        <GaugeCard
+        <SparklineCard
           label="Consistency"
-          sublabel="Weekly volume"
           value={data.is_discovery_phase ? null : data.consistency_score}
-          isDiscovery={data.is_discovery_phase}
-          color="#f59e0b"
           trend={data.trends?.consistency ?? null}
-        />
-        <GaugeCard
-          label="Savings"
-          sublabel="Of income saved"
-          value={data.is_discovery_phase ? null : data.savings_consistency}
+          points={data.sparkline_points?.consistency ?? []}
           isDiscovery={data.is_discovery_phase}
-          color="#10b981"
+          onExpand={() => setExpandedMetric('consistency')}
+          milestones={(data.milestone_markers ?? []).filter(m => m.metric === 'consistency')}
+        />
+        <SparklineCard
+          label="Savings"
+          value={data.is_discovery_phase ? null : data.savings_consistency}
           trend={data.trends?.horizon ?? null}
+          points={data.sparkline_points?.savings ?? []}
+          isDiscovery={data.is_discovery_phase}
+          onExpand={() => setExpandedMetric('savings')}
+          milestones={(data.milestone_markers ?? []).filter(m => m.metric === 'savings')}
         />
       </div>
 
@@ -164,8 +174,50 @@ function InsightsDashboard({
       {/* 4. Premium Mentor section */}
       <MentorSection data={data} child={child} />
 
-      {/* 5. Period stats */}
+      {/* 5. Learning Lab section (paid add-on only) */}
+      {data.learning_lab_enabled && (
+        <LabSection
+          childName={child.display_name.split(' ')[0]}
+          currentModule={data.current_module}
+          completedSlugs={data.completed_module_slugs}
+          retentionScore={data.retention_score}
+        />
+      )}
+
+      {/* 6. Period stats */}
       <SupportingStats data={data} currency={currency} />
+
+      {/* Expand modal */}
+      <AnimatePresence>
+        {expandedMetric && (() => {
+          const metricPoints = {
+            responsibility: data.sparkline_points?.responsibility ?? [],
+            consistency:    data.sparkline_points?.consistency ?? [],
+            savings:        data.sparkline_points?.savings ?? [],
+          }[expandedMetric]
+
+          const metricValue = {
+            responsibility: data.first_time_pass_rate,
+            consistency:    data.consistency_score,
+            savings:        data.savings_consistency,
+          }[expandedMetric]
+
+          const metricMarkers = (data.milestone_markers ?? []).filter(m => m.metric === expandedMetric)
+
+          return (
+            <SparklineExpanded
+              key={expandedMetric}
+              label={expandedMetric.charAt(0).toUpperCase() + expandedMetric.slice(1)}
+              value={metricValue}
+              points={metricPoints}
+              milestones={metricMarkers}
+              hasLearningLab={data.learning_lab_enabled}
+              nextModuleTitle={data.current_module?.title ?? null}
+              onClose={() => setExpandedMetric(null)}
+            />
+          )
+        })()}
+      </AnimatePresence>
     </div>
   )
 }
@@ -329,6 +381,20 @@ function DiscoveryCard({ data, name }: { data: InsightsData; name: string }) {
               </p>
             </div>
           </div>
+          {/* Progress ring — discovery state */}
+          <div className="relative w-9 h-9 shrink-0">
+            <svg width={36} height={36} viewBox="0 0 36 36">
+              <circle cx={18} cy={18} r={13} fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth={4}/>
+              <circle cx={18} cy={18} r={13} fill="none" stroke="#0d9488" strokeWidth={4}
+                strokeDasharray={`${Math.round((Math.min(data.all_time_completed, 3) / 3) * 82)} 82`}
+                strokeLinecap="round"
+                transform="rotate(-90 18 18)"
+              />
+              <text x={18} y={22} textAnchor="middle" fontSize={8} fontWeight={700} fill="#0d9488">
+                {data.all_time_completed}/3
+              </text>
+            </svg>
+          </div>
           <ProBadge />
         </div>
 
@@ -355,25 +421,6 @@ function DiscoveryCard({ data, name }: { data: InsightsData; name: string }) {
             step="03"
             text="Turn on photo check-in for one task, so I can measure follow-through accurately."
           />
-        </div>
-
-        {/* Baseline progress */}
-        <div className="pt-3.5 border-t" style={{ borderColor: 'rgba(13,148,136,0.2)' }}>
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-[11px] font-semibold" style={{ color: '#6b9e87' }}>Baseline progress</span>
-            <span className="text-[11px] font-bold tabular-nums" style={{ color: '#a7c4b5' }}>
-              {data.all_time_completed} / 3 tasks
-            </span>
-          </div>
-          <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.08)' }}>
-            <div
-              className="h-full rounded-full transition-all duration-700"
-              style={{
-                width: `${Math.min(100, Math.round((data.all_time_completed / 3) * 100))}%`,
-                background: 'linear-gradient(90deg, #0d9488, #d4a017)',
-              }}
-            />
-          </div>
         </div>
 
       </div>
@@ -654,84 +701,6 @@ function ShareNudgeModal({
   )
 }
 
-// ── Gauge card ────────────────────────────────────────────────────────────────
-
-function TrendIndicator({ trend }: { trend: TrendEntry | null }) {
-  if (!trend || trend.direction === null) return null
-  if (trend.direction === 'up') return (
-    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M12 19V5M5 12l7-7 7 7"/>
-    </svg>
-  )
-  if (trend.direction === 'down') return (
-    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M12 5v14M5 12l7 7 7-7"/>
-    </svg>
-  )
-  return (
-    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M5 12h14"/>
-    </svg>
-  )
-}
-
-function GaugeCard({
-  label, sublabel, value, isDiscovery, color, trend,
-}: {
-  label: string; sublabel: string; value: number | null
-  isDiscovery: boolean; color: string; trend: TrendEntry | null
-}) {
-  const size = 72, stroke = 7
-  const r = (size - stroke) / 2
-  const cx = size / 2, cy = size / 2
-  const arcDeg = 220, startAngle = 160, endAngle = startAngle + arcDeg
-
-  function polarToCartesian(angle: number) {
-    const rad = (angle * Math.PI) / 180
-    return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) }
-  }
-
-  function arcPath(fromDeg: number, toDeg: number) {
-    const s = polarToCartesian(fromDeg), e = polarToCartesian(toDeg)
-    return `M ${s.x} ${s.y} A ${r} ${r} 0 ${toDeg - fromDeg > 180 ? 1 : 0} 1 ${e.x} ${e.y}`
-  }
-
-  const filled   = isDiscovery || value === null ? 0 : value
-  const fillEnd  = startAngle + (arcDeg * filled) / 100
-  const trackPath = arcPath(startAngle, endAngle)
-  const fillPath  = filled > 0 ? arcPath(startAngle, fillEnd) : null
-  const displayText = value === null ? '—' : `${value}%`
-  const subText = isDiscovery ? 'Establishing…' : value === null ? 'No data' : null
-
-  return (
-    <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-3 flex flex-col items-center gap-1.5">
-      <div className="relative">
-        <svg width={size} height={size * 0.72} viewBox={`0 0 ${size} ${size}`} style={{ overflow: 'visible' }}>
-          <path d={trackPath} fill="none" stroke="var(--color-surface-alt)" strokeWidth={stroke} strokeLinecap="round" />
-          {fillPath && !isDiscovery && (
-            <path d={fillPath} fill="none" stroke={color} strokeWidth={stroke} strokeLinecap="round" />
-          )}
-        </svg>
-        <div className="absolute inset-0 flex items-center justify-center">
-          <span
-            className={`text-[14px] font-extrabold tabular-nums leading-none ${isDiscovery ? 'text-[var(--color-text-muted)]' : ''}`}
-            style={!isDiscovery && value !== null ? { color } : undefined}
-          >
-            {displayText}
-          </span>
-        </div>
-      </div>
-      <div className="text-center">
-        <div className="flex items-center justify-center gap-1">
-          <p className="text-[11px] font-bold text-[var(--color-text)] leading-tight">{label}</p>
-          {!isDiscovery && <TrendIndicator trend={trend} />}
-        </div>
-        <p className="text-[9.5px] text-[var(--color-text-muted)] leading-tight mt-0.5">{subText ?? sublabel}</p>
-      </div>
-    </div>
-  )
-}
-
 // ── Effort preference tag ─────────────────────────────────────────────────────
 
 function EffortTag({ preference, child }: { preference: 'high_yield' | 'steady'; child: ChildRecord }) {
@@ -767,29 +736,59 @@ function EffortTag({ preference, child }: { preference: 'high_yield' | 'steady';
 
 // ── Supporting stats ──────────────────────────────────────────────────────────
 
+function planningHorizonLabel(value: number | null): string {
+  if (value === null || value === 0) return '—'
+  if (value <= 33)  return 'Day-to-day'
+  if (value <= 60)  return 'Short-term · Building stamina'
+  if (value <= 80)  return 'Medium-term'
+  return 'Long-term thinker'
+}
+
 function SupportingStats({ data, currency }: { data: InsightsData; currency: string }) {
+  const choreDelta = data.trends?.consistency?.delta ?? null
+
   return (
     <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl overflow-hidden">
       <div className="px-4 py-3 border-b border-[var(--color-border)]">
-        <p className="text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wide">Period breakdown</p>
+        <p className="text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wide">
+          Progress Summary
+        </p>
       </div>
       <div className="grid grid-cols-2 divide-x divide-y divide-[var(--color-border)]">
-        <StatCell label="Chores completed"  value={String(data.tasks_completed)} />
-        <StatCell label="Needed revision"   value={String(data.tasks_revised)} />
-        <StatCell label="Earned"            value={formatCurrency(data.total_earned_pence, currency)} />
-        <StatCell label="Spent"             value={formatCurrency(data.total_spent_pence,  currency)} />
-        <StatCell label="Saved to goals"    value={formatCurrency(data.total_saved_pence,  currency)} />
-        <StatCell label="Planning horizon"  value={data.planning_horizon !== null ? `${data.planning_horizon}%` : '—'} />
+        <div className="px-4 py-3">
+          <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">Chores done</p>
+          <p className="text-[15px] font-bold text-[var(--color-text)] tabular-nums mt-0.5 flex items-baseline gap-1">
+            <AnimatedStat value={String(data.tasks_completed)}/>
+            {choreDelta !== null && choreDelta > 0 && (
+              <span className="text-[10px] font-bold text-[#16a34a]">↑ {choreDelta}</span>
+            )}
+          </p>
+        </div>
+        <div className="px-4 py-3">
+          <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">Needed revision</p>
+          <p className="text-[15px] font-bold text-[var(--color-text)] tabular-nums mt-0.5">
+            <AnimatedStat value={String(data.tasks_revised)}/>
+          </p>
+        </div>
+        <div className="px-4 py-3">
+          <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">Earned</p>
+          <p className="text-[15px] font-bold text-[var(--color-text)] tabular-nums mt-0.5">
+            <AnimatedStat value={formatCurrency(data.total_earned_pence, currency)}/>
+          </p>
+        </div>
+        <div className="px-4 py-3">
+          <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">Saved to goals</p>
+          <p className="text-[15px] font-bold text-[var(--color-text)] tabular-nums mt-0.5">
+            <AnimatedStat value={formatCurrency(data.total_saved_pence, currency)}/>
+          </p>
+        </div>
+        <div className="px-4 py-3 col-span-2">
+          <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">Planning horizon</p>
+          <p className="text-[13px] font-semibold text-[var(--color-text-muted)] mt-0.5">
+            {planningHorizonLabel(data.planning_horizon)}
+          </p>
+        </div>
       </div>
-    </div>
-  )
-}
-
-function StatCell({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="px-4 py-3">
-      <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">{label}</p>
-      <p className="text-[15px] font-bold text-[var(--color-text)] tabular-nums mt-0.5">{value}</p>
     </div>
   )
 }
