@@ -371,6 +371,12 @@ export async function handleInsights(request: Request, env: Env): Promise<Respon
     }
   }
 
+  // ── 10. Sparkline point arrays ────────────────────────────────────────────
+  const sparklinePointCount = period === 'week' ? 7 : 30;
+  const sparklinePoints = isDiscoveryPhase ? null : await buildSparklinePoints(
+    env.DB, family_id, effectiveChildId, period, sparklinePointCount,
+  );
+
   return json({
     period,
     period_start_epoch: periodStart || null,
@@ -405,6 +411,16 @@ export async function handleInsights(request: Request, env: Env): Promise<Respon
 
     // AI Executive Briefing (null during Discovery Phase)
     mentor_briefing: mentorBriefing,
+
+    // Sparkline data
+    sparkline_points:       sparklinePoints,
+
+    // Learning Lab (stubbed — Task 4 wires real data)
+    learning_lab_enabled:   false,
+    current_module:         null,
+    completed_module_slugs: [],
+    retention_score:        null,
+    milestone_markers:      [],
   });
 }
 
@@ -866,6 +882,98 @@ function buildRuleBasedBriefing(input: BriefingInput): MentorBriefing {
         ? `You might consider holding the current structure steady and focusing on ${childName} completing one full week of tasks without revision—building the consistency baseline before introducing new complexity.`
         : `You might consider reviewing ${childName}'s current task portfolio and assessing whether the reward structure is appropriately calibrated to the effort required—misalignment is a common driver of mixed-signal periods.`);
   return applyCollaborationNudge({ observation: obs, behavioral_root: root, the_nudge: nudge, source: 'fallback' }, familyCtx, locale, isSeedling);
+}
+
+/**
+ * Returns an array of `points` integers (0–100) for a given metric,
+ * bucketed evenly across the period. Buckets with no data default to 0.
+ *
+ * metric = 'responsibility' → first_time_pass_rate per bucket
+ * metric = 'consistency'    → task count per bucket, normalised 0–100
+ * metric = 'savings'        → savings_consistency per bucket
+ */
+async function buildSparklinePoints(
+  db: D1Database,
+  family_id: string,
+  child_id: string,
+  period: string,
+  points: number,
+): Promise<{ responsibility: number[]; consistency: number[]; savings: number[] }> {
+  const now        = Math.floor(Date.now() / 1000);
+  const periodSecs = period === 'week'  ? 7 * 86400
+                   : period === 'month' ? 30 * 86400
+                   : Math.max(30 * 86400, now - (await db.prepare(
+                       `SELECT MIN(resolved_at) AS t FROM completions WHERE family_id=? AND child_id=? AND status='completed'`
+                     ).bind(family_id, child_id).first<{t:number|null}>().then(r => r?.t ?? now)));
+  const startEpoch = now - periodSecs;
+  const bucketSecs = periodSecs / points;
+
+  // Fetch raw completion rows within the period
+  const rows = await db.prepare(`
+    SELECT resolved_at, attempt_count, reward_amount
+    FROM completions
+    WHERE family_id = ? AND child_id = ? AND status = 'completed'
+      AND resolved_at >= ?
+    ORDER BY resolved_at ASC
+  `).bind(family_id, child_id, startEpoch).all<{
+    resolved_at: number; attempt_count: number; reward_amount: number;
+  }>();
+
+  // Fetch saving contributions within the period
+  const saveRows = await db.prepare(`
+    SELECT contributed_at, amount_pence FROM goal_contributions
+    WHERE family_id = ? AND child_id = ? AND contributed_at >= ?
+  `).bind(family_id, child_id, startEpoch).all<{contributed_at: number; amount_pence: number}>()
+    .catch(() => ({ results: [] as {contributed_at: number; amount_pence: number}[] }));
+
+  const spendRows = await db.prepare(`
+    SELECT spent_at, amount FROM spending
+    WHERE family_id = ? AND child_id = ? AND spent_at >= ?
+  `).bind(family_id, child_id, startEpoch).all<{spent_at: number; amount: number}>()
+    .catch(() => ({ results: [] as {spent_at: number; amount: number}[] }));
+
+  // Build per-bucket arrays
+  const respArr:  number[] = Array(points).fill(0);
+  const consArr:  number[] = Array(points).fill(0);
+  const saveArr:  number[] = Array(points).fill(0);
+
+  // Bucket completions
+  const completionsByBucket: { total: number; firstPass: number }[] =
+    Array.from({ length: points }, () => ({ total: 0, firstPass: 0 }));
+
+  for (const r of rows.results) {
+    const idx = Math.min(points - 1, Math.floor((r.resolved_at - startEpoch) / bucketSecs));
+    completionsByBucket[idx].total++;
+    if (r.attempt_count === 1) completionsByBucket[idx].firstPass++;
+  }
+
+  // Max completions in any bucket — used to normalise consistency
+  const maxCount = Math.max(1, ...completionsByBucket.map(b => b.total));
+
+  for (let i = 0; i < points; i++) {
+    const b = completionsByBucket[i];
+    respArr[i] = b.total > 0 ? Math.round((b.firstPass / b.total) * 100) : 0;
+    consArr[i] = Math.round((b.total / maxCount) * 100);
+  }
+
+  // Bucket savings consistency
+  interface BucketFinance { saved: number; spent: number }
+  const financeBuckets: BucketFinance[] = Array.from({ length: points }, () => ({ saved: 0, spent: 0 }));
+
+  for (const r of saveRows.results) {
+    const idx = Math.min(points - 1, Math.floor((r.contributed_at - startEpoch) / bucketSecs));
+    financeBuckets[idx].saved += r.amount_pence;
+  }
+  for (const r of spendRows.results) {
+    const idx = Math.min(points - 1, Math.floor((r.spent_at - startEpoch) / bucketSecs));
+    financeBuckets[idx].spent += r.amount;
+  }
+  for (let i = 0; i < points; i++) {
+    const total = financeBuckets[i].saved + financeBuckets[i].spent;
+    saveArr[i] = total > 0 ? Math.round((financeBuckets[i].saved / total) * 100) : 0;
+  }
+
+  return { responsibility: respArr, consistency: consArr, savings: saveArr };
 }
 
 async function generateBriefing(env: Env, childId: string, input: BriefingInput): Promise<MentorBriefing> {
