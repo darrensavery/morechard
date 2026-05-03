@@ -448,6 +448,26 @@ export interface MentorBriefing {
   source: 'ai' | 'fallback' | 'cache';
 }
 
+export interface SparklinePoints {
+  responsibility: number[];
+  consistency:    number[];
+  savings:        number[];
+}
+
+export interface MilestoneMarker {
+  metric:       'responsibility' | 'consistency' | 'savings';
+  point_index:  number;
+  module_title: string;
+  delta_after:  number;
+}
+
+export interface CurrentModule {
+  slug:         string;
+  title:        string;
+  progress_pct: number;
+  pillar:       string;
+}
+
 export interface InsightsData {
   period: string;
   period_start_epoch: number | null;
@@ -477,6 +497,13 @@ export interface InsightsData {
     | { mode: 'professional';  avg_earned_pence_week: number }
   ) | null;
   mentor_briefing: MentorBriefing | null;
+  // New additive fields
+  sparkline_points:       SparklinePoints | null;
+  learning_lab_enabled:   boolean;
+  current_module:         CurrentModule | null;
+  completed_module_slugs: string[];
+  retention_score:        number | null;
+  milestone_markers:      MilestoneMarker[];
 }
 
 export async function getInsights(
