@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import type { ChildRecord } from '../lib/api'
-import { getChildren, getCompletions, clearToken, getUnpaidSummary, getFamily, type UnpaidSummaryRow } from '../lib/api'
+import { getChildren, getCompletions, clearToken, getUnpaidSummary, getFamily, getTrialStatus, type UnpaidSummaryRow, type TrialStatus } from '../lib/api'
 import { getDeviceIdentity } from '../lib/deviceIdentity'
 import { useLocale, isPolish } from '../lib/locale'
 import { AvatarSVG } from '../lib/avatars'
@@ -16,6 +16,8 @@ import { GoalBoostingTab }  from '../components/dashboard/GoalBoostingTab'
 import { FullLogo } from '../components/ui/Logo'
 import { UnpaidIndicator } from '../components/payment/UnpaidIndicator'
 import { PaymentBridgeSheet } from '../components/payment/PaymentBridgeSheet'
+import { DemoBanner } from '../components/demo/DemoBanner'
+import { DemoUpsellCard } from '../components/demo/DemoUpsellCard'
 
 // Offline signal SVG
 function OfflineIcon() {
@@ -56,8 +58,9 @@ export function ParentDashboard() {
   const [activeChild, setActiveChild] = useState<ChildRecord | null>(null)
   const [childrenLoaded, setChildrenLoaded] = useState(false)
   const [pendingCount, setPendingCount] = useState(0)
-  const [online,     setOnline]     = useState(navigator.onLine)
+  const [online,       setOnline]       = useState(navigator.onLine)
   const [parentingMode, setParentingMode] = useState<'single' | 'co-parenting'>('single')
+  const [trialStatus,  setTrialStatus]  = useState<TrialStatus | null>(null)
   const [unpaid, setUnpaid] = useState<UnpaidSummaryRow[]>([])
   const [bridgeCtx, setBridgeCtx] = useState<null | {
     child: ChildRecord; completionIds: string[]; total: number; currency: string;
@@ -70,6 +73,12 @@ export function ParentDashboard() {
   }
 
   useEffect(() => { refreshUnpaid() }, [familyId])
+
+  // Fetch trial/license status for upsell card
+  useEffect(() => {
+    if (!familyId) return
+    getTrialStatus().then(setTrialStatus).catch(() => { /* non-fatal */ })
+  }, [familyId])
 
   // Load family config to drive household-vs-co-parenting UX
   useEffect(() => {
@@ -164,6 +173,8 @@ export function ParentDashboard() {
 
   return (
     <div className="min-h-svh bg-[var(--color-bg)] flex flex-col" style={{ overscrollBehaviorY: 'none' }}>
+      <DemoBanner />
+      <DemoUpsellCard trialStatus={trialStatus} />
       {/* Header */}
       <header className="safe-top sticky top-0 z-10 bg-[var(--color-surface)] border-b border-[var(--color-border)] shadow-[0_1px_4px_rgba(0,0,0,.05)]">
         <div className="max-w-[560px] mx-auto px-3.5 py-3 flex items-center justify-between">
