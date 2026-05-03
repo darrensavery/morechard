@@ -11,7 +11,7 @@ A shared, pre-populated demo account ("the Thomson family") that allows two dist
 1. **Professionals** (solicitors, mediators, family lawyers) — evaluate the Shield AI forensic PDF capability on behalf of clients
 2. **Post-trial Core users** — experience AI Mentor and Shield features they don't currently have access to, as an upsell mechanism
 
-The demo is a single shared D1 family (`is_demo = true`). Professionals get read-only access. Demo parents can add/edit chores. All data resets nightly at midnight UTC.
+The demo is a single shared D1 family (`is_demo = true`). Professionals can add one chore and mark it complete to feel the approval flow, but cannot edit seed data. Demo parents can add/edit chores. All data resets nightly at midnight UTC.
 
 ---
 
@@ -107,7 +107,13 @@ Two of the Thomson chores display Rate Guide market-rate comparisons, showcasing
 
 ### Forensic PDF
 
-A pre-generated static PDF seeded as a file in the demo. It covers the full 6-month Thomson window, highlights the 3 disputed transactions, includes hash verification, and is downloadable via the same UI as a real export. The download triggers the normal Shield export flow.
+A pre-generated static PDF seeded as a file in the demo. It covers the full 6-month Thomson window and is downloadable via the same UI as a real export. The download triggers the normal Shield export flow.
+
+The PDF must explicitly include:
+- **Timestamped audit log** — for every chore: who created it, who approved or disputed it, and when. For mediators, the *process* of a dispute is often more important than the outcome.
+- **3 disputed transactions** highlighted with full dispute timeline (raised by, responded by, resolution status)
+- **2 late approvals** (>48hrs) flagged with elapsed time
+- **Hash verification section** — chain-of-custody proof that no entry has been altered
 
 ---
 
@@ -123,7 +129,7 @@ A pre-generated static PDF seeded as a file in the demo. It covers the full 6-mo
 
 ### Professional (`user_type: 'professional'`)
 
-- **Read-only throughout** — no adding, editing, or approving chores
+- Can add a single chore and mark it complete — enough to feel the parent approval flow end-to-end (their test chore appears in the audit trail, reinforcing the PDF's value). Cannot edit or delete seed chores.
 - Full access to all Shield features: forensic PDF download, hash-chain verification, audit trail
 - AI Mentor briefings fully visible (static seed)
 - Learning Lab visible but not interactive
@@ -140,7 +146,7 @@ A pre-generated static PDF seeded as a file in the demo. It covers the full 6-mo
   > *"Upgrade to Complete AI to unlock your AI Mentor"*
 - Learning Lab locked behind upsell prompt:
   > *"Upgrade to see Ellie and Jake's full curriculum"*
-- Upsell prompts show what the feature looks like but do not link to a payment page (paywall not yet built — Phase 7)
+- Upsell prompts show what the feature looks like but do not link to a payment page (paywall not yet built — Phase 7). Each prompt includes a "Notify me when this is available" button which writes a row to `upgrade_interest` (feature, user_id, timestamp) — converting dead-end intent into a warm lead list for the Phase 7 paywall launch.
 
 ---
 
@@ -176,6 +182,17 @@ Registered in `wrangler.toml` alongside the existing Monday 03:00 UTC rate-guide
 | `marketing_consent` | BOOLEAN | From opt-in checkbox |
 | `registered_at` | INTEGER | Unix timestamp |
 | `last_active_at` | INTEGER | Updated each session |
+
+### `upgrade_interest` table (new)
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | TEXT | UUID |
+| `user_id` | TEXT | FK to `users` |
+| `feature` | TEXT | `'shield'`, `'ai_mentor'`, `'learning_lab'` |
+| `registered_at` | INTEGER | Unix timestamp |
+
+One row per user per feature — `INSERT OR IGNORE` to prevent duplicates. Internal use only — warm lead list for Phase 7 paywall launch.
 
 ### Seed tables
 - All seeded rows across `chores`, `ledger`, `goals`, `unlocked_modules` gain `is_seed BOOLEAN DEFAULT 0`
