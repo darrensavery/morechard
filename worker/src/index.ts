@@ -160,6 +160,7 @@ import {
 } from './routes/market-rates.js';
 import { runMarketRateAggregation } from './jobs/marketRateAggregation.js';
 import { runMarketingEmails } from './cron/marketing-emails.js';
+import { runDemoReset } from './cron/demo-reset.js';
 import { handleChildChat } from './routes/chat.js';
 import { handleChatHistory } from './routes/chat-history.js';
 import { handleChatModules } from './routes/chat-modules.js';
@@ -242,6 +243,9 @@ export default Sentry.withSentry(
 
     // ── 5. Marketing re-engagement emails ──────────────────────
     await runMarketingEmails(env);
+
+    // ── 6. Nightly demo reset (Thomson family) ─────────────────
+    await runDemoReset(env);
   },
 } satisfies ExportedHandler<Env>,
 );
