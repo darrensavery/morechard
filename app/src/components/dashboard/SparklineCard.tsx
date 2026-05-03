@@ -148,7 +148,7 @@ export function SparklineCard({
           })}
 
           {activeIdx !== null && (
-            <line x1={dotX.get()} y1={0} x2={dotX.get()} y2={H}
+            <motion.line x1={dotX} x2={dotX} y1={0} y2={H}
               stroke={stroke} strokeWidth={1} strokeDasharray="2 2" opacity={0.4}/>
           )}
 

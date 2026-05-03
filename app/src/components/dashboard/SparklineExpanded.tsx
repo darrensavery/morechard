@@ -23,7 +23,7 @@ function toPolylinePoints(data: number[], w: number, h: number): string {
 }
 
 export function SparklineExpanded({
-  label, value, points, milestones, hasLearningLab, nextModuleTitle, onClose,
+  label, value: _value, points, milestones, hasLearningLab, nextModuleTitle, onClose,
 }: Props) {
   useAndroidBack(true, onClose)
 
@@ -137,7 +137,7 @@ export function SparklineExpanded({
           )}
 
           {activeIdx !== null && (
-            <line x1={dotX.get()} y1={0} x2={dotX.get()} y2={H}
+            <motion.line x1={dotX} x2={dotX} y1={0} y2={H}
               stroke="var(--brand-primary)" strokeWidth={1} strokeDasharray="2 2" opacity={0.35}/>
           )}
 

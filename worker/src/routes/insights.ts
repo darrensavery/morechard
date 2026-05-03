@@ -443,13 +443,21 @@ export async function handleInsights(request: Request, env: Env): Promise<Respon
           sparklinePointCount - 1,
           Math.floor((comp.completed_at - (periodStartEpoch || (periodEndEpoch - 30 * 86400))) / bucketDuration),
         );
-        const before = sparklinePoints.consistency[Math.max(0, idx - 1)] ?? 0;
-        const after  = sparklinePoints.consistency[Math.min(sparklinePointCount - 1, idx + 1)] ?? 0;
+        // Emit a marker on whichever metric shows the largest improvement after this module.
+        const metrics = ['responsibility', 'consistency', 'savings'] as const;
+        let bestMetric: typeof metrics[number] = 'consistency';
+        let bestDelta = -1;
+        for (const m of metrics) {
+          const before = sparklinePoints[m][Math.max(0, idx - 1)] ?? 0;
+          const after  = sparklinePoints[m][Math.min(sparklinePointCount - 1, idx + 1)] ?? 0;
+          const delta  = after - before;
+          if (delta > bestDelta) { bestDelta = delta; bestMetric = m; }
+        }
         milestoneMarkers.push({
-          metric:       'consistency',
+          metric:       bestMetric,
           point_index:  idx,
           module_title: comp.title,
-          delta_after:  Math.max(0, after - before),
+          delta_after:  Math.max(0, bestDelta),
         });
       }
     }
