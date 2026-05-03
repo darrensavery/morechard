@@ -46,6 +46,14 @@ export async function handleChoreCreate(request: Request, env: Env): Promise<Res
 
   if (family_id !== auth.family_id) return error('Forbidden', 403);
 
+  // Demo guard — professionals may only add 1 test chore; demo_parents have no chore limit.
+  if (auth.demo_user_type === 'professional') {
+    const row = await env.DB
+      .prepare('SELECT COUNT(*) as cnt FROM chores WHERE family_id = ? AND is_seed = 0')
+      .bind(family_id).first<{ cnt: number }>();
+    if ((row?.cnt ?? 0) >= 1) return error('Demo accounts are limited to one test chore', 403);
+  }
+
   if (frequency && !VALID_FREQUENCIES.includes(frequency as string))
     return error(`frequency must be one of: ${VALID_FREQUENCIES.join(', ')}`);
 
@@ -189,10 +197,11 @@ export async function handleChoreUpdate(request: Request, env: Env, id: string):
   const chore = await env.DB
     .prepare('SELECT * FROM chores WHERE id = ?')
     .bind(id)
-    .first<{ family_id: string; archived: number }>();
+    .first<{ family_id: string; archived: number; is_seed: number }>();
 
   if (!chore) return error('Chore not found', 404);
   if (chore.family_id !== auth.family_id) return error('Forbidden', 403);
+  if (chore.is_seed) return error('Seed chores cannot be edited in the demo', 403);
   if (chore.archived) return error('Cannot edit an archived chore');
 
   const allowed = [
@@ -240,11 +249,12 @@ export async function handleChoreArchive(request: Request, env: Env, id: string)
   const auth = (request as AuthedRequest).auth;
 
   const chore = await env.DB
-    .prepare('SELECT family_id FROM chores WHERE id = ?')
-    .bind(id).first<{ family_id: string }>();
+    .prepare('SELECT family_id, is_seed FROM chores WHERE id = ?')
+    .bind(id).first<{ family_id: string; is_seed: number }>();
 
   if (!chore) return error('Chore not found', 404);
   if (chore.family_id !== auth.family_id) return error('Forbidden', 403);
+  if (chore.is_seed) return error('Seed chores cannot be deleted in the demo', 403);
 
   await env.DB
     .prepare('UPDATE chores SET archived = 1, updated_at = ? WHERE id = ?')
