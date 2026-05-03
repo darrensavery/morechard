@@ -14,7 +14,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { AnimatePresence } from 'framer-motion'
-import type { ChildRecord, InsightsData, MentorBriefing, SparklinePoints, MilestoneMarker, CurrentModule } from '../../lib/api'
+import type { ChildRecord, InsightsData, MentorBriefing } from '../../lib/api'
 import { getInsights, formatCurrency } from '../../lib/api'
 import { AvatarSVG } from '../../lib/avatars'
 import { useAndroidBack } from '../../hooks/useAndroidBack'
