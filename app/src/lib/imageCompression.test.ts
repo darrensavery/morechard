@@ -18,8 +18,8 @@ function makePng(sizeBytes = 600 * 1024): File {
 }
 
 describe('compressImage', () => {
-  let getContextSpy: ReturnType<typeof vi.spyOn>;
-  let toBlobSpy: ReturnType<typeof vi.spyOn>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let toBlobSpy: ReturnType<typeof vi.spyOn<any, any>>;
 
   beforeEach(() => {
     // Mock createImageBitmap to return a mock ImageBitmap
@@ -30,13 +30,15 @@ describe('compressImage', () => {
     }));
 
     // Mock canvas getContext
-    getContextSpy = vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({
       drawImage: vi.fn(),
     } as unknown as CanvasRenderingContext2D);
 
     // Mock canvas toBlob to produce a ~300KB JPEG blob
     toBlobSpy = vi.spyOn(HTMLCanvasElement.prototype, 'toBlob').mockImplementation(
-      (cb, type) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (...args: any[]) => {
+        const [cb, type] = args as [BlobCallback, string?];
         cb(new Blob([new Uint8Array(300 * 1024)], { type: type ?? 'image/jpeg' }));
       }
     );
@@ -64,7 +66,9 @@ describe('compressImage', () => {
   it('throws on files over 10MB after compression', async () => {
     const { compressImage } = await import('./imageCompression');
     // Make toBlob return a blob > 10MB
-    toBlobSpy.mockImplementation((cb, type) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    toBlobSpy.mockImplementation((...args: any[]) => {
+      const [cb, type] = args as [BlobCallback, string?];
       cb(new Blob([new Uint8Array(11 * 1024 * 1024)], { type: type ?? 'image/jpeg' }));
     });
     const large = makePng(600 * 1024);
