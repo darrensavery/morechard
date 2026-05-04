@@ -217,7 +217,7 @@ export function AddExpenseSheet({ defaultSplitBp, currency, parentingMode, regio
                       key={preset.id}
                       type="button"
                       onClick={() => selectPreset(preset)}
-                      className="w-full text-left px-4 py-2.5 text-sm hover:bg-[var(--color-surface-alt)] flex items-center gap-2 transition-colors"
+                      className="w-full text-left px-4 py-2.5 text-sm hover:bg-[var(--color-surface-alt)] flex items-center gap-2 transition-colors cursor-pointer"
                     >
                       <CategoryIcon category={preset.category} size={15} />
                       <span className="font-medium text-[var(--color-text)]">{localiseName(preset, 'en')}</span>
@@ -248,7 +248,7 @@ export function AddExpenseSheet({ defaultSplitBp, currency, parentingMode, regio
               <button
                 type="button"
                 onClick={() => setShowCategoryOverride(v => !v)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-[var(--brand-primary)] bg-[color-mix(in_srgb,var(--brand-primary)_10%,transparent)] text-sm font-medium text-[var(--brand-primary)]"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-[var(--brand-primary)] bg-[color-mix(in_srgb,var(--brand-primary)_10%,transparent)] text-sm font-medium text-[var(--brand-primary)] cursor-pointer"
               >
                 <CategoryIcon category={category} size={13} />
                 {selectedCategoryLabel}
@@ -263,7 +263,7 @@ export function AddExpenseSheet({ defaultSplitBp, currency, parentingMode, regio
                     key={c.value}
                     type="button"
                     onClick={() => { setCategory(c.value); setShowCategoryOverride(false); }}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm border transition-colors
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm border transition-colors cursor-pointer
                       ${category === c.value
                         ? 'border-[var(--brand-primary)] bg-[color-mix(in_srgb,var(--brand-primary)_10%,transparent)] text-[var(--brand-primary)]'
                         : 'border-[var(--color-border)] bg-[var(--color-surface-alt)] text-[var(--color-text-muted)] hover:border-[var(--brand-primary)] hover:text-[var(--brand-primary)]'
@@ -337,7 +337,7 @@ export function AddExpenseSheet({ defaultSplitBp, currency, parentingMode, regio
               <button
                 type="button"
                 onClick={() => setNoteOpen(v => !v)}
-                className="text-sm font-medium text-[var(--brand-primary)]"
+                className="text-sm font-medium text-[var(--brand-primary)] cursor-pointer"
               >
                 {noteOpen ? '▾ Note' : '▸ Add note'}
               </button>
@@ -357,7 +357,7 @@ export function AddExpenseSheet({ defaultSplitBp, currency, parentingMode, regio
               <button
                 type="button"
                 onClick={() => setReceiptOpen(v => !v)}
-                className="text-sm font-medium text-[var(--brand-primary)]"
+                className="text-sm font-medium text-[var(--brand-primary)] cursor-pointer"
               >
                 {receiptOpen ? '▾ Attach receipt' : '▸ Attach receipt'}
               </button>
@@ -380,7 +380,7 @@ export function AddExpenseSheet({ defaultSplitBp, currency, parentingMode, regio
             <button
               type="submit"
               disabled={saving || !canSubmit}
-              className="w-full bg-[var(--brand-primary)] text-white font-semibold py-3 rounded-xl disabled:opacity-40 disabled:cursor-not-allowed transition-opacity"
+              className="w-full bg-[var(--brand-primary)] text-white font-semibold py-3 rounded-xl disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-opacity"
             >
               {saving ? 'Saving…' : 'Log expense'}
             </button>

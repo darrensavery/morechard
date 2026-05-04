@@ -446,7 +446,7 @@ export function ParentDashboard() {
             defaultSplitBp={5000}
             currency="GBP"
             parentingMode={parentingMode}
-            familyName={getDeviceIdentity()?.display_name ?? undefined}
+            familyName={activeChild?.display_name ?? undefined}
             onClose={() => setShowAddExpense(false)}
             onSaved={() => { setShowAddExpense(false) }}
           />
