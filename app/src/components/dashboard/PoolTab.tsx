@@ -1,37 +1,12 @@
 // app/src/components/dashboard/PoolTab.tsx
 import { useEffect, useState } from 'react';
-import { apiUrl, authHeaders } from '../../lib/api';
-
-type VerificationStatus =
-  | 'committed_auto'
-  | 'committed_manual'
-  | 'pending'
-  | 'rejected'
-  | 'voided'
-  | 'reversed';
-
-type SharedExpense = {
-  id: number;
-  logged_by: string;
-  logged_by_name: string;
-  authorised_by: string | null;
-  authorised_by_name: string | null;
-  description: string;
-  category: string;
-  total_amount: number;
-  split_bp: number;
-  currency: string;
-  verification_status: VerificationStatus;
-  attachment_key: string | null;
-  settlement_period: string | null;
-  reconciled_at: number | null;
-  created_at: number;
-  deleted_at: number | null;
-};
+import { apiUrl, authHeaders, getSharedExpenses, SharedExpense } from '../../lib/api';
+import { VoidExpenseSheet } from './VoidExpenseSheet';
 
 const CATEGORY_EMOJI: Record<string, string> = {
   education: '📚', health: '🏥', clothing: '👕',
-  travel: '✈️', activities: '⚽', other: '📋',
+  travel: '✈️', activities: '⚽', childcare: '🧒',
+  food: '🍱', tech: '💻', gifts: '🎁', other: '📋',
 };
 
 function formatAmount(pence: number, currency: string): string {
@@ -67,13 +42,12 @@ export function PoolTab({ familyId, currentUserId, parentingMode, onAddClick, on
   const [expenses, setExpenses] = useState<SharedExpense[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [voidingExpense, setVoidingExpense] = useState<SharedExpense | null>(null);
 
   async function load() {
     setLoading(true);
     try {
-      const res = await fetch(apiUrl('/api/shared-expenses'), { headers: authHeaders() });
-      if (!res.ok) throw new Error(await res.text());
-      const data = await res.json() as { expenses: SharedExpense[] };
+      const data = await getSharedExpenses();
       setExpenses(data.expenses);
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Failed to load');
@@ -261,6 +235,14 @@ export function PoolTab({ familyId, currentUserId, parentingMode, onAddClick, on
                           To keep things simple, we've rounded your share to {formatAmount(myAmount, e.currency)}.
                         </p>
                       )}
+                      {e.logged_by === currentUserId && (
+                        <button
+                          onClick={() => setVoidingExpense(e)}
+                          className="text-xs text-red-500 border border-red-300 rounded px-2 py-0.5 mt-1"
+                        >
+                          Void
+                        </button>
+                      )}
                     </div>
                     <p className="text-sm font-bold tabular-nums">{formatAmount(e.total_amount, e.currency)}</p>
                   </div>
@@ -277,9 +259,10 @@ export function PoolTab({ familyId, currentUserId, parentingMode, onAddClick, on
           <h3 className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wide mb-2">Voided</h3>
           <div className="flex flex-col gap-2">
             {voidedExpenses.map(e => (
-              <div key={e.id} className="rounded-xl border border-[var(--color-border)] p-4 opacity-50">
-                <p className="text-sm line-through">{e.description}</p>
-                <p className="text-xs text-[var(--color-text-muted)]">Voided — co-parent removed</p>
+              <div key={e.id} className="rounded-xl border border-[var(--color-border)] p-4 opacity-60">
+                <p className="text-sm line-through text-[var(--color-text-muted)]">{e.description}</p>
+                {e.note && <p className="text-xs text-[var(--color-text-muted)] mt-0.5 italic">{e.note}</p>}
+                {e.voided_at && <p className="text-xs text-[var(--color-text-muted)]">Voided {new Date(e.voided_at * 1000).toLocaleDateString()}</p>}
               </div>
             ))}
           </div>
@@ -307,6 +290,15 @@ export function PoolTab({ familyId, currentUserId, parentingMode, onAddClick, on
             ? 'No shared expenses yet. Log one to get started.'
             : 'No household expenses yet. Log one to keep a record of your spending.'}
         </div>
+      )}
+
+      {voidingExpense && (
+        <VoidExpenseSheet
+          expenseId={voidingExpense.id}
+          description={voidingExpense.description}
+          onClose={() => setVoidingExpense(null)}
+          onVoided={() => { setVoidingExpense(null); load(); }}
+        />
       )}
     </div>
   );

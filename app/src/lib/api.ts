@@ -917,3 +917,80 @@ export async function getMarketingConsent(): Promise<{ consented: boolean | null
     '/api/consent/marketing',
   );
 }
+
+// ----------------------------------------------------------------
+// Shared Expenses
+// ----------------------------------------------------------------
+export interface SharedExpense {
+  id: number;
+  logged_by: string;
+  logged_by_name: string | null;
+  authorised_by: string | null;
+  authorised_by_name: string | null;
+  description: string;
+  category: string;
+  total_amount: number;
+  split_bp: number;
+  currency: string;
+  verification_status: 'committed_auto' | 'committed_manual' | 'pending' | 'rejected' | 'voided' | 'reversed';
+  expense_date: string | null;
+  note: string | null;
+  receipt_r2_key: string | null;
+  receipt_uploaded_at: number | null;
+  voided_at: number | null;
+  voided_by: string | null;
+  voids_id: number | null;
+  attachment_key: string | null;
+  settlement_period: string | null;
+  reconciled_at: number | null;
+  created_at: number;
+  deleted_at: number | null;
+}
+
+export async function getSharedExpenses(): Promise<{ expenses: SharedExpense[] }> {
+  return request('/api/shared-expenses');
+}
+
+export async function createSharedExpense(body: {
+  description: string;
+  category: string;
+  total_amount: number;
+  split_bp?: number;
+  expense_date?: string;
+  note?: string;
+}): Promise<{ id: number; verification_status: string }> {
+  return request('/api/shared-expenses', { method: 'POST', body: JSON.stringify(body) });
+}
+
+export async function uploadReceipt(expenseId: number, file: File): Promise<{ id: number; receipt_uploaded_at: number }> {
+  const res = await fetch(apiUrl(`/api/shared-expenses/${expenseId}/receipt`), {
+    method: 'POST',
+    headers: authHeaders(file.type || 'application/octet-stream'),
+    body: file,
+  });
+  const data = await res.json() as { id?: number; receipt_uploaded_at?: number; error?: string };
+  if (!res.ok) throw new Error(data.error ?? `HTTP ${res.status}`);
+  return { id: data.id!, receipt_uploaded_at: data.receipt_uploaded_at! };
+}
+
+export async function getReceiptUrl(expenseId: number): Promise<{ url: string }> {
+  return request(`/api/shared-expenses/${expenseId}/receipt`);
+}
+
+export async function deleteReceipt(expenseId: number): Promise<{ id: number; deleted: boolean }> {
+  return request(`/api/shared-expenses/${expenseId}/receipt`, { method: 'DELETE' });
+}
+
+export async function voidExpense(expenseId: number, body: {
+  reason: string;
+  replacement?: {
+    description: string;
+    category: string;
+    total_amount: number;
+    split_bp?: number;
+    expense_date?: string;
+    note?: string;
+  };
+}): Promise<{ voided_id: number; replacement_id: number | null }> {
+  return request(`/api/shared-expenses/${expenseId}/void`, { method: 'POST', body: JSON.stringify(body) });
+}
