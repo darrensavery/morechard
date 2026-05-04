@@ -236,7 +236,7 @@ export function AddExpenseSheet({ defaultSplitBp, currency, parentingMode, regio
             {/* Description */}
             <div>
               <label className="text-[10px] font-bold text-[var(--color-text-muted)] uppercase tracking-widest">
-                Description
+                Description <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
@@ -285,7 +285,7 @@ export function AddExpenseSheet({ defaultSplitBp, currency, parentingMode, regio
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="text-[10px] font-bold text-[var(--color-text-muted)] uppercase tracking-widest">
-                  Date
+                  Date <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="date"
@@ -296,7 +296,7 @@ export function AddExpenseSheet({ defaultSplitBp, currency, parentingMode, regio
               </div>
               <div>
                 <label className="text-[10px] font-bold text-[var(--color-text-muted)] uppercase tracking-widest">
-                  Amount ({symbol})
+                  Amount ({symbol}) <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="number"

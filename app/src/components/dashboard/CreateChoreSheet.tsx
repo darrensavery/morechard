@@ -431,6 +431,9 @@ export function CreateChoreSheet({
 
           {/* ── Search / title input + dropdown ─────────────────── */}
           <div className="relative">
+            <label className="text-[10px] font-bold text-[var(--color-text-muted)] uppercase tracking-widest block mb-1.5">
+              Chore name <span className="text-red-500">*</span>
+            </label>
             <input
               ref={titleRef}
               type="text"
@@ -504,7 +507,7 @@ export function CreateChoreSheet({
             {/* Reward — left half */}
             <div className="flex-1">
               <label className="text-[10px] font-bold text-[var(--color-text-muted)] uppercase tracking-widest block mb-1.5">
-                Reward
+                Reward <span className="text-red-500">*</span>
               </label>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[15px] font-bold text-[var(--color-text-muted)]">
