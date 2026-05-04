@@ -1,6 +1,7 @@
 // app/src/components/dashboard/PoolTab.tsx
 import { useEffect, useState } from 'react';
-import { apiUrl, authHeaders, getSharedExpenses, SharedExpense } from '../../lib/api';
+import type { SharedExpense } from '../../lib/api';
+import { apiUrl, authHeaders, getSharedExpenses } from '../../lib/api';
 import { VoidExpenseSheet } from './VoidExpenseSheet';
 
 const CATEGORY_EMOJI: Record<string, string> = {

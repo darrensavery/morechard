@@ -2,8 +2,9 @@
 import { useState } from 'react';
 import { createSharedExpense, uploadReceipt } from '../../lib/api';
 import { useAndroidBack } from '../../hooks/useAndroidBack';
+import type { ExpensePreset, ExpenseCategory } from '../../lib/sharedExpensePresets';
 import {
-  PRESETS, ExpensePreset, ExpenseCategory,
+  PRESETS,
   getPresetsForRegion, localiseName, fuzzyMatchPreset
 } from '../../lib/sharedExpensePresets';
 import { ReceiptPicker } from './ReceiptPicker';

@@ -1,12 +1,11 @@
 import { describe, it, expect } from 'vitest';
+import type { ExpensePreset, ExpenseCategory } from './sharedExpensePresets';
 import {
   PRESETS,
-  ExpensePreset,
   getPresetsForRegion,
   localiseName,
   findPreset,
   fuzzyMatchPreset,
-  ExpenseCategory,
 } from './sharedExpensePresets';
 
 describe('catalogue integrity', () => {
