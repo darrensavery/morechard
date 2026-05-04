@@ -10,6 +10,7 @@ import { useNavigate } from 'react-router-dom'
 import { FullLogo } from '@/components/ui/Logo'
 import { cn } from '@/lib/utils'
 import { apiUrl, setToken } from '@/lib/api'
+import { setDeviceIdentity } from '@/lib/deviceIdentity'
 
 function isValidEmail(e: string) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e) }
 
@@ -51,8 +52,16 @@ export default function DemoRegisterScreen() {
       if (!res.ok) throw new Error(data.error ?? 'Registration failed')
 
       setToken(data.token!)
-      localStorage.setItem('mc_role', 'parent')
-      localStorage.setItem('mc_family_id', 'demo-family-thomson')
+      setDeviceIdentity({
+        user_id:       'demo-user-sarah',
+        family_id:     'demo-family-thomson',
+        display_name:  name.trim(),
+        role:          'parent',
+        parenting_role: 'LEAD_PARENT',
+        initials:      name.trim().split(/\s+/).map(p => p[0]).join('').slice(0, 2).toUpperCase(),
+        registered_at: new Date().toISOString(),
+        auth_method:   'none',
+      })
       localStorage.setItem('mc_demo_user_type', 'professional')
       window.location.href = '/parent'
     } catch (err) {

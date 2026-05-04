@@ -8,6 +8,7 @@ import { useState } from 'react'
 import { Sparkles } from 'lucide-react'
 import { apiUrl, authHeaders, setToken } from '@/lib/api'
 import type { TrialStatus } from '@/lib/api'
+import { setDeviceIdentity, getDeviceIdentity } from '@/lib/deviceIdentity'
 
 interface Props {
   trialStatus: TrialStatus | null
@@ -38,8 +39,17 @@ export function DemoUpsellCard({ trialStatus }: Props) {
       if (!res.ok) throw new Error(data.error ?? 'Could not enter demo')
 
       setToken(data.token!)
-      localStorage.setItem('mc_family_id', 'demo-family-thomson')
-      localStorage.setItem('mc_role', 'parent')
+      const existing = getDeviceIdentity()
+      setDeviceIdentity({
+        user_id:        'demo-user-sarah',
+        family_id:      'demo-family-thomson',
+        display_name:   existing?.display_name ?? 'Demo User',
+        role:           'parent',
+        parenting_role: 'LEAD_PARENT',
+        initials:       existing?.initials ?? 'DU',
+        registered_at:  existing?.registered_at ?? new Date().toISOString(),
+        auth_method:    'none',
+      })
       localStorage.setItem('mc_demo_user_type', 'demo_parent')
       window.location.href = '/parent'
     } catch (err) {
