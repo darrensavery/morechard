@@ -255,10 +255,10 @@ export function Stage1ParentIdentity({ data, onNext }: Props) {
             <label
               key={String(value)}
               className={cn(
-                'flex items-center gap-3 rounded-xl border-2 px-4 py-3 cursor-pointer transition-all duration-150',
+                'flex items-center gap-3 rounded-xl border px-4 py-3 cursor-pointer transition-all duration-150',
                 marketingConsent === value
                   ? 'border-teal-500 bg-teal-50'
-                  : 'border-gray-200 bg-white hover:border-teal-300',
+                  : 'border-gray-200 bg-white hover:border-gray-300',
               )}
             >
               <input
@@ -271,7 +271,7 @@ export function Stage1ParentIdentity({ data, onNext }: Props) {
               />
               <span className={cn(
                 'text-sm font-medium',
-                marketingConsent === value ? 'text-teal-700' : 'text-gray-700',
+                marketingConsent === value ? 'text-teal-700' : 'text-gray-500',
               )}>
                 {label}
               </span>
@@ -393,7 +393,7 @@ function FloatingField({
           onFocus={() => setFocused(true)}
           onBlur={() => { setFocused(false); onBlur?.() }}
           className={cn(
-            'w-full rounded-xl border bg-gray-50 px-3.5 pb-2.5 pt-6 text-sm text-gray-900',
+            'w-full rounded-xl border bg-white px-3.5 pb-2.5 pt-6 text-sm text-gray-900',
             'transition-all duration-150 outline-none',
             trailingIcon ? 'pr-10' : '',
             focused

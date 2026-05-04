@@ -7,10 +7,10 @@
  * GET /api/export/pdf?family_id=&lang=en|pl&tier=basic|behavioral|forensic
  *   Returns a print-ready HTML document. Three tiers:
  *
- *   basic       — Family Orchard Summary (Standard £34.99 licence)
+ *   basic       — Family Orchard Summary (Morechard Core licence)
  *                 Summary cards, ledger table, status log.
  *
- *   behavioral  — Growth & Learning Curriculum (requires AI Mentor — Complete AI or Shield AI)
+ *   behavioral  — Growth & Learning Curriculum (requires AI Mentor — Core AI or Morechard Shield)
  *                 All basic content plus Learning Lab modules and Behavioural Pulse.
  *
  *   forensic    — Immutable Chain of Custody (Legal version)

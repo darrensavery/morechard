@@ -79,7 +79,7 @@ export interface TrialStatus {
   is_expired: boolean;
   has_lifetime_license: boolean;
   has_ai_mentor: boolean;          // AI Mentor + Learning Lab permanently unlocked
-  has_shield: boolean;             // Shield AI plan — includes AI Mentor + PDF exports
+  has_shield: boolean;             // Morechard Shield plan — includes AI Mentor + PDF exports
 }
 
 export type Currency = 'GBP' | 'PLN' | 'USD';

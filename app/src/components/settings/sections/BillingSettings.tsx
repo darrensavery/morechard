@@ -380,8 +380,8 @@ function PlanView({ onBack, showToast }: { onBack: () => void; showToast: (m: st
                   </button>
                 </div>
 
-                {/* Complete — shown only when no base license yet */}
-                {!hasBase && (
+                {/* Complete — shown only when user has no paid plan at all */}
+                {!hasBase && !hasAi && !hasShield && (
                   <div className="rounded-2xl border-2 border-[var(--color-border)] overflow-hidden relative">
                     <div className="absolute top-3 right-3 flex items-center gap-1 px-2 py-0.5 rounded-full bg-teal-500 text-white text-[10px] font-bold">
                       <Star size={9} />
