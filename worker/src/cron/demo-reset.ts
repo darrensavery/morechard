@@ -43,9 +43,15 @@ export async function runDemoReset(env: Env): Promise<void> {
     .bind(DEMO_FAMILY_ID)
     .run();
 
-  // 5. Delete non-seed shared expenses.
+  // 5. Soft-delete non-seed shared expenses (trigger prevents hard DELETE).
   await env.DB
-    .prepare('DELETE FROM shared_expenses WHERE family_id = ? AND is_seed = 0')
+    .prepare('UPDATE shared_expenses SET deleted_at = unixepoch() WHERE family_id = ? AND is_seed = 0 AND deleted_at IS NULL')
+    .bind(DEMO_FAMILY_ID)
+    .run();
+
+  // Restore seed shared expenses that were soft-deleted during the day.
+  await env.DB
+    .prepare('UPDATE shared_expenses SET deleted_at = NULL WHERE family_id = ? AND is_seed = 1')
     .bind(DEMO_FAMILY_ID)
     .run();
 

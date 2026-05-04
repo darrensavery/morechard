@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback } from 'react'
-import type { Completion, PayoutRecord, ChildRecord } from '../../lib/api'
+import type { Completion, PayoutRecord, ChildRecord, UnpaidSummaryRow } from '../../lib/api'
 import {
   getHistory, getPayouts, createPayout, createBonus, formatCurrency,
-  getCompletions, approveCompletion, reviseCompletion, approveAll, getProofUrl,
+  getCompletions, approveCompletion, reviseCompletion, approveAll, getProofUrl, getChores,
 } from '../../lib/api'
 import { useGatekeeper } from '../../hooks/useGatekeeper'
 import { useAndroidBack } from '../../hooks/useAndroidBack'
@@ -13,6 +13,8 @@ interface Props {
   child: ChildRecord
   childCount: number
   onCountChange: (n: number) => void
+  unpaidRow?: UnpaidSummaryRow | null
+  onOpenBridge?: () => void
   /** Reserved for next iteration — real goal progress data */
   goalProgress?: { goalName: string; choresRemaining: number } | null
 }
@@ -26,7 +28,7 @@ const STATUS_STYLES: Record<string, { label: string; bg: string; text: string }>
   suggestion: { label: 'Suggestion', bg: 'bg-blue-100',   text: 'text-blue-700' },
 }
 
-export function ActivityTab({ familyId, child, childCount, onCountChange, goalProgress }: Props) {
+export function ActivityTab({ familyId, child, childCount, onCountChange, unpaidRow, onOpenBridge, goalProgress }: Props) {
   // ── Pending completions (absorbed from PendingTab) ───────────────────────────
   const { challenge, GatekeeperModal } = useGatekeeper()
   const [completions,         setCompletions]         = useState<Completion[]>([])
@@ -56,6 +58,7 @@ export function ActivityTab({ familyId, child, childCount, onCountChange, goalPr
   const [bonusReason, setBonusReason] = useState('')
   const [bonusBusy, setBonusBusy]   = useState(false)
   const [bonusError, setBonusError] = useState<string | null>(null)
+  const [overdueCount, setOverdueCount] = useState(0)
 
   useAndroidBack(showApproveAllModal, () => setShowApproveAllModal(false))
   useAndroidBack(!!reviseId, () => { setReviseId(null); setReviseNote('') })
@@ -70,6 +73,16 @@ export function ActivityTab({ familyId, child, childCount, onCountChange, goalPr
     setCompletions(r.completions)
     onCountChange(r.completions.length)
     setPendingLoading(false)
+    if (r.completions.length === 0) {
+      try {
+        const today = new Date().toISOString().slice(0, 10)
+        const { chores } = await getChores({ family_id: familyId, assigned_to: child.id })
+        const overdue = chores.filter(c => c.due_date && c.due_date < today && !c.archived)
+        setOverdueCount(overdue.length)
+      } catch { /* non-fatal */ }
+    } else {
+      setOverdueCount(0)
+    }
   }, [familyId, child.id, onCountChange])
 
   useEffect(() => { loadPending() }, [loadPending])
@@ -270,9 +283,28 @@ export function ActivityTab({ familyId, child, childCount, onCountChange, goalPr
         </div>
       )}
 
+      {/* ── Unpaid earnings summary ───────────────────────────────────────────── */}
+      {unpaidRow && unpaidRow.unpaid_total > 0 && (
+        <button
+          type="button"
+          onClick={onOpenBridge}
+          className="w-full flex items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-left"
+        >
+          <div>
+            <p className="text-[13px] font-semibold text-amber-900">Earnings waiting to be paid out</p>
+            <p className="text-[12px] text-amber-700 mt-0.5">
+              {formatCurrency(unpaidRow.unpaid_total, unpaidRow.currency)} approved but not yet transferred
+            </p>
+          </div>
+          <span className="shrink-0 text-[12px] font-bold text-amber-900 bg-amber-100 border border-amber-300 rounded-full px-3 py-1">
+            Pay out
+          </span>
+        </button>
+      )}
+
       {/* ── AI Mentor empty-state card (shown only when no pending approvals) ── */}
       {!pendingLoading && completions.length === 0 && (
-        <MentorEmptyCard childName={child.display_name} childCount={childCount} goalProgress={goalProgress ?? null} />
+        <MentorEmptyCard childName={child.display_name} childCount={childCount} goalProgress={goalProgress ?? null} overdueCount={overdueCount} />
       )}
 
       {/* ── Pay out bottom sheet ──────────────────────────────────────────────── */}
@@ -385,7 +417,7 @@ export function ActivityTab({ familyId, child, childCount, onCountChange, goalPr
               <div>
                 <p className="text-[14px] font-semibold text-[var(--color-text)]">{formatCurrency(p.amount, p.currency)}</p>
                 <p className="text-[12px] text-[var(--color-text-muted)]">
-                  {new Date(p.paid_at * 1000).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+                  {new Date(p.paid_at * 1000).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
                   {p.note && ` · ${p.note}`}
                 </p>
               </div>
@@ -413,7 +445,7 @@ export function ActivityTab({ familyId, child, childCount, onCountChange, goalPr
                     <p className="text-[14px] font-semibold text-[var(--color-text)] truncate">{item.chore_title}</p>
                     <p className="text-[12px] text-[var(--color-text-muted)]">
                       {formatCurrency(item.reward_amount, item.currency)} ·{' '}
-                      {itemDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+                      {itemDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
                       {item.rejection_note && <span className="ml-1 italic text-red-500">"{item.rejection_note}"</span>}
                     </p>
                     <WeeklyRhythmDots history={history} choreTitle={item.chore_title} />
@@ -507,18 +539,24 @@ function MentorEmptyCard({
   childName,
   childCount,
   goalProgress,
+  overdueCount = 0,
 }: {
   childName: string
   childCount: number
   goalProgress: GoalProgress | null
+  overdueCount?: number
 }) {
-  const heading = `${childName} is all caught up! 🎉`
+  const heading = overdueCount > 0
+    ? `${overdueCount} overdue chore${overdueCount !== 1 ? 's' : ''} need attention`
+    : `${childName} is all caught up! 🎉`
 
-  const mentorLine = goalProgress
-    ? `It looks like ${childName} is ${goalProgress.choresRemaining} chore${goalProgress.choresRemaining !== 1 ? 's' : ''} away from their '${goalProgress.goalName}' goal.`
-    : childCount === 1
-      ? `Keep an eye on ${childName}'s progress — their next goal milestone is coming up soon.`
-      : `No pending tasks for ${childName} right now. Switch to another child above to check their pending approvals.`
+  const mentorLine = overdueCount > 0
+    ? `${childName} has ${overdueCount} chore${overdueCount !== 1 ? 's' : ''} past their due date with no submission yet. A gentle reminder usually does the trick.`
+    : goalProgress
+      ? `It looks like ${childName} is ${goalProgress.choresRemaining} chore${goalProgress.choresRemaining !== 1 ? 's' : ''} away from their '${goalProgress.goalName}' goal.`
+      : childCount === 1
+        ? `Keep an eye on ${childName}'s progress — their next goal milestone is coming up soon.`
+        : `No pending tasks for ${childName} right now. Switch to another child above to check their pending approvals.`
 
   return (
     <PremiumShell>

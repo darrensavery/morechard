@@ -14,7 +14,6 @@ import { AddExpenseSheet } from '../components/dashboard/AddExpenseSheet'
 import { SettlementCard }  from '../components/dashboard/SettlementCard'
 import { GoalBoostingTab }  from '../components/dashboard/GoalBoostingTab'
 import { FullLogo } from '../components/ui/Logo'
-import { UnpaidIndicator } from '../components/payment/UnpaidIndicator'
 import { PaymentBridgeSheet } from '../components/payment/PaymentBridgeSheet'
 import { DemoBanner } from '../components/demo/DemoBanner'
 import { DemoUpsellCard } from '../components/demo/DemoUpsellCard'
@@ -245,33 +244,22 @@ export function ParentDashboard() {
         {/* Child selector */}
         {children.length > 1 && (
           <div className="max-w-[560px] mx-auto px-3.5 pb-2.5 flex gap-2 overflow-x-auto scrollbar-hide">
-            {children.map(child => {
-              const row = unpaid.find((u) => u.child_id === child.id)
-              return (
-                <div key={child.id} className="shrink-0 flex items-center gap-1.5">
-                  <button
-                    onClick={() => setActiveChild(child)}
-                    className={`
-                      shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[13px] font-semibold
-                      transition-colors duration-100 cursor-pointer
-                      ${activeChild?.id === child.id
-                        ? 'bg-[var(--brand-primary)] text-white'
-                        : 'bg-[var(--color-surface-alt)] text-[var(--color-text-muted)] hover:opacity-80'}
-                    `}
-                  >
-                    <AvatarSVG id={child.avatar_id ?? 'bottts:spark'} size={20} />
-                    {child.display_name}
-                  </button>
-                  {row && (
-                    <UnpaidIndicator
-                      unpaidMinorUnits={row.unpaid_total}
-                      currency={row.currency}
-                      onClick={() => openBridgeForChild(child, row)}
-                    />
-                  )}
-                </div>
-              )
-            })}
+            {children.map(child => (
+              <button
+                key={child.id}
+                onClick={() => setActiveChild(child)}
+                className={`
+                  shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[13px] font-semibold
+                  transition-colors duration-100 cursor-pointer
+                  ${activeChild?.id === child.id
+                    ? 'bg-[var(--brand-primary)] text-white'
+                    : 'bg-[var(--color-surface-alt)] text-[var(--color-text-muted)] hover:opacity-80'}
+                `}
+              >
+                <AvatarSVG id={child.avatar_id ?? 'bottts:spark'} size={20} />
+                {child.display_name}
+              </button>
+            ))}
           </div>
         )}
 
@@ -363,7 +351,7 @@ export function ParentDashboard() {
         {!childrenLoaded ? null : activeChild ? (
           <>
             {tab === 'chores'   && <ChoresTab       familyId={familyId} child={activeChild} children={children} />}
-            {tab === 'activity' && <ActivityTab     familyId={familyId} child={activeChild} childCount={children.length} onCountChange={setPendingCount} />}
+            {tab === 'activity' && <ActivityTab     familyId={familyId} child={activeChild} childCount={children.length} onCountChange={setPendingCount} unpaidRow={unpaid.find(u => u.child_id === activeChild.id) ?? null} onOpenBridge={() => { const row = unpaid.find(u => u.child_id === activeChild.id); if (row) openBridgeForChild(activeChild, row) }} />}
             {tab === 'pool'     && (
               <PoolTab
                 familyId={familyId}

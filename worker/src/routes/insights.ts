@@ -84,15 +84,18 @@ export async function handleInsights(request: Request, env: Env): Promise<Respon
     : null;
 
   // ── 2. Discovery Phase Flag ───────────────────────────────────────────────
-  // < 3 completed tasks all-time OR < 7 days since first completion
+  // < 3 completed tasks all-time OR < 7 days since first ever completion.
+  // Uses all-time MIN(resolved_at), not period-filtered, so weekly view
+  // correctly exits discovery phase after 7 days of history.
   const allTimeRow = await env.DB.prepare(`
-    SELECT COUNT(*) AS total FROM completions
+    SELECT COUNT(*) AS total, MIN(resolved_at) AS first_resolved FROM completions
     WHERE family_id = ? AND child_id = ? AND status = 'completed'
   `).bind(family_id, effectiveChildId)
-    .first<{ total: number }>();
+    .first<{ total: number; first_resolved: number | null }>();
 
   const allTimeCompleted  = allTimeRow?.total ?? 0;
-  const daysSinceFirst    = earliestResolved ? (now - earliestResolved) / 86400 : 0;
+  const firstEverResolved = allTimeRow?.first_resolved ?? null;
+  const daysSinceFirst    = firstEverResolved ? (now - firstEverResolved) / 86400 : 0;
   const isDiscoveryPhase  = allTimeCompleted < 3 || daysSinceFirst < 7;
 
   // ── 3. Consistency Score (28-day weekly volume stability) ─────────────────
@@ -132,20 +135,25 @@ export async function handleInsights(request: Request, env: Env): Promise<Respon
   }
 
   // ── 4. Effort Preference ─────────────────────────────────────────────────
-  // Compare child's avg reward vs family avg. Requires ≥ 3 completions.
+  // Compare child's avg reward vs family avg using the chores table.
+  // Requires ≥ 3 completions.
   let effortPreference: 'high_yield' | 'steady' | null = null;
   if (allTimeCompleted >= 3) {
     const [childAvgRow, familyAvgRow] = await Promise.all([
       env.DB.prepare(`
-        SELECT AVG(reward_amount) AS avg_reward FROM completions
-        WHERE family_id = ? AND child_id = ? AND status = 'completed'
+        SELECT AVG(ch.reward_amount) AS avg_reward
+        FROM completions c JOIN chores ch ON ch.id = c.chore_id
+        WHERE c.family_id = ? AND c.child_id = ? AND c.status = 'completed'
       `).bind(family_id, effectiveChildId)
-        .first<{ avg_reward: number | null }>(),
+        .first<{ avg_reward: number | null }>()
+        .catch(() => ({ avg_reward: null })),
       env.DB.prepare(`
-        SELECT AVG(reward_amount) AS avg_reward FROM completions
-        WHERE family_id = ? AND status = 'completed'
+        SELECT AVG(ch.reward_amount) AS avg_reward
+        FROM completions c JOIN chores ch ON ch.id = c.chore_id
+        WHERE c.family_id = ? AND c.status = 'completed'
       `).bind(family_id)
-        .first<{ avg_reward: number | null }>(),
+        .first<{ avg_reward: number | null }>()
+        .catch(() => ({ avg_reward: null })),
     ]);
 
     const childAvg  = childAvgRow?.avg_reward  ?? 0;
@@ -996,13 +1004,13 @@ async function buildSparklinePoints(
 
   // Fetch raw completion rows within the period
   const rows = await db.prepare(`
-    SELECT resolved_at, attempt_count, reward_amount
+    SELECT resolved_at, attempt_count
     FROM completions
     WHERE family_id = ? AND child_id = ? AND status = 'completed'
       AND resolved_at >= ?
     ORDER BY resolved_at ASC
   `).bind(family_id, child_id, startEpoch).all<{
-    resolved_at: number; attempt_count: number; reward_amount: number;
+    resolved_at: number; attempt_count: number;
   }>();
 
   // Fetch saving contributions within the period
