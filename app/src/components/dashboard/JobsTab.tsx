@@ -8,6 +8,7 @@ import {
 import { CreateChoreSheet } from './CreateChoreSheet'
 import { RateGuideSheet } from './RateGuideSheet'
 import { PremiumShell, MentorAvatar, ProBadge, injectPremiumStyles } from '../ui/PremiumShell'
+import { Button } from '../ui/button'
 
 const DAYS = ['M', 'T', 'W', 'T', 'F', 'S', 'S']
 const CURRENCY = 'GBP'
@@ -227,12 +228,9 @@ export function ChoresTab({ familyId, child, children }: Props) {
 
       {/* Add chore button — dashed when list has chores, FAB-style hint when empty handled above */}
       {chores.length > 0 && (
-        <button
-          onClick={() => setShowSheet(true)}
-          className="w-full bg-[var(--brand-primary)] text-white rounded-xl py-3.5 text-[14px] font-semibold transition-opacity hover:opacity-90 cursor-pointer"
-        >
+        <Button onClick={() => setShowSheet(true)} className="w-full">
           + Add chore
-        </button>
+        </Button>
       )}
 
       {/* Create chore sheet */}

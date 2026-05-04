@@ -4,19 +4,16 @@ import { cva, type VariantProps } from 'class-variance-authority'
 import { cn } from '@/lib/utils'
 
 const buttonVariants = cva(
-  // cursor-pointer added globally so every button shows the hand
-  'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-semibold cursor-pointer transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
+  'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-semibold cursor-pointer transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 active:scale-[0.98]',
   {
     variants: {
       variant: {
-        // Primary — teal, consistent with Stage 1 CTA
-        default:     'bg-teal-600 text-white hover:bg-teal-700 active:scale-[0.98] shadow-sm hover:shadow-md',
+        default:     'bg-[var(--brand-primary)] text-white hover:opacity-90',
         destructive: 'bg-destructive text-destructive-foreground hover:bg-destructive/90',
-        // Back/secondary — outline only, low visual weight
-        outline:     'border border-gray-300 bg-white text-gray-600 hover:border-gray-400 hover:bg-gray-50',
-        secondary:   'bg-gray-100 text-gray-700 hover:bg-gray-200',
-        ghost:       'text-gray-600 hover:bg-gray-100 hover:text-gray-800',
-        link:        'text-teal-600 underline-offset-4 hover:underline',
+        outline:     'border border-[var(--color-border)] bg-[var(--color-surface-alt)] text-[var(--color-text)] hover:border-[var(--brand-primary)] hover:text-[var(--brand-primary)]',
+        secondary:   'bg-[var(--color-surface-alt)] text-[var(--color-text-muted)] hover:border-[var(--brand-primary)] hover:text-[var(--brand-primary)] border border-[var(--color-border)]',
+        ghost:       'text-[var(--color-text-muted)] hover:bg-[var(--color-surface-alt)] hover:text-[var(--color-text)]',
+        link:        'text-[var(--brand-primary)] underline-offset-4 hover:underline',
       },
       size: {
         default: 'h-11 px-5 py-2',

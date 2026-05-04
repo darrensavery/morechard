@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import type { SharedExpense } from '../../lib/api';
 import { apiUrl, authHeaders, getSharedExpenses } from '../../lib/api';
 import { VoidExpenseSheet } from './VoidExpenseSheet';
+import { Button } from '../ui/button';
 
 function CategoryIcon({ category, size = 14 }: { category: string; size?: number }) {
   const p = { width: size, height: size, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: '1.8', strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const };
@@ -144,12 +145,9 @@ export function PoolTab({ familyId, currentUserId, parentingMode, onAddClick, on
 
       {/* Add expense button */}
       <div className="px-4">
-        <button
-          onClick={onAddClick}
-          className="w-full bg-[var(--brand-primary)] text-white font-semibold text-sm py-3 rounded-xl"
-        >
+        <Button onClick={onAddClick} className="w-full">
           {isCoParenting ? '+ Log shared expense' : '+ Log household expense'}
-        </button>
+        </Button>
       </div>
 
       {/* Pending approvals — only relevant in co-parenting mode */}
