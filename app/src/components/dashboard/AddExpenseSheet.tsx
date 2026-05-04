@@ -248,7 +248,7 @@ export function AddExpenseSheet({ defaultSplitBp, currency, parentingMode, regio
               <button
                 type="button"
                 onClick={() => setShowCategoryOverride(v => !v)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-[var(--color-border)] bg-[var(--color-surface-alt)] text-sm font-medium text-[var(--color-text)]"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-[var(--brand-primary)] bg-[color-mix(in_srgb,var(--brand-primary)_10%,transparent)] text-sm font-medium text-[var(--brand-primary)]"
               >
                 <CategoryIcon category={category} size={13} />
                 {selectedCategoryLabel}
