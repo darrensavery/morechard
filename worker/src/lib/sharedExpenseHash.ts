@@ -56,7 +56,7 @@ export async function computeSharedExpenseHashV2(params: {
   voidsId: number | null;
 }): Promise<string> {
   const n = (v: string | null | undefined): string => v ?? '';
-  const i = (v: number | null | undefined): string => (v == null || v === 0 ? '' : String(v));
+  const i = (v: number | null | undefined): string => (v == null ? '' : String(v));
   const payload = [
     params.id,
     params.familyId,

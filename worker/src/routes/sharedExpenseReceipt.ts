@@ -126,29 +126,12 @@ export async function handleUploadReceipt(
   const ext = extFromMime(contentType);
   const r2Key = `${row.family_id}/${expenseId}/${Date.now()}.${ext}`;
 
-  // 9. Delete existing receipt if present
-  if (row.receipt_r2_key) {
-    try {
-      await env.RECEIPTS.delete(row.receipt_r2_key);
-    } catch {
-      // Non-fatal: object may already be missing
-    }
-  }
-
-  // 10. Upload to R2
-  await env.RECEIPTS.put(r2Key, bytes, { httpMetadata: { contentType } });
-
-  // 11. Update DB columns
+  // 9–12. DB first, then R2 (prevents orphan R2 objects if DB fails)
   const receiptUploadedAt = Math.floor(Date.now() / 1000);
-  await env.DB.prepare(
-    `UPDATE shared_expenses SET receipt_r2_key = ?, receipt_hash = ?, receipt_uploaded_at = ? WHERE id = ?`,
-  )
-    .bind(r2Key, receiptHash, receiptUploadedAt, row.id)
-    .run();
-
-  // 12. Re-derive record_hash if the row is committed
   const committedStatuses = ['committed_auto', 'committed_manual'];
+
   if (committedStatuses.includes(row.verification_status)) {
+    // Committed row: batch receipt columns + record_hash update atomically
     const newRecordHash = await computeSharedExpenseHashV2({
       id: row.id,
       familyId: row.family_id,
@@ -163,10 +146,35 @@ export async function handleUploadReceipt(
       voidedAt: row.voided_at ?? null,
       voidsId: row.voids_id ?? null,
     });
-    await env.DB.prepare(`UPDATE shared_expenses SET record_hash = ? WHERE id = ?`)
-      .bind(newRecordHash, row.id)
-      .run();
+    await env.DB.batch([
+      env.DB.prepare(
+        `UPDATE shared_expenses SET receipt_r2_key = ?, receipt_hash = ?, receipt_uploaded_at = ? WHERE id = ?`,
+      ).bind(r2Key, receiptHash, receiptUploadedAt, row.id),
+      env.DB.prepare(`UPDATE shared_expenses SET record_hash = ? WHERE id = ?`).bind(
+        newRecordHash,
+        row.id,
+      ),
+    ]);
+  } else {
+    // Pending row: only update receipt columns (record_hash stays 'PENDING')
+    await env.DB.batch([
+      env.DB.prepare(
+        `UPDATE shared_expenses SET receipt_r2_key = ?, receipt_hash = ?, receipt_uploaded_at = ? WHERE id = ?`,
+      ).bind(r2Key, receiptHash, receiptUploadedAt, row.id),
+    ]);
   }
+
+  // Delete old receipt from R2 (non-fatal — object may already be missing)
+  if (row.receipt_r2_key) {
+    try {
+      await env.RECEIPTS.delete(row.receipt_r2_key);
+    } catch (e) {
+      console.warn('[receipt] Failed to delete old R2 object:', row.receipt_r2_key, e);
+    }
+  }
+
+  // Write new receipt to R2 (DB already updated — no orphan risk if this fails)
+  await env.RECEIPTS.put(r2Key, bytes, { httpMetadata: { contentType } });
 
   // 13. Return result
   return jsonOk({ id: row.id, receipt_uploaded_at: receiptUploadedAt });
@@ -200,11 +208,14 @@ export async function handleGetReceiptUrl(
   // 4. Generate presigned URL
   // createSignedUrl is a Cloudflare R2 runtime method not yet fully typed in workers-types
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const url = await (env.RECEIPTS as unknown as any).createSignedUrl(row.receipt_r2_key, {
-    expiresIn: 3600,
-  });
-
-  return jsonOk({ url });
+  try {
+    const url = await (env.RECEIPTS as unknown as any).createSignedUrl(row.receipt_r2_key, {
+      expiresIn: 3600,
+    });
+    return jsonOk({ url });
+  } catch {
+    return jsonErr('Failed to generate receipt URL', 500);
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -243,19 +254,11 @@ export async function handleDeleteReceipt(
     );
   }
 
-  // 5. Delete from R2
-  await env.RECEIPTS.delete(row.receipt_r2_key);
+  // 5–7. DB first, then R2 (prevents stale DB state if R2 delete fails)
+  const committedStatusesDel = ['committed_auto', 'committed_manual'];
 
-  // 6. Clear DB columns
-  await env.DB.prepare(
-    `UPDATE shared_expenses SET receipt_r2_key = NULL, receipt_hash = NULL, receipt_uploaded_at = NULL WHERE id = ?`,
-  )
-    .bind(row.id)
-    .run();
-
-  // 7. Re-derive record_hash with receiptHash = null if committed
-  const committedStatuses = ['committed_auto', 'committed_manual'];
-  if (committedStatuses.includes(row.verification_status)) {
+  if (committedStatusesDel.includes(row.verification_status)) {
+    // Committed row: batch receipt column clear + record_hash update atomically
     const newRecordHash = await computeSharedExpenseHashV2({
       id: row.id,
       familyId: row.family_id,
@@ -270,10 +273,26 @@ export async function handleDeleteReceipt(
       voidedAt: row.voided_at ?? null,
       voidsId: row.voids_id ?? null,
     });
-    await env.DB.prepare(`UPDATE shared_expenses SET record_hash = ? WHERE id = ?`)
-      .bind(newRecordHash, row.id)
-      .run();
+    await env.DB.batch([
+      env.DB.prepare(
+        `UPDATE shared_expenses SET receipt_r2_key = NULL, receipt_hash = NULL, receipt_uploaded_at = NULL WHERE id = ?`,
+      ).bind(row.id),
+      env.DB.prepare(`UPDATE shared_expenses SET record_hash = ? WHERE id = ?`).bind(
+        newRecordHash,
+        row.id,
+      ),
+    ]);
+  } else {
+    // Pending row: only clear receipt columns
+    await env.DB.batch([
+      env.DB.prepare(
+        `UPDATE shared_expenses SET receipt_r2_key = NULL, receipt_hash = NULL, receipt_uploaded_at = NULL WHERE id = ?`,
+      ).bind(row.id),
+    ]);
   }
+
+  // Delete from R2 (DB already updated — receipt_r2_key captured above before clearing)
+  await env.RECEIPTS.delete(row.receipt_r2_key);
 
   // 8. Return result
   return jsonOk({ id: row.id, deleted: true });

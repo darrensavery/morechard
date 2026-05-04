@@ -75,10 +75,31 @@ describe('computeSharedExpenseHashV2', () => {
       expenseDate: '',
       note: '',
       receiptHash: '',
-      voidedAt: null,   // 0/null both map to ''
+      voidedAt: null,
       voidsId: null,
     });
     expect(withNulls).toBe(withEmpties);
+  });
+
+  it('voidsId: 0 produces a different hash from voidsId: null', async () => {
+    const withNull = await computeSharedExpenseHashV2({
+      ...BASE,
+      expenseDate: null,
+      note: null,
+      receiptHash: null,
+      voidedAt: null,
+      voidsId: null,
+    });
+    const withZero = await computeSharedExpenseHashV2({
+      ...BASE,
+      expenseDate: null,
+      note: null,
+      receiptHash: null,
+      voidedAt: null,
+      voidsId: 0,
+    });
+    // null maps to '' but 0 maps to '0' — payloads must differ
+    expect(withZero).not.toBe(withNull);
   });
 
   it('different expenseDate produces different hash', async () => {
