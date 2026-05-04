@@ -448,6 +448,7 @@ function ChoreCard({ chore, plans, expanded, onToggle, onArchive, onEdit, onTogg
   onEdit: () => void
   onTogglePlan: (dayIndex: number) => void
 }) {
+  const [hovered, setHovered] = useState(false)
   const dueDateObj = chore.due_date && /^\d{4}-\d{2}-\d{2}$/.test(chore.due_date) ? new Date(chore.due_date) : null
   const isOverdue = dueDateObj && dueDateObj < new Date()
   const plannedDays = plans.map(p => p.day_of_week - 1)
@@ -466,14 +467,22 @@ function ChoreCard({ chore, plans, expanded, onToggle, onArchive, onEdit, onTogg
     ? 'bg-amber-50 dark:bg-amber-950/30'
     : 'bg-[var(--color-surface)]'
 
-  const shadowStyle = isOverdue || chore.is_flash
-    ? { boxShadow: 'var(--shadow-card-urgent)', border: 'none' }
-    : { boxShadow: 'var(--shadow-card)', border: 'none' }
+  const shadowStyle = {
+    border: 'none',
+    transition: 'box-shadow 200ms ease',
+    boxShadow: hovered
+      ? 'var(--shadow-card-hover)'
+      : (isOverdue || chore.is_flash)
+      ? 'var(--shadow-card-urgent)'
+      : 'var(--shadow-card)',
+  }
 
   return (
     <div
-      className={`${bgClass} ${accentBorderClass} rounded-xl overflow-hidden transition-all duration-200 ease-in hover:[box-shadow:var(--shadow-card-hover)]`}
+      className={`${bgClass} ${accentBorderClass} rounded-xl overflow-hidden`}
       style={shadowStyle}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
     >
       <button
         className="w-full px-4 py-3 flex items-start gap-3 cursor-pointer"
