@@ -495,7 +495,13 @@ function ChoreCard({ chore, plans, expanded, onToggle, onArchive, onEdit, onTogg
         onClick={onToggle}
       >
         {/* Category icon */}
-        <div className="shrink-0 w-9 h-9 rounded-lg bg-[var(--color-surface-alt)] flex items-center justify-center text-[var(--brand-primary)] mt-0.5">
+        <div className={`shrink-0 w-9 h-9 rounded-lg flex items-center justify-center mt-0.5 ${
+          isOverdue || chore.is_flash
+            ? 'bg-red-100 text-red-500 dark:bg-red-900/40 dark:text-red-400'
+            : chore.is_priority
+            ? 'bg-amber-100 text-amber-600 dark:bg-amber-900/40 dark:text-amber-400'
+            : 'bg-[var(--color-surface-alt)] text-[var(--brand-primary)]'
+        }`}>
           <ChoreIcon title={chore.title} size={18} />
         </div>
 
