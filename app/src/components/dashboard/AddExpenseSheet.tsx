@@ -146,16 +146,11 @@ export function AddExpenseSheet({ defaultSplitBp, currency, parentingMode, regio
   const selectedCategoryLabel = CATEGORIES.find(c => c.value === category)?.label ?? category;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50">
-      <div className="relative bg-[var(--color-surface)] rounded-t-3xl shadow-2xl w-full max-w-[560px] flex flex-col max-h-[92dvh]">
-
-        {/* Drag handle */}
-        <div className="flex justify-center pt-3 pb-1 shrink-0">
-          <div className="w-10 h-1 rounded-full bg-[var(--color-border)]" />
-        </div>
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50" onClick={onClose}>
+      <div className="relative bg-[var(--color-surface)] rounded-t-3xl shadow-2xl w-full max-w-[560px] flex flex-col max-h-[92dvh]" onClick={e => e.stopPropagation()}>
 
         {/* Header */}
-        <div className="px-5 pt-1 pb-3 flex items-center justify-between shrink-0">
+        <div className="px-5 pt-4 pb-3 flex items-center justify-between shrink-0">
           <div>
             <p className="text-[17px] font-extrabold text-[var(--color-text)] tracking-tight leading-tight">
               Log shared expense

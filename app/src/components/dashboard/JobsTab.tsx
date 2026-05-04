@@ -229,7 +229,7 @@ export function ChoresTab({ familyId, child, children }: Props) {
       {chores.length > 0 && (
         <button
           onClick={() => setShowSheet(true)}
-          className="w-full border-2 border-dashed border-[var(--color-border)] rounded-xl py-3.5 text-[14px] font-semibold text-[var(--color-text-muted)] hover:border-[var(--brand-primary)] hover:text-[var(--brand-primary)] transition-colors cursor-pointer"
+          className="w-full bg-[var(--brand-primary)] text-white rounded-xl py-3.5 text-[14px] font-semibold transition-opacity hover:opacity-90 cursor-pointer"
         >
           + Add chore
         </button>

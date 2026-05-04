@@ -306,13 +306,8 @@ export function CreateChoreSheet({
 
       <div className="relative bg-[var(--color-surface)] rounded-t-3xl shadow-2xl max-w-[560px] w-full mx-auto flex flex-col max-h-[92svh]">
 
-        {/* Drag handle */}
-        <div className="flex justify-center pt-3 pb-1 shrink-0">
-          <div className="w-10 h-1 rounded-full bg-[var(--color-border)]" />
-        </div>
-
         {/* Header */}
-        <div className="px-5 pt-1 pb-2 flex items-center justify-between shrink-0">
+        <div className="px-5 pt-4 pb-2 flex items-center justify-between shrink-0">
           <div>
             <p className="text-[17px] font-extrabold text-[var(--color-text)] tracking-tight leading-tight">
               {isEditMode ? 'Edit chore' : 'New chore'}
