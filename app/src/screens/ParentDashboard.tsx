@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import type { ChildRecord } from '../lib/api'
 import { getChildren, getCompletions, clearToken, getUnpaidSummary, getFamily, getTrialStatus, type UnpaidSummaryRow, type TrialStatus } from '../lib/api'
@@ -54,6 +54,10 @@ export function ParentDashboard() {
     setTab(t)
     localStorage.setItem('mc_parent_tab', t)
   }
+
+  const tabBarRef = useRef<HTMLDivElement>(null)
+  const tabRefs = useRef<(HTMLButtonElement | null)[]>([])
+  const [indicator, setIndicator] = useState({ left: 0, width: 0 })
   const [children,   setChildren]   = useState<ChildRecord[]>([])
   const [activeChild, setActiveChild] = useState<ChildRecord | null>(null)
   const [childrenLoaded, setChildrenLoaded] = useState(false)
@@ -171,6 +175,14 @@ export function ParentDashboard() {
     { id: 'goals',    label: 'Goals' },
   ]
 
+  useEffect(() => {
+    const idx = TABS.findIndex(t => t.id === tab)
+    const btn = tabRefs.current[idx]
+    const bar = tabBarRef.current
+    if (!btn || !bar) return
+    setIndicator({ left: btn.offsetLeft - bar.scrollLeft, width: btn.offsetWidth })
+  }, [tab, TABS.length, pendingCount])
+
   return (
     <div className="min-h-svh bg-[var(--color-bg)] flex flex-col" style={{ overscrollBehaviorY: 'none' }}>
       <DemoBanner />
@@ -264,10 +276,11 @@ export function ParentDashboard() {
         )}
 
         {/* Tab bar */}
-        <div className="max-w-[560px] mx-auto border-t border-[var(--color-border)] flex overflow-x-auto scrollbar-hide">
-          {TABS.map(t => (
+        <div ref={tabBarRef} className="max-w-[560px] mx-auto border-t border-[var(--color-border)] flex overflow-x-auto scrollbar-hide relative">
+          {TABS.map((t, i) => (
             <button
               key={t.id}
+              ref={el => { tabRefs.current[i] = el }}
               onClick={() => handleTabChange(t.id)}
               className={`
                 flex-1 shrink-0 px-3 py-2.5 text-[13px] font-semibold
@@ -282,11 +295,17 @@ export function ParentDashboard() {
                   {t.badge}
                 </span>
               ) : null}
-              {tab === t.id && (
-                <span className="absolute bottom-0 left-0 right-0 h-[2.5px] bg-[var(--brand-primary)] rounded-t-full" />
-              )}
             </button>
           ))}
+          {/* Sliding active indicator */}
+          <span
+            className="absolute bottom-0 h-[2.5px] bg-[var(--brand-primary)] rounded-t-full pointer-events-none"
+            style={{
+              left: indicator.left,
+              width: indicator.width,
+              transition: 'left 250ms cubic-bezier(0.4,0,0.2,1), width 250ms cubic-bezier(0.4,0,0.2,1)',
+            }}
+          />
         </div>
       </header>
 
