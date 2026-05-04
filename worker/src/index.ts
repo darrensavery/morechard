@@ -37,6 +37,9 @@
  *   POST   /api/shared-expenses/:id/reject   Reject pending expense
  *   DELETE /api/shared-expenses/:id       Soft-delete (pending/rejected only)
  *   POST   /api/shared-expenses/reconcile Monthly settlement reconcile
+ *   POST   /api/shared-expenses/:id/receipt    Upload receipt
+ *   GET    /api/shared-expenses/:id/receipt    Get presigned receipt URL
+ *   DELETE /api/shared-expenses/:id/receipt    Delete receipt (48h window)
  *   PATCH  /api/family/settings           Update threshold + split defaults
  *
  * Authenticated — parent only (invite + registration):
@@ -181,6 +184,7 @@ import {
   handleReconcileSharedExpenses,
   handleUpdateFamilySettings,
 } from './routes/sharedExpenses.js';
+import { handleUploadReceipt, handleGetReceiptUrl, handleDeleteReceipt } from './routes/sharedExpenseReceipt.js';
 
 export default Sentry.withSentry(
   (env: Env) => ({
@@ -531,6 +535,10 @@ async function route(request: Request, env: Env, method: string, path: string): 
   if (sharedExpApproveMatch && method === 'POST') return withAuth(request, auth, env, (req, e) => handleApproveSharedExpense(req, e, sharedExpApproveMatch[1]));
   const sharedExpRejectMatch = path.match(/^\/api\/shared-expenses\/(\d+)\/reject$/);
   if (sharedExpRejectMatch && method === 'POST') return withAuth(request, auth, env, (req, e) => handleRejectSharedExpense(req, e, sharedExpRejectMatch[1]));
+  const sharedExpReceiptMatch = path.match(/^\/api\/shared-expenses\/(\d+)\/receipt$/);
+  if (sharedExpReceiptMatch && method === 'POST')   return withAuth(request, auth, env, (req, e) => handleUploadReceipt(req, e, sharedExpReceiptMatch[1]));
+  if (sharedExpReceiptMatch && method === 'GET')    return withAuth(request, auth, env, (req, e) => handleGetReceiptUrl(req, e, sharedExpReceiptMatch[1]));
+  if (sharedExpReceiptMatch && method === 'DELETE') return withAuth(request, auth, env, (req, e) => handleDeleteReceipt(req, e, sharedExpReceiptMatch[1]));
   if (path === '/api/family/settings'           && method === 'PATCH')  return withAuth(request, auth, env, handleUpdateFamilySettings);
 
   // Child PIN management
