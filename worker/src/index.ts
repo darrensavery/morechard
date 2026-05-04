@@ -40,6 +40,7 @@
  *   POST   /api/shared-expenses/:id/receipt    Upload receipt
  *   GET    /api/shared-expenses/:id/receipt    Get presigned receipt URL
  *   DELETE /api/shared-expenses/:id/receipt    Delete receipt (48h window)
+ *   POST   /api/shared-expenses/:id/void       Void expense (+ optional replacement)
  *   PATCH  /api/family/settings           Update threshold + split defaults
  *
  * Authenticated — parent only (invite + registration):
@@ -185,6 +186,7 @@ import {
   handleUpdateFamilySettings,
 } from './routes/sharedExpenses.js';
 import { handleUploadReceipt, handleGetReceiptUrl, handleDeleteReceipt } from './routes/sharedExpenseReceipt.js';
+import { handleVoidSharedExpense } from './routes/sharedExpenseVoid.js';
 
 export default Sentry.withSentry(
   (env: Env) => ({
@@ -539,6 +541,8 @@ async function route(request: Request, env: Env, method: string, path: string): 
   if (sharedExpReceiptMatch && method === 'POST')   return withAuth(request, auth, env, (req, e) => handleUploadReceipt(req, e, sharedExpReceiptMatch[1]));
   if (sharedExpReceiptMatch && method === 'GET')    return withAuth(request, auth, env, (req, e) => handleGetReceiptUrl(req, e, sharedExpReceiptMatch[1]));
   if (sharedExpReceiptMatch && method === 'DELETE') return withAuth(request, auth, env, (req, e) => handleDeleteReceipt(req, e, sharedExpReceiptMatch[1]));
+  const sharedExpVoidMatch = path.match(/^\/api\/shared-expenses\/(\d+)\/void$/);
+  if (sharedExpVoidMatch && method === 'POST') return withAuth(request, auth, env, (req, e) => handleVoidSharedExpense(req, e, sharedExpVoidMatch[1]));
   if (path === '/api/family/settings'           && method === 'PATCH')  return withAuth(request, auth, env, handleUpdateFamilySettings);
 
   // Child PIN management
