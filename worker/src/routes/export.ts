@@ -229,6 +229,22 @@ export async function handleExportPdf(request: Request, env: Env): Promise<Respo
     ].sort((a, b) => a.event_at - b.event_at);
   }
 
+  // Shared expenses for forensic export
+  let sharedExpenseRows: SharedExpenseExportRow[] = [];
+  if (tier === 'forensic') {
+    const seRes = await env.DB.prepare(
+      `SELECT se.*,
+              ul.display_name AS logged_by_name,
+              uv.display_name AS voided_by_name
+       FROM shared_expenses se
+       LEFT JOIN users ul ON ul.id = se.logged_by
+       LEFT JOIN users uv ON uv.id = se.voided_by
+       WHERE se.family_id = ? AND se.deleted_at IS NULL
+       ORDER BY se.created_at ASC`
+    ).bind(family_id).all().catch(() => ({ results: [] }));
+    sharedExpenseRows = seRes.results as unknown as SharedExpenseExportRow[];
+  }
+
   // Document fingerprint — SHA-256 of (family_id + row count + export timestamp)
   const exportTs          = Math.floor(Date.now() / 1000);
   const fingerprintInput  = `${family_id}|${ledgerRows.length}|${exportTs}|${tier}`;
@@ -251,6 +267,7 @@ export async function handleExportPdf(request: Request, env: Env): Promise<Respo
       family, lang, ledgerRows, govRows, completions, rewardEdits, loginRows,
       statusRows, labelMap, fingerprint, shortFp, docUuid,
       exportTs, pending, verified, disputed, totalEarned, totalTasks,
+      sharedExpenseRows,
     });
   } else if (tier === 'behavioral') {
     html = buildBehavioralReport({
@@ -593,14 +610,15 @@ ${declarationFooter(family.name, exportTs, lang, docUuid, false)}
 // Version C — Forensic Report (Legal version)
 // ----------------------------------------------------------------
 interface ForensicContext extends ReportContext {
-  completions: CompletionRow[];
-  rewardEdits: RewardEditRow[];
-  loginRows:   LoginHistoryRow[];
+  completions:        CompletionRow[];
+  rewardEdits:        RewardEditRow[];
+  loginRows:          LoginHistoryRow[];
+  sharedExpenseRows:  SharedExpenseExportRow[];
 }
 
 function buildForensicReport(ctx: ForensicContext): string {
   const { family, lang, ledgerRows, govRows, completions, rewardEdits, loginRows,
-          fingerprint, docUuid, exportTs,
+          sharedExpenseRows, fingerprint, docUuid, exportTs,
           disputed, totalEarned, totalTasks } = ctx;
   const pl = lang === 'pl';
 
@@ -817,6 +835,35 @@ ${loginRows.length > 0 ? `
     </tr>`).join('')}
   </tbody>
 </table>` : ''}
+
+${(() => {
+    // Build exhibit assignments for shared expenses with receipts (not voided)
+    const exhibitAssignments = new Map<number, string>();
+    let exhibitIdx = 0;
+    for (const se of sharedExpenseRows) {
+      if (se.receipt_r2_key && !se.voided_at) {
+        exhibitAssignments.set(se.id, exhibitLabel(exhibitIdx++));
+      }
+    }
+    return sharedExpenseRows.length > 0 ? `
+<h2>${pl ? 'Wydatki Wspólne (Rejestr)' : 'Shared Expenses Register'}</h2>
+<p style="font-size:9px;color:#777;font-style:italic;margin-bottom:8px">${pl
+  ? 'Wszystkie wydatki rodzicielskie zarejestrowane w systemie. Anulowane wpisy zachowane dla integralności łańcucha.'
+  : 'All co-parenting expenses logged in the system. Voided entries retained for chain integrity.'}</p>
+<table>
+  <thead>
+    <tr>
+      <th>#</th><th>Date</th><th>Description</th><th>Category</th>
+      <th>Total</th><th>Your Share</th><th>Logged By</th><th>Status</th><th>Exhibit</th>
+    </tr>
+  </thead>
+  <tbody>
+    ${buildSharedExpenseRows(sharedExpenseRows, family.currency, exhibitAssignments)}
+  </tbody>
+</table>
+${buildExhibitsSection(sharedExpenseRows, exhibitAssignments, pl)}
+` : '';
+  })()}
 
 <div class="integrity-block">
   <strong>${pl ? 'Pieczęć Integralności Dokumentu' : 'Document Integrity Seal'}</strong><br/>
@@ -1038,6 +1085,94 @@ interface RewardEditRow {
 interface LoginHistoryRow {
   display_name: string; event_at: number; ip_address: string;
   user_agent: string | null; role: string; action: string;
+}
+
+interface SharedExpenseExportRow {
+  id: number;
+  logged_by: string;
+  logged_by_name: string | null;
+  description: string;
+  category: string;
+  total_amount: number;
+  currency: string;
+  split_bp: number;
+  verification_status: string;
+  expense_date: string | null;
+  note: string | null;
+  receipt_r2_key: string | null;
+  receipt_uploaded_at: number | null;
+  voided_at: number | null;
+  voided_by_name: string | null;
+  voids_id: number | null;
+  hash_version: number;
+  record_hash: string;
+  created_at: number;
+}
+
+const CATEGORY_LABELS: Record<string, string> = {
+  education:  'Education',
+  health:     'Health',
+  clothing:   'Clothing',
+  travel:     'Travel',
+  activities: 'Activities',
+  childcare:  'Childcare',
+  food:       'Food',
+  tech:       'Tech & Devices',
+  gifts:      'Gifts & Celebrations',
+  other:      'Other',
+};
+
+function exhibitLabel(index: number): string {
+  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  if (index < 26) return alphabet[index];
+  return alphabet[Math.floor(index / 26) - 1] + alphabet[index % 26];
+}
+
+function buildSharedExpenseRows(rows: SharedExpenseExportRow[], currency: string, exhibits: Map<number, string>): string {
+  return rows.map(se => {
+    const voided = se.voided_at !== null;
+    const style = voided ? ' style="text-decoration:line-through;color:#999"' : '';
+    const loggedByAmount = Math.round((se.total_amount * se.split_bp) / 10000);
+    const statusText = voided
+      ? `Voided ${fmtDate(se.voided_at!)} by ${escHtml(se.voided_by_name ?? 'unknown')}`
+      : se.verification_status.replace('_', ' ');
+    const replacesNote = se.voids_id ? ` <em style="font-size:9px">(Replaces #${se.voids_id})</em>` : '';
+    const label = exhibits.get(se.id) ?? '—';
+    return `<tr>
+      <td${style}>${se.id}</td>
+      <td${style}>${escHtml(se.expense_date ?? fmtDate(se.created_at))}</td>
+      <td${style}>${escHtml(se.description)}${replacesNote}</td>
+      <td${style}>${CATEGORY_LABELS[se.category] ?? se.category}</td>
+      <td class="num-cell"${style}>${fmtAmount(se.total_amount, currency)}</td>
+      <td class="num-cell"${style}>${fmtAmount(loggedByAmount, currency)}</td>
+      <td${style}>${escHtml(se.logged_by_name ?? '—')}</td>
+      <td${style}>${escHtml(statusText)}</td>
+      <td style="font-family:monospace;font-weight:700">${label}</td>
+    </tr>`;
+  }).join('');
+}
+
+function buildExhibitsSection(rows: SharedExpenseExportRow[], exhibits: Map<number, string>, pl: boolean): string {
+  const withReceipts = rows.filter(se => exhibits.has(se.id));
+  if (!withReceipts.length) return '';
+  return `<h2>${pl ? 'Załączniki (Rachunki)' : 'Exhibits (Receipts)'}</h2>
+<p style="font-size:9px;color:#777;font-style:italic;margin-bottom:8px">${pl
+  ? 'Rachunki są przechowywane w bezpiecznym magazynie i dostępne na żądanie sądu.'
+  : 'Receipts are stored in secure storage and available on court request.'}</p>
+<table>
+  <thead>
+    <tr><th>Exhibit</th><th>#</th><th>Description</th><th>Date</th><th>Storage Reference</th></tr>
+  </thead>
+  <tbody>
+    ${withReceipts.map(se => `<tr>
+      <td style="font-family:monospace;font-weight:700">${exhibits.get(se.id)}</td>
+      <td>${se.id}</td>
+      <td>${escHtml(se.description)}</td>
+      <td>${escHtml(se.expense_date ?? fmtDate(se.created_at))}</td>
+      <td style="font-family:monospace;font-size:9px">${escHtml(se.receipt_r2_key ?? '—')}</td>
+    </tr>`).join('')}
+  </tbody>
+</table>`;
 }
 
 function buildLabelMap(rows: LabelRow[], lang: string): Record<string, string> {
