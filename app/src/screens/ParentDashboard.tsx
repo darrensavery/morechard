@@ -162,7 +162,7 @@ export function ParentDashboard() {
     return () => { clearInterval(t); document.removeEventListener('visibilitychange', onVisible) }
   }, [familyId, activeChild])
 
-  const poolLabel = parentingMode === 'co-parenting' ? 'Pool' : 'Household'
+  const poolLabel = parentingMode === 'co-parenting' ? 'Pool' : 'Bills & Purchases'
   const TABS: { id: Tab; label: string; badge?: number }[] = [
     { id: 'chores',   label: 'Chores' },
     { id: 'activity', label: 'Activity', badge: pendingCount || undefined },
@@ -427,6 +427,7 @@ export function ParentDashboard() {
             defaultSplitBp={5000}
             currency="GBP"
             parentingMode={parentingMode}
+            familyName={getDeviceIdentity()?.display_name ?? undefined}
             onClose={() => setShowAddExpense(false)}
             onSaved={() => { setShowAddExpense(false) }}
           />

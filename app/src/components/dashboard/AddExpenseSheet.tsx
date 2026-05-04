@@ -58,11 +58,12 @@ type Props = {
   currency: string;
   parentingMode: 'single' | 'co-parenting';
   region?: ExpenseRegion;
+  familyName?: string;
   onClose: () => void;
   onSaved: () => void;
 };
 
-export function AddExpenseSheet({ defaultSplitBp, currency, parentingMode, region = 'UK', onClose, onSaved }: Props) {
+export function AddExpenseSheet({ defaultSplitBp, currency, parentingMode, region = 'UK', familyName, onClose, onSaved }: Props) {
   const isCoParenting = parentingMode === 'co-parenting';
   const symbol = currency === 'GBP' ? '£' : currency === 'USD' ? '$' : 'zł';
 
@@ -102,14 +103,16 @@ export function AddExpenseSheet({ defaultSplitBp, currency, parentingMode, regio
   const otherAmount = totalPence - loggedByAmount;
   const uneven = totalPence > 0 && loggedByAmount !== otherAmount;
 
+  // All mandatory fields must be populated to enable submit
+  const canSubmit = description.trim().length > 0 && totalPence > 0 && expenseDate.length > 0;
+
   function formatP(p: number) {
     return `${symbol}${(p / 100).toFixed(2)}`;
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!description.trim()) { setError('Please enter a description.'); return; }
-    if (totalPence <= 0) { setError('Please enter a valid amount.'); return; }
+    if (!canSubmit) return;
 
     setSaving(true);
     setError(null);
@@ -127,7 +130,6 @@ export function AddExpenseSheet({ defaultSplitBp, currency, parentingMode, regio
         try {
           await uploadReceipt(result.id, receiptFile);
         } catch {
-          // Non-blocking: expense saved, receipt failed
           setReceiptError('Expense saved, but receipt upload failed. You can retry from the expense list.');
           onSaved();
           return;
@@ -144,231 +146,251 @@ export function AddExpenseSheet({ defaultSplitBp, currency, parentingMode, regio
   const selectedCategoryLabel = CATEGORIES.find(c => c.value === category)?.label ?? category;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40">
-      <div className="w-full max-w-[560px] bg-[var(--color-surface)] rounded-t-2xl p-6 pb-10 flex flex-col gap-4 max-h-[92dvh] overflow-y-auto">
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-bold">Log shared expense</h2>
-          <button onClick={onClose} className="text-[var(--color-text-muted)] text-2xl leading-none">&times;</button>
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50">
+      <div className="relative bg-[var(--color-surface)] rounded-t-3xl shadow-2xl w-full max-w-[560px] flex flex-col max-h-[92dvh]">
+
+        {/* Drag handle */}
+        <div className="flex justify-center pt-3 pb-1 shrink-0">
+          <div className="w-10 h-1 rounded-full bg-[var(--color-border)]" />
         </div>
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-
-          {/* Quick Pick tiles */}
+        {/* Header */}
+        <div className="px-5 pt-1 pb-3 flex items-center justify-between shrink-0">
           <div>
-            <label className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wide">
-              Quick pick
-            </label>
-            <div className="mt-2 grid grid-cols-4 gap-2">
-              {TILE_PRESETS.map(preset => (
-                <button
-                  key={preset.id}
-                  type="button"
-                  onClick={() => selectPreset(preset)}
-                  className={`flex flex-col items-center gap-1 p-2 rounded-xl border text-center text-[10px] font-medium transition-colors
-                    ${description === localiseName(preset, 'en')
-                      ? 'border-[var(--brand-primary)] bg-[var(--brand-primary)]/10 text-[var(--brand-primary)]'
-                      : 'border-[var(--color-border)] bg-[var(--color-surface-raised)] text-[var(--color-text)]'
-                    }`}
-                >
-                  <CategoryIcon category={preset.category} size={22} />
-                  <span className="leading-tight">{localiseName(preset, 'en')}</span>
-                </button>
-              ))}
-            </div>
+            <p className="text-[17px] font-extrabold text-[var(--color-text)] tracking-tight leading-tight">
+              Log shared expense
+            </p>
+            <p className="text-[12px] text-[var(--color-text-muted)]">
+              for <span className="font-semibold text-[var(--brand-primary)]">{familyName ?? 'the family'}</span>
+            </p>
           </div>
+          <button
+            onClick={onClose}
+            className="w-8 h-8 rounded-lg border border-[var(--color-border)] flex items-center justify-center text-[var(--color-text-muted)] hover:bg-[var(--color-surface-alt)] cursor-pointer"
+            aria-label="Close"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+          </button>
+        </div>
 
-          {/* Search */}
-          <div className="relative">
-            <label className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wide">
-              Or search all expenses
-            </label>
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-              placeholder="e.g. tutoring, ballet, school photos…"
-              className="mt-1 w-full border border-[var(--color-border)] rounded-xl px-4 py-3 text-sm bg-[var(--color-surface-raised)]"
-            />
-            {searchResults.length > 0 && (
-              <div className="absolute left-0 right-0 top-full mt-1 z-10 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl shadow-lg overflow-hidden">
-                {searchResults.map(preset => (
+        {/* Scrollable body */}
+        <div className="overflow-y-auto px-5 pb-10">
+          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+
+            {/* Quick Pick tiles */}
+            <div>
+              <p className="text-[10px] font-bold text-[var(--color-text-muted)] uppercase tracking-widest mb-2">
+                Quick pick
+              </p>
+              <div className="grid grid-cols-4 gap-2">
+                {TILE_PRESETS.map(preset => {
+                  const active = description === localiseName(preset, 'en');
+                  return (
+                    <button
+                      key={preset.id}
+                      type="button"
+                      onClick={() => selectPreset(preset)}
+                      className={`flex flex-col items-center justify-center gap-1.5 rounded-2xl border-2 py-2.5 px-1 text-center transition-all cursor-pointer
+                        ${active
+                          ? 'border-[var(--brand-primary)] bg-[color-mix(in_srgb,var(--brand-primary)_10%,transparent)] text-[var(--brand-primary)]'
+                          : 'border-[var(--color-border)] bg-[var(--color-surface-alt)] text-[var(--color-text-muted)] hover:border-[var(--brand-primary)] hover:text-[var(--brand-primary)]'
+                        }`}
+                    >
+                      <CategoryIcon category={preset.category} size={20} />
+                      <span className="text-[9px] font-semibold leading-tight text-center">
+                        {localiseName(preset, 'en')}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Search */}
+            <div className="relative">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                placeholder="Search all expenses…"
+                className="w-full border border-[var(--color-border)] rounded-xl px-4 py-2.5 text-sm bg-[var(--color-surface)] text-[var(--color-text)] placeholder:text-[var(--color-text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]"
+              />
+              {searchResults.length > 0 && (
+                <div className="absolute left-0 right-0 top-full mt-1 z-10 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl shadow-lg overflow-hidden divide-y divide-[var(--color-border)]">
+                  {searchResults.map(preset => (
+                    <button
+                      key={preset.id}
+                      type="button"
+                      onClick={() => selectPreset(preset)}
+                      className="w-full text-left px-4 py-2.5 text-sm hover:bg-[var(--color-surface-alt)] flex items-center gap-2 transition-colors"
+                    >
+                      <CategoryIcon category={preset.category} size={15} />
+                      <span className="font-medium text-[var(--color-text)]">{localiseName(preset, 'en')}</span>
+                      <span className="text-xs text-[var(--color-text-muted)] ml-1 capitalize">{preset.category}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Description */}
+            <div>
+              <label className="text-[10px] font-bold text-[var(--color-text-muted)] uppercase tracking-widest">
+                Description
+              </label>
+              <input
+                type="text"
+                value={description}
+                onChange={e => setDescription(e.target.value)}
+                placeholder="e.g. School trip payment"
+                className="mt-1.5 w-full border border-[var(--color-border)] rounded-xl px-3 py-2.5 text-sm bg-[var(--color-surface)] text-[var(--color-text)] placeholder:text-[var(--color-text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]"
+              />
+            </div>
+
+            {/* Filed under chip */}
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-[var(--color-text-muted)]">Filed under:</span>
+              <button
+                type="button"
+                onClick={() => setShowCategoryOverride(v => !v)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-[var(--color-border)] bg-[var(--color-surface-alt)] text-sm font-medium text-[var(--color-text)]"
+              >
+                <CategoryIcon category={category} size={13} />
+                {selectedCategoryLabel}
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="opacity-50"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              </button>
+            </div>
+
+            {showCategoryOverride && (
+              <div className="flex flex-wrap gap-2">
+                {CATEGORIES.map(c => (
                   <button
-                    key={preset.id}
+                    key={c.value}
                     type="button"
-                    onClick={() => selectPreset(preset)}
-                    className="w-full text-left px-4 py-3 text-sm hover:bg-[var(--color-surface-raised)] flex items-center gap-2"
+                    onClick={() => { setCategory(c.value); setShowCategoryOverride(false); }}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm border transition-colors
+                      ${category === c.value
+                        ? 'border-[var(--brand-primary)] bg-[color-mix(in_srgb,var(--brand-primary)_10%,transparent)] text-[var(--brand-primary)]'
+                        : 'border-[var(--color-border)] bg-[var(--color-surface-alt)] text-[var(--color-text-muted)] hover:border-[var(--brand-primary)] hover:text-[var(--brand-primary)]'
+                      }`}
                   >
-                    <CategoryIcon category={preset.category} size={16} />
-                    <div>
-                      <span className="font-medium">{localiseName(preset, 'en')}</span>
-                      <span className="text-xs text-[var(--color-text-muted)] ml-2 capitalize">{preset.category}</span>
-                    </div>
+                    <CategoryIcon category={c.value} size={13} />
+                    {c.label}
                   </button>
                 ))}
               </div>
             )}
-          </div>
 
-          {/* Description */}
-          <div>
-            <label className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wide">
-              Description
-            </label>
-            <input
-              type="text"
-              value={description}
-              onChange={e => setDescription(e.target.value)}
-              placeholder="e.g. School trip payment"
-              className="mt-1 w-full border border-[var(--color-border)] rounded-xl px-4 py-3 text-sm bg-[var(--color-surface-raised)]"
-            />
-          </div>
-
-          {/* Filed under chip */}
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-[var(--color-text-muted)]">Filed under:</span>
-            <button
-              type="button"
-              onClick={() => setShowCategoryOverride(v => !v)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-[var(--color-border)] bg-[var(--color-surface-raised)] text-sm font-medium"
-            >
-              <CategoryIcon category={category} size={14} />
-              {selectedCategoryLabel}
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="opacity-50"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-            </button>
-          </div>
-
-          {/* Category override popover */}
-          {showCategoryOverride && (
-            <div className="flex flex-wrap gap-2">
-              {CATEGORIES.map(c => (
-                <button
-                  key={c.value}
-                  type="button"
-                  onClick={() => { setCategory(c.value); setShowCategoryOverride(false); }}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm border transition-colors
-                    ${category === c.value
-                      ? 'border-[var(--brand-primary)] bg-[var(--brand-primary)]/10 text-[var(--brand-primary)]'
-                      : 'border-[var(--color-border)] text-[var(--color-text)]'
-                    }`}
-                >
-                  <CategoryIcon category={c.value} size={13} />
-                  {c.label}
-                </button>
-              ))}
-            </div>
-          )}
-
-          {/* Date + Amount row */}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wide">
-                Date
-              </label>
-              <input
-                type="date"
-                value={expenseDate}
-                onChange={e => setExpenseDate(e.target.value)}
-                className="mt-1 w-full border border-[var(--color-border)] rounded-xl px-3 py-3 text-sm bg-[var(--color-surface-raised)]"
-              />
-            </div>
-            <div>
-              <label className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wide">
-                Amount ({symbol})
-              </label>
-              <input
-                type="number"
-                inputMode="decimal"
-                step="0.01"
-                min="0.01"
-                value={amountStr}
-                onChange={e => setAmountStr(e.target.value)}
-                placeholder="0.00"
-                className="mt-1 w-full border border-[var(--color-border)] rounded-xl px-3 py-3 text-sm bg-[var(--color-surface-raised)] tabular-nums"
-              />
-            </div>
-          </div>
-
-          {/* Co-parent split slider */}
-          {isCoParenting && (
-            <div>
-              <label className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wide">
-                Your share — {(splitBp / 100).toFixed(0)}%
-              </label>
-              <input
-                type="range" min={0} max={10000} step={100}
-                value={splitBp}
-                onChange={e => setSplitBp(Number(e.target.value))}
-                className="w-full mt-2"
-              />
-              {totalPence > 0 && (
-                <div className="flex justify-between text-xs text-[var(--color-text-muted)] mt-1 tabular-nums">
-                  <span>You: {formatP(loggedByAmount)}</span>
-                  <span>Other parent: {formatP(otherAmount)}</span>
-                </div>
-              )}
-              {uneven && (
-                <p className="text-[10px] text-[var(--color-text-muted)] italic mt-1">
-                  Rounded to {formatP(loggedByAmount)} / {formatP(otherAmount)}.
-                </p>
-              )}
-            </div>
-          )}
-
-          {/* Note collapsible */}
-          <div>
-            <button
-              type="button"
-              onClick={() => setNoteOpen(v => !v)}
-              className="text-sm font-medium text-[var(--brand-primary)]"
-            >
-              {noteOpen ? '▾ Note' : '▸ + Add note'}
-            </button>
-            {noteOpen && (
-              <textarea
-                value={note}
-                onChange={e => setNote(e.target.value)}
-                placeholder="e.g. why this expense was incurred"
-                rows={3}
-                className="mt-2 w-full border border-[var(--color-border)] rounded-xl px-4 py-3 text-sm bg-[var(--color-surface-raised)] resize-none"
-              />
-            )}
-          </div>
-
-          {/* Receipt collapsible */}
-          <div>
-            <button
-              type="button"
-              onClick={() => setReceiptOpen(v => !v)}
-              className="text-sm font-medium text-[var(--brand-primary)]"
-            >
-              {receiptOpen ? '▾ Receipt' : '▸ + Attach receipt'}
-            </button>
-            {receiptOpen && (
-              <div className="mt-2">
-                <ReceiptPicker
-                  onFile={f => { setReceiptFile(f); setReceiptError(null); }}
-                  onError={msg => setReceiptError(msg)}
+            {/* Date + Amount row */}
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-[10px] font-bold text-[var(--color-text-muted)] uppercase tracking-widest">
+                  Date
+                </label>
+                <input
+                  type="date"
+                  value={expenseDate}
+                  onChange={e => setExpenseDate(e.target.value)}
+                  className="mt-1.5 w-full border border-[var(--color-border)] rounded-xl px-3 py-2.5 text-sm bg-[var(--color-surface)] text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]"
                 />
-                {receiptFile && (
-                  <p className="text-xs text-green-600 mt-1">✓ Receipt ready to upload</p>
+              </div>
+              <div>
+                <label className="text-[10px] font-bold text-[var(--color-text-muted)] uppercase tracking-widest">
+                  Amount ({symbol})
+                </label>
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  step="0.01"
+                  min="0.01"
+                  value={amountStr}
+                  onChange={e => setAmountStr(e.target.value)}
+                  placeholder="0.00"
+                  className="mt-1.5 w-full border border-[var(--color-border)] rounded-xl px-3 py-2.5 text-sm bg-[var(--color-surface)] text-[var(--color-text)] placeholder:text-[var(--color-text-muted)] tabular-nums focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]"
+                />
+              </div>
+            </div>
+
+            {/* Co-parent split slider */}
+            {isCoParenting && (
+              <div>
+                <label className="text-[10px] font-bold text-[var(--color-text-muted)] uppercase tracking-widest">
+                  Your share — {(splitBp / 100).toFixed(0)}%
+                </label>
+                <input
+                  type="range" min={0} max={10000} step={100}
+                  value={splitBp}
+                  onChange={e => setSplitBp(Number(e.target.value))}
+                  className="w-full mt-2"
+                />
+                {totalPence > 0 && (
+                  <div className="flex justify-between text-xs text-[var(--color-text-muted)] mt-1 tabular-nums">
+                    <span>You: {formatP(loggedByAmount)}</span>
+                    <span>Other parent: {formatP(otherAmount)}</span>
+                  </div>
                 )}
-                {receiptError && (
-                  <p className="text-xs text-red-500 mt-1">{receiptError}</p>
+                {uneven && (
+                  <p className="text-[10px] text-[var(--color-text-muted)] italic mt-1">
+                    Rounded to {formatP(loggedByAmount)} / {formatP(otherAmount)}.
+                  </p>
                 )}
               </div>
             )}
-          </div>
 
-          {error && <p className="text-sm text-red-500">{error}</p>}
+            {/* Note collapsible */}
+            <div>
+              <button
+                type="button"
+                onClick={() => setNoteOpen(v => !v)}
+                className="text-sm font-medium text-[var(--brand-primary)]"
+              >
+                {noteOpen ? '▾ Note' : '▸ Add note'}
+              </button>
+              {noteOpen && (
+                <textarea
+                  value={note}
+                  onChange={e => setNote(e.target.value)}
+                  placeholder="e.g. why this expense was incurred"
+                  rows={3}
+                  className="mt-2 w-full border border-[var(--color-border)] rounded-xl px-3 py-2.5 text-sm bg-[var(--color-surface)] text-[var(--color-text)] placeholder:text-[var(--color-text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] resize-none"
+                />
+              )}
+            </div>
 
-          <button
-            type="submit"
-            disabled={saving}
-            className="w-full bg-[var(--brand-primary)] text-white font-semibold py-3 rounded-xl disabled:opacity-50"
-          >
-            {saving ? 'Saving…' : 'Log expense'}
-          </button>
-        </form>
+            {/* Receipt collapsible */}
+            <div>
+              <button
+                type="button"
+                onClick={() => setReceiptOpen(v => !v)}
+                className="text-sm font-medium text-[var(--brand-primary)]"
+              >
+                {receiptOpen ? '▾ Attach receipt' : '▸ Attach receipt'}
+              </button>
+              {receiptOpen && (
+                <div className="mt-2">
+                  <ReceiptPicker
+                    onFile={f => { setReceiptFile(f); setReceiptError(null); }}
+                    onClear={() => setReceiptFile(null)}
+                    onError={msg => setReceiptError(msg)}
+                  />
+                  {receiptError && (
+                    <p className="text-xs text-red-500 mt-1">{receiptError}</p>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {error && <p className="text-sm text-red-500">{error}</p>}
+
+            <button
+              type="submit"
+              disabled={saving || !canSubmit}
+              className="w-full bg-[var(--brand-primary)] text-white font-semibold py-3 rounded-xl disabled:opacity-40 disabled:cursor-not-allowed transition-opacity"
+            >
+              {saving ? 'Saving…' : 'Log expense'}
+            </button>
+          </form>
+        </div>
       </div>
     </div>
   );
