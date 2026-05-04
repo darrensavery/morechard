@@ -8,11 +8,13 @@
     "db:migrate": "wrangler d1 migrations apply morechard",
     "db:migrate:local": "wrangler d1 migrations apply morechard --local",
     "db:seed": "wrangler d1 execute morechard --local --file=./seed.sql",
-    "db:reset": "wrangler d1 execute morechard --local --file=./reset.sql"
+    "db:reset": "wrangler d1 execute morechard --local --file=./reset.sql",
+    "test": "vitest"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20240909.0",
     "typescript": "^5.5.2",
+    "vitest": "^4.1.5",
     "wrangler": "^4.79.0"
   },
   "dependencies": {
