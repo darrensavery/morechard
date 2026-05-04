@@ -467,8 +467,14 @@ function ChoreCard({ chore, plans, expanded, onToggle, onArchive, onEdit, onTogg
     ? 'bg-amber-50 dark:bg-amber-950/30'
     : 'bg-[var(--color-surface)]'
 
+  const borderColor = isOverdue || chore.is_flash
+    ? '1px solid rgba(220,38,38,0.35)'
+    : chore.is_priority
+    ? '1px solid rgba(217,119,6,0.30)'
+    : '1px solid var(--color-border)'
+
   const shadowStyle = {
-    border: 'none',
+    border: borderColor,
     transition: 'box-shadow 200ms ease',
     boxShadow: hovered
       ? 'var(--shadow-card-hover)'
