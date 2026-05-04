@@ -188,7 +188,7 @@ export function ParentDashboard() {
       <DemoBanner />
       <DemoUpsellCard trialStatus={trialStatus} />
       {/* Header */}
-      <header className="safe-top sticky top-0 z-10 bg-[var(--color-surface)] border-b border-[var(--color-border)] shadow-[0_1px_4px_rgba(0,0,0,.05)]">
+      <header className="safe-top sticky top-0 z-10 glass-header">
         <div className="max-w-[560px] mx-auto px-3.5 py-3 flex items-center justify-between">
           <FullLogo iconSize={26} />
           <div className="flex items-center gap-2">

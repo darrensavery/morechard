@@ -271,7 +271,7 @@ export function ChoresTab({ familyId, child, children }: Props) {
           {showArchived && (
             <div className="mt-2 space-y-2">
               {archived.map(chore => (
-                <div key={chore.id} className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl px-4 py-3 flex items-center justify-between opacity-60">
+                <div key={chore.id} className="bg-[var(--color-surface)] rounded-xl px-4 py-3 flex items-center justify-between opacity-60" style={{ boxShadow: 'var(--shadow-card)' }}>
                   <div>
                     <p className="text-[14px] font-semibold text-[var(--color-text)]">{chore.title}</p>
                     <p className="text-[12px] text-[var(--color-text-muted)]">{formatCurrency(chore.reward_amount, chore.currency)}</p>
@@ -452,12 +452,12 @@ function ChoreCard({ chore, plans, expanded, onToggle, onArchive, onEdit, onTogg
   const isOverdue = dueDateObj && dueDateObj < new Date()
   const plannedDays = plans.map(p => p.day_of_week - 1)
 
-  const borderClass = chore.is_flash
-    ? 'border-red-500 border-l-4'
+  const accentBorderClass = chore.is_flash
+    ? 'border-l-4 border-l-red-500'
     : chore.is_priority
-    ? 'border-amber-500 border-l-4'
+    ? 'border-l-4 border-l-amber-500'
     : isOverdue
-    ? 'border-red-300 border-l-4'
+    ? 'border-l-4 border-l-red-300'
     : ''
 
   const bgClass = isOverdue && !chore.is_flash
@@ -466,8 +466,15 @@ function ChoreCard({ chore, plans, expanded, onToggle, onArchive, onEdit, onTogg
     ? 'bg-amber-50 dark:bg-amber-950/30'
     : 'bg-[var(--color-surface)]'
 
+  const shadowStyle = isOverdue || chore.is_flash
+    ? { boxShadow: 'var(--shadow-card-urgent)', border: 'none' }
+    : { boxShadow: 'var(--shadow-card)', border: 'none' }
+
   return (
-    <div className={`${bgClass} border border-[var(--color-border)] ${borderClass} rounded-xl overflow-hidden transition-all duration-200 ease-in`}>
+    <div
+      className={`${bgClass} ${accentBorderClass} rounded-xl overflow-hidden transition-all duration-200 ease-in hover:[box-shadow:var(--shadow-card-hover)]`}
+      style={shadowStyle}
+    >
       <button
         className="w-full px-4 py-3 flex items-start gap-3 cursor-pointer"
         onClick={onToggle}
@@ -518,7 +525,7 @@ function ChoreCard({ chore, plans, expanded, onToggle, onArchive, onEdit, onTogg
       </button>
 
       {expanded && (
-        <div className="px-4 pb-4 space-y-3 border-t border-[var(--color-border)] pt-3">
+        <div className="px-4 pb-4 space-y-3 border-t border-[color-mix(in_srgb,var(--color-border)_50%,transparent)] pt-3">
           {chore.description && (
             <p className="text-[13px] text-[var(--color-text-muted)]">{chore.description}</p>
           )}

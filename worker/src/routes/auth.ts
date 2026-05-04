@@ -892,7 +892,7 @@ export async function handleGoogleAuth(_request: Request, env: Env): Promise<Res
   const nonce       = nanoid(16);
   const sig         = await hmacSign(nonce, env.JWT_SECRET);
   const state       = `${nonce}.${sig}`;
-  const redirectUri = 'https://api.morechard.com/auth/google/callback';
+  const redirectUri = `${env.WORKER_URL ?? 'https://api.morechard.com'}/auth/google/callback`;
 
   const params = new URLSearchParams({
     client_id:     env.GOOGLE_CLIENT_ID,
@@ -918,7 +918,7 @@ export async function handleGoogleAuth(_request: Request, env: Env): Promise<Res
 // verifies the ID token, merges the user, issues SLT, redirects.
 // ----------------------------------------------------------------
 export async function handleGoogleCallback(request: Request, env: Env): Promise<Response> {
-  const appUrl = 'https://app.morechard.com';
+  const appUrl = env.APP_URL ?? 'https://app.morechard.com';
   try {
     return await _handleGoogleCallback(request, env, appUrl);
   } catch (err) {
@@ -934,7 +934,7 @@ async function _handleGoogleCallback(request: Request, env: Env, appUrl: string)
   const url         = new URL(request.url);
   const code        = url.searchParams.get('code');
   const stateParam  = url.searchParams.get('state');
-  const redirectUri = 'https://api.morechard.com/auth/google/callback';
+  const redirectUri = `${env.WORKER_URL ?? 'https://api.morechard.com'}/auth/google/callback`;
 
   // ── Step 1: CSRF validation (HMAC-signed state, no cookie needed) ──
   if (!stateParam || !code) {

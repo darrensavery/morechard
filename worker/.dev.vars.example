@@ -2,7 +2,10 @@
 # .dev.vars is gitignored — never commit real secrets.
 
 JWT_SECRET=replace-with-32-plus-char-random-string
+GOOGLE_CLIENT_ID=your-client-id.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=GOCSPX-your-secret-here
 RESEND_API_KEY=re_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-APP_URL=http://127.0.0.1:8788
+APP_URL=http://localhost:5173
+WORKER_URL=http://localhost:8787
 POSTHOG_API_KEY=phc_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 OPENAI_API_KEY=sk-proj-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx

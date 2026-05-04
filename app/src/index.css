@@ -137,6 +137,44 @@
   100% { box-shadow: 0 0 0 0 transparent; }
 }
 
+/* ── Depth system ──────────────────────────────────────────────────────────
+   Layered soft shadows replace flat 1px borders for a tactile, floating feel.
+   Three tiers: resting, lifted (hover/active), urgent (overdue cards). */
+:root {
+  --shadow-card:        0 1px 3px rgba(0,0,0,0.05), 0 4px 14px rgba(0,0,0,0.06);
+  --shadow-card-hover:  0 2px 6px rgba(0,0,0,0.06), 0 8px 24px rgba(0,0,0,0.09);
+  --shadow-card-urgent: 0 2px 6px rgba(220,38,38,0.10), 0 8px 24px rgba(220,38,38,0.13);
+  --shadow-header:      0 1px 0 rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.06);
+}
+[data-theme="dark"] {
+  --shadow-card:        0 1px 3px rgba(0,0,0,0.25), 0 4px 14px rgba(0,0,0,0.30);
+  --shadow-card-hover:  0 2px 6px rgba(0,0,0,0.30), 0 8px 24px rgba(0,0,0,0.40);
+  --shadow-card-urgent: 0 2px 6px rgba(220,38,38,0.20), 0 8px 28px rgba(220,38,38,0.25);
+  --shadow-header:      0 1px 0 rgba(0,0,0,0.40), 0 4px 16px rgba(0,0,0,0.35);
+}
+
+/* Glassmorphism header — transparency + backdrop blur */
+.glass-header {
+  background: color-mix(in srgb, var(--color-surface) 82%, transparent) !important;
+  backdrop-filter: blur(16px) saturate(1.4);
+  -webkit-backdrop-filter: blur(16px) saturate(1.4);
+  border-bottom: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent) !important;
+  box-shadow: var(--shadow-header) !important;
+}
+
+/* Paper texture overlay on the page background — very faint grain */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.028;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+  background-size: 200px 200px;
+}
+#root { position: relative; z-index: 1; }
+
 .animate-shake {
   animation: shake 0.55s ease-in-out;
 }

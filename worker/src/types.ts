@@ -8,6 +8,7 @@ export interface Env {
   JWT_SECRET: string;
   RESEND_API_KEY: string;
   APP_URL: string;
+  WORKER_URL: string;
   STRIPE_SECRET_KEY: string;
   STRIPE_WEBHOOK_SECRET: string;
   FIREBASE_PROJECT_ID: string;

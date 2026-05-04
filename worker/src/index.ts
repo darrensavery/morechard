@@ -427,7 +427,7 @@ async function route(request: Request, env: Env, method: string, path: string): 
     if (parentCheck) return parentCheck;
     const childId = childSettingsMatch[1];
     const owned = await env.DB.prepare(
-      `SELECT id FROM family_roles WHERE user_id = ? AND family_id = ? AND role = 'child' LIMIT 1`
+      `SELECT user_id FROM family_roles WHERE user_id = ? AND family_id = ? AND role = 'child' LIMIT 1`
     ).bind(childId, auth.family_id).first();
     if (!owned) return new Response(JSON.stringify({ error: 'Not found' }), { status: 403, headers: { 'Content-Type': 'application/json' } });
     const rewritten = new Request(
