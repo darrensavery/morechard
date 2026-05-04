@@ -15,6 +15,10 @@ binding = "AI"
 binding = "EVIDENCE"
 bucket_name = "morechard-evidence"
 
+[[r2_buckets]]
+binding = "RECEIPTS"
+bucket_name = "morechard-receipts"
+
 [vars]
 ENVIRONMENT = "development"
 APP_URL = "https://app.morechard.com"
@@ -53,6 +57,10 @@ database_id = "5e8b4cd3-4807-43e4-bd84-4969da6e402c"
 [[env.production.r2_buckets]]
 binding = "EVIDENCE"
 bucket_name = "morechard-evidence"
+
+[[env.production.r2_buckets]]
+binding = "RECEIPTS"
+bucket_name = "morechard-receipts"
 
 [env.production.ai]
 binding = "AI"

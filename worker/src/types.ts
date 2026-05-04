@@ -1,6 +1,7 @@
 export interface Env {
   DB: D1Database;
   EVIDENCE: R2Bucket;
+  RECEIPTS: R2Bucket;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   AI: any; // Cloudflare Workers AI binding (@cloudflare/workers-types Ai)
   ENVIRONMENT: string;
