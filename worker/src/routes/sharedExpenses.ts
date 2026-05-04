@@ -1,5 +1,5 @@
 // worker/src/routes/sharedExpenses.ts
-import { computeSharedExpenseHash, getLastCommittedHash, GENESIS_HASH } from '../lib/sharedExpenseHash.js';
+import { computeSharedExpenseHash, computeSharedExpenseHashV2, getLastCommittedHash, GENESIS_HASH } from '../lib/sharedExpenseHash.js';
 import { sendApprovalEmail, AuthedRequest } from './auth.js';
 import { Env } from '../types.js';
 import { json as jsonOk, error as jsonErr, clientIp as ip } from '../lib/response.js';
@@ -17,14 +17,24 @@ export async function handleCreateSharedExpense(req: AuthedRequest, env: Env): P
     total_amount: number;
     split_bp?: number;
     attachment_key?: string;
+    expense_date?: string;
+    note?: string;
   }>();
 
   if (!body.description?.trim()) return jsonErr('description required', 400);
   if (!body.category) return jsonErr('category required', 400);
   if (!Number.isInteger(body.total_amount) || body.total_amount <= 0) return jsonErr('total_amount must be a positive integer (pence)', 400);
 
-  const VALID_CATEGORIES = ['education', 'health', 'clothing', 'travel', 'activities', 'other'];
+  const VALID_CATEGORIES = ['education', 'health', 'clothing', 'travel', 'activities', 'childcare', 'food', 'tech', 'gifts', 'other'];
   if (!VALID_CATEGORIES.includes(body.category)) return jsonErr('invalid category', 400);
+
+  if (body.expense_date && !/^\d{4}-\d{2}-\d{2}$/.test(body.expense_date)) {
+    return jsonErr('expense_date must be in YYYY-MM-DD format', 400);
+  }
+
+  if (body.note && body.note.length > 500) {
+    return jsonErr('note must not exceed 500 characters', 400);
+  }
 
   const family = await env.DB
     .prepare('SELECT currency, verify_mode, shared_expense_threshold, shared_expense_split_bp FROM families WHERE id = ?')
@@ -53,8 +63,9 @@ export async function handleCreateSharedExpense(req: AuthedRequest, env: Env): P
     .prepare(
       `INSERT INTO shared_expenses
          (family_id, logged_by, description, category, total_amount, currency,
-          split_bp, verification_status, attachment_key, previous_hash, record_hash, ip_address)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          split_bp, verification_status, attachment_key, previous_hash, record_hash, ip_address,
+          expense_date, note, hash_version)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     )
     .bind(
       req.auth.family_id,
@@ -69,21 +80,29 @@ export async function handleCreateSharedExpense(req: AuthedRequest, env: Env): P
       previousHash,
       recordHash,
       ip(req),
+      body.expense_date ?? null,
+      body.note?.trim() ?? null,
+      2,
     );
 
   const result = await insertStmt.run();
   const newId = result.meta.last_row_id as number;
 
   if (autoCommit) {
-    recordHash = await computeSharedExpenseHash(
-      newId,
-      req.auth.family_id,
-      req.auth.sub,
-      body.total_amount,
-      family.currency,
+    recordHash = await computeSharedExpenseHashV2({
+      id: newId,
+      familyId: req.auth.family_id,
+      loggedBy: req.auth.sub,
+      totalAmount: body.total_amount,
+      currency: family.currency,
       splitBp,
       previousHash,
-    );
+      expenseDate: body.expense_date ?? null,
+      note: body.note?.trim() ?? null,
+      receiptHash: null,
+      voidedAt: null,
+      voidsId: null,
+    });
     // Atomic batch: write the hash immediately so concurrent reads never see PENDING for committed rows
     await env.DB.batch([
       env.DB.prepare('UPDATE shared_expenses SET record_hash = ? WHERE id = ?').bind(recordHash, newId),
