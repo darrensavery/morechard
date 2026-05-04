@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* Wire Tailwind's dark: variant to data-theme="dark" rather than prefers-color-scheme */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
 /* ── LEMON MILK — wordmark font ────────────────────────────────────────────── */
 @font-face {
   font-family: 'LEMON MILK';
