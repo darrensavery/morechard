@@ -1108,29 +1108,26 @@ async function buildSparklinePoints(
   // Interpolate gaps in responsibility and consistency: find neighbouring real
   // values and linearly interpolate so the chart shows natural variation rather
   // than a flat carry-forward line. Buckets before any data remain 0.
+  // Interpolate internal gaps between real data points. Trailing and leading
+  // zeros are left as 0 so the frontend can skip them (no data = no line).
   function interpolateGaps(arr: number[]): number[] {
     const out = [...arr];
     let i = 0;
     while (i < out.length) {
       if (out[i] === 0) {
-        // find previous non-zero
         let prev = i - 1;
         while (prev >= 0 && out[prev] === 0) prev--;
-        // find next non-zero
         let next = i + 1;
         while (next < out.length && out[next] === 0) next++;
         if (prev >= 0 && next < out.length) {
-          // linear interpolation
+          // internal gap — linear interpolation between neighbours
           const steps = next - prev;
           for (let j = prev + 1; j < next; j++) {
             out[j] = Math.round(out[prev] + (out[next] - out[prev]) * ((j - prev) / steps));
           }
           i = next;
-        } else if (prev >= 0) {
-          // trailing zeros: carry last known value
-          for (let j = prev + 1; j < out.length; j++) out[j] = out[prev];
-          break;
         } else {
+          // leading or trailing zero — leave as 0 (no data)
           i++;
         }
       } else {
