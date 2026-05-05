@@ -94,7 +94,7 @@ export function InsightsTab({ familyId, child }: Props) {
       ) : error ? (
         <ErrorState onRetry={load} />
       ) : data ? (
-        <InsightsDashboard data={data} child={selectedChild} currency={currency} />
+        <InsightsDashboard data={data} child={selectedChild} currency={currency} period={period} />
       ) : null}
     </div>
   )
@@ -103,8 +103,8 @@ export function InsightsTab({ familyId, child }: Props) {
 // ── InsightsDashboard ─────────────────────────────────────────────────────────
 
 function InsightsDashboard({
-  data, child, currency,
-}: { data: InsightsData; child: ChildRecord; currency: string }) {
+  data, child, currency, period,
+}: { data: InsightsData; child: ChildRecord; currency: string; period: 'week' | 'month' | 'all' }) {
   const [expandedMetric, setExpandedMetric] = useState<'responsibility' | 'consistency' | 'savings' | null>(null)
 
   return (
@@ -166,7 +166,7 @@ function InsightsDashboard({
       )}
 
       {/* 4. Premium Mentor section */}
-      <MentorSection data={data} child={child} onViewTrends={() => {
+      <MentorSection data={data} child={child} period={period} onViewTrends={() => {
         // Open the metric with the largest absolute trend delta
         const t = data.trends
         if (!t) { setExpandedMetric('consistency'); return }
@@ -270,7 +270,7 @@ function BalanceStat({
 
 // ── Mentor section — carousel when > 1 card ───────────────────────────────────
 
-function MentorSection({ data, child, onViewTrends }: { data: InsightsData; child: ChildRecord; onViewTrends: () => void }) {
+function MentorSection({ data, child, period, onViewTrends }: { data: InsightsData; child: ChildRecord; period: 'week' | 'month' | 'all'; onViewTrends: () => void }) {
   const name = child.display_name.split(' ')[0]
 
   // Discovery phase: single initialisation card
@@ -296,24 +296,26 @@ function MentorSection({ data, child, onViewTrends }: { data: InsightsData; chil
         name={name}
         persona="coach"
         isTeenMode={data.velocity_context?.mode === 'professional'}
+        period={period}
         onViewTrends={onViewTrends}
       />
     )
   }
 
   // Multiple cards — horizontal carousel
-  return <MentorCarousel cards={cards} child={child} name={name} data={data} onViewTrends={onViewTrends} />
+  return <MentorCarousel cards={cards} child={child} name={name} data={data} period={period} onViewTrends={onViewTrends} />
 }
 
 // ── Carousel (for when multiple AI cards exist) ───────────────────────────────
 
 function MentorCarousel({
-  cards, child, name, data, onViewTrends,
+  cards, child, name, data, period, onViewTrends,
 }: {
   cards: { id: string; briefing: MentorBriefing; persona: 'coach' | 'accountant' | 'analyst' }[]
   child: ChildRecord
   name:  string
   data:  InsightsData
+  period: 'week' | 'month' | 'all'
   onViewTrends: () => void
 }) {
   const [active, setActive] = useState(0)
@@ -344,6 +346,7 @@ function MentorCarousel({
               name={name}
               persona={card.persona}
               isTeenMode={data.velocity_context?.mode === 'professional'}
+              period={period}
               onViewTrends={onViewTrends}
             />
           </div>
@@ -456,14 +459,21 @@ const PERSONA_CONFIG = {
   analyst:    { label: 'Analyst',    accent: '#8b5cf6', accentDim: 'rgba(139,92,246,0.15)'  },
 }
 
+const PERIOD_NOTE_LABEL: Record<'week' | 'month' | 'all', string> = {
+  week:  "This Week's Coaching Note",
+  month: "This Month's Coaching Note",
+  all:   "All-Time Coaching Note",
+}
+
 function LiveBriefingCard({
-  briefing, child, name, persona, isTeenMode, onViewTrends,
+  briefing, child, name, persona, isTeenMode, period, onViewTrends,
 }: {
   briefing:      MentorBriefing
   child:         ChildRecord
   name:          string
   persona:       'coach' | 'accountant' | 'analyst'
   isTeenMode:    boolean
+  period:        'week' | 'month' | 'all'
   onViewTrends:  () => void
 }) {
   const [modalOpen, setModalOpen] = useState(false)
@@ -491,7 +501,7 @@ function LiveBriefingCard({
                   </span>
                 </div>
                 <p className="text-[15px] font-extrabold tracking-tight" style={{ color: '#f0fdf4' }}>
-                  This Week's Coaching Note
+                  {PERIOD_NOTE_LABEL[period]}
                 </p>
               </div>
             </div>
