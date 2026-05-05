@@ -225,7 +225,7 @@ export function LabSection({ childName, currentModule, completedSlugs, retention
             borderColor: 'color-mix(in srgb, var(--brand-primary) 25%, transparent)',
             color:       'var(--brand-primary)',
           }}>
-          {completedSlugs.length}/{SKILL_TRACK.length} modules
+          {completedSlugs.length === 0 ? 'Not started' : `${completedSlugs.length} of ${SKILL_TRACK.length} done`}
         </span>
       </div>
 

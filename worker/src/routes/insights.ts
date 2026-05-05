@@ -379,11 +379,11 @@ export async function handleInsights(request: Request, env: Env): Promise<Respon
   }
 
   // ── 10. Sparkline point arrays ────────────────────────────────────────────
-  // Always use a fixed 28-day window for sparklines regardless of the period
-  // toggle. This ensures charts always show historical trend data even when
-  // the selected period (e.g. 'week') has no completions yet.
+  // Use all-time window so charts always show real historical trend data even
+  // when recent activity is sparse. 28 buckets evenly distributed across
+  // the full history gives a smooth, meaningful curve.
   const sparklinePoints = isDiscoveryPhase ? null : await buildSparklinePoints(
-    env.DB, family_id, effectiveChildId, 'month', 28,
+    env.DB, family_id, effectiveChildId, 'all', 28,
   );
 
   // ── 11. Learning Lab data ─────────────────────────────────────────────────
@@ -400,59 +400,52 @@ export async function handleInsights(request: Request, env: Env): Promise<Respon
   const milestoneMarkers: { metric: 'responsibility'|'consistency'|'savings'; point_index: number; module_title: string; delta_after: number }[] = [];
 
   if (learningLabEnabled) {
-    // Completed modules
+    // Unlocked modules — the actual table created by migration 0028
     const modRows = await env.DB.prepare(`
-      SELECT module_slug FROM module_completions
-      WHERE child_id = ? ORDER BY completed_at ASC
-    `).bind(effectiveChildId).all<{ module_slug: string }>().catch(() => ({ results: [] }));
+      SELECT module_slug, unlocked_at FROM unlocked_modules
+      WHERE child_id = ? ORDER BY unlocked_at ASC
+    `).bind(effectiveChildId).all<{ module_slug: string; unlocked_at: number }>()
+      .catch(() => ({ results: [] }));
 
     completedModuleSlugs = modRows.results.map(r => r.module_slug);
 
-    // Current in-progress module
-    const inProgressRow = await env.DB.prepare(`
-      SELECT module_slug, progress_pct, pillar, title
-      FROM chat_module_progress
-      WHERE child_id = ? AND completed = 0
-      ORDER BY last_activity_at DESC
-      LIMIT 1
-    `).bind(effectiveChildId).first<{
-      module_slug: string; progress_pct: number; pillar: string; title: string;
-    }>().catch(() => null);
-
-    if (inProgressRow) {
-      currentModule = {
-        slug:         inProgressRow.module_slug,
-        title:        inProgressRow.title,
-        progress_pct: inProgressRow.progress_pct,
-        pillar:       inProgressRow.pillar,
-      };
-    }
+    // No chat_module_progress table exists — currentModule stays null unless
+    // a child has unlocked modules but not yet finished the final one.
+    // For now: if any modules are unlocked, no "in progress" signal is surfaced.
 
     // Retention score heuristic
     if (completedModuleSlugs.length > 0 && savingsConsistency !== null) {
       retentionScore = Math.min(100, Math.round(savingsConsistency * 1.1));
     }
 
-    // Milestone markers
-    if (sparklinePoints) {
-      const completionDateRows = await env.DB.prepare(`
-        SELECT module_slug, title, completed_at FROM module_completions
-        WHERE child_id = ? ORDER BY completed_at ASC
-      `).bind(effectiveChildId).all<{ module_slug: string; title: string; completed_at: number }>()
-        .catch(() => ({ results: [] }));
+    // Milestone markers — map unlock dates onto sparkline buckets
+    if (sparklinePoints && modRows.results.length > 0) {
+      const sparklineCount = 28;
+      const now2           = Math.floor(Date.now() / 1000);
+      // Mirror the all-time window used by buildSparklinePoints
+      const oldestEpoch2   = oldestEpoch; // reuse from above
+      const periodSecs2    = Math.max(30 * 86400, now2 - oldestEpoch2);
+      const sparklineStart = now2 - periodSecs2;
+      const bucketDuration = periodSecs2 / sparklineCount;
 
-      const sparklineCount   = 28; // fixed 28-day sparkline window
-      const periodEndEpoch   = Math.floor(Date.now() / 1000);
-      const sparklineStart   = periodEndEpoch - 28 * 86400;
-      const bucketDuration   = (28 * 86400) / sparklineCount;
+      // Slug→title map from the frontend SKILL_TRACK (hardcoded to avoid a DB round-trip)
+      const slugToTitle: Record<string, string> = {
+        'patience-tree':      'Patience',
+        'compound-interest':  'Snowball',
+        'banking-101':        'Banking',
+        'effort-vs-reward':   'Effort',
+        'taxes-net-pay':      'Taxes',
+        'opportunity-cost':   'Trade-offs',
+        'the-interest-trap':  'Debt',
+        'giving-and-charity': 'Giving',
+      };
 
-      for (const comp of completionDateRows.results) {
-        if (comp.completed_at < sparklineStart) continue;
+      for (const mod of modRows.results) {
+        if (mod.unlocked_at < sparklineStart) continue;
         const idx = Math.min(
           sparklineCount - 1,
-          Math.floor((comp.completed_at - sparklineStart) / bucketDuration),
+          Math.floor((mod.unlocked_at - sparklineStart) / bucketDuration),
         );
-        // Emit a marker on whichever metric shows the largest improvement after this module.
         const metrics = ['responsibility', 'consistency', 'savings'] as const;
         let bestMetric: typeof metrics[number] = 'consistency';
         let bestDelta = -1;
@@ -465,7 +458,7 @@ export async function handleInsights(request: Request, env: Env): Promise<Respon
         milestoneMarkers.push({
           metric:       bestMetric,
           point_index:  idx,
-          module_title: comp.title,
+          module_title: slugToTitle[mod.module_slug] ?? mod.module_slug,
           delta_after:  Math.max(0, bestDelta),
         });
       }

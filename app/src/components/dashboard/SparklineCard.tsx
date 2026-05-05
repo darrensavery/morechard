@@ -94,16 +94,18 @@ export function SparklineCard({
       className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-2 flex flex-col items-center gap-1.5 relative overflow-hidden cursor-pointer"
       style={{ boxShadow: isDiscovery ? 'none' : glow }}
     >
-      {/* Expand icon — top right */}
-      <button
-        onClick={e => { e.stopPropagation(); onExpand() }}
-        className="absolute top-1.5 right-1.5 w-5 h-5 flex items-center justify-center rounded opacity-50 hover:opacity-100 transition-opacity cursor-pointer text-[var(--color-text-muted)]"
-        aria-label={`Expand ${label}`}
-      >
-        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/>
-        </svg>
-      </button>
+      {/* Expand icon — only shown when there is real data to display */}
+      {!isDiscovery && points.length >= 2 && (
+        <button
+          onClick={e => { e.stopPropagation(); onExpand() }}
+          className="absolute top-1.5 right-1.5 w-5 h-5 flex items-center justify-center rounded opacity-50 hover:opacity-100 transition-opacity cursor-pointer text-[var(--color-text-muted)]"
+          aria-label={`Expand ${label}`}
+        >
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/>
+          </svg>
+        </button>
+      )}
 
       <div className="w-full relative">
         {activeIdx !== null && (
