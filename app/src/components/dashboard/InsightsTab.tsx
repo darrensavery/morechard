@@ -16,7 +16,6 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { AnimatePresence } from 'framer-motion'
 import type { ChildRecord, InsightsData, MentorBriefing } from '../../lib/api'
 import { getInsights, formatCurrency } from '../../lib/api'
-import { AvatarSVG } from '../../lib/avatars'
 import { useAndroidBack } from '../../hooks/useAndroidBack'
 import { PremiumShell, MentorAvatar, ProBadge, injectPremiumStyles } from '../ui/PremiumShell'
 import { SparklineCard } from './SparklineCard'
@@ -42,9 +41,9 @@ const PERIOD_LABELS: Record<Period, string> = {
 
 // ── Root component ────────────────────────────────────────────────────────────
 
-export function InsightsTab({ familyId, child, children }: Props) {
+export function InsightsTab({ familyId, child }: Props) {
   const [selectedChild, setSelectedChild] = useState<ChildRecord>(child)
-  const [period,        setPeriod]        = useState<Period>('week')
+  const [period,        setPeriod]        = useState<Period>('month')
   const [data,          setData]          = useState<InsightsData | null>(null)
   const [loading,       setLoading]       = useState(true)
   const [error,         setError]         = useState(false)
@@ -71,28 +70,6 @@ export function InsightsTab({ familyId, child, children }: Props) {
 
   return (
     <div className="space-y-4">
-
-      {/* ── Child selector ── */}
-      {children.length > 1 && (
-        <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-0.5">
-          {children.map(c => (
-            <button
-              key={c.id}
-              onClick={() => setSelectedChild(c)}
-              className={`
-                shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[13px] font-semibold
-                transition-colors duration-100 cursor-pointer border
-                ${selectedChild.id === c.id
-                  ? 'bg-[var(--brand-primary)] text-white border-[var(--brand-primary)]'
-                  : 'bg-[var(--color-surface)] text-[var(--color-text-muted)] border-[var(--color-border)] hover:opacity-80'}
-              `}
-            >
-              <AvatarSVG id={c.avatar_id ?? 'bottts:spark'} size={18} />
-              {c.display_name}
-            </button>
-          ))}
-        </div>
-      )}
 
       {/* ── Period toggle ── */}
       <div className="flex gap-1.5 bg-[var(--color-surface-alt)] rounded-xl p-1">

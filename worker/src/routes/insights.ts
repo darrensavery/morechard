@@ -380,9 +380,11 @@ export async function handleInsights(request: Request, env: Env): Promise<Respon
   }
 
   // ── 10. Sparkline point arrays ────────────────────────────────────────────
-  const sparklinePointCount = period === 'week' ? 7 : 30;
+  // Always use a fixed 28-day window for sparklines regardless of the period
+  // toggle. This ensures charts always show historical trend data even when
+  // the selected period (e.g. 'week') has no completions yet.
   const sparklinePoints = isDiscoveryPhase ? null : await buildSparklinePoints(
-    env.DB, family_id, effectiveChildId, period, sparklinePointCount,
+    env.DB, family_id, effectiveChildId, 'month', 28,
   );
 
   // ── 11. Learning Lab data ─────────────────────────────────────────────────

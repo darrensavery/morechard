@@ -176,13 +176,13 @@ export function SparklineCard({
       </div>
 
       <span
-        className="text-[11px] font-extrabold tabular-nums"
+        className="text-[12px] font-extrabold tabular-nums"
         style={{ color: isDiscovery ? 'var(--color-text-muted)' : stroke }}
       >
         {isDiscovery || value === null ? '—' : `${value}%`}
       </span>
 
-      <span className="text-[8px] font-bold text-[var(--color-text-muted)] leading-tight">{label}</span>
+      <span className="text-[11px] font-bold text-[var(--color-text-muted)] leading-tight">{label}</span>
 
       {isDiscovery
         ? <span className="text-[8px] text-[var(--color-text-muted)]">Establishing…</span>
