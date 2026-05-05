@@ -76,7 +76,6 @@ export async function handleInsights(request: Request, env: Env): Promise<Respon
 
   const totalCompleted    = passRateRow?.total_completed  ?? 0;
   const firstTimePasses   = passRateRow?.first_time_passes ?? 0;
-  const earliestResolved  = passRateRow?.earliest_resolved ?? null;
   const tasksRevised      = totalCompleted - firstTimePasses;
 
   const firstTimePassRate = totalCompleted > 0
@@ -442,16 +441,16 @@ export async function handleInsights(request: Request, env: Env): Promise<Respon
       `).bind(effectiveChildId).all<{ module_slug: string; title: string; completed_at: number }>()
         .catch(() => ({ results: [] }));
 
-      const periodStartEpoch = getPeriodStart(period);
+      const sparklineCount   = 28; // fixed 28-day sparkline window
       const periodEndEpoch   = Math.floor(Date.now() / 1000);
-      const periodDuration   = periodEndEpoch - (periodStartEpoch || (periodEndEpoch - 30 * 86400));
-      const bucketDuration   = periodDuration / sparklinePointCount;
+      const sparklineStart   = periodEndEpoch - 28 * 86400;
+      const bucketDuration   = (28 * 86400) / sparklineCount;
 
       for (const comp of completionDateRows.results) {
-        if (periodStartEpoch && comp.completed_at < periodStartEpoch) continue;
+        if (comp.completed_at < sparklineStart) continue;
         const idx = Math.min(
-          sparklinePointCount - 1,
-          Math.floor((comp.completed_at - (periodStartEpoch || (periodEndEpoch - 30 * 86400))) / bucketDuration),
+          sparklineCount - 1,
+          Math.floor((comp.completed_at - sparklineStart) / bucketDuration),
         );
         // Emit a marker on whichever metric shows the largest improvement after this module.
         const metrics = ['responsibility', 'consistency', 'savings'] as const;
@@ -459,7 +458,7 @@ export async function handleInsights(request: Request, env: Env): Promise<Respon
         let bestDelta = -1;
         for (const m of metrics) {
           const before = sparklinePoints[m][Math.max(0, idx - 1)] ?? 0;
-          const after  = sparklinePoints[m][Math.min(sparklinePointCount - 1, idx + 1)] ?? 0;
+          const after  = sparklinePoints[m][Math.min(sparklineCount - 1, idx + 1)] ?? 0;
           const delta  = after - before;
           if (delta > bestDelta) { bestDelta = delta; bestMetric = m; }
         }
