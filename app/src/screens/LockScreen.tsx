@@ -56,10 +56,16 @@ export function LockScreen() {
   useEffect(() => {
     if (!identity) { navigate('/', { replace: true }); return }
 
-    // No security set — pass straight through only if a token exists.
-    // If there's no token the session has expired; go to landing so the user can log in again.
+    // No token means the session has expired regardless of auth method.
+    // Clear device identity so RootGate routes back to the landing/login screen.
+    if (!localStorage.getItem('mc_token')) {
+      localStorage.removeItem('mc_device_identity')
+      navigate('/', { replace: true })
+      return
+    }
+
+    // No security set — pass straight through
     if (identity.auth_method === 'none') {
-      if (!localStorage.getItem('mc_token')) { navigate('/', { replace: true }); return }
       unlock('none')
       return
     }

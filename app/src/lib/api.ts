@@ -88,6 +88,15 @@ async function request<T>(path: string, options: RequestInit = {}, _retries = 2,
     throw new Error('Unexpected response from server. Please try again.');
   }
 
+  // Token expired or revoked — clear session and force re-login.
+  // Only applies to authenticated API routes, not the auth endpoints themselves.
+  if (res.status === 401 && !path.startsWith('/auth/')) {
+    localStorage.removeItem('mc_token');
+    localStorage.removeItem('mc_device_identity');
+    window.location.href = '/';
+    throw new Error((data as Record<string, unknown>).error as string ?? 'Session expired');
+  }
+
   // Trial expired — worker sends 402 with { redirect: '/paywall' }
   if (res.status === 402 && !skip402) {
     window.location.href = '/paywall';
