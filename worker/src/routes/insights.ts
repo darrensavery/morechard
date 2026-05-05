@@ -37,7 +37,9 @@ export async function handleInsights(request: Request, env: Env): Promise<Respon
 
   const family_id = url.searchParams.get('family_id');
   const child_id  = url.searchParams.get('child_id');
-  const period    = url.searchParams.get('period') ?? 'week';
+  // Demo family always uses all-time data so the account never shows zeros
+  const isDemo    = family_id === 'demo-family-thomson';
+  const period    = isDemo ? 'all' : (url.searchParams.get('period') ?? 'week');
 
   if (!family_id) return error('family_id required');
   if (family_id !== auth.family_id) return error('Forbidden', 403);
@@ -469,6 +471,7 @@ export async function handleInsights(request: Request, env: Env): Promise<Respon
     period,
     period_start_epoch: periodStart || null,
     child_id: effectiveChildId,
+    is_demo: isDemo,
 
     // Discovery state
     is_discovery_phase: isDiscoveryPhase,

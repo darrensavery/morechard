@@ -110,6 +110,22 @@ function InsightsDashboard({
   return (
     <div className="space-y-4">
 
+      {/* Demo account banner */}
+      {data.is_demo && (
+        <div className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl border"
+          style={{
+            background:  'color-mix(in srgb, var(--brand-accent) 10%, transparent)',
+            borderColor: 'color-mix(in srgb, var(--brand-accent) 30%, transparent)',
+          }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--brand-accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
+            <circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/>
+          </svg>
+          <p className="text-[11px] font-semibold" style={{ color: 'var(--brand-accent)' }}>
+            Demo account — showing all-time data snapshot
+          </p>
+        </div>
+      )}
+
       {/* 1. Balance bar */}
       <BalanceBar data={data} currency={currency} />
 

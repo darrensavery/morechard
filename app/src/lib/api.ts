@@ -481,6 +481,7 @@ export interface InsightsData {
   period: string;
   period_start_epoch: number | null;
   child_id: string;
+  is_demo?: boolean;
   is_discovery_phase: boolean;
   all_time_completed: number;
   first_time_pass_rate: number | null;
