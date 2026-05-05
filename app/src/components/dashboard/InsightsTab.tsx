@@ -150,7 +150,18 @@ function InsightsDashboard({
       )}
 
       {/* 4. Premium Mentor section */}
-      <MentorSection data={data} child={child} />
+      <MentorSection data={data} child={child} onViewTrends={() => {
+        // Open the metric with the largest absolute trend delta
+        const t = data.trends
+        if (!t) { setExpandedMetric('consistency'); return }
+        const candidates: ['responsibility' | 'consistency' | 'savings', number][] = [
+          ['responsibility', Math.abs(t.responsibility?.delta ?? 0)],
+          ['consistency',    Math.abs(t.consistency?.delta    ?? 0)],
+          ['savings',        Math.abs(t.horizon?.delta        ?? 0)],
+        ]
+        candidates.sort((a, b) => b[1] - a[1])
+        setExpandedMetric(candidates[0][0])
+      }} />
 
       {/* 5. Learning Lab section (paid add-on only) */}
       {data.learning_lab_enabled && (
@@ -243,7 +254,7 @@ function BalanceStat({
 
 // ── Mentor section — carousel when > 1 card ───────────────────────────────────
 
-function MentorSection({ data, child }: { data: InsightsData; child: ChildRecord }) {
+function MentorSection({ data, child, onViewTrends }: { data: InsightsData; child: ChildRecord; onViewTrends: () => void }) {
   const name = child.display_name.split(' ')[0]
 
   // Discovery phase: single initialisation card
@@ -269,23 +280,25 @@ function MentorSection({ data, child }: { data: InsightsData; child: ChildRecord
         name={name}
         persona="coach"
         isTeenMode={data.velocity_context?.mode === 'professional'}
+        onViewTrends={onViewTrends}
       />
     )
   }
 
   // Multiple cards — horizontal carousel
-  return <MentorCarousel cards={cards} child={child} name={name} data={data} />
+  return <MentorCarousel cards={cards} child={child} name={name} data={data} onViewTrends={onViewTrends} />
 }
 
 // ── Carousel (for when multiple AI cards exist) ───────────────────────────────
 
 function MentorCarousel({
-  cards, child, name, data,
+  cards, child, name, data, onViewTrends,
 }: {
   cards: { id: string; briefing: MentorBriefing; persona: 'coach' | 'accountant' | 'analyst' }[]
   child: ChildRecord
   name:  string
   data:  InsightsData
+  onViewTrends: () => void
 }) {
   const [active, setActive] = useState(0)
   const trackRef = useRef<HTMLDivElement>(null)
@@ -315,6 +328,7 @@ function MentorCarousel({
               name={name}
               persona={card.persona}
               isTeenMode={data.velocity_context?.mode === 'professional'}
+              onViewTrends={onViewTrends}
             />
           </div>
         ))}
@@ -427,13 +441,14 @@ const PERSONA_CONFIG = {
 }
 
 function LiveBriefingCard({
-  briefing, child, name, persona, isTeenMode,
+  briefing, child, name, persona, isTeenMode, onViewTrends,
 }: {
-  briefing:   MentorBriefing
-  child:      ChildRecord
-  name:       string
-  persona:    'coach' | 'accountant' | 'analyst'
-  isTeenMode: boolean
+  briefing:      MentorBriefing
+  child:         ChildRecord
+  name:          string
+  persona:       'coach' | 'accountant' | 'analyst'
+  isTeenMode:    boolean
+  onViewTrends:  () => void
 }) {
   const [modalOpen, setModalOpen] = useState(false)
   const animate = briefing.source === 'ai'
@@ -516,7 +531,7 @@ function LiveBriefingCard({
             <button
               className="flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl text-[13px] font-semibold cursor-pointer transition-opacity hover:opacity-85"
               style={{ background: 'rgba(255,255,255,0.07)', color: '#a7c4b5', border: '1px solid rgba(255,255,255,0.1)' }}
-              onClick={() => {/* future: deep-link to relevant tab */}}
+              onClick={onViewTrends}
             >
               View trends
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">

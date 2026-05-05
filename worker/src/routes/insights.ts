@@ -1061,6 +1061,15 @@ async function buildSparklinePoints(
     saveArr[i] = total > 0 ? Math.round((financeBuckets[i].saved / total) * 100) : 0;
   }
 
+  // Forward-fill: carry the last known value into empty buckets so gaps don't
+  // crash to 0 and cause jagged spikes in the sparkline charts.
+  let lastResp = 0, lastCons = 0, lastSave = 0;
+  for (let i = 0; i < points; i++) {
+    if (respArr[i] > 0) lastResp = respArr[i]; else if (lastResp > 0) respArr[i] = lastResp;
+    if (consArr[i] > 0) lastCons = consArr[i]; else if (lastCons > 0) consArr[i] = lastCons;
+    if (saveArr[i] > 0) lastSave = saveArr[i]; else if (lastSave > 0) saveArr[i] = lastSave;
+  }
+
   return { responsibility: respArr, consistency: consArr, savings: saveArr };
 }
 
