@@ -14,12 +14,13 @@ describe('SparklineExpanded', () => {
         value={64}
         points={points}
         milestones={markers}
+        choreEvents={[]}
         hasLearningLab={false}
         nextModuleTitle={null}
         onClose={() => {}}
       />
     )
-    expect(screen.getByText('Consistency — Deep Dive')).toBeTruthy()
+    expect(screen.getByText('Consistency')).toBeTruthy()
   })
 
   it('calls onClose when close button is clicked', () => {
@@ -30,6 +31,7 @@ describe('SparklineExpanded', () => {
         value={64}
         points={points}
         milestones={markers}
+        choreEvents={[]}
         hasLearningLab={false}
         nextModuleTitle={null}
         onClose={onClose}
@@ -46,6 +48,7 @@ describe('SparklineExpanded', () => {
         value={64}
         points={points}
         milestones={markers}
+        choreEvents={[]}
         hasLearningLab={true}
         nextModuleTitle="Opportunity Cost"
         onClose={() => {}}
@@ -61,6 +64,7 @@ describe('SparklineExpanded', () => {
         value={64}
         points={points}
         milestones={markers}
+        choreEvents={[]}
         hasLearningLab={false}
         nextModuleTitle="Opportunity Cost"
         onClose={() => {}}

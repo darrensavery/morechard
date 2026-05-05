@@ -216,6 +216,7 @@ function InsightsDashboard({
               value={metricValue}
               points={metricPoints}
               milestones={metricMarkers}
+              choreEvents={data.chore_events ?? []}
               hasLearningLab={data.learning_lab_enabled}
               nextModuleTitle={data.current_module?.title ?? null}
               onClose={() => setExpandedMetric(null)}

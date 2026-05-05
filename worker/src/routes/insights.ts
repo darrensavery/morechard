@@ -430,16 +430,29 @@ export async function handleInsights(request: Request, env: Env): Promise<Respon
       const sparklineStart = now2 - periodSecs2;
       const bucketDuration = periodSecs2 / sparklineCount;
 
-      // Slug→title map from the frontend SKILL_TRACK (hardcoded to avoid a DB round-trip)
+      // Slug→title map — all 20 curriculum modules
       const slugToTitle: Record<string, string> = {
-        'patience-tree':      'Patience',
-        'compound-interest':  'Snowball',
-        'banking-101':        'Banking',
-        'effort-vs-reward':   'Effort',
-        'taxes-net-pay':      'Taxes',
-        'opportunity-cost':   'Trade-offs',
-        'the-interest-trap':  'Debt',
-        'giving-and-charity': 'Giving',
+        'effort-vs-reward':           'Effort',
+        'taxes-net-pay':              'Taxes',
+        'entrepreneurship':           'Enterprise',
+        'gig-trap-vs-salary':         'Gig vs Salary',
+        'needs-vs-wants':             'Needs & Wants',
+        'scams-digital-safety':       'Scams',
+        'advertising-influence':      'Adverts',
+        'patience-tree':              'Patience',
+        'banking-101':                'Banking',
+        'opportunity-cost':           'Trade-offs',
+        'the-snowball':               'Snowball',
+        'the-interest-trap':          'Interest Trap',
+        'credit-scores-trust':        'Credit Score',
+        'good-vs-bad-debt':           'Good Debt',
+        'compound-growth':            'Compound Growth',
+        'inflation':                  'Inflation',
+        'risk-and-diversification':   'Risk',
+        'giving-and-charity':         'Giving',
+        'digital-vs-physical-currency': 'Digital Money',
+        'money-and-mental-health':    'Money & Mind',
+        'social-comparison':          'Comparison',
       };
 
       for (const mod of modRows.results) {
@@ -465,6 +478,33 @@ export async function handleInsights(request: Request, env: Env): Promise<Respon
         });
       }
     }
+  }
+
+  // ── 12. Chore event markers for expanded chart ───────────────────────────────
+  // Map individual chore completions onto sparkline bucket indices so the
+  // expanded chart can show a dot for every chore, not just weekly aggregates.
+  type ChoreEvent = { point_index: number; first_pass: boolean };
+  let choreEvents: ChoreEvent[] = [];
+  if (sparklinePoints && !isDiscoveryPhase) {
+    const spNow   = Math.floor(Date.now() / 1000);
+    const spOldest = oldestEpoch;
+    const spPeriod = Math.max(30 * 86400, spNow - spOldest);
+    const spStart  = spNow - spPeriod;
+    const spBucket = spPeriod / 28;
+    // Re-fetch completions for event markers — reuse the same date range
+    const eventRows = await env.DB.prepare(`
+      SELECT resolved_at, attempt_count FROM completions
+      WHERE family_id = ? AND child_id = ? AND status = 'completed'
+        AND resolved_at >= ?
+      ORDER BY resolved_at ASC
+      LIMIT 200
+    `).bind(family_id, effectiveChildId, spStart)
+      .all<{ resolved_at: number; attempt_count: number }>()
+      .catch(() => ({ results: [] as { resolved_at: number; attempt_count: number }[] }));
+    choreEvents = eventRows.results.map(r => ({
+      point_index: Math.min(27, Math.floor((r.resolved_at - spStart) / spBucket)),
+      first_pass:  r.attempt_count === 1,
+    }));
   }
 
   return json({
@@ -512,6 +552,7 @@ export async function handleInsights(request: Request, env: Env): Promise<Respon
     completed_module_slugs: completedModuleSlugs,
     retention_score:        retentionScore,
     milestone_markers:      milestoneMarkers,
+    chore_events:           choreEvents,
   });
 }
 
@@ -1064,16 +1105,52 @@ async function buildSparklinePoints(
     saveArr[i] = total > 0 ? Math.round((financeBuckets[i].saved / total) * 100) : 0;
   }
 
-  // Forward-fill: carry the last known value into empty buckets so gaps don't
-  // crash to 0 and cause jagged spikes in the sparkline charts.
-  let lastResp = 0, lastCons = 0, lastSave = 0;
+  // Interpolate gaps in responsibility and consistency: find neighbouring real
+  // values and linearly interpolate so the chart shows natural variation rather
+  // than a flat carry-forward line. Buckets before any data remain 0.
+  function interpolateGaps(arr: number[]): number[] {
+    const out = [...arr];
+    let i = 0;
+    while (i < out.length) {
+      if (out[i] === 0) {
+        // find previous non-zero
+        let prev = i - 1;
+        while (prev >= 0 && out[prev] === 0) prev--;
+        // find next non-zero
+        let next = i + 1;
+        while (next < out.length && out[next] === 0) next++;
+        if (prev >= 0 && next < out.length) {
+          // linear interpolation
+          const steps = next - prev;
+          for (let j = prev + 1; j < next; j++) {
+            out[j] = Math.round(out[prev] + (out[next] - out[prev]) * ((j - prev) / steps));
+          }
+          i = next;
+        } else if (prev >= 0) {
+          // trailing zeros: carry last known value
+          for (let j = prev + 1; j < out.length; j++) out[j] = out[prev];
+          break;
+        } else {
+          i++;
+        }
+      } else {
+        i++;
+      }
+    }
+    return out;
+  }
+
+  // Forward-fill savings only (sparse data — no interpolation possible)
+  let lastSave = 0;
   for (let i = 0; i < points; i++) {
-    if (respArr[i] > 0) lastResp = respArr[i]; else if (lastResp > 0) respArr[i] = lastResp;
-    if (consArr[i] > 0) lastCons = consArr[i]; else if (lastCons > 0) consArr[i] = lastCons;
     if (saveArr[i] > 0) lastSave = saveArr[i]; else if (lastSave > 0) saveArr[i] = lastSave;
   }
 
-  return { responsibility: respArr, consistency: consArr, savings: saveArr };
+  return {
+    responsibility: interpolateGaps(respArr),
+    consistency:    interpolateGaps(consArr),
+    savings:        saveArr,
+  };
 }
 
 async function generateBriefing(env: Env, childId: string, input: BriefingInput): Promise<MentorBriefing> {

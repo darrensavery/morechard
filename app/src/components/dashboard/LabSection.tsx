@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { CurrentModule } from '../../lib/api'
-import { CURRICULUM, PILLAR_ICONS } from '../../lib/curriculum'
+import { CURRICULUM, PILLAR_ICONS, PILLAR_LABELS } from '../../lib/curriculum'
 
 interface Props {
   childName:      string;
@@ -51,6 +51,9 @@ function ModuleDetailSheet({
               <p className="text-[11px] font-bold uppercase tracking-wide"
                  style={{ color: statusColors.text }}>{statusLabel}</p>
               <p className="text-[16px] font-extrabold text-[var(--color-text)] leading-snug mt-0.5">{module.label}</p>
+              <p className="text-[10px] text-[var(--color-text-muted)] mt-0.5">
+                {PILLAR_LABELS[module.pillar] ?? module.pillar} · Level {module.level}
+              </p>
             </div>
           </div>
           <button onClick={onClose}
@@ -147,11 +150,23 @@ export function LabSection({ childName, currentModule, completedSlugs }: Props) 
 
       {/* Full curriculum carousel */}
       <div className="px-4 pt-3 pb-4">
-        <p className="text-[10px] font-bold text-[var(--color-text-muted)] uppercase tracking-wide mb-3">
-          Full Curriculum — tap any module to see details
-        </p>
-        {/* overflow-visible so the completed-tick badge isn't clipped */}
-        <div className="flex gap-3 overflow-x-auto pb-2" style={{ scrollbarWidth: 'none', overflowY: 'visible' }}>
+        <div className="flex items-center justify-between mb-3">
+          <p className="text-[10px] font-bold text-[var(--color-text-muted)] uppercase tracking-wide">
+            Full Curriculum ({CURRICULUM.length} modules)
+          </p>
+          <div className="flex items-center gap-1 text-[10px] text-[var(--color-text-muted)]">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M5 12h14M12 5l7 7-7 7"/>
+            </svg>
+            <span>scroll to see all</span>
+          </div>
+        </div>
+        {/* Wrapper with right-fade gradient hint */}
+        <div className="relative">
+          <div className="absolute right-0 top-0 bottom-0 w-8 pointer-events-none z-10"
+            style={{ background: 'linear-gradient(to right, transparent, var(--color-surface))' }}/>
+          {/* overflow-visible so the completed-tick badge isn't clipped */}
+          <div className="flex gap-3 overflow-x-auto pb-2" style={{ scrollbarWidth: 'none', overflowY: 'visible' }}>
           {CURRICULUM.map(chip => {
             const status    = getStatus(chip.slug)
             const isDone    = status === 'completed'
@@ -224,6 +239,7 @@ export function LabSection({ childName, currentModule, completedSlugs }: Props) 
               </button>
             )
           })}
+          </div>
         </div>
       </div>
 

@@ -514,6 +514,7 @@ export interface InsightsData {
   completed_module_slugs: string[];
   retention_score:        number | null;
   milestone_markers:      MilestoneMarker[];
+  chore_events?:          { point_index: number; first_pass: boolean }[];
 }
 
 export async function getInsights(
