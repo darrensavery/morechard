@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import type { CurrentModule } from '../../lib/api'
 import { CURRICULUM, PILLAR_ICONS, PILLAR_LABELS } from '../../lib/curriculum'
 
@@ -96,6 +96,28 @@ function ModuleDetailSheet({
 
 export function LabSection({ childName, currentModule, completedSlugs }: Props) {
   const [detailSlug, setDetailSlug] = useState<string | null>(null)
+  const scrollRef  = useRef<HTMLDivElement>(null)
+  const dragState  = useRef({ dragging: false, moved: false, startX: 0, scrollLeft: 0 })
+
+  function onMouseDown(e: React.MouseEvent) {
+    const el = scrollRef.current
+    if (!el) return
+    dragState.current = { dragging: true, moved: false, startX: e.pageX - el.offsetLeft, scrollLeft: el.scrollLeft }
+    el.style.cursor = 'grabbing'
+  }
+  function onMouseMove(e: React.MouseEvent) {
+    if (!dragState.current.dragging || !scrollRef.current) return
+    e.preventDefault()
+    const x = e.pageX - scrollRef.current.offsetLeft
+    const delta = x - dragState.current.startX
+    if (Math.abs(delta) > 4) dragState.current.moved = true
+    scrollRef.current.scrollLeft = dragState.current.scrollLeft - delta
+  }
+  function onMouseUp() {
+    dragState.current.dragging = false
+    if (scrollRef.current) scrollRef.current.style.cursor = 'grab'
+  }
+  function wasDrag() { return dragState.current.moved }
   const detailModule = detailSlug ? CURRICULUM.find(s => s.slug === detailSlug) : null
 
   // Only count slugs that actually exist in the curriculum
@@ -166,7 +188,15 @@ export function LabSection({ childName, currentModule, completedSlugs }: Props) 
           <div className="absolute right-0 top-0 bottom-0 w-8 pointer-events-none z-10"
             style={{ background: 'linear-gradient(to right, transparent, var(--color-surface))' }}/>
           {/* overflow-visible so the completed-tick badge isn't clipped */}
-          <div className="flex gap-3 overflow-x-auto pb-2" style={{ scrollbarWidth: 'none', overflowY: 'visible' }}>
+          <div
+            ref={scrollRef}
+            className="flex gap-3 overflow-x-auto pb-2"
+            style={{ scrollbarWidth: 'none', overflowY: 'visible', cursor: 'grab', userSelect: 'none' }}
+            onMouseDown={onMouseDown}
+            onMouseMove={onMouseMove}
+            onMouseUp={onMouseUp}
+            onMouseLeave={onMouseUp}
+          >
           {CURRICULUM.map(chip => {
             const status    = getStatus(chip.slug)
             const isDone    = status === 'completed'
@@ -187,7 +217,7 @@ export function LabSection({ childName, currentModule, completedSlugs }: Props) 
               <button
                 key={chip.slug}
                 type="button"
-                onClick={() => setDetailSlug(chip.slug)}
+                onClick={() => { if (!wasDrag()) setDetailSlug(chip.slug) }}
                 className="flex flex-col items-center gap-2 shrink-0 cursor-pointer transition-opacity hover:opacity-80 active:opacity-60"
                 style={{ width: 72 }}
               >
