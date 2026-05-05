@@ -149,8 +149,8 @@ export function GoalBoostingTab({ familyId, child }: Props) {
         const msg       = contribMsg[goal.id]
 
         return (
+          <div key={goal.id} className="space-y-2">
           <div
-            key={goal.id}
             className="bg-[var(--color-surface)] rounded-2xl border border-[var(--color-border)] overflow-hidden"
           >
             {/* Goal header */}
@@ -267,12 +267,12 @@ export function GoalBoostingTab({ familyId, child }: Props) {
               )}
             </div>
 
-            {/* AI Mentor nudge — AI plans only */}
-            {hasAiMentor && (
-              <div className="border-t border-[var(--color-border)]">
-                <GoalMentorNudge goal={goal} childName={child.display_name} />
-              </div>
-            )}
+          </div>
+
+          {/* AI Mentor nudge — rendered below the goal card */}
+          {hasAiMentor && (
+            <GoalMentorNudge goal={goal} childName={child.display_name} />
+          )}
           </div>
         )
       })}
