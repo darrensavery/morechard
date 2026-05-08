@@ -1,6 +1,6 @@
 // app/src/components/dashboard/ExpenseDetailSheet.tsx
 import { useState, useEffect } from 'react';
-import { X, Receipt, Calendar, User, Tag, SplitSquareHorizontal, AlertTriangle } from 'lucide-react';
+import { X, Receipt, Calendar, User, Tag, SplitSquareHorizontal } from 'lucide-react';
 import type { SharedExpense } from '../../lib/api';
 import { getReceiptUrl } from '../../lib/api';
 import { useAndroidBack } from '../../hooks/useAndroidBack';
@@ -31,7 +31,7 @@ export function ExpenseDetailSheet({ expense: e, currentUserId, isCoParenting, o
 
   const [receiptState, setReceiptState] = useState<ReceiptState>('idle');
   const [receiptUrl, setReceiptUrl] = useState<string | null>(null);
-  const [receiptError, setReceiptError] = useState<string | null>(null);
+  const [_receiptError, setReceiptError] = useState<string | null>(null);
 
   const hasReceipt = Boolean(e.receipt_r2_key);
 
@@ -160,23 +160,35 @@ export function ExpenseDetailSheet({ expense: e, currentUserId, isCoParenting, o
               </div>
               <div className="p-3">
                 {receiptState === 'loading' && (
-                  <div className="flex items-center justify-center h-32 text-[var(--color-text-muted)] text-sm">
-                    Loading receipt…
+                  <div className="flex items-center justify-center h-40 rounded-lg bg-[var(--color-surface-alt)]">
+                    <div className="flex flex-col items-center gap-2 text-[var(--color-text-muted)]">
+                      <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
+                      </svg>
+                      <span className="text-xs">Loading receipt…</span>
+                    </div>
                   </div>
                 )}
                 {receiptState === 'error' && (
-                  <div className="flex items-center gap-2 text-red-500 text-sm p-2">
-                    <AlertTriangle size={14} /> {receiptError}
+                  <div className="flex flex-col items-center gap-2 py-6 text-center text-[var(--color-text-muted)]">
+                    <Receipt size={24} className="opacity-40" />
+                    <p className="text-sm font-medium">Receipt unavailable</p>
+                    <p className="text-xs leading-snug max-w-[220px]">
+                      The receipt file could not be loaded. It may have been removed or the link has expired.
+                    </p>
                   </div>
                 )}
                 {receiptState === 'loaded' && receiptUrl && !isPdf && (
-                  <a href={receiptUrl} target="_blank" rel="noopener noreferrer">
+                  <a href={receiptUrl} target="_blank" rel="noopener noreferrer" className="block">
                     <img
                       src={receiptUrl}
                       alt="Receipt"
                       className="w-full rounded-lg object-contain max-h-80"
                     />
-                    <p className="text-[10px] text-center text-[var(--color-text-muted)] mt-1">Tap to open full size</p>
+                    <p className="text-[10px] text-center text-[var(--color-text-muted)] mt-1.5">
+                      Tap image to open full size ↗
+                    </p>
                   </a>
                 )}
                 {receiptState === 'loaded' && receiptUrl && isPdf && (
@@ -184,13 +196,14 @@ export function ExpenseDetailSheet({ expense: e, currentUserId, isCoParenting, o
                     href={receiptUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-3 p-3 rounded-lg bg-[var(--color-surface-raised)] border border-[var(--color-border)] hover:bg-[var(--color-surface-alt)]"
+                    className="flex items-center gap-3 p-3 rounded-lg bg-[var(--color-surface-alt)] border border-[var(--color-border)] hover:bg-[var(--color-border)] transition-colors"
                   >
                     <Receipt size={20} className="text-[var(--brand-primary)] shrink-0" />
-                    <div>
+                    <div className="flex-1">
                       <p className="text-sm font-semibold text-[var(--color-text)]">View PDF receipt</p>
                       <p className="text-xs text-[var(--color-text-muted)]">Opens in new tab</p>
                     </div>
+                    <span className="text-[var(--color-text-muted)] text-xs">↗</span>
                   </a>
                 )}
               </div>

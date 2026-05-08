@@ -243,14 +243,17 @@ export function PoolTab({ familyId, currentUserId, parentingMode, refreshKey, on
                 </div>
                 <div className="flex gap-2 mt-3">
                   <button
-                    onClick={() => handleApprove(e.id)}
-                    className="flex-1 bg-green-600 text-white text-sm font-semibold py-1.5 rounded-lg"
+                    onClick={() => {
+                      if (navigator.vibrate) navigator.vibrate(50);
+                      handleApprove(e.id);
+                    }}
+                    className="flex-1 bg-green-600 text-white text-sm font-semibold py-1.5 rounded-lg hover:bg-green-700 active:bg-green-800 active:scale-[0.97] transition-all cursor-pointer"
                   >
                     Approve
                   </button>
                   <button
                     onClick={() => handleReject(e.id)}
-                    className="flex-1 border border-red-400 text-red-600 text-sm font-semibold py-1.5 rounded-lg"
+                    className="flex-1 border border-red-400 text-red-600 text-sm font-semibold py-1.5 rounded-lg hover:bg-red-50 hover:border-red-500 active:bg-red-100 active:scale-[0.97] transition-all cursor-pointer"
                   >
                     Reject
                   </button>
@@ -313,7 +316,7 @@ export function PoolTab({ familyId, currentUserId, parentingMode, refreshKey, on
                   key={e.id}
                   type="button"
                   onClick={() => setDetailExpense(e)}
-                  className="w-full text-left rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 hover:bg-[var(--color-surface-raised)] active:bg-[var(--color-surface-raised)] transition-colors cursor-pointer"
+                  className="w-full text-left rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 hover:bg-[var(--color-surface-alt)] active:bg-[var(--color-surface-alt)] transition-colors cursor-pointer"
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1 min-w-0">
@@ -421,7 +424,7 @@ export function PoolTab({ familyId, currentUserId, parentingMode, refreshKey, on
                               key={e.id}
                               type="button"
                               onClick={() => setDetailExpense(e)}
-                              className="w-full text-left rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 opacity-75 hover:opacity-100 hover:bg-[var(--color-surface-raised)] transition-all cursor-pointer"
+                              className="w-full text-left rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 opacity-75 hover:opacity-100 hover:bg-[var(--color-surface-alt)] hover:border-[var(--color-text-muted)] transition-all cursor-pointer"
                             >
                               <div className="flex items-start justify-between gap-2">
                                 <div className="flex-1 min-w-0">
