@@ -293,6 +293,46 @@ export async function handleExportPdf(request: Request, env: Env): Promise<Respo
 }
 
 // ----------------------------------------------------------------
+// GET /api/export/prune-check
+// Returns whether there are any ledger rows eligible for pruning
+// (older than 2 years, not yet pruned, not a demo family).
+// ----------------------------------------------------------------
+export async function handleExportPruneCheck(
+  _request: Request,
+  env: Env,
+  auth: { sub: string; family_id: string },
+): Promise<Response> {
+  const family_id = auth.family_id;
+
+  const family = await env.DB
+    .prepare('SELECT is_demo FROM families WHERE id = ?')
+    .bind(family_id)
+    .first<{ is_demo: number }>();
+
+  if (family?.is_demo) {
+    return new Response(JSON.stringify({ has_prunable: false }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
+  const cutoff = Math.floor(Date.now() / 1000) - 2 * 365 * 86400;
+
+  const row = await env.DB
+    .prepare(
+      `SELECT COUNT(*) AS cnt FROM ledger
+       WHERE family_id = ? AND created_at < ? AND pruned_at IS NULL`
+    )
+    .bind(family_id, cutoff)
+    .first<{ cnt: number }>();
+
+  return new Response(JSON.stringify({ has_prunable: (row?.cnt ?? 0) > 0 }), {
+    status: 200,
+    headers: { 'Content-Type': 'application/json' },
+  });
+}
+
+// ----------------------------------------------------------------
 // POST /api/export/prune
 // Lead-parent only. Identifies ledger rows older than 2 years,
 // archives their hashes, then zeroes PII columns (description,

@@ -107,7 +107,7 @@ import {
 import { handleLedgerPost, handleLedgerGet, handleLedgerDispute } from './routes/ledger.js';
 import { handleLedgerVerify } from './routes/verify.js';
 import { handleRaiseDispute } from './routes/raise-dispute.js';
-import { handleExportJson, handleExportPdf, handleExportPrune } from './routes/export.js';
+import { handleExportJson, handleExportPdf, handleExportPrune, handleExportPruneCheck } from './routes/export.js';
 import {
   handleGovernanceRequest,
   handleGovernanceConfirm,
@@ -649,6 +649,11 @@ async function route(request: Request, env: Env, method: string, path: string): 
     const famCheck = requireFamilyMatch(auth, new URL(request.url).searchParams.get('family_id') ?? '');
     if (famCheck) return famCheck;
     return handleExportPdf(request, env);
+  }
+  if (path === '/api/export/prune-check' && method === 'GET') {
+    const parentCheck = requireRole(auth, 'parent');
+    if (parentCheck) return parentCheck;
+    return handleExportPruneCheck(request, env, auth);
   }
   if (path === '/api/export/prune' && method === 'POST') {
     const parentCheck = requireRole(auth, 'parent');

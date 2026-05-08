@@ -32,7 +32,7 @@ export function DataSettings({
   toast, onBack, onNavigateToPlan, shieldUpgradePrice,
 }: Props) {
   const familyId = useMemo(() => getFamilyId(), [])
-  const { stateOf, errorOf, triggerExport, triggerPrune, prunedCount } =
+  const { stateOf, errorOf, triggerExport, triggerPrune, prunedCount, hasPrunableData } =
     useExportManager(familyId)
 
   const [pruneStep, setPruneStep] = useState<PruneStep>('idle')
@@ -218,8 +218,8 @@ export function DataSettings({
         )}
       </SectionCard>
 
-      {/* Data Pruning — lead only */}
-      {isLead && (
+      {/* Data Pruning — lead only, only shown when pruneable records exist */}
+      {isLead && hasPrunableData && (
         <SectionCard>
           {pruneStep === 'idle' && (
             <SettingsRow

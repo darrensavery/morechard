@@ -5,11 +5,12 @@ type ExportKey = 'json-basic' | 'pdf-basic' | 'pdf-behavioral' | 'pdf-forensic' 
 type ExportState = 'idle' | 'generating' | 'success' | 'error'
 
 interface UseExportManager {
-  stateOf:      (key: ExportKey) => ExportState
-  errorOf:      (key: ExportKey) => string | null
-  triggerExport: (format: 'pdf' | 'json', tier: 'basic' | 'behavioral' | 'forensic') => Promise<void>
-  triggerPrune:  () => Promise<void>
-  prunedCount:   number | null
+  stateOf:        (key: ExportKey) => ExportState
+  errorOf:        (key: ExportKey) => string | null
+  triggerExport:  (format: 'pdf' | 'json', tier: 'basic' | 'behavioral' | 'forensic') => Promise<void>
+  triggerPrune:   () => Promise<void>
+  prunedCount:    number | null
+  hasPrunableData: boolean
 }
 
 const SUCCESS_RESET_MS = 3_000
@@ -20,6 +21,17 @@ export function useExportManager(familyId: string): UseExportManager {
   const [states, setStates] = useState<Map<ExportKey, ExportState>>(new Map())
   const [errors, setErrors] = useState<Map<ExportKey, string | null>>(new Map())
   const [prunedCount, setPrunedCount] = useState<number | null>(null)
+  const [hasPrunableData, setHasPrunableData] = useState(false)
+
+  useEffect(() => {
+    if (!familyId) return
+    fetch(apiUrl('/api/export/prune-check'), { headers: authHeaders() })
+      .then(r => r.ok ? r.json() : null)
+      .then((body: { has_prunable?: boolean } | null) => {
+        if (body?.has_prunable) setHasPrunableData(true)
+      })
+      .catch(() => { /* non-critical — default stays false */ })
+  }, [familyId])
 
   // Keep refs to active success-reset timers so we never leak them
   const resetTimers = useRef<Map<ExportKey, ReturnType<typeof setTimeout>>>(new Map())
@@ -159,5 +171,6 @@ export function useExportManager(familyId: string): UseExportManager {
     triggerExport,
     triggerPrune,
     prunedCount,
+    hasPrunableData,
   }
 }
