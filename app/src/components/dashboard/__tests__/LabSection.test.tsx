@@ -18,7 +18,7 @@ describe('LabSection', () => {
         retentionScore={84}
       />
     )
-    expect(screen.getByText("Henry's Toolkit")).toBeTruthy()
+    expect(screen.getByText("Henry's Learning Lab")).toBeTruthy()
   })
 
   it('renders current module name', () => {
@@ -33,16 +33,16 @@ describe('LabSection', () => {
     expect(screen.getByText('The Snowball')).toBeTruthy()
   })
 
-  it('renders retention score when provided', () => {
+  it('renders module progress percentage', () => {
     render(
       <LabSection
         childName="Henry"
         currentModule={mod}
         completedSlugs={[]}
-        retentionScore={84}
+        retentionScore={null}
       />
     )
-    expect(screen.getByText('84%')).toBeTruthy()
+    expect(screen.getByText('60%')).toBeTruthy()
   })
 
   it('renders skill track label', () => {
@@ -54,6 +54,6 @@ describe('LabSection', () => {
         retentionScore={null}
       />
     )
-    expect(screen.getByText("Skills Henry is Building")).toBeTruthy()
+    expect(screen.getByText(/Full Curriculum/)).toBeTruthy()
   })
 })
