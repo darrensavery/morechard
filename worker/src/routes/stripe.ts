@@ -138,6 +138,37 @@ async function createCheckoutSession(
   return { url: session.url, sessionId: session.id };
 }
 
+async function createDynamicPrice(
+  productId: string,
+  unitAmount: number,
+  currency: string,
+  stripeSecretKey: string,
+): Promise<string> {
+  const params = new URLSearchParams({
+    'currency':    currency,
+    'unit_amount': String(unitAmount),
+    'product':     productId,
+  });
+
+  const res = await fetch('https://api.stripe.com/v1/prices', {
+    method: 'POST',
+    headers: {
+      Authorization:  `Bearer ${stripeSecretKey}`,
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: params.toString(),
+  });
+
+  if (!res.ok) {
+    const msg = await res.text();
+    console.error('Stripe create-price error:', msg);
+    throw new Error('Failed to create dynamic price');
+  }
+
+  const price = await res.json() as { id: string };
+  return price.id;
+}
+
 async function verifyWebhookSignature(
   rawBody: string,
   signatureHeader: string,
@@ -183,7 +214,8 @@ export async function handleShieldUpgradePrice(
     .bind(auth.family_id)
     .first<{ has_shield: number }>();
 
-  if (family?.has_shield) return error('Already purchased', 400);
+  if (!family) return error('Family not found', 404);
+  if (family.has_shield) return error('Already purchased', 400);
 
   const { alreadyPaid, delta } = await calcShieldCredit(env, auth.family_id);
 
@@ -210,7 +242,25 @@ export async function handleCreateCheckout(
     return error(`payment_type must be one of: ${PURCHASABLE.join(', ')}`, 400);
   }
 
-  const priceId = PRICE_IDS[payment_type];
+  let priceId: string | undefined = PRICE_IDS[payment_type];
+
+  // For Shield, calculate upgrade credit and use a dynamic price if applicable
+  if (payment_type === 'SHIELD_AI') {
+    const { delta } = await calcShieldCredit(env, auth.family_id);
+    if (delta < SHIELD_FULL_PRICE_PENCE) {
+      try {
+        priceId = await createDynamicPrice(
+          env.STRIPE_SHIELD_PRODUCT_ID,
+          delta,
+          'gbp',
+          env.STRIPE_SECRET_KEY,
+        );
+      } catch {
+        return error('Failed to calculate upgrade price', 502);
+      }
+    }
+  }
+
   if (!priceId || priceId.startsWith('price_PLACEHOLDER')) {
     console.error(`No live price ID configured for ${payment_type}`);
     return error('This product is not yet available for purchase', 503);
