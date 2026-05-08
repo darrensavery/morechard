@@ -302,7 +302,7 @@ export function ChildDashboard() {
         </div>
       )}
 
-      <main className="flex-1 max-w-[560px] mx-auto w-full px-3.5 py-4 flex flex-col gap-4">
+      <main className="flex-1 max-w-[560px] mx-auto w-full px-3.5 py-4 flex flex-col gap-4 relative">
         <div className={childTab === 'earn' ? 'tab-panel' : 'tab-panel hidden'}><EarnTab familyId={familyId} childId={userId} currency={chores[0]?.currency ?? 'GBP'} /></div>
         <div className={childTab === 'lab'  ? 'tab-panel' : 'tab-panel hidden'}><LabTab childId={userId} appView={appView} /></div>
         {childTab !== 'earn' && childTab !== 'lab' && (loading ? (
