@@ -52,10 +52,11 @@ export function ProfileSettings({
   const [nameError,   setNameError]   = useState<string | null>(null)
 
   // Email inline edit
-  const [editingEmail, setEditingEmail] = useState(false)
-  const [emailInput,   setEmailInput]   = useState('')
-  const [emailSaving,  setEmailSaving]  = useState(false)
-  const [emailError,   setEmailError]   = useState<string | null>(null)
+  const [editingEmail,    setEditingEmail]    = useState(false)
+  const [emailInput,      setEmailInput]      = useState('')
+  const [emailSaving,     setEmailSaving]     = useState(false)
+  const [emailError,      setEmailError]      = useState<string | null>(null)
+  const [emailSentTo,     setEmailSentTo]     = useState<string | null>(null)
 
   // Danger zone modal state
   const [showLeaveModal,  setShowLeaveModal]  = useState(false)
@@ -89,6 +90,7 @@ export function ProfileSettings({
     try {
       await onSaveEmail(trimmed)
       setEditingEmail(false)
+      setEmailSentTo(trimmed)
     } catch (err: unknown) {
       setEmailError((err as Error).message)
     } finally {
@@ -147,32 +149,45 @@ export function ProfileSettings({
       {/* Avatar */}
       <SectionCard>
         <div className="px-4 py-3.5 flex items-center gap-3">
-          <button
-            onClick={() => setShowAvatarPicker(true)}
-            className="relative cursor-pointer group shrink-0"
-            title="Change avatar"
-          >
-            {myAvatar
-              ? <AvatarSVG id={myAvatar} size={52} />
-              : <DefaultAvatar size={52} initials={identity?.initials ?? identity?.display_name ?? 'P'} />
-            }
-            <span className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/20 rounded-full transition-colors text-white text-[18px] opacity-0 group-hover:opacity-100">✎</span>
-          </button>
+          {identity?.google_picture ? (
+            <img
+              src={identity.google_picture}
+              alt={identity.display_name}
+              className="w-[52px] h-[52px] rounded-full object-cover border-2 border-[var(--brand-primary)] shrink-0"
+              onError={e => { (e.target as HTMLImageElement).style.display = 'none' }}
+            />
+          ) : (
+            <button
+              onClick={() => setShowAvatarPicker(true)}
+              className="relative cursor-pointer group shrink-0"
+              title="Change avatar"
+            >
+              {myAvatar
+                ? <AvatarSVG id={myAvatar} size={52} />
+                : <DefaultAvatar size={52} initials={identity?.initials ?? identity?.display_name ?? 'P'} />
+              }
+              <span className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/20 rounded-full transition-colors text-white text-[18px] opacity-0 group-hover:opacity-100">✎</span>
+            </button>
+          )}
           <div>
             <p className="text-[14px] font-semibold text-[var(--color-text)]">
               {(family.display_name as string) ?? identity?.display_name ?? 'My family'}
             </p>
-            <button
-              onClick={() => setShowAvatarPicker(true)}
-              className="text-[12px] font-semibold text-[var(--brand-primary)] hover:underline cursor-pointer"
-            >
-              Change avatar
-            </button>
+            {identity?.google_picture ? (
+              <p className="text-[12px] text-[var(--color-text-muted)]">Google profile picture</p>
+            ) : (
+              <button
+                onClick={() => setShowAvatarPicker(true)}
+                className="text-[12px] font-semibold text-[var(--brand-primary)] hover:underline cursor-pointer"
+              >
+                Change avatar
+              </button>
+            )}
           </div>
         </div>
       </SectionCard>
 
-      {showAvatarPicker && (
+      {!identity?.google_picture && showAvatarPicker && (
         <SectionCard>
           <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--color-border)]">
             <p className="text-[15px] font-bold">Choose avatar</p>
@@ -251,16 +266,30 @@ export function ProfileSettings({
         <SettingsRow
           icon={<Shield size={15} />}
           label="Email"
-          description={profile?.email ?? 'No email set'}
-          badge={profile && (profile.email_verified === 0 || profile.email_pending) ? 'Unverified' : undefined}
+          description={profile?.email_pending
+            ? `${profile.email} · change pending`
+            : (profile?.email ?? 'No email set')}
+          badge={profile?.email_pending
+            ? 'Verify pending'
+            : (profile && profile.email_verified === 0 ? 'Unverified' : undefined)}
           onClick={() => {
             setEmailInput(profile?.email ?? '')
             setEmailError(null)
+            setEmailSentTo(null)
             setEditingEmail(v => !v)
             setEditingName(false)
             setShowAvatarPicker(false)
           }}
         />
+        {emailSentTo && !editingEmail && (
+          <div className="px-4 py-3 border-t border-[var(--color-border)] flex items-start gap-2 bg-teal-50">
+            <span className="text-teal-600 shrink-0 mt-0.5">✓</span>
+            <p className="text-[12px] text-teal-700 leading-snug">
+              Verification email sent to <span className="font-semibold">{emailSentTo}</span>. Click the link in that email to confirm the change — your current address remains active until then.
+            </p>
+          </div>
+        )}
+
         {editingEmail && (
           <form onSubmit={handleSaveEmail} className="px-4 py-3 border-t border-[var(--color-border)] space-y-2">
             <input

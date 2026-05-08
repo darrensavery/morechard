@@ -387,7 +387,7 @@ function PlanView({ onBack, showToast, shieldUpgradePrice }: {
                   <button
                     type="button"
                     onClick={() => setShowCompare(true)}
-                    className="text-[12px] font-semibold text-[var(--brand-primary)] hover:opacity-75 transition-opacity"
+                    className="text-[12px] font-semibold text-[var(--brand-primary)] px-2.5 py-1 rounded-lg border border-[var(--brand-primary)] hover:bg-[color-mix(in_srgb,var(--brand-primary)_10%,transparent)] active:bg-[color-mix(in_srgb,var(--brand-primary)_18%,transparent)] active:scale-[0.97] transition-all duration-150"
                   >
                     Compare all plans
                   </button>
@@ -556,7 +556,7 @@ function PlanView({ onBack, showToast, shieldUpgradePrice }: {
                       type="button"
                       disabled={buying !== null}
                       onClick={() => handlePurchase('SHIELD_AI')}
-                      className="w-full py-2.5 rounded-xl bg-amber-500 text-white text-[13px] font-bold hover:opacity-90 active:opacity-80 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="w-full py-2.5 rounded-xl bg-amber-500 text-white text-[13px] font-bold hover:bg-amber-600 hover:shadow-[0_4px_14px_color-mix(in_srgb,#f59e0b_40%,transparent)] active:bg-amber-700 active:scale-[0.98] active:shadow-none transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {buying === 'SHIELD_AI'
                         ? 'Loading…'
@@ -587,7 +587,7 @@ function PlanView({ onBack, showToast, shieldUpgradePrice }: {
                     <button
                       type="button"
                       onClick={() => setShowCancelConfirm(true)}
-                      className="text-[12px] font-semibold text-red-500 hover:text-red-600 transition-colors"
+                      className="text-[12px] font-semibold text-red-500 px-2.5 py-1 rounded-lg border border-red-300 hover:bg-red-50 hover:text-red-600 hover:border-red-400 active:bg-red-100 active:scale-[0.97] transition-all duration-150"
                     >
                       Cancel plan & request refund
                     </button>

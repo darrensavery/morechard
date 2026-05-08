@@ -180,6 +180,17 @@ export function ParentSettingsTab({ familyId, online, onChildrenChange, onClose 
 
   const { toast, showToast } = useToast()
 
+  // Show toast + clean URL if redirected back from email verification link
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('emailVerified') === '1') {
+      showToast('Email address confirmed — your new address is now active')
+      const clean = window.location.pathname
+      window.history.replaceState({}, '', clean)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   // Profile (loaded from GET /auth/me)
   const [profile,   setProfile]   = useState<MeResult | null>(null)
   const [leadCount, setLeadCount] = useState<number>(1)
