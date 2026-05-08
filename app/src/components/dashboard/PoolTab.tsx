@@ -1,5 +1,5 @@
 // app/src/components/dashboard/PoolTab.tsx
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState } from 'react';
 import type { SharedExpense } from '../../lib/api';
 import { apiUrl, authHeaders, getSharedExpenses } from '../../lib/api';
 import { VoidExpenseSheet } from './VoidExpenseSheet';
@@ -110,23 +110,21 @@ export function PoolTab({ familyId, currentUserId, parentingMode, refreshKey, on
   const flaggedExpenses = expenses.filter(e => e.verification_status === 'rejected');
   const voidedExpenses = expenses.filter(e => e.verification_status === 'voided');
 
-  // Archive = all committed expenses not in the current open period, plus settled history
-  const archiveExpenses = useMemo(() => {
-    const all = expenses.filter(e =>
-      ['committed_auto', 'committed_manual'].includes(e.verification_status) && e.settlement_period
-    );
-    return [...all].sort((a, b) => {
-      switch (archiveSort) {
-        case 'date-desc':   return b.created_at - a.created_at;
-        case 'date-asc':    return a.created_at - b.created_at;
-        case 'alpha-asc':   return a.description.localeCompare(b.description);
-        case 'alpha-desc':  return b.description.localeCompare(a.description);
-        case 'amount-desc': return b.total_amount - a.total_amount;
-        case 'amount-asc':  return a.total_amount - b.total_amount;
-        default:            return 0;
-      }
-    });
-  }, [expenses, archiveSort]);
+  // Archive = committed expenses that have been settled (have a settlement_period)
+  const archiveBase = expenses.filter(e =>
+    ['committed_auto', 'committed_manual'].includes(e.verification_status) && e.settlement_period
+  );
+  const archiveExpenses = [...archiveBase].sort((a, b) => {
+    switch (archiveSort) {
+      case 'date-desc':   return b.created_at - a.created_at;
+      case 'date-asc':    return a.created_at - b.created_at;
+      case 'alpha-asc':   return a.description.localeCompare(b.description);
+      case 'alpha-desc':  return b.description.localeCompare(a.description);
+      case 'amount-desc': return b.total_amount - a.total_amount;
+      case 'amount-asc':  return a.total_amount - b.total_amount;
+      default:            return 0;
+    }
+  });
 
   let netPence = 0;
   for (const e of openExpenses) {
