@@ -73,7 +73,7 @@ import { clearDeviceIdentity, getDeviceIdentity, updateDeviceIdentity } from '..
 import type { ChildRecord, ChildGrowthSettings } from '../../lib/api'
 import {
   getChildren, addChild, generateInvite,
-  getFamily, getSettings, updateSettings,
+  getFamily, updateFamily, getSettings, updateSettings,
   getChildSettings, updateChildSettings,
   getChildGrowth, updateChildGrowth,
   getMe, updateProfile, getLeadCount, getTrialStatus,
