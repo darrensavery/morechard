@@ -1,5 +1,5 @@
 // app/src/components/dashboard/PoolTab.tsx
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import type { SharedExpense } from '../../lib/api';
 import { apiUrl, authHeaders, getSharedExpenses } from '../../lib/api';
 import { VoidExpenseSheet } from './VoidExpenseSheet';
@@ -41,6 +41,17 @@ function ledgerNote(
   return `Logged by ${loggedByName}`;
 }
 
+type SortKey = 'date-desc' | 'date-asc' | 'alpha-asc' | 'alpha-desc' | 'amount-desc' | 'amount-asc';
+
+const SORT_OPTIONS: { value: SortKey; label: string }[] = [
+  { value: 'date-desc',   label: 'Newest first' },
+  { value: 'date-asc',    label: 'Oldest first' },
+  { value: 'alpha-asc',   label: 'A → Z' },
+  { value: 'alpha-desc',  label: 'Z → A' },
+  { value: 'amount-desc', label: 'Highest amount' },
+  { value: 'amount-asc',  label: 'Lowest amount' },
+];
+
 type Props = {
   familyId: string;
   currentUserId: string;
@@ -56,6 +67,8 @@ export function PoolTab({ familyId, currentUserId, parentingMode, refreshKey, on
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [voidingExpense, setVoidingExpense] = useState<SharedExpense | null>(null);
+  const [archiveSort, setArchiveSort] = useState<SortKey>('date-desc');
+  const [archiveOpen, setArchiveOpen] = useState(false);
 
   async function load() {
     setLoading(true);
@@ -99,6 +112,24 @@ export function PoolTab({ familyId, currentUserId, parentingMode, refreshKey, on
   const flaggedExpenses = expenses.filter(e => e.verification_status === 'rejected');
   const voidedExpenses = expenses.filter(e => e.verification_status === 'voided');
   const history = expenses.filter(e => e.settlement_period);
+
+  // Archive = all committed expenses not in the current open period, plus settled history
+  const archiveExpenses = useMemo(() => {
+    const all = expenses.filter(e =>
+      ['committed_auto', 'committed_manual'].includes(e.verification_status) && e.settlement_period
+    );
+    return [...all].sort((a, b) => {
+      switch (archiveSort) {
+        case 'date-desc':   return b.created_at - a.created_at;
+        case 'date-asc':    return a.created_at - b.created_at;
+        case 'alpha-asc':   return a.description.localeCompare(b.description);
+        case 'alpha-desc':  return b.description.localeCompare(a.description);
+        case 'amount-desc': return b.total_amount - a.total_amount;
+        case 'amount-asc':  return a.total_amount - b.total_amount;
+        default:            return 0;
+      }
+    });
+  }, [expenses, archiveSort]);
 
   let netPence = 0;
   for (const e of openExpenses) {
@@ -226,7 +257,7 @@ export function PoolTab({ familyId, currentUserId, parentingMode, refreshKey, on
       {openExpenses.length > 0 && (
         <section className="px-4">
           <h3 className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wide mb-2">
-            {new Date().toLocaleString('default', { month: 'long', year: 'numeric' })} · Not yet settled
+            {new Date().toLocaleString('default', { month: 'long', year: 'numeric' })}
           </h3>
           <div className="flex flex-col gap-2">
             {openExpenses.map(e => {
@@ -279,18 +310,68 @@ export function PoolTab({ familyId, currentUserId, parentingMode, refreshKey, on
         </section>
       )}
 
-      {/* Reconciled history */}
-      {history.length > 0 && (
+      {/* Archive — all historical committed expenses */}
+      {archiveExpenses.length > 0 && (
         <section className="px-4">
-          <h3 className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wide mb-2">History</h3>
-          {[...new Set(history.map(e => e.settlement_period))].map(period => (
-            <div key={period} className="rounded-xl border border-[var(--color-border)] p-3 mb-2">
-              <p className="text-sm font-semibold">{period}</p>
-              <p className="text-xs text-[var(--color-text-muted)]">
-                {history.filter(e => e.settlement_period === period).length} expenses reconciled
-              </p>
-            </div>
-          ))}
+          <button
+            type="button"
+            onClick={() => setArchiveOpen(o => !o)}
+            className="w-full flex items-center justify-between mb-2 cursor-pointer"
+          >
+            <h3 className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wide">
+              Archive ({archiveExpenses.length})
+            </h3>
+            <span className="text-xs text-[var(--color-text-muted)]">{archiveOpen ? '▲ Hide' : '▼ Show'}</span>
+          </button>
+
+          {archiveOpen && (
+            <>
+              {/* Sort control */}
+              <div className="flex items-center gap-2 mb-3">
+                <span className="text-xs text-[var(--color-text-muted)] shrink-0">Sort:</span>
+                <select
+                  value={archiveSort}
+                  onChange={e => setArchiveSort(e.target.value as SortKey)}
+                  className="text-xs bg-[var(--color-surface-alt)] border border-[var(--color-border)] rounded-lg px-2 py-1 text-[var(--color-text)] focus:outline-none cursor-pointer"
+                >
+                  {SORT_OPTIONS.map(o => (
+                    <option key={o.value} value={o.value}>{o.label}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                {archiveExpenses.map(e => {
+                  const dateStr = e.expense_date
+                    ? new Date(e.expense_date).toLocaleDateString('default', { day: 'numeric', month: 'short', year: 'numeric' })
+                    : new Date(e.created_at * 1000).toLocaleDateString('default', { day: 'numeric', month: 'short', year: 'numeric' });
+                  return (
+                    <div key={e.id} className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 opacity-75">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-sm">
+                            <span className="inline-flex items-center gap-1.5">
+                              <CategoryIcon category={e.category} />
+                              {e.description}
+                            </span>
+                          </p>
+                          <p className="text-xs text-[var(--color-text-muted)] mt-0.5 ml-5">{dateStr}</p>
+                          {e.settlement_period && (
+                            <p className="text-xs text-[var(--color-text-muted)] mt-0.5 ml-5">
+                              Settled {new Date(e.settlement_period + '-01').toLocaleString('default', { month: 'long', year: 'numeric' })}
+                            </p>
+                          )}
+                        </div>
+                        <p className="text-sm font-bold tabular-nums text-[var(--color-text-muted)]">
+                          {formatAmount(e.total_amount, e.currency)}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          )}
         </section>
       )}
 
