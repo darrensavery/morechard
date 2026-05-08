@@ -351,9 +351,9 @@ export function ParentDashboard() {
       <main className="flex-1 max-w-[560px] mx-auto w-full px-3.5 py-4">
         {!childrenLoaded ? null : activeChild ? (
           <>
-            {tab === 'chores'   && <ChoresTab       familyId={familyId} child={activeChild} children={children} />}
-            {tab === 'activity' && <ActivityTab     familyId={familyId} child={activeChild} childCount={children.length} onCountChange={setPendingCount} unpaidRow={unpaid.find(u => u.child_id === activeChild.id) ?? null} onOpenBridge={() => { const row = unpaid.find(u => u.child_id === activeChild.id); if (row) openBridgeForChild(activeChild, row) }} />}
-            {tab === 'pool'     && (
+            <div className={tab === 'chores'   ? undefined : 'hidden'}><ChoresTab       familyId={familyId} child={activeChild} children={children} /></div>
+            <div className={tab === 'activity' ? undefined : 'hidden'}><ActivityTab     familyId={familyId} child={activeChild} childCount={children.length} onCountChange={setPendingCount} unpaidRow={unpaid.find(u => u.child_id === activeChild.id) ?? null} onOpenBridge={() => { const row = unpaid.find(u => u.child_id === activeChild.id); if (row) openBridgeForChild(activeChild, row) }} /></div>
+            <div className={tab === 'pool'     ? undefined : 'hidden'}>
               <PoolTab
                 familyId={familyId}
                 currentUserId={getDeviceIdentity()?.user_id ?? ''}
@@ -362,9 +362,9 @@ export function ParentDashboard() {
                 onAddClick={() => setShowAddExpense(true)}
                 onReconcileClick={() => setShowSettlement(true)}
               />
-            )}
-            {tab === 'insights' && <InsightsTab     familyId={familyId} child={activeChild} children={children} />}
-            {tab === 'goals'    && <GoalBoostingTab familyId={familyId} child={activeChild} />}
+            </div>
+            <div className={tab === 'insights' ? undefined : 'hidden'}><InsightsTab     familyId={familyId} child={activeChild} children={children} /></div>
+            <div className={tab === 'goals'    ? undefined : 'hidden'}><GoalBoostingTab familyId={familyId} child={activeChild} /></div>
           </>
         ) : (
           (() => {

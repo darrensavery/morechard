@@ -303,11 +303,9 @@ export function ChildDashboard() {
       )}
 
       <main className="flex-1 max-w-[560px] mx-auto w-full px-3.5 py-4 flex flex-col gap-4">
-        {childTab === 'earn' ? (
-          <EarnTab familyId={familyId} childId={userId} currency={chores[0]?.currency ?? 'GBP'} />
-        ) : childTab === 'lab' ? (
-          <LabTab childId={userId} appView={appView} />
-        ) : loading ? (
+        <div className={childTab === 'earn' ? undefined : 'hidden'}><EarnTab familyId={familyId} childId={userId} currency={chores[0]?.currency ?? 'GBP'} /></div>
+        <div className={childTab === 'lab'  ? undefined : 'hidden'}><LabTab childId={userId} appView={appView} /></div>
+        {childTab !== 'earn' && childTab !== 'lab' && (loading ? (
           <div className="py-16 text-center text-[14px] text-[var(--color-text-muted)]">Loading…</div>
         ) : tone.isChild ? (
           /* ═══════════════════════════════════════════════════════════
@@ -364,7 +362,7 @@ export function ChildDashboard() {
             setNoteChore={setNoteChore}
             setNoteText={setNoteText}
           />
-        )}
+        ))}
 
       </main>
 
