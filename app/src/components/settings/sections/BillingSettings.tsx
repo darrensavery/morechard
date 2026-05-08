@@ -172,12 +172,12 @@ function TrialView({ onBack }: { onBack: () => void }) {
   const pct      = daysLeft !== null ? Math.max(0, Math.min(100, (daysLeft / 14) * 100)) : 100
   const urgent   = daysLeft !== null && daysLeft <= 2
 
-  const planLabel = trial?.has_shield
-    ? 'Morechard Shield'
-    : trial?.has_ai_mentor
-    ? 'Morechard Core AI'
-    : trial?.has_lifetime_license
-    ? 'Morechard Core'
+  const planLabel = trial?.has_lifetime_license
+    ? trial.has_shield
+      ? 'Morechard Shield'
+      : trial.has_ai_mentor
+      ? 'Morechard Core AI'
+      : 'Morechard Core'
     : null
 
   return (
@@ -320,25 +320,25 @@ function PlanView({ onBack, showToast, shieldUpgradePrice }: {
   const hasAi      = trial?.has_ai_mentor
   const hasShield  = trial?.has_shield
 
-  // Derive current plan label
-  const currentPlan = hasShield
-    ? 'Morechard Shield'
-    : hasAi
-    ? 'Morechard Core AI'
-    : hasBase
-    ? 'Morechard Core'
+  // Derive current plan label — only show a purchased plan if has_lifetime_license is true
+  const currentPlan = hasBase
+    ? hasShield
+      ? 'Morechard Shield'
+      : hasAi
+      ? 'Morechard Core AI'
+      : 'Morechard Core'
     : trial?.is_expired
     ? 'Trial expired'
     : trial?.is_activated
     ? `Trial — ${trial.days_remaining ?? 0} days left`
     : 'Free trial (not started)'
 
-  const planColor = hasShield
-    ? 'bg-amber-100 text-amber-700'
-    : hasAi
-    ? 'bg-violet-100 text-violet-700'
-    : hasBase
-    ? 'bg-[color-mix(in_srgb,var(--brand-primary)_12%,transparent)] text-[var(--brand-primary)]'
+  const planColor = hasBase
+    ? hasShield
+      ? 'bg-amber-100 text-amber-700'
+      : hasAi
+      ? 'bg-violet-100 text-violet-700'
+      : 'bg-[color-mix(in_srgb,var(--brand-primary)_12%,transparent)] text-[var(--brand-primary)]'
     : trial?.is_expired
     ? 'bg-red-100 text-red-600'
     : 'bg-teal-100 text-teal-700'

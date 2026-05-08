@@ -402,7 +402,7 @@ onSaveOverdraftPolicy={handleSaveOverdraftPolicy} /></ProfileSection>
           </span>
           <button
             type="button"
-            onClick={() => setView({ type: 'section', section: 'billing' })}
+            onClick={() => setView({ type: 'section', section: 'billing', billingSubView: 'plan' })}
             className="flex items-center gap-0.5 text-[11px] font-semibold shrink-0 text-teal-600"
           >
             {pl ? 'Plan' : 'Manage Plan'}<ChevronRight size={12} />
@@ -425,7 +425,7 @@ onSaveOverdraftPolicy={handleSaveOverdraftPolicy} /></ProfileSection>
         <div className="flex items-center gap-2 px-3 pt-2 pb-1.5">
           <Clock size={13} className="shrink-0" />
           <span className="flex-1 text-[12px] font-semibold">{label}</span>
-          <button type="button" onClick={() => setView({ type: 'section', section: 'billing' })}
+          <button type="button" onClick={() => setView({ type: 'section', section: 'billing', billingSubView: 'plan' })}
             className={cn('flex items-center gap-0.5 text-[11px] font-semibold shrink-0', urgentAmber ? 'text-amber-600' : 'text-teal-600')}>
             {pl ? 'Plan' : 'Manage Plan'}<ChevronRight size={12} />
           </button>
