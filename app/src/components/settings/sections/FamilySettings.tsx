@@ -160,6 +160,76 @@ export function FamilySettings({
     )
   }
 
+  if (showOverdraftPolicy) {
+    async function handleSaveOverdraft() {
+      setSavingOverdraft(true)
+      try {
+        await onSaveOverdraftPolicy(localEnabled, localLimitPence)
+        setShowOverdraftPolicy(false)
+      } finally {
+        setSavingOverdraft(false)
+      }
+    }
+
+    return (
+      <div className="space-y-4">
+        {toast && <Toast message={toast} />}
+        <SectionHeader title="Global Overdraft Policy" onBack={() => setShowOverdraftPolicy(false)} />
+
+        <SectionCard>
+          {/* Toggle row */}
+          <div className="flex items-center justify-between px-4 py-3.5 border-b border-[var(--color-border)]">
+            <div className="flex-1 min-w-0 pr-4">
+              <p className="text-[13px] font-semibold text-[var(--color-text)]">Allow Overdraft</p>
+              <p className="text-[12px] text-[var(--color-text-muted)] leading-snug">
+                Let children's balances go negative
+              </p>
+            </div>
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                checked={localEnabled}
+                onChange={e => setLocalEnabled(e.target.checked)}
+                className="sr-only peer"
+              />
+              <div className="w-11 h-6 bg-[var(--color-border)] peer-checked:bg-[var(--brand-primary)] rounded-full transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-5" />
+            </label>
+          </div>
+
+          {/* Limit input — shown only when enabled */}
+          {localEnabled && (
+            <div className="px-4 py-3.5">
+              <p className="text-[13px] font-semibold text-[var(--color-text)] mb-0.5">Overdraft Limit</p>
+              <p className="text-[12px] text-[var(--color-text-muted)] mb-2.5 leading-snug">
+                Maximum amount a child can go into the negative.
+              </p>
+              <div className="flex items-center gap-2">
+                <span className="text-[14px] text-[var(--color-text-muted)]">£</span>
+                <input
+                  type="number"
+                  inputMode="decimal"
+                  step="1"
+                  min="0"
+                  value={(localLimitPence / 100).toFixed(0)}
+                  onChange={e => setLocalLimitPence(Math.round(parseFloat(e.target.value || '0') * 100))}
+                  className="border border-[var(--color-border)] rounded-xl px-4 py-2 text-[14px] bg-[var(--color-surface)] w-28 tabular-nums focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]"
+                />
+              </div>
+            </div>
+          )}
+        </SectionCard>
+
+        <button
+          onClick={handleSaveOverdraft}
+          disabled={savingOverdraft}
+          className="w-full bg-[var(--brand-primary)] text-white font-semibold text-[14px] py-3 rounded-xl disabled:opacity-50 cursor-pointer"
+        >
+          {savingOverdraft ? 'Saving…' : 'Save Changes'}
+        </button>
+      </div>
+    )
+  }
+
   if (showSharedExpenses) {
     return (
       <div className="space-y-4">
@@ -356,8 +426,8 @@ export function FamilySettings({
           {!isLead && <ReadOnlyBadge />}
         </div>
         <SectionCard>
-          <SettingsRow icon={<Calendar size={15} />} label={`${terminology.allowanceLabel} Day`} description={`Weekly day for automated ${terminology.money} drops — your family's harvest day`} onClick={onComingSoon} disabled={!isLead} />
-          <SettingsRow icon={<Shield size={15} />} label="Global Overdraft Policy" description="Toggle bailouts — default: off / £0" onClick={onComingSoon} disabled={!isLead} />
+          <SettingsRow icon={<Calendar size={15} />} label={`${terminology.allowanceLabel} Day`} description={`Weekly day for automated ${terminology.money} drops — your family's harvest day`} onClick={() => { setSelectedDay(pocketMoneyDay); setShowPocketMoneyDay(true) }} disabled={!isLead} />
+          <SettingsRow icon={<Shield size={15} />} label="Global Overdraft Policy" description="Toggle bailouts — default: off / £0" onClick={() => { setLocalEnabled(overdraftEnabled); setLocalLimitPence(overdraftLimitPence); setShowOverdraftPolicy(true) }} disabled={!isLead} />
         </SectionCard>
       </div>
     </div>
