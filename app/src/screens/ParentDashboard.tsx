@@ -351,9 +351,9 @@ export function ParentDashboard() {
       <main className="flex-1 max-w-[560px] mx-auto w-full px-3.5 py-4">
         {!childrenLoaded ? null : activeChild ? (
           <>
-            <div className={tab === 'chores'   ? undefined : 'hidden'}><ChoresTab       familyId={familyId} child={activeChild} children={children} /></div>
-            <div className={tab === 'activity' ? undefined : 'hidden'}><ActivityTab     familyId={familyId} child={activeChild} childCount={children.length} onCountChange={setPendingCount} unpaidRow={unpaid.find(u => u.child_id === activeChild.id) ?? null} onOpenBridge={() => { const row = unpaid.find(u => u.child_id === activeChild.id); if (row) openBridgeForChild(activeChild, row) }} /></div>
-            <div className={tab === 'pool'     ? undefined : 'hidden'}>
+            <div className={tab === 'chores'   ? 'tab-panel' : 'tab-panel hidden'}><ChoresTab       familyId={familyId} child={activeChild} children={children} /></div>
+            <div className={tab === 'activity' ? 'tab-panel' : 'tab-panel hidden'}><ActivityTab     familyId={familyId} child={activeChild} childCount={children.length} onCountChange={setPendingCount} unpaidRow={unpaid.find(u => u.child_id === activeChild.id) ?? null} onOpenBridge={() => { const row = unpaid.find(u => u.child_id === activeChild.id); if (row) openBridgeForChild(activeChild, row) }} /></div>
+            <div className={tab === 'pool'     ? 'tab-panel' : 'tab-panel hidden'}>
               <PoolTab
                 familyId={familyId}
                 currentUserId={getDeviceIdentity()?.user_id ?? ''}
@@ -363,8 +363,8 @@ export function ParentDashboard() {
                 onReconcileClick={() => setShowSettlement(true)}
               />
             </div>
-            <div className={tab === 'insights' ? undefined : 'hidden'}><InsightsTab     familyId={familyId} child={activeChild} children={children} /></div>
-            <div className={tab === 'goals'    ? undefined : 'hidden'}><GoalBoostingTab familyId={familyId} child={activeChild} /></div>
+            <div className={tab === 'insights' ? 'tab-panel' : 'tab-panel hidden'}><InsightsTab     familyId={familyId} child={activeChild} children={children} /></div>
+            <div className={tab === 'goals'    ? 'tab-panel' : 'tab-panel hidden'}><GoalBoostingTab familyId={familyId} child={activeChild} /></div>
           </>
         ) : (
           (() => {

@@ -303,8 +303,8 @@ export function ChildDashboard() {
       )}
 
       <main className="flex-1 max-w-[560px] mx-auto w-full px-3.5 py-4 flex flex-col gap-4">
-        <div className={childTab === 'earn' ? undefined : 'hidden'}><EarnTab familyId={familyId} childId={userId} currency={chores[0]?.currency ?? 'GBP'} /></div>
-        <div className={childTab === 'lab'  ? undefined : 'hidden'}><LabTab childId={userId} appView={appView} /></div>
+        <div className={childTab === 'earn' ? 'tab-panel' : 'tab-panel hidden'}><EarnTab familyId={familyId} childId={userId} currency={chores[0]?.currency ?? 'GBP'} /></div>
+        <div className={childTab === 'lab'  ? 'tab-panel' : 'tab-panel hidden'}><LabTab childId={userId} appView={appView} /></div>
         {childTab !== 'earn' && childTab !== 'lab' && (loading ? (
           <div className="py-16 text-center text-[14px] text-[var(--color-text-muted)]">Loading…</div>
         ) : tone.isChild ? (
