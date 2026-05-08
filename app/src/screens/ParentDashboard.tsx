@@ -48,6 +48,7 @@ export function ParentDashboard() {
   const [showSettings, setShowSettings] = useState(false)
   const [showAddExpense,  setShowAddExpense]  = useState(false)
   const [showSettlement,  setShowSettlement]  = useState(false)
+  const [poolRefreshKey, setPoolRefreshKey] = useState(0)
 
   function handleTabChange(t: Tab) {
     setTab(t)
@@ -165,7 +166,7 @@ export function ParentDashboard() {
     return () => { clearInterval(t); document.removeEventListener('visibilitychange', onVisible) }
   }, [familyId, activeChild])
 
-  const poolLabel = parentingMode === 'co-parenting' ? 'Pool' : 'Spending'
+  const poolLabel = parentingMode === 'co-parenting' ? 'Pool' : 'Expenses'
   const TABS: { id: Tab; label: string; badge?: number }[] = [
     { id: 'chores',   label: 'Chores' },
     { id: 'activity', label: 'Activity', badge: pendingCount || undefined },
@@ -357,6 +358,7 @@ export function ParentDashboard() {
                 familyId={familyId}
                 currentUserId={getDeviceIdentity()?.user_id ?? ''}
                 parentingMode={parentingMode}
+                refreshKey={poolRefreshKey}
                 onAddClick={() => setShowAddExpense(true)}
                 onReconcileClick={() => setShowSettlement(true)}
               />
@@ -436,7 +438,7 @@ export function ParentDashboard() {
             parentingMode={parentingMode}
             familyName={activeChild?.display_name ?? undefined}
             onClose={() => setShowAddExpense(false)}
-            onSaved={() => { setShowAddExpense(false) }}
+            onSaved={() => { setShowAddExpense(false); setPoolRefreshKey(k => k + 1) }}
           />
         )}
         {showSettlement && (

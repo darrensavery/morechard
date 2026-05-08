@@ -45,11 +45,12 @@ type Props = {
   familyId: string;
   currentUserId: string;
   parentingMode: 'single' | 'co-parenting';
+  refreshKey?: number;
   onAddClick: () => void;
   onReconcileClick: (expenses: SharedExpense[]) => void;
 };
 
-export function PoolTab({ familyId, currentUserId, parentingMode, onAddClick, onReconcileClick }: Props) {
+export function PoolTab({ familyId, currentUserId, parentingMode, refreshKey, onAddClick, onReconcileClick }: Props) {
   const isCoParenting = parentingMode === 'co-parenting';
   const [expenses, setExpenses] = useState<SharedExpense[]>([]);
   const [loading, setLoading] = useState(true);
@@ -68,7 +69,7 @@ export function PoolTab({ familyId, currentUserId, parentingMode, onAddClick, on
     }
   }
 
-  useEffect(() => { load(); }, [familyId]);
+  useEffect(() => { load(); }, [familyId, refreshKey]);
 
   async function handleApprove(id: number) {
     await fetch(apiUrl(`/api/shared-expenses/${id}/approve`), { method: 'POST', headers: authHeaders() });
@@ -118,7 +119,7 @@ export function PoolTab({ familyId, currentUserId, parentingMode, onAddClick, on
       {/* Running balance / month summary chip */}
       {openExpenses.length > 0 && (
         <div className="mx-4 mt-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-raised)] p-4 flex items-center justify-between">
-          <div>
+          <div className="flex-1 text-center">
             <p className="text-xs text-[var(--color-text-muted)] uppercase tracking-wide">This month</p>
             {isCoParenting ? (
               <p className={`text-2xl font-bold tabular-nums ${netPence < 0 ? 'text-green-600' : netPence > 0 ? 'text-red-500' : 'text-[var(--color-text)]'}`}>
@@ -225,7 +226,7 @@ export function PoolTab({ familyId, currentUserId, parentingMode, onAddClick, on
       {openExpenses.length > 0 && (
         <section className="px-4">
           <h3 className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wide mb-2">
-            Open — {currentPeriod}
+            {new Date().toLocaleString('default', { month: 'long', year: 'numeric' })} · Not yet settled
           </h3>
           <div className="flex flex-col gap-2">
             {openExpenses.map(e => {
@@ -238,7 +239,7 @@ export function PoolTab({ familyId, currentUserId, parentingMode, onAddClick, on
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1">
                       <p className="font-semibold text-sm"><span className="inline-flex items-center gap-1.5"><CategoryIcon category={e.category} />{e.description}</span></p>
-                      <p className="text-xs text-[var(--color-text-muted)] mt-0.5">{ledgerNote(e, currentUserId)}</p>
+                      <p className="text-xs text-[var(--color-text-muted)] mt-0.5 ml-5">{ledgerNote(e, currentUserId)}</p>
                       {isCoParenting && uneven && (
                         <p className="text-[10px] text-[var(--color-text-muted)] mt-0.5 italic">
                           To keep things simple, we've rounded your share to {formatAmount(myAmount, e.currency)}.
@@ -247,7 +248,7 @@ export function PoolTab({ familyId, currentUserId, parentingMode, onAddClick, on
                       {e.logged_by === currentUserId && (
                         <button
                           onClick={() => setVoidingExpense(e)}
-                          className="text-xs text-red-500 border border-red-300 rounded px-2 py-0.5 mt-1"
+                          className="text-xs text-red-500 border border-red-300 rounded px-2 py-0.5 mt-1 cursor-pointer hover:bg-red-50 hover:border-red-400 hover:text-red-600 transition-colors"
                         >
                           Void
                         </button>
