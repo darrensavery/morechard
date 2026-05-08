@@ -247,7 +247,7 @@ export function PoolTab({ familyId, currentUserId, parentingMode, refreshKey, on
                       if (navigator.vibrate) navigator.vibrate(50);
                       handleApprove(e.id);
                     }}
-                    className="flex-1 bg-green-600 text-white text-sm font-semibold py-1.5 rounded-lg hover:bg-green-700 active:bg-green-800 active:scale-[0.97] transition-all cursor-pointer"
+                    className="flex-1 bg-[var(--brand-primary)] text-white text-sm font-semibold py-1.5 rounded-lg hover:opacity-90 active:opacity-80 active:scale-[0.97] transition-all cursor-pointer"
                   >
                     Approve
                   </button>
