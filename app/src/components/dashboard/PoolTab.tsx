@@ -233,32 +233,13 @@ export function PoolTab({ familyId, currentUserId, parentingMode, refreshKey, on
           </h3>
           <div className="flex flex-col gap-2">
             {pendingExpenses.filter(e => e.logged_by !== currentUserId).map(e => (
-              <div key={e.id} className="rounded-xl border border-amber-300 bg-amber-50 dark:bg-amber-950/20 p-4">
-                <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <p className="font-semibold text-sm"><span className="inline-flex items-center gap-1.5"><CategoryIcon category={e.category} />{e.description}</span></p>
-                    <p className="text-xs text-[var(--color-text-muted)] mt-0.5">{ledgerNote(e, currentUserId)}</p>
-                    <p className="text-sm font-bold tabular-nums mt-1">{formatAmount(e.total_amount, e.currency)}</p>
-                  </div>
-                </div>
-                <div className="flex gap-2 mt-3">
-                  <button
-                    onClick={() => {
-                      if (navigator.vibrate) navigator.vibrate(50);
-                      handleApprove(e.id);
-                    }}
-                    className="flex-1 bg-[var(--brand-primary)] text-white text-sm font-semibold py-1.5 rounded-lg hover:opacity-90 active:opacity-80 active:scale-[0.97] transition-all cursor-pointer"
-                  >
-                    Approve
-                  </button>
-                  <button
-                    onClick={() => handleReject(e.id)}
-                    className="flex-1 border border-red-400 text-red-600 text-sm font-semibold py-1.5 rounded-lg hover:bg-red-50 hover:border-red-500 active:bg-red-100 active:scale-[0.97] transition-all cursor-pointer"
-                  >
-                    Reject
-                  </button>
-                </div>
-              </div>
+              <PendingApprovalCard
+                key={e.id}
+                expense={e}
+                currentUserId={currentUserId}
+                onApprove={() => handleApprove(e.id)}
+                onReject={() => handleReject(e.id)}
+              />
             ))}
             {pendingExpenses.filter(e => e.logged_by === currentUserId).map(e => (
               <div key={e.id} className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 opacity-70">
@@ -457,10 +438,38 @@ export function PoolTab({ familyId, currentUserId, parentingMode, refreshKey, on
       )}
 
       {expenses.length === 0 && (
-        <div className="px-4 pt-8 text-center text-[var(--color-text-muted)] text-sm">
-          {isCoParenting
-            ? 'No shared expenses yet. Log one to get started.'
-            : 'No household expenses yet. Log one to keep a record of your spending.'}
+        <div className="px-4 pt-2">
+          <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5 space-y-3" style={{ boxShadow: 'var(--shadow-card)' }}>
+            <div className="w-10 h-10 rounded-xl bg-[var(--color-surface-alt)] flex items-center justify-center">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--brand-primary)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                <polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/>
+              </svg>
+            </div>
+            <div>
+              <p className="text-[14px] font-bold text-[var(--color-text)] leading-snug">
+                {isCoParenting ? 'Track shared child expenses' : 'Track household expenses'}
+              </p>
+              <p className="text-[12px] text-[var(--color-text-muted)] mt-1 leading-relaxed">
+                {isCoParenting
+                  ? 'Log costs you share for your child — school trips, clubs, clothing, medical. Each expense is split between you and your co-parent and kept in an immutable record you can both refer to.'
+                  : 'Keep a running record of what you spend on your child — school trips, activities, clothing, and more. Every entry is logged and archived by month for easy reference.'}
+              </p>
+            </div>
+            <div className="space-y-1.5 pt-1">
+              {[
+                isCoParenting ? 'Log an expense and your co-parent approves it' : 'Tap "+ Log household expense" to add your first entry',
+                isCoParenting ? 'Both parents can view, approve, or flag entries' : 'Expenses are organised by month in the archive',
+                'Attach a photo receipt to any entry for proof',
+                'Export to CSV any time for your records',
+              ].map((step, i) => (
+                <div key={i} className="flex items-start gap-2.5">
+                  <span className="shrink-0 w-4 h-4 rounded-full bg-[color-mix(in_srgb,var(--brand-primary)_15%,transparent)] text-[var(--brand-primary)] flex items-center justify-center text-[9px] font-bold mt-0.5">{i + 1}</span>
+                  <p className="text-[12px] text-[var(--color-text-muted)] leading-snug">{step}</p>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       )}
 
@@ -485,6 +494,59 @@ export function PoolTab({ familyId, currentUserId, parentingMode, refreshKey, on
           } : undefined}
         />
       )}
+    </div>
+  );
+}
+
+// ── Sub-components ─────────────────────────────────────────────────────────────
+
+function PendingApprovalCard({ expense: e, onApprove, onReject }: {
+  expense: SharedExpense;
+  currentUserId: string;
+  onApprove: () => void;
+  onReject: () => void;
+}) {
+  const [hovered, setHovered] = useState(false);
+  return (
+    <div
+      className="rounded-xl border border-amber-300 bg-amber-50 dark:bg-amber-950/20 p-4"
+      style={{
+        boxShadow: hovered ? 'var(--shadow-card-hover)' : 'var(--shadow-card)',
+        backgroundColor: hovered ? 'color-mix(in srgb, #fef3c7 90%, transparent)' : undefined,
+        transition: 'box-shadow 200ms ease, background-color 200ms ease',
+      }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
+      <div className="flex items-start justify-between gap-2">
+        <div>
+          <p className="font-semibold text-sm">
+            <span className="inline-flex items-center gap-1.5">
+              <CategoryIcon category={e.category} />
+              {e.description}
+              {e.receipt_r2_key && <Receipt size={11} className="text-[var(--brand-primary)] shrink-0" />}
+            </span>
+          </p>
+          <p className="text-xs text-[var(--color-text-muted)] mt-0.5">
+            {e.logged_by_name ? `Logged by ${e.logged_by_name}` : 'Logged by other parent'}
+          </p>
+          <p className="text-sm font-bold tabular-nums mt-1">{formatAmount(e.total_amount, e.currency)}</p>
+        </div>
+      </div>
+      <div className="flex gap-2 mt-3">
+        <button
+          onClick={() => { if (navigator.vibrate) navigator.vibrate(50); onApprove(); }}
+          className="flex-1 bg-[var(--brand-primary)] text-white text-sm font-semibold py-1.5 rounded-lg hover:opacity-90 active:opacity-80 active:scale-[0.97] transition-all cursor-pointer"
+        >
+          Approve
+        </button>
+        <button
+          onClick={onReject}
+          className="flex-1 border border-red-400 text-red-600 text-sm font-semibold py-1.5 rounded-lg hover:bg-red-50 hover:border-red-500 active:bg-red-100 active:scale-[0.97] transition-all cursor-pointer"
+        >
+          Reject
+        </button>
+      </div>
     </div>
   );
 }
