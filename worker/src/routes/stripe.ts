@@ -167,6 +167,35 @@ async function verifyWebhookSignature(
 }
 
 // ----------------------------------------------------------------
+// Route: GET /api/stripe/shield-upgrade-price
+// ----------------------------------------------------------------
+export async function handleShieldUpgradePrice(
+  _request: Request,
+  env: Env,
+  auth: JwtPayload,
+): Promise<Response> {
+  // Only parents can purchase
+  if (auth.role !== 'parent') return error('Forbidden', 403);
+
+  // Guard: already has Shield
+  const family = await env.DB
+    .prepare('SELECT has_shield FROM families WHERE id = ?')
+    .bind(auth.family_id)
+    .first<{ has_shield: number }>();
+
+  if (family?.has_shield) return error('Already purchased', 400);
+
+  const { alreadyPaid, delta } = await calcShieldCredit(env, auth.family_id);
+
+  return json({
+    full_price:   SHIELD_FULL_PRICE_PENCE,
+    already_paid: alreadyPaid,
+    delta,
+    currency:     'GBP',
+  });
+}
+
+// ----------------------------------------------------------------
 // Route: POST /api/stripe/create-checkout
 // ----------------------------------------------------------------
 export async function handleCreateCheckout(

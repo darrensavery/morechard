@@ -140,7 +140,7 @@ import {
 } from './routes/auth.js';
 import { requireAuth, requireRole, requireFamilyMatch } from './lib/middleware.js';
 import { checkTrialStatus, getTrialStatus } from './lib/trial.js';
-import { handleCreateCheckout, handleStripeWebhook, handleCancelPlan } from './routes/stripe.js';
+import { handleCreateCheckout, handleStripeWebhook, handleCancelPlan, handleShieldUpgradePrice } from './routes/stripe.js';
 import { handleExchange } from './routes/exchange.js';
 import {
   handleGenerateInvite,
@@ -654,6 +654,11 @@ async function route(request: Request, env: Env, method: string, path: string): 
     const parentCheck = requireRole(auth, 'parent');
     if (parentCheck) return parentCheck;
     return handleExportPrune(request, env, auth);
+  }
+
+  // Shield upgrade price preview (parent only, post-auth)
+  if (path === '/api/stripe/shield-upgrade-price' && method === 'GET') {
+    return handleShieldUpgradePrice(request, env, auth);
   }
 
   // Stripe checkout (parent only, post-auth)
