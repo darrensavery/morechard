@@ -28,7 +28,7 @@ const STATUS_STYLES: Record<string, { label: string; bg: string; text: string }>
   suggestion: { label: 'Suggestion', bg: 'bg-blue-100',   text: 'text-blue-700' },
 }
 
-export function ActivityTab({ familyId, child, childCount, onCountChange, unpaidRow, onOpenBridge, goalProgress }: Props) {
+export function ActivityTab({ familyId, child, childCount, onCountChange, unpaidRow, goalProgress }: Props) {
   // ── Pending completions (absorbed from PendingTab) ───────────────────────────
   const { challenge, GatekeeperModal } = useGatekeeper()
   const [completions,         setCompletions]         = useState<Completion[]>([])
@@ -59,6 +59,7 @@ export function ActivityTab({ familyId, child, childCount, onCountChange, unpaid
   const [bonusBusy, setBonusBusy]   = useState(false)
   const [bonusError, setBonusError] = useState<string | null>(null)
   const [overdueCount, setOverdueCount] = useState(0)
+  const [detailCompletion, setDetailCompletion] = useState<Completion | null>(null)
 
   useAndroidBack(showApproveAllModal, () => setShowApproveAllModal(false))
   useAndroidBack(!!reviseId, () => { setReviseId(null); setReviseNote('') })
@@ -285,21 +286,14 @@ export function ActivityTab({ familyId, child, childCount, onCountChange, unpaid
 
       {/* ── Unpaid earnings summary ───────────────────────────────────────────── */}
       {unpaidRow && unpaidRow.unpaid_total > 0 && (
-        <button
-          type="button"
-          onClick={onOpenBridge}
-          className="w-full flex items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-left"
-        >
-          <div>
-            <p className="text-[13px] font-semibold text-amber-900">Earnings waiting to be paid out</p>
-            <p className="text-[12px] text-amber-700 mt-0.5">
-              {formatCurrency(unpaidRow.unpaid_total, unpaidRow.currency)} approved but not yet transferred
-            </p>
-          </div>
-          <span className="shrink-0 text-[12px] font-bold text-amber-900 bg-amber-100 border border-amber-300 rounded-full px-3 py-1">
-            Pay out
-          </span>
-        </button>
+        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
+          <p className="text-[13px] font-semibold text-amber-900">
+            {formatCurrency(unpaidRow.unpaid_total, unpaidRow.currency)} approved but not yet transferred
+          </p>
+          <p className="text-[12px] text-amber-700 mt-0.5">
+            Use the Pay out button above to transfer earnings
+          </p>
+        </div>
       )}
 
       {/* ── AI Mentor empty-state card (shown only when no pending approvals) ── */}
@@ -427,6 +421,14 @@ export function ActivityTab({ familyId, child, childCount, onCountChange, unpaid
         </div>
       )}
 
+      {/* ── Chore detail sheet ───────────────────────────────────────────────── */}
+      {detailCompletion && (
+        <ChoreDetailSheet
+          completion={detailCompletion}
+          onClose={() => setDetailCompletion(null)}
+        />
+      )}
+
       {/* ── Chore history ────────────────────────────────────────────────────── */}
       <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl divide-y divide-[var(--color-border)]">
         <p className="px-4 py-2.5 text-[13px] font-bold text-[var(--color-text-muted)] uppercase tracking-wide">Chore history</p>
@@ -440,20 +442,31 @@ export function ActivityTab({ familyId, child, childCount, onCountChange, unpaid
               const s = STATUS_STYLES[item.status] ?? { label: item.status, bg: 'bg-gray-100', text: 'text-gray-600' }
               const itemDate = new Date(item.submitted_at * 1000)
               return (
-                <div key={item.id} className="px-4 py-3 flex items-center justify-between gap-2">
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => setDetailCompletion(item)}
+                  className="w-full text-left px-4 py-3 flex items-center justify-between gap-2 hover:bg-[var(--color-surface-alt)] active:bg-[var(--color-surface-alt)] transition-colors cursor-pointer"
+                >
                   <div className="min-w-0 flex-1">
-                    <p className="text-[14px] font-semibold text-[var(--color-text)] truncate">{item.chore_title}</p>
+                    <p className="text-[14px] font-semibold text-[var(--color-text)] truncate flex items-center gap-1.5">
+                      {item.chore_title}
+                      {item.proof_url && (
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="var(--brand-primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-label="Has photo">
+                          <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/>
+                        </svg>
+                      )}
+                    </p>
                     <p className="text-[12px] text-[var(--color-text-muted)]">
                       {formatCurrency(item.reward_amount, item.currency)} ·{' '}
                       {itemDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
-                      {item.rejection_note && <span className="ml-1 italic text-red-500">"{item.rejection_note}"</span>}
                     </p>
                     <WeeklyRhythmDots history={history} choreTitle={item.chore_title} />
                   </div>
                   <span className={`shrink-0 text-[11px] font-bold rounded-full px-2 py-1 ${s.bg} ${s.text}`}>
                     {s.label}
                   </span>
-                </div>
+                </button>
               )
             })}
             {hasMore && (
@@ -467,6 +480,145 @@ export function ActivityTab({ familyId, child, childCount, onCountChange, unpaid
           </>
         )}
       </div>
+    </div>
+  )
+}
+
+// ── Chore Detail Sheet ────────────────────────────────────────────────────────
+
+function ChoreDetailSheet({ completion: c, onClose }: { completion: Completion; onClose: () => void }) {
+  const [proofUrl, setProofUrl] = useState<string | null>(null)
+  const [proofState, setProofState] = useState<'idle' | 'loading' | 'loaded' | 'error'>('idle')
+
+  useEffect(() => {
+    if (!c.proof_url) return
+    setProofState('loading')
+    getProofUrl(c.id)
+      .then(r => { setProofUrl(r.url); setProofState('loaded') })
+      .catch(() => setProofState('error'))
+  }, [c.id, c.proof_url])
+
+  const dateStr = new Date(c.submitted_at * 1000).toLocaleDateString('en-GB', {
+    day: 'numeric', month: 'long', year: 'numeric',
+  })
+  const timeStr = new Date(c.submitted_at * 1000).toLocaleTimeString('en-GB', {
+    hour: '2-digit', minute: '2-digit',
+  })
+
+  const statusLabel: Record<string, string> = {
+    completed: 'Approved', awaiting_review: 'Pending', needs_revision: 'Needs revision', pending: 'Pending',
+  }
+  const s = STATUS_STYLES[c.status] ?? { label: c.status, bg: 'bg-gray-100', text: 'text-gray-600' }
+
+  return (
+    <div className="fixed inset-0 z-50 flex flex-col">
+      <button type="button" className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} aria-label="Close" />
+      <div className="relative mt-auto w-full max-h-[90dvh] bg-[var(--color-surface)] rounded-t-2xl flex flex-col overflow-hidden shadow-2xl">
+
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b border-[var(--color-border)] shrink-0">
+          <div className="flex-1 min-w-0">
+            <p className="text-[11px] font-semibold text-[var(--color-text-muted)] uppercase tracking-wider mb-0.5">Chore</p>
+            <h2 className="text-[16px] font-bold text-[var(--color-text)] leading-snug truncate pr-2">{c.chore_title}</h2>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="shrink-0 w-8 h-8 rounded-lg border border-[var(--color-border)] flex items-center justify-center text-[var(--color-text-muted)] hover:bg-[var(--color-surface-alt)] active:bg-[var(--color-border)] transition-colors cursor-pointer"
+            aria-label="Close"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+          </button>
+        </div>
+
+        {/* Body */}
+        <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
+
+          {/* Amount hero */}
+          <div className="rounded-xl bg-[var(--color-surface-alt)] border border-[var(--color-border)] p-4 flex items-center justify-between">
+            <p className="text-2xl font-bold tabular-nums text-[var(--brand-primary)]">
+              {formatCurrency(c.reward_amount, c.currency)}
+            </p>
+            <span className={`text-[11px] font-bold rounded-full px-2.5 py-1 ${s.bg} ${s.text}`}>
+              {statusLabel[c.status] ?? c.status}
+            </span>
+          </div>
+
+          {/* Detail rows */}
+          <div className="rounded-xl border border-[var(--color-border)] divide-y divide-[var(--color-border)]">
+            <ChoreDetailRow label="Submitted" value={`${dateStr} at ${timeStr}`} />
+            {c.attempt_count > 1 && (
+              <ChoreDetailRow label="Attempt" value={`#${c.attempt_count} (re-submission)`} />
+            )}
+            {c.resolved_at && (
+              <ChoreDetailRow
+                label="Resolved"
+                value={new Date(c.resolved_at * 1000).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
+              />
+            )}
+          </div>
+
+          {/* Child's note */}
+          {c.note && (
+            <div className="rounded-xl border border-[var(--color-border)] p-3">
+              <p className="text-[10px] font-semibold text-[var(--color-text-muted)] uppercase tracking-wider mb-1">
+                {c.child_name}'s note
+              </p>
+              <p className="text-sm text-[var(--color-text)] leading-snug italic">"{c.note}"</p>
+            </div>
+          )}
+
+          {/* Parent notes */}
+          {(c.parent_notes || c.rejection_note) && (
+            <div className="rounded-xl border border-amber-200 bg-amber-50 p-3">
+              <p className="text-[10px] font-semibold text-amber-700 uppercase tracking-wider mb-1">Parent feedback</p>
+              <p className="text-sm text-amber-900 leading-snug">
+                {c.parent_notes ?? c.rejection_note}
+              </p>
+            </div>
+          )}
+
+          {/* Proof photo */}
+          {c.proof_url && (
+            <div className="rounded-xl border border-[var(--color-border)] overflow-hidden">
+              <div className="flex items-center gap-2 px-3 py-2 bg-[var(--color-surface-alt)] border-b border-[var(--color-border)]">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--color-text-muted)]">
+                  <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/>
+                </svg>
+                <p className="text-[11px] font-semibold text-[var(--color-text-muted)] uppercase tracking-wider">Proof photo</p>
+              </div>
+              <div className="p-3">
+                {proofState === 'loading' && (
+                  <div className="flex items-center justify-center h-40 rounded-lg bg-[var(--color-surface-alt)]">
+                    <div className="w-5 h-5 border-2 border-[var(--brand-primary)] border-t-transparent rounded-full animate-spin" />
+                  </div>
+                )}
+                {proofState === 'error' && (
+                  <div className="flex flex-col items-center gap-2 py-6 text-center text-[var(--color-text-muted)]">
+                    <p className="text-sm font-medium">Photo unavailable</p>
+                    <p className="text-xs">The evidence photo could not be loaded or has expired.</p>
+                  </div>
+                )}
+                {proofState === 'loaded' && proofUrl && (
+                  <a href={proofUrl} target="_blank" rel="noopener noreferrer" className="block">
+                    <img src={proofUrl} alt="Proof of work" className="w-full rounded-lg object-contain max-h-80" />
+                    <p className="text-[10px] text-center text-[var(--color-text-muted)] mt-1.5">Tap image to open full size ↗</p>
+                  </a>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function ChoreDetailRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-center gap-3 px-3 py-2.5">
+      <span className="text-xs text-[var(--color-text-muted)] w-20 shrink-0">{label}</span>
+      <span className="text-sm text-[var(--color-text)] flex-1 text-right font-medium">{value}</span>
     </div>
   )
 }
