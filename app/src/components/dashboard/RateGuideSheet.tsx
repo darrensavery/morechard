@@ -3,6 +3,7 @@ import { useState, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useMarketRates, fuzzyMatch } from '../../hooks/useMarketRates';
 import { useAndroidBack } from '../../hooks/useAndroidBack';
+import { useDragToClose } from '../../hooks/useDragToClose';
 import { currencySymbol } from '../../lib/locale';
 import type { MarketRate } from '../../lib/api';
 
@@ -93,6 +94,8 @@ export function RateGuideSheet({ open, onClose, currency = 'GBP', onUse }: Props
   const [category, setCategory] = useState('All');
   const [sort,     setSort]     = useState<SortKey>('alpha');
 
+  const { sheetRef, handleProps } = useDragToClose(onClose);
+
   useAndroidBack(open, onClose);
 
   const filtered: MarketRate[] = useMemo(() => {
@@ -109,11 +112,14 @@ export function RateGuideSheet({ open, onClose, currency = 'GBP', onUse }: Props
   const noResults = !loading && !error && filtered.length === 0 && search.length > 0;
 
   return createPortal(
-    <div className="fixed inset-0 z-[100] flex items-end justify-center bg-black/50">
-      <div className="relative bg-[var(--color-bg)] rounded-t-3xl shadow-2xl w-full max-w-[560px] flex flex-col h-[92svh]">
+    <div className="fixed inset-0 z-[100] flex items-end justify-center bg-black/50" onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
+      <div
+        ref={sheetRef}
+        className="relative bg-[var(--color-bg)] rounded-t-3xl shadow-2xl w-full max-w-[560px] flex flex-col h-[92svh] transition-transform duration-300"
+      >
 
         {/* Drag handle */}
-        <div className="flex justify-center pt-3 pb-0 shrink-0">
+        <div {...handleProps}>
           <div className="w-10 h-1 rounded-full bg-[var(--color-border)]" />
         </div>
 

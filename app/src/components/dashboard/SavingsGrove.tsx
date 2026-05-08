@@ -14,6 +14,7 @@ import type { Chore, Goal } from '../../lib/api'
 import { createGoal, formatCurrency } from '../../lib/api'
 import { currencySymbol } from '../../lib/locale'
 import { useAndroidBack } from '../../hooks/useAndroidBack'
+import { useDragToClose } from '../../hooks/useDragToClose'
 
 const CATEGORIES = [
   { id: 'Toys',     label: '🧸 Toys' },
@@ -49,6 +50,7 @@ export function SavingsGrove({
   const [err,        setErr]        = useState<string | null>(null)
 
   useAndroidBack(true, onClose)
+  const { sheetRef, handleProps } = useDragToClose(onClose)
 
   const targetPence = useMemo(() => {
     const n = parseFloat(amountStr)
@@ -120,9 +122,9 @@ export function SavingsGrove({
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
 
       {/* Sheet */}
-      <div className="relative bg-[var(--color-surface)] rounded-t-3xl max-h-[92svh] overflow-y-auto">
+      <div ref={sheetRef} className="relative bg-[var(--color-surface)] rounded-t-3xl max-h-[92svh] overflow-y-auto transition-transform duration-300">
         {/* Drag handle */}
-        <div className="flex justify-center pt-3 pb-1">
+        <div {...handleProps}>
           <div className="w-10 h-1 rounded-full bg-[var(--color-border)]" />
         </div>
 

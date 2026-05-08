@@ -4,6 +4,7 @@ import { Receipt, Calendar, User, Tag, SplitSquareHorizontal } from 'lucide-reac
 import type { SharedExpense } from '../../lib/api';
 import { getReceiptUrl } from '../../lib/api';
 import { useAndroidBack } from '../../hooks/useAndroidBack';
+import { useDragToClose } from '../../hooks/useDragToClose';
 
 function formatAmount(pence: number, currency: string): string {
   const symbol = currency === 'GBP' ? '£' : currency === 'USD' ? '$' : 'zł';
@@ -28,6 +29,7 @@ type ReceiptState = 'idle' | 'loading' | 'loaded' | 'error';
 
 export function ExpenseDetailSheet({ expense: e, currentUserId, isCoParenting, onClose, onVoid }: Props) {
   useAndroidBack(true, onClose);
+  const { sheetRef, handleProps } = useDragToClose(onClose);
 
   const [receiptState, setReceiptState] = useState<ReceiptState>('idle');
   const [receiptUrl, setReceiptUrl] = useState<string | null>(null);
@@ -77,7 +79,12 @@ export function ExpenseDetailSheet({ expense: e, currentUserId, isCoParenting, o
       />
 
       {/* Sheet */}
-      <div className="relative mt-auto w-full max-h-[90dvh] bg-[var(--color-surface)] rounded-t-2xl flex flex-col overflow-hidden shadow-2xl">
+      <div ref={sheetRef} className="relative mt-auto w-full max-h-[90dvh] bg-[var(--color-surface)] rounded-t-2xl flex flex-col overflow-hidden shadow-2xl transition-transform duration-300">
+
+        {/* Drag handle */}
+        <div {...handleProps}>
+          <div className="w-10 h-1 rounded-full bg-[var(--color-border)]" />
+        </div>
 
         {/* Header */}
         <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b border-[var(--color-border)] shrink-0">

@@ -6,6 +6,7 @@ import {
 } from '../../lib/api'
 import { useGatekeeper } from '../../hooks/useGatekeeper'
 import { useAndroidBack } from '../../hooks/useAndroidBack'
+import { useDragToClose } from '../../hooks/useDragToClose'
 import { PremiumShell, MentorAvatar, ProBadge, injectPremiumStyles } from '../ui/PremiumShell'
 
 interface Props {
@@ -26,6 +27,24 @@ const STATUS_STYLES: Record<string, { label: string; bg: string; text: string }>
   pending:    { label: 'Pending',    bg: 'bg-amber-100',  text: 'text-amber-700' },
   rejected:   { label: 'Rejected',  bg: 'bg-red-100',    text: 'text-red-700' },
   suggestion: { label: 'Suggestion', bg: 'bg-blue-100',   text: 'text-blue-700' },
+}
+
+function MiniSheet({ onClose, children }: { onClose: () => void; children: React.ReactNode }) {
+  const { sheetRef, handleProps } = useDragToClose(onClose)
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center"
+      style={{ background: 'rgba(0,0,0,0.45)' }}
+      onClick={e => { if (e.target === e.currentTarget) onClose() }}
+    >
+      <div ref={sheetRef} className="w-full max-w-lg bg-[var(--color-surface)] rounded-t-2xl transition-transform duration-300 pb-safe">
+        <div {...handleProps}>
+          <div className="w-10 h-1 rounded-full bg-[var(--color-border)]" />
+        </div>
+        {children}
+      </div>
+    </div>
+  )
 }
 
 export function ActivityTab({ familyId, child, childCount, onCountChange, unpaidRow, goalProgress }: Props) {
@@ -301,16 +320,8 @@ export function ActivityTab({ familyId, child, childCount, onCountChange, unpaid
 
       {/* ── Pay out bottom sheet ──────────────────────────────────────────────── */}
       {showPayout && (
-        <div
-          className="fixed inset-0 z-50 flex items-end justify-center"
-          style={{ background: 'rgba(0,0,0,0.45)' }}
-          onClick={e => { if (e.target === e.currentTarget) { setShowPayout(false); setPayoutError(null) } }}
-        >
-          <form
-            onSubmit={handlePayout}
-            className="w-full max-w-lg bg-[var(--color-surface)] rounded-t-2xl p-5 space-y-3 pb-safe"
-            onClick={e => e.stopPropagation()}
-          >
+        <MiniSheet onClose={() => { setShowPayout(false); setPayoutError(null) }}>
+          <form onSubmit={handlePayout} className="px-5 pb-5 space-y-3" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-1">
               <p className="text-[15px] font-bold text-[var(--color-text)]">Pay out to {child.display_name}</p>
               <button type="button" onClick={() => { setShowPayout(false); setPayoutError(null) }}
@@ -346,21 +357,13 @@ export function ActivityTab({ familyId, child, childCount, onCountChange, unpaid
               </button>
             </div>
           </form>
-        </div>
+        </MiniSheet>
       )}
 
       {/* ── Bonus bottom sheet ───────────────────────────────────────────────── */}
       {showBonus && (
-        <div
-          className="fixed inset-0 z-50 flex items-end justify-center"
-          style={{ background: 'rgba(0,0,0,0.45)' }}
-          onClick={e => { if (e.target === e.currentTarget) { setShowBonus(false); setBonusError(null) } }}
-        >
-          <form
-            onSubmit={handleBonus}
-            className="w-full max-w-lg bg-[var(--color-surface)] rounded-t-2xl p-5 space-y-3 pb-safe"
-            onClick={e => e.stopPropagation()}
-          >
+        <MiniSheet onClose={() => { setShowBonus(false); setBonusError(null) }}>
+          <form onSubmit={handleBonus} className="px-5 pb-5 space-y-3" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-1">
               <p className="text-[15px] font-bold text-[var(--color-text)]">Add bonus for {child.display_name}</p>
               <button type="button" onClick={() => { setShowBonus(false); setBonusError(null) }}
@@ -397,7 +400,7 @@ export function ActivityTab({ familyId, child, childCount, onCountChange, unpaid
               </button>
             </div>
           </form>
-        </div>
+        </MiniSheet>
       )}
 
       {/* ── Recent payouts ───────────────────────────────────────────────────── */}
@@ -581,6 +584,7 @@ export function ActivityTab({ familyId, child, childCount, onCountChange, unpaid
 function ChoreDetailSheet({ completion: c, onClose }: { completion: Completion; onClose: () => void }) {
   const [proofUrl, setProofUrl] = useState<string | null>(null)
   const [proofState, setProofState] = useState<'idle' | 'loading' | 'loaded' | 'error'>('idle')
+  const { sheetRef, handleProps } = useDragToClose(onClose)
 
   useEffect(() => {
     if (!c.proof_url) return
@@ -605,10 +609,15 @@ function ChoreDetailSheet({ completion: c, onClose }: { completion: Completion; 
   return (
     <div className="fixed inset-0 z-50 flex flex-col">
       <button type="button" className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} aria-label="Close" />
-      <div className="relative mt-auto w-full max-h-[90dvh] bg-[var(--color-surface)] rounded-t-2xl flex flex-col overflow-hidden shadow-2xl">
+      <div ref={sheetRef} className="relative mt-auto w-full max-h-[90dvh] bg-[var(--color-surface)] rounded-t-2xl flex flex-col overflow-hidden shadow-2xl transition-transform duration-300">
+
+        {/* Drag handle */}
+        <div {...handleProps}>
+          <div className="w-10 h-1 rounded-full bg-[var(--color-border)]" />
+        </div>
 
         {/* Header */}
-        <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b border-[var(--color-border)] shrink-0">
+        <div className="flex items-center justify-between px-5 pt-3 pb-3 border-b border-[var(--color-border)] shrink-0">
           <div className="flex-1 min-w-0">
             <p className="text-[11px] font-semibold text-[var(--color-text-muted)] uppercase tracking-wider mb-0.5">Chore</p>
             <h2 className="text-[16px] font-bold text-[var(--color-text)] leading-snug truncate pr-2">{c.chore_title}</h2>

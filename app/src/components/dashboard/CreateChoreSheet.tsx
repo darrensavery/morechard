@@ -8,6 +8,7 @@ import { createChore, updateChore } from '../../lib/api'
 import { currencySymbol } from '../../lib/locale'
 import { useMarketRates, fuzzyMatch } from '../../hooks/useMarketRates'
 import { useAndroidBack } from '../../hooks/useAndroidBack'
+import { useDragToClose } from '../../hooks/useDragToClose'
 
 interface Props {
   familyId: string
@@ -115,6 +116,7 @@ export function CreateChoreSheet({
   const [showTooltip, setShowTooltip] = useState(false)
 
   useAndroidBack(true, onClose)
+  const { sheetRef, handleProps } = useDragToClose(onClose)
 
   // ── Assignment state ────────────────────────────────────────────────────────
   const singleChild = children.length === 1 ? children[0] : null
@@ -297,7 +299,12 @@ export function CreateChoreSheet({
     <div className="fixed inset-0 z-50 flex flex-col justify-end" role="dialog" aria-modal="true">
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
 
-      <div className="relative bg-[var(--color-surface)] rounded-t-3xl shadow-2xl max-w-[560px] w-full mx-auto flex flex-col max-h-[92svh]">
+      <div ref={sheetRef} className="relative bg-[var(--color-surface)] rounded-t-3xl shadow-2xl max-w-[560px] w-full mx-auto flex flex-col max-h-[92svh] transition-transform duration-300">
+
+        {/* Drag handle */}
+        <div {...handleProps}>
+          <div className="w-10 h-1 rounded-full bg-[var(--color-border)]" />
+        </div>
 
         {/* Header */}
         <div className="px-5 pt-4 pb-2 flex items-center justify-between shrink-0">

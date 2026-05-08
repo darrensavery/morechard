@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { createSharedExpense, uploadReceipt } from '../../lib/api';
 import { useAndroidBack } from '../../hooks/useAndroidBack';
+import { useDragToClose } from '../../hooks/useDragToClose';
 import type { ExpensePreset, ExpenseCategory } from '../../lib/sharedExpensePresets';
 import {
   PRESETS,
@@ -83,6 +84,7 @@ export function AddExpenseSheet({ defaultSplitBp, currency, parentingMode, regio
   const [showCategoryOverride, setShowCategoryOverride] = useState(false);
 
   useAndroidBack(true, onClose);
+  const { sheetRef, handleProps } = useDragToClose(onClose);
 
   const regionPresets = getPresetsForRegion(region);
   const searchResults = searchQuery.trim()
@@ -147,7 +149,12 @@ export function AddExpenseSheet({ defaultSplitBp, currency, parentingMode, regio
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50" onClick={onClose}>
-      <div className="relative bg-[var(--color-surface)] rounded-t-3xl shadow-2xl w-full max-w-[560px] flex flex-col max-h-[92dvh]" onClick={e => e.stopPropagation()}>
+      <div ref={sheetRef} className="relative bg-[var(--color-surface)] rounded-t-3xl shadow-2xl w-full max-w-[560px] flex flex-col max-h-[92dvh] transition-transform duration-300" onClick={e => e.stopPropagation()}>
+
+        {/* Drag handle */}
+        <div {...handleProps}>
+          <div className="w-10 h-1 rounded-full bg-[var(--color-border)]" />
+        </div>
 
         {/* Header */}
         <div className="px-5 pt-4 pb-3 flex items-center justify-between shrink-0">
