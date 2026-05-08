@@ -126,6 +126,7 @@ import {
   handleLogout,
   handleMe,
   handleMePatch,
+  handleVerifyEmail,
   handleFamilyLeads,
   handleLeaveFamily,
   handleDeleteFamily,
@@ -395,9 +396,10 @@ async function route(request: Request, env: Env, method: string, path: string): 
   if (path === '/auth/demo/notify' && method === 'POST') return withAuth(request, auth, env, handleDemoNotify);
   if (path === '/auth/demo/active' && method === 'GET')  return withAuth(request, auth, env, handleDemoActive);
 
-  if (path === '/auth/me'     && method === 'GET')  return withAuth(request, auth, env, handleMe);
-  if (path === '/auth/me'     && method === 'PATCH') return withAuth(request, auth, env, handleMePatch);
-  if (path === '/auth/logout' && method === 'POST') return withAuth(request, auth, env, handleLogout);
+  if (path === '/auth/me'           && method === 'GET')  return withAuth(request, auth, env, handleMe);
+  if (path === '/auth/me'           && method === 'PATCH') return withAuth(request, auth, env, handleMePatch);
+  if (path === '/auth/verify-email' && method === 'GET')  return handleVerifyEmail(request, env);
+  if (path === '/auth/logout'       && method === 'POST') return withAuth(request, auth, env, handleLogout);
 
   // Co-parent-aware account deletion — placed before trial check so expired-trial users can still delete
   if (path === '/auth/family/leads' && method === 'GET')    return withAuth(request, auth, env, handleFamilyLeads);

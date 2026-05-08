@@ -11,7 +11,8 @@
  * GET  /auth/me                Return current user from JWT
  */
 
-import { Env } from '../types.js';
+import { Env } from '../types.js'
+import { EmailService, buildVerifyEmailHtml, buildVerifyEmailText } from '../lib/email.js';
 import { json, error, clientIp } from '../lib/response.js';
 import { hashPassword, verifyPassword } from '../lib/crypto.js';
 import { signJwt } from '../lib/jwt.js';
@@ -507,14 +508,16 @@ export async function handleMePatch(request: Request, env: Env): Promise<Respons
     await writeSystemNote(`🌱 ${trimmed} updated their family name`);
   }
 
-  // ── Email update ─────────────────────────────────────────────
+  // ── Email update — staged via email_pending; confirmed by verify link ────────
   if (email !== undefined) {
     const trimmedEmail = email.trim().toLowerCase();
-    // Basic RFC-ish format check
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
       return error('Please enter a valid email address', 400);
     }
-    // Uniqueness check — reject if another verified account has this address
+    if (trimmedEmail === user.email) {
+      return error('That is already your current email address', 400);
+    }
+    // Reject if another verified account already holds this address
     const conflict = await env.DB
       .prepare('SELECT id FROM users WHERE email = ? AND email_verified = 1 AND id != ?')
       .bind(trimmedEmail, caller.sub)
@@ -522,11 +525,44 @@ export async function handleMePatch(request: Request, env: Env): Promise<Respons
     if (conflict) {
       return error('That email address is already registered', 409);
     }
+
+    // Stage the new address and issue a verification token
+    const token      = crypto.randomUUID();
+    const expiresAt  = Math.floor(Date.now() / 1000) + 24 * 60 * 60; // 24 h
+
+    // Invalidate any prior unused tokens for this user
     await env.DB
-      .prepare('UPDATE users SET email = ?, email_verified = 0 WHERE id = ?')
+      .prepare('DELETE FROM email_verify_tokens WHERE user_id = ? AND used_at IS NULL')
+      .bind(caller.sub)
+      .run();
+
+    await env.DB
+      .prepare('INSERT INTO email_verify_tokens (user_id, token, new_email, expires_at) VALUES (?,?,?,?)')
+      .bind(caller.sub, token, trimmedEmail, expiresAt)
+      .run();
+
+    await env.DB
+      .prepare('UPDATE users SET email_pending = ? WHERE id = ?')
       .bind(trimmedEmail, caller.sub)
       .run();
-    await writeSystemNote('🌱 Contact email was updated');
+
+    const verifyUrl = `${env.APP_URL}/auth/verify-email?token=${token}`;
+    try {
+      await new EmailService(env).sendTransactional({
+        to:      trimmedEmail,
+        subject: 'Confirm your new Morechard email address',
+        html:    buildVerifyEmailHtml(verifyUrl, user.display_name),
+        text:    buildVerifyEmailText(verifyUrl, user.display_name),
+      });
+    } catch (err) {
+      console.error('[handleMePatch] verify email send failed', err);
+      // Roll back staging so the user can try again
+      await env.DB.prepare('UPDATE users SET email_pending = NULL WHERE id = ?').bind(caller.sub).run();
+      await env.DB.prepare('DELETE FROM email_verify_tokens WHERE token = ?').bind(token).run();
+      return error('Could not send verification email — please try again', 502);
+    }
+
+    await writeSystemNote('🌱 Email change requested — awaiting verification');
   }
 
   // Return updated profile
@@ -537,6 +573,45 @@ export async function handleMePatch(request: Request, env: Env): Promise<Respons
   if (!updated) return error('User not found', 404);
 
   return json({ ...updated, family_id: caller.family_id, role: caller.role });
+}
+
+// ----------------------------------------------------------------
+// GET /auth/verify-email?token=...
+// Confirms a pending email change. No auth required — token is the credential.
+// On success redirects the user to /parent/settings?emailVerified=1.
+// ----------------------------------------------------------------
+export async function handleVerifyEmail(request: Request, env: Env): Promise<Response> {
+  const url   = new URL(request.url);
+  const token = url.searchParams.get('token');
+
+  if (!token) {
+    return new Response('Missing token', { status: 400 });
+  }
+
+  const now = Math.floor(Date.now() / 1000);
+
+  const row = await env.DB
+    .prepare('SELECT id, user_id, new_email, expires_at, used_at FROM email_verify_tokens WHERE token = ?')
+    .bind(token)
+    .first<{ id: number; user_id: string; new_email: string; expires_at: number; used_at: number | null }>();
+
+  if (!row)          return new Response('Invalid or expired link', { status: 400 });
+  if (row.used_at)   return new Response('This link has already been used', { status: 400 });
+  if (row.expires_at < now) return new Response('This link has expired — please request a new one from Account & Profile settings', { status: 400 });
+
+  // Apply the change: promote email_pending → email, mark verified, clear pending
+  await env.DB
+    .prepare('UPDATE users SET email = ?, email_verified = 1, email_pending = NULL WHERE id = ?')
+    .bind(row.new_email, row.user_id)
+    .run();
+
+  // Mark token as used
+  await env.DB
+    .prepare('UPDATE email_verify_tokens SET used_at = ? WHERE id = ?')
+    .bind(now, row.id)
+    .run();
+
+  return Response.redirect(`${env.APP_URL}/parent/settings?emailVerified=1`, 302);
 }
 
 // ----------------------------------------------------------------
