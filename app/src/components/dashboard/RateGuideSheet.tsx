@@ -110,7 +110,7 @@ export function RateGuideSheet({ open, onClose, currency = 'GBP', onUse }: Props
 
   return createPortal(
     <div className="fixed inset-0 z-[100] flex items-end justify-center bg-black/50">
-      <div className="relative bg-[var(--color-bg)] rounded-t-3xl shadow-2xl w-full max-w-[560px] flex flex-col max-h-[92svh]">
+      <div className="relative bg-[var(--color-bg)] rounded-t-3xl shadow-2xl w-full max-w-[560px] flex flex-col h-[92svh]">
 
         {/* Drag handle */}
         <div className="flex justify-center pt-3 pb-0 shrink-0">
@@ -220,7 +220,7 @@ export function RateGuideSheet({ open, onClose, currency = 'GBP', onUse }: Props
                       className={`px-2 py-1 rounded-md text-[11px] font-semibold transition-colors cursor-pointer
                         ${sort === opt.value
                           ? 'bg-[var(--brand-primary)] text-white'
-                          : 'bg-[var(--color-surface-alt)] text-[var(--color-text-muted)] hover:text-[var(--color-text)]'
+                          : 'bg-[var(--color-surface-alt)] text-[var(--color-text-muted)] hover:bg-[color-mix(in_srgb,var(--color-surface-alt)_70%,var(--color-border))] hover:text-[var(--color-text)]'
                         }`}
                     >
                       {opt.label}
@@ -234,7 +234,7 @@ export function RateGuideSheet({ open, onClose, currency = 'GBP', onUse }: Props
                 return (
                   <div
                     key={rate.id}
-                    className="flex items-center gap-3 py-3.5 border-b border-[var(--color-border)] last:border-0"
+                    className="flex items-center gap-3 py-3.5 border-b border-[var(--color-border)] last:border-0 -mx-5 px-5 rounded-lg hover:bg-[var(--color-surface-alt)] transition-colors"
                   >
                     {/* Chore name + category */}
                     <div className="flex-1 min-w-0">
