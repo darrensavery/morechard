@@ -170,6 +170,27 @@ export async function handleFamilyUpdate(request: Request, env: Env): Promise<Re
     updates.push('fast_track_enabled = ?');
     values.push(val ? 1 : 0);
   }
+  if ('pocket_money_day' in body) {
+    const v = body.pocket_money_day;
+    if (!Number.isInteger(v) || (v as number) < 0 || (v as number) > 6)
+      return error('pocket_money_day must be an integer 0–6');
+    updates.push('pocket_money_day = ?');
+    values.push(v as number);
+  }
+  if ('overdraft_enabled' in body) {
+    const v = body.overdraft_enabled;
+    if (v !== 0 && v !== 1 && v !== true && v !== false)
+      return error('overdraft_enabled must be a boolean');
+    updates.push('overdraft_enabled = ?');
+    values.push(v ? 1 : 0);
+  }
+  if ('overdraft_limit_pence' in body) {
+    const v = body.overdraft_limit_pence;
+    if (!Number.isInteger(v) || (v as number) < 0)
+      return error('overdraft_limit_pence must be a non-negative integer');
+    updates.push('overdraft_limit_pence = ?');
+    values.push(v as number);
+  }
 
   if (updates.length === 0) return error('No valid fields to update');
   values.push(auth.family_id);
