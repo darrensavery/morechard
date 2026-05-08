@@ -77,8 +77,9 @@ import {
   getChildSettings, updateChildSettings,
   getChildGrowth, updateChildGrowth,
   getMe, updateProfile, getLeadCount, getTrialStatus,
+  getShieldUpgradePrice,
   apiUrl, authHeaders,
-  type MeResult, type TrialStatus,
+  type MeResult, type TrialStatus, type ShieldUpgradePrice,
 } from '../../lib/api'
 import { track } from '../../lib/analytics'
 import { useLocale, isPolish } from '../../lib/locale'
@@ -183,6 +184,7 @@ export function ParentSettingsTab({ familyId, online, onChildrenChange, onClose 
   const [profile,   setProfile]   = useState<MeResult | null>(null)
   const [leadCount, setLeadCount] = useState<number>(1)
   const [trial,     setTrial]     = useState<TrialStatus | null>(null)
+  const [shieldUpgradePrice, setShieldUpgradePrice] = useState<ShieldUpgradePrice | null>(null)
 
   function comingSoon() {
     showToast('Coming Soon to the Orchard')
@@ -204,13 +206,14 @@ export function ParentSettingsTab({ familyId, online, onChildrenChange, onClose 
 
   const load = useCallback(async () => {
     setLoading(true)
-    const [c, f, s, p, leads, t] = await Promise.all([
+    const [c, f, s, p, leads, t, shieldPrice] = await Promise.all([
       getChildren().then(r => r.children),
       getFamily(),
       getSettings(),
       getMe(),
       getLeadCount().then(r => r.lead_count).catch(() => 1),
       getTrialStatus().catch(() => null),
+      getShieldUpgradePrice().catch(() => null),
     ])
     setChildren(c)
     onChildrenChange(c)
@@ -222,6 +225,7 @@ export function ParentSettingsTab({ familyId, online, onChildrenChange, onClose 
     setProfile(p)
     setLeadCount(leads)
     setTrial(t)
+    setShieldUpgradePrice(shieldPrice)
     if (s?.avatar_id) localStorage.setItem('mc_parent_avatar', s.avatar_id)
     // Seed locale from D1 only if localStorage has no valid locale yet.
     // Normalise legacy 2-char 'en' → 'en-GB' before applying.
@@ -351,8 +355,8 @@ overdraftLimitPence={overdraftLimitPence}
 onSaveOverdraftPolicy={handleSaveOverdraftPolicy} /></ProfileSection>
     if (view.section === 'security')   return <ProfileSection><SecuritySettings   profile={profile} toast={toast} onBack={back} onComingSoon={comingSoon} /></ProfileSection>
     if (view.section === 'appearance') return <ProfileSection><AppearanceSettings toast={toast} onBack={back} /></ProfileSection>
-    if (view.section === 'billing')    return <ProfileSection><BillingSettings    toast={toast} onBack={back} onComingSoon={comingSoon} initialView={view.billingSubView} /></ProfileSection>
-    if (view.section === 'data')       return <ProfileSection><DataSettings       isLead={isLead} hasAiMentor={Boolean(trial?.has_ai_mentor) || Boolean(trial?.has_shield)} hasShield={Boolean(trial?.has_shield)} toast={toast} onBack={back} onNavigateToPlan={() => setView({ type: 'section', section: 'billing', billingSubView: 'plan' })} /></ProfileSection>
+    if (view.section === 'billing')    return <ProfileSection><BillingSettings    toast={toast} onBack={back} onComingSoon={comingSoon} initialView={view.billingSubView} shieldUpgradePrice={shieldUpgradePrice} /></ProfileSection>
+    if (view.section === 'data')       return <ProfileSection><DataSettings       isLead={isLead} hasAiMentor={Boolean(trial?.has_ai_mentor) || Boolean(trial?.has_shield)} hasShield={Boolean(trial?.has_shield)} toast={toast} onBack={back} onNavigateToPlan={() => setView({ type: 'section', section: 'billing', billingSubView: 'plan' })} shieldUpgradePrice={shieldUpgradePrice} /></ProfileSection>
     if (view.section === 'referrals')  return <ProfileSection><ReferralsSettings  toast={toast} onBack={back} onComingSoon={comingSoon} /></ProfileSection>
     if (view.section === 'about')      return <ProfileSection><AboutSettings      toast={toast} onBack={back} onComingSoon={comingSoon} /></ProfileSection>
   }
