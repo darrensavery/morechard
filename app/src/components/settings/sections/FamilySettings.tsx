@@ -7,6 +7,7 @@
  */
 
 import { useState, type FormEvent } from 'react'
+import { copyText } from '../../../lib/clipboard'
 import { Users, Shield, Calendar, ChevronRight } from 'lucide-react'
 import type { ChildRecord, ChildGrowthSettings } from '../../../lib/api'
 import { AvatarSVG } from '../../../lib/avatars'
@@ -67,6 +68,7 @@ export function FamilySettings({
   const [inviteCode,          setInviteCode]          = useState<string | null>(null)
   const [inviteExpiry,        setInviteExpiry]        = useState<string | null>(null)
   const [genningInvite,       setGenningInvite]       = useState(false)
+  const [copied,              setCopied]              = useState(false)
   const [showSharedExpenses,  setShowSharedExpenses]  = useState(false)
 
   const [showPocketMoneyDay,  setShowPocketMoneyDay]  = useState(false)
@@ -99,6 +101,25 @@ export function FamilySettings({
       setInviteExpiry(new Date(r.expires_at * 1000).toLocaleString('en-GB'))
     } finally {
       setGenningInvite(false)
+    }
+  }
+
+  async function handleShare() {
+    const text = `Join my family on Morechard! Download the app at app.morechard.com and use invite code ${inviteCode} to join.`
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'Join my family on Morechard!',
+          text,
+          url: 'https://app.morechard.com',
+        })
+      } catch {
+        // user cancelled or share failed — ignore
+      }
+    } else {
+      await copyText(text)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1500)
     }
   }
 
