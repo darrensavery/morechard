@@ -167,6 +167,9 @@ export function ParentSettingsTab({ familyId, online, onChildrenChange, onClose 
   const [threshold,      setThreshold]      = useState(5000) // 5000 pence = £50
   const [splitBp,        setSplitBp]        = useState(5000) // 5000 bp = 50%
   const [savingSettings, setSavingSettings] = useState(false)
+  const [pocketMoneyDay,       setPocketMoneyDay]       = useState<number>(6)
+  const [overdraftEnabled,     setOverdraftEnabled]     = useState<boolean>(false)
+  const [overdraftLimitPence,  setOverdraftLimitPence]  = useState<number>(0)
 
   // Per-child settings (source of truth — passed to FamilySettings)
   const [appViews,       setAppViews]       = useState<Record<string, 'ORCHARD' | 'CLEAN'>>({})
@@ -212,6 +215,9 @@ export function ParentSettingsTab({ familyId, online, onChildrenChange, onClose 
     setChildren(c)
     onChildrenChange(c)
     setFamily(f)
+    setPocketMoneyDay(typeof f.pocket_money_day === 'number' ? f.pocket_money_day : 6)
+    setOverdraftEnabled(Boolean(f.overdraft_enabled))
+    setOverdraftLimitPence(typeof f.overdraft_limit_pence === 'number' ? f.overdraft_limit_pence : 0)
     setSettings(s)
     setProfile(p)
     setLeadCount(leads)
@@ -318,13 +324,31 @@ export function ParentSettingsTab({ familyId, online, onChildrenChange, onClose 
     }
   }
 
+  async function handleSavePocketMoneyDay(day: number) {
+    await updateFamily({ pocket_money_day: day })
+    setPocketMoneyDay(day)
+    showToast('Pocket money day saved')
+  }
+
+  async function handleSaveOverdraftPolicy(enabled: boolean, limitPence: number) {
+    await updateFamily({ overdraft_enabled: enabled ? 1 : 0, overdraft_limit_pence: limitPence })
+    setOverdraftEnabled(enabled)
+    setOverdraftLimitPence(limitPence)
+    showToast('Overdraft policy saved')
+  }
+
   // ── Section views ────────────────────────────────────────────────────────────
 
   const back = () => setView({ type: 'menu' })
 
   if (view.type === 'section') {
     if (view.section === 'account')    return <ProfileSection><ProfileSettings    profile={profile} settings={settings} identity={identity} family={family} isLead={isLead} leadCount={leadCount} onSaveName={handleSaveName} onSaveEmail={handleSaveEmail} onSetAvatar={handleSetAvatar} onBack={back} onComingSoon={comingSoon} toast={toast} /></ProfileSection>
-    if (view.section === 'family')     return <ProfileSection><FamilySettings     children={children} appViews={appViews} appViewBusy={appViewBusy} growthSettings={growthSettings} growthBusy={growthBusy} isLead={isLead} hasCoParent={family?.parenting_mode === 'co-parenting'} sharedExpenseThreshold={threshold} sharedExpenseSplitBp={splitBp} savingSharedExpense={savingSettings} toast={toast} onBack={back} onComingSoon={comingSoon} onAddChild={handleAddChild} onAppViewToggle={handleAppViewToggle} onGrowthUpdate={handleGrowthUpdate} onRenameChild={handleRenameChild} onPinResetSuccess={handlePinResetSuccess} onGenerateInvite={handleGenerateInvite} onSharedExpenseThresholdChange={setThreshold} onSharedExpenseSplitChange={setSplitBp} onSaveSharedExpense={handleSaveCoParentSettings} /></ProfileSection>
+    if (view.section === 'family')     return <ProfileSection><FamilySettings     children={children} appViews={appViews} appViewBusy={appViewBusy} growthSettings={growthSettings} growthBusy={growthBusy} isLead={isLead} hasCoParent={family?.parenting_mode === 'co-parenting'} sharedExpenseThreshold={threshold} sharedExpenseSplitBp={splitBp} savingSharedExpense={savingSettings} toast={toast} onBack={back} onComingSoon={comingSoon} onAddChild={handleAddChild} onAppViewToggle={handleAppViewToggle} onGrowthUpdate={handleGrowthUpdate} onRenameChild={handleRenameChild} onPinResetSuccess={handlePinResetSuccess} onGenerateInvite={handleGenerateInvite} onSharedExpenseThresholdChange={setThreshold} onSharedExpenseSplitChange={setSplitBp} onSaveSharedExpense={handleSaveCoParentSettings}
+pocketMoneyDay={pocketMoneyDay}
+onSavePocketMoneyDay={handleSavePocketMoneyDay}
+overdraftEnabled={overdraftEnabled}
+overdraftLimitPence={overdraftLimitPence}
+onSaveOverdraftPolicy={handleSaveOverdraftPolicy} /></ProfileSection>
     if (view.section === 'security')   return <ProfileSection><SecuritySettings   profile={profile} toast={toast} onBack={back} onComingSoon={comingSoon} /></ProfileSection>
     if (view.section === 'appearance') return <ProfileSection><AppearanceSettings toast={toast} onBack={back} /></ProfileSection>
     if (view.section === 'billing')    return <ProfileSection><BillingSettings    toast={toast} onBack={back} onComingSoon={comingSoon} initialView={view.billingSubView} /></ProfileSection>
