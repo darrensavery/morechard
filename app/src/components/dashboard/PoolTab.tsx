@@ -114,17 +114,29 @@ export function PoolTab({ familyId, currentUserId, parentingMode, refreshKey, on
   const archiveBase = expenses.filter(e =>
     ['committed_auto', 'committed_manual'].includes(e.verification_status) && e.settlement_period
   );
-  const archiveExpenses = [...archiveBase].sort((a, b) => {
+
+  // Sort within each group (alpha/amount sorts); date sorts control group order only
+  const archiveSorted = [...archiveBase].sort((a, b) => {
     switch (archiveSort) {
-      case 'date-desc':   return b.created_at - a.created_at;
-      case 'date-asc':    return a.created_at - b.created_at;
       case 'alpha-asc':   return a.description.localeCompare(b.description);
       case 'alpha-desc':  return b.description.localeCompare(a.description);
       case 'amount-desc': return b.total_amount - a.total_amount;
       case 'amount-asc':  return a.total_amount - b.total_amount;
-      default:            return 0;
+      default:            return b.created_at - a.created_at; // within group, default newest first
     }
   });
+
+  // Group by settlement_period (YYYY-MM)
+  const groupMap = new Map<string, SharedExpense[]>();
+  for (const e of archiveSorted) {
+    const key = e.settlement_period ?? e.expense_date?.slice(0, 7) ?? new Date(e.created_at * 1000).toISOString().slice(0, 7);
+    if (!groupMap.has(key)) groupMap.set(key, []);
+    groupMap.get(key)!.push(e);
+  }
+  // Sort groups by period key
+  const archiveGroups = [...groupMap.entries()].sort((a, b) =>
+    archiveSort === 'date-asc' ? a[0].localeCompare(b[0]) : b[0].localeCompare(a[0])
+  );
 
   let netPence = 0;
   for (const e of openExpenses) {
@@ -305,8 +317,8 @@ export function PoolTab({ familyId, currentUserId, parentingMode, refreshKey, on
         </section>
       )}
 
-      {/* Archive — all historical committed expenses */}
-      {archiveExpenses.length > 0 && (
+      {/* Archive — all historical committed expenses, grouped by month */}
+      {archiveBase.length > 0 && (
         <section className="px-4">
           <button
             type="button"
@@ -314,7 +326,7 @@ export function PoolTab({ familyId, currentUserId, parentingMode, refreshKey, on
             className="w-full flex items-center justify-between mb-2 cursor-pointer"
           >
             <h3 className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wide">
-              Archive ({archiveExpenses.length})
+              Archive ({archiveBase.length})
             </h3>
             <span className="text-xs text-[var(--color-text-muted)]">{archiveOpen ? '▲ Hide' : '▼ Show'}</span>
           </button>
@@ -335,31 +347,42 @@ export function PoolTab({ familyId, currentUserId, parentingMode, refreshKey, on
                 </select>
               </div>
 
-              <div className="flex flex-col gap-2">
-                {archiveExpenses.map(e => {
-                  const dateStr = e.expense_date
-                    ? new Date(e.expense_date).toLocaleDateString('default', { day: 'numeric', month: 'short', year: 'numeric' })
-                    : new Date(e.created_at * 1000).toLocaleDateString('default', { day: 'numeric', month: 'short', year: 'numeric' });
+              <div className="flex flex-col gap-4">
+                {archiveGroups.map(([period, items]) => {
+                  const monthLabel = new Date(period + '-02').toLocaleString('default', { month: 'long', year: 'numeric' });
+                  const monthTotal = items.reduce((s, e) => s + e.total_amount, 0);
+                  const groupCurrency = items[0]?.currency ?? currency;
                   return (
-                    <div key={e.id} className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 opacity-75">
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-sm">
-                            <span className="inline-flex items-center gap-1.5">
-                              <CategoryIcon category={e.category} />
-                              {e.description}
-                            </span>
-                          </p>
-                          <p className="text-xs text-[var(--color-text-muted)] mt-0.5 ml-5">{dateStr}</p>
-                          {e.settlement_period && (
-                            <p className="text-xs text-[var(--color-text-muted)] mt-0.5 ml-5">
-                              Settled {new Date(e.settlement_period + '-01').toLocaleString('default', { month: 'long', year: 'numeric' })}
-                            </p>
-                          )}
-                        </div>
-                        <p className="text-sm font-bold tabular-nums text-[var(--color-text-muted)]">
-                          {formatAmount(e.total_amount, e.currency)}
-                        </p>
+                    <div key={period}>
+                      {/* Month header */}
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wide">{monthLabel}</p>
+                        <p className="text-xs font-bold tabular-nums text-[var(--color-text-muted)]">{formatAmount(monthTotal, groupCurrency)}</p>
+                      </div>
+                      <div className="flex flex-col gap-2">
+                        {items.map(e => {
+                          const dateStr = e.expense_date
+                            ? new Date(e.expense_date).toLocaleDateString('default', { day: 'numeric', month: 'short' })
+                            : new Date(e.created_at * 1000).toLocaleDateString('default', { day: 'numeric', month: 'short' });
+                          return (
+                            <div key={e.id} className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 opacity-75">
+                              <div className="flex items-start justify-between gap-2">
+                                <div className="flex-1 min-w-0">
+                                  <p className="font-semibold text-sm">
+                                    <span className="inline-flex items-center gap-1.5">
+                                      <CategoryIcon category={e.category} />
+                                      {e.description}
+                                    </span>
+                                  </p>
+                                  <p className="text-xs text-[var(--color-text-muted)] mt-0.5 ml-5">{dateStr}</p>
+                                </div>
+                                <p className="text-sm font-bold tabular-nums text-[var(--color-text-muted)]">
+                                  {formatAmount(e.total_amount, e.currency)}
+                                </p>
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
                   );
