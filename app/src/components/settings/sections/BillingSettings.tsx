@@ -17,17 +17,18 @@ import { CreditCard, Clock, Receipt, Zap, Shield, Star, X, Check, Mail, AlertTri
 import { Toast, SettingsRow, SectionCard, SectionHeader } from '../shared'
 import {
   getTrialStatus, getBillingHistory, createCheckoutSession, cancelPlan,
-  type TrialStatus, type PaymentRecord,
+  type TrialStatus, type PaymentRecord, type ShieldUpgradePrice,
 } from '../../../lib/api'
 import { cn } from '../../../lib/utils'
 
 type SubView = 'menu' | 'trial' | 'plan' | 'history'
 
 interface Props {
-  toast:        string | null
-  onBack:       () => void
-  onComingSoon: () => void
-  initialView?: 'plan'
+  toast:               string | null
+  onBack:              () => void
+  onComingSoon:        () => void
+  initialView?:        'plan'
+  shieldUpgradePrice:  ShieldUpgradePrice | null
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
@@ -259,7 +260,11 @@ function TrialView({ onBack }: { onBack: () => void }) {
 
 type PurchasableSku = 'COMPLETE' | 'COMPLETE_AI' | 'SHIELD_AI' | 'AI_UPGRADE'
 
-function PlanView({ onBack, showToast }: { onBack: () => void; showToast: (m: string) => void }) {
+function PlanView({ onBack, showToast, shieldUpgradePrice }: {
+  onBack: () => void
+  showToast: (m: string) => void
+  shieldUpgradePrice: ShieldUpgradePrice | null
+}) {
   const [trial, setTrial]               = useState<TrialStatus | null>(null)
   const [payments, setPayments]         = useState<PaymentRecord[]>([])
   const [loading, setLoading]           = useState(true)
@@ -337,6 +342,14 @@ function PlanView({ onBack, showToast }: { onBack: () => void; showToast: (m: st
     : trial?.is_expired
     ? 'bg-red-100 text-red-600'
     : 'bg-teal-100 text-teal-700'
+
+  function formatGBP(pence: number): string {
+    return `£${(pence / 100).toFixed(2)}`
+  }
+
+  const shieldDelta     = shieldUpgradePrice?.delta ?? 14999
+  const shieldPaid      = shieldUpgradePrice?.already_paid ?? 0
+  const shieldIsUpgrade = shieldPaid > 0
 
   return (
     <>
@@ -506,11 +519,18 @@ function PlanView({ onBack, showToast }: { onBack: () => void; showToast: (m: st
                           <span className="px-1.5 py-0.5 rounded-md bg-amber-100 text-amber-700 text-[10px] font-bold uppercase tracking-wide">Professional</span>
                         </div>
                         <p className="text-[20px] font-bold text-amber-600 leading-none mt-0.5">
-                          £149.99
+                          {formatGBP(shieldDelta)}
                           <span className="text-[12px] font-semibold text-[var(--color-text-muted)] ml-1">one-time</span>
+                          {shieldIsUpgrade && (
+                            <span className="ml-2 text-[12px] font-semibold text-[var(--color-text-muted)] line-through">
+                              £149.99
+                            </span>
+                          )}
                         </p>
                         <p className="text-[11px] text-amber-700 font-medium mt-1">
-                          Less than one hour of professional mediation
+                          {shieldIsUpgrade
+                            ? `You've already paid ${formatGBP(shieldPaid)} — only the difference is charged`
+                            : 'Less than one hour of professional mediation'}
                         </p>
                       </div>
                     </div>
@@ -538,7 +558,11 @@ function PlanView({ onBack, showToast }: { onBack: () => void; showToast: (m: st
                       onClick={() => handlePurchase('SHIELD_AI')}
                       className="w-full py-2.5 rounded-xl bg-amber-500 text-white text-[13px] font-bold hover:opacity-90 active:opacity-80 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      {buying === 'SHIELD_AI' ? 'Loading…' : 'Get Morechard Shield — £149.99'}
+                      {buying === 'SHIELD_AI'
+                        ? 'Loading…'
+                        : shieldIsUpgrade
+                        ? `Upgrade to Morechard Shield — ${formatGBP(shieldDelta)}`
+                        : 'Get Morechard Shield — £149.99'}
                     </button>
                   </div>
                 </div>
@@ -674,7 +698,7 @@ function HistoryView({ onBack }: { onBack: () => void }) {
 
 // ── Root billing menu ──────────────────────────────────────────────────────────
 
-export function BillingSettings({ toast, onBack, onComingSoon: _onComingSoon, initialView }: Props) {
+export function BillingSettings({ toast, onBack, onComingSoon: _onComingSoon, initialView, shieldUpgradePrice }: Props) {
   const [sub, setSub]             = useState<SubView>(initialView ?? 'menu')
   const [localToast, setLocalToast] = useState<string | null>(null)
   const toastTimerRef             = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -692,7 +716,7 @@ export function BillingSettings({ toast, onBack, onComingSoon: _onComingSoon, in
   const activeToast = localToast ?? toast
 
   if (sub === 'trial')   return <div className="space-y-4">{activeToast && <Toast message={activeToast} />}<TrialView onBack={() => setSub('menu')} /></div>
-  if (sub === 'plan')    return <div className="space-y-4">{activeToast && <Toast message={activeToast} />}<PlanView  onBack={() => setSub('menu')} showToast={showToast} /></div>
+  if (sub === 'plan')    return <div className="space-y-4">{activeToast && <Toast message={activeToast} />}<PlanView  onBack={() => setSub('menu')} showToast={showToast} shieldUpgradePrice={shieldUpgradePrice} /></div>
   if (sub === 'history') return <div className="space-y-4">{activeToast && <Toast message={activeToast} />}<HistoryView onBack={() => setSub('menu')} /></div>
 
   return (
