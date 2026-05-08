@@ -422,12 +422,14 @@ export function FamilySettings({
                 <p className="text-[22px] font-extrabold tracking-widest text-[var(--color-text)]">{inviteCode}</p>
                 <div className="flex items-center gap-4">
                   <button
+                    type="button"
                     onClick={handleShare}
                     className="text-[12px] font-semibold text-[var(--color-text)] hover:underline cursor-pointer"
                   >
                     {copied ? 'Copied!' : 'Share'}
                   </button>
                   <button
+                    type="button"
                     onClick={() => setInviteCode(null)}
                     className="text-[12px] text-[var(--color-text-muted)] hover:underline cursor-pointer"
                   >
