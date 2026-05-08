@@ -12,23 +12,24 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { Database, FileText, Scale, AlertTriangle, Download, Lock, Zap, Shield } from 'lucide-react'
 import { Toast, useToast, SettingsRow, SectionCard, SectionHeader } from '../shared'
-import { getFamilyId } from '../../../lib/api'
+import { getFamilyId, type ShieldUpgradePrice } from '../../../lib/api'
 import { useExportManager } from '../../../hooks/useExportManager'
 
 interface Props {
-  isLead:           boolean
-  hasAiMentor:      boolean
-  hasShield:        boolean
-  toast:            string | null
-  onBack:           () => void
-  onNavigateToPlan: () => void
+  isLead:              boolean
+  hasAiMentor:         boolean
+  hasShield:           boolean
+  toast:               string | null
+  onBack:              () => void
+  onNavigateToPlan:    () => void
+  shieldUpgradePrice:  ShieldUpgradePrice | null
 }
 
 type PruneStep = 'idle' | 'confirm' | 'pruning'
 
 export function DataSettings({
   isLead, hasAiMentor, hasShield,
-  toast, onBack, onNavigateToPlan,
+  toast, onBack, onNavigateToPlan, shieldUpgradePrice,
 }: Props) {
   const familyId = useMemo(() => getFamilyId(), [])
   const { stateOf, errorOf, triggerExport, triggerPrune, prunedCount } =
@@ -63,6 +64,14 @@ export function DataSettings({
     triggerPrune()
     setPruneStep('pruning')
   }, [triggerPrune])
+
+  const shieldLabelText = (() => {
+    if (!shieldUpgradePrice || shieldUpgradePrice.already_paid === 0) {
+      return 'Requires Shield (£149.99 one-time)'
+    }
+    const delta = (shieldUpgradePrice.delta / 100).toFixed(2)
+    return `Requires Shield (£${delta} to upgrade)`
+  })()
 
   function exportLabel(key: Parameters<typeof stateOf>[0], idleLabel: string) {
     const s = stateOf(key)
@@ -193,7 +202,7 @@ export function DataSettings({
             </span>
             <div className="flex-1 min-w-0">
               <p className="text-[12px] font-semibold text-amber-700 leading-snug">
-                Requires Shield (£149.99 one-time)
+                {shieldLabelText}
               </p>
               <p className="text-[11px] text-amber-500 leading-snug">
                 Tap to unlock — court-ready tamper-evident exports
