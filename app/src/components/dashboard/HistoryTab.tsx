@@ -43,7 +43,7 @@ export function ActivityTab({ familyId, child, childCount, onCountChange, unpaid
   const [payouts, setPayouts]   = useState<PayoutRecord[]>([])
   const [loading, setLoading]   = useState(true)
   const [historySort, setHistorySort] = useState<'date-desc' | 'date-asc'>('date-desc')
-  const [historyOpen, setHistoryOpen] = useState(true)
+  const [historyOpen, setHistoryOpen] = useState(false)
   const [openMonths, setOpenMonths]   = useState<Set<string>>(new Set())
 
   // Pay out modal
@@ -507,7 +507,7 @@ export function ActivityTab({ familyId, child, childCount, onCountChange, unpaid
                           next.has(key) ? next.delete(key) : next.add(key)
                           return next
                         })}
-                        className="w-full flex items-center justify-between px-4 py-2.5 bg-[var(--color-surface-alt)] hover:bg-[color-mix(in_srgb,var(--color-surface-alt)_80%,var(--color-border))] transition-colors cursor-pointer"
+                        className="w-full flex items-center justify-between px-4 py-2.5 bg-[color-mix(in_srgb,var(--color-surface-alt)_70%,var(--color-border))] hover:bg-[color-mix(in_srgb,var(--color-surface-alt)_55%,var(--color-border))] transition-colors cursor-pointer"
                       >
                         <div className="flex items-center gap-2">
                           <svg
