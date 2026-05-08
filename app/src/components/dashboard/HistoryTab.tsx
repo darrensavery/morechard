@@ -461,7 +461,6 @@ export function ActivityTab({ familyId, child, childCount, onCountChange, unpaid
                       {formatCurrency(item.reward_amount, item.currency)} ·{' '}
                       {itemDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
                     </p>
-                    <WeeklyRhythmDots history={history} choreTitle={item.chore_title} />
                   </div>
                   <span className={`shrink-0 text-[11px] font-bold rounded-full px-2 py-1 ${s.bg} ${s.text}`}>
                     {s.label}
@@ -619,63 +618,6 @@ function ChoreDetailRow({ label, value }: { label: string; value: string }) {
     <div className="flex items-center gap-3 px-3 py-2.5">
       <span className="text-xs text-[var(--color-text-muted)] w-20 shrink-0">{label}</span>
       <span className="text-sm text-[var(--color-text)] flex-1 text-right font-medium">{value}</span>
-    </div>
-  )
-}
-
-// ── Weekly Rhythm Dots ────────────────────────────────────────────────────────
-
-function getWeekBounds(): { weekStart: Date; weekEnd: Date } {
-  const now = new Date()
-  const day = now.getDay()
-  const diffToMon = day === 0 ? -6 : 1 - day
-  const weekStart = new Date(now)
-  weekStart.setHours(0, 0, 0, 0)
-  weekStart.setDate(now.getDate() + diffToMon)
-  const weekEnd = new Date(weekStart)
-  weekEnd.setDate(weekStart.getDate() + 6)
-  weekEnd.setHours(23, 59, 59, 999)
-  return { weekStart, weekEnd }
-}
-
-function WeeklyRhythmDots({
-  history,
-  choreTitle,
-}: {
-  history: Completion[]
-  choreTitle: string
-}) {
-  const { weekStart, weekEnd } = getWeekBounds()
-  const DAY_LABELS = ['M', 'T', 'W', 'T', 'F', 'S', 'S']
-
-  const activeDayIndices = new Set<number>()
-  history
-    .filter(h => h.chore_title === choreTitle)
-    .forEach(h => {
-      const d = new Date(h.submitted_at * 1000)
-      if (d >= weekStart && d <= weekEnd) {
-        const iso = (d.getDay() + 6) % 7
-        activeDayIndices.add(iso)
-      }
-    })
-
-  if (activeDayIndices.size === 0) return null
-
-  return (
-    <div className="flex items-center gap-[3px] mt-1.5">
-      {DAY_LABELS.map((label, i) => (
-        <div
-          key={i}
-          title={['Mon','Tue','Wed','Thu','Fri','Sat','Sun'][i]}
-          className={`w-[18px] h-[18px] rounded-full flex items-center justify-center text-[9px] font-bold transition-colors
-            ${activeDayIndices.has(i)
-              ? 'bg-[var(--brand-primary)] text-white'
-              : 'bg-[var(--color-surface-alt)] text-[var(--color-text-muted)]/50'
-            }`}
-        >
-          {label}
-        </div>
-      ))}
     </div>
   )
 }
