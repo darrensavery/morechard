@@ -193,5 +193,6 @@ body::before {
 
 /* ── Tab panel fade ────────────────────────────────────────────────────────
    Keeps panels mounted (no remount lag) but crossfades between them.     */
-.tab-panel        { transition: opacity 120ms ease; }
-.tab-panel.hidden { opacity: 0; pointer-events: none; position: absolute; visibility: hidden; display: block !important; }
+@keyframes tab-fade-in { from { opacity: 0 } to { opacity: 1 } }
+.tab-panel        { animation: tab-fade-in 150ms ease; }
+.tab-panel.hidden { display: none; }

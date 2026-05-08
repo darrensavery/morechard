@@ -348,7 +348,7 @@ export function ParentDashboard() {
       </div>
 
       {/* Content */}
-      <main className="flex-1 max-w-[560px] mx-auto w-full px-3.5 py-4 relative">
+      <main className="flex-1 max-w-[560px] mx-auto w-full px-3.5 py-4">
         {!childrenLoaded ? null : activeChild ? (
           <>
             <div className={tab === 'chores'   ? 'tab-panel' : 'tab-panel hidden'}><ChoresTab       familyId={familyId} child={activeChild} children={children} /></div>
