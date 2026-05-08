@@ -109,7 +109,6 @@ export function PoolTab({ familyId, currentUserId, parentingMode, refreshKey, on
   const pendingExpenses = expenses.filter(e => e.verification_status === 'pending');
   const flaggedExpenses = expenses.filter(e => e.verification_status === 'rejected');
   const voidedExpenses = expenses.filter(e => e.verification_status === 'voided');
-  const history = expenses.filter(e => e.settlement_period);
 
   // Archive = all committed expenses not in the current open period, plus settled history
   const archiveExpenses = useMemo(() => {
