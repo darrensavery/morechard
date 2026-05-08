@@ -60,6 +60,39 @@ const AUDIT_AMOUNTS: Partial<Record<PaymentType, number>> = {
 const PURCHASABLE: PaymentType[] = ['COMPLETE', 'COMPLETE_AI', 'SHIELD_AI', 'AI_UPGRADE'];
 
 // ----------------------------------------------------------------
+// Shield upgrade credit — sums what this family already paid
+// toward the Shield licence price.
+// ----------------------------------------------------------------
+
+const SHIELD_FULL_PRICE_PENCE = 14999;
+const STRIPE_MINIMUM_PENCE = 30;
+
+interface ShieldCreditResult {
+  alreadyPaid: number;  // pence
+  delta: number;        // pence — amount to charge
+}
+
+async function calcShieldCredit(env: Env, familyId: string): Promise<ShieldCreditResult> {
+  const row = await env.DB
+    .prepare(`
+      SELECT COALESCE(SUM(amount_paid_int), 0) AS total
+      FROM payment_audit_log
+      WHERE family_id = ?
+        AND payment_type IN ('COMPLETE', 'COMPLETE_AI', 'AI_UPGRADE')
+        AND refunded_at IS NULL
+        AND currency = 'GBP'
+    `)
+    .bind(familyId)
+    .first<{ total: number }>();
+
+  const alreadyPaid = row?.total ?? 0;
+  const raw = SHIELD_FULL_PRICE_PENCE - alreadyPaid;
+  const delta = Math.max(raw, STRIPE_MINIMUM_PENCE);
+
+  return { alreadyPaid, delta };
+}
+
+// ----------------------------------------------------------------
 // Referral: only acquisition SKUs (not upgrades) earn referral credit
 // ----------------------------------------------------------------
 const REFERRAL_ELIGIBLE: PaymentType[] = ['COMPLETE', 'COMPLETE_AI', 'SHIELD_AI', 'LIFETIME'];
