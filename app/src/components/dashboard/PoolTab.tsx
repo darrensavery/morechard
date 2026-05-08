@@ -103,8 +103,6 @@ export function PoolTab({ familyId, currentUserId, parentingMode, refreshKey, on
   if (loading) return <div className="p-6 text-center text-[var(--color-text-muted)] text-sm">Loading…</div>;
   if (error) return <div className="p-6 text-center text-red-500 text-sm">{error}</div>;
 
-  const currentPeriod = new Date().toISOString().slice(0, 7);
-
   const openExpenses = expenses.filter(
     e => !e.settlement_period && ['committed_auto', 'committed_manual'].includes(e.verification_status)
   );
