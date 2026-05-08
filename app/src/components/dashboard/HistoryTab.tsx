@@ -19,7 +19,7 @@ interface Props {
   goalProgress?: { goalName: string; choresRemaining: number } | null
 }
 
-const LIMIT = 20
+const LIMIT = 500
 
 const STATUS_STYLES: Record<string, { label: string; bg: string; text: string }> = {
   approved:   { label: 'Approved',   bg: 'bg-green-100',  text: 'text-green-700' },
@@ -42,8 +42,9 @@ export function ActivityTab({ familyId, child, childCount, onCountChange, unpaid
   const [history, setHistory]   = useState<Completion[]>([])
   const [payouts, setPayouts]   = useState<PayoutRecord[]>([])
   const [loading, setLoading]   = useState(true)
-  const [offset, setOffset]     = useState(0)
-  const [hasMore, setHasMore]   = useState(false)
+  const [historySort, setHistorySort] = useState<'date-desc' | 'date-asc'>('date-desc')
+  const [historyOpen, setHistoryOpen] = useState(true)
+  const [openMonths, setOpenMonths]   = useState<Set<string>>(new Set())
 
   // Pay out modal
   const [showPayout, setShowPayout]   = useState(false)
@@ -115,21 +116,18 @@ export function ActivityTab({ familyId, child, childCount, onCountChange, unpaid
   const approveAllTotal    = completions.reduce((s, c) => s + c.reward_amount, 0)
   const approveAllCurrency = completions[0]?.currency ?? 'GBP'
 
-  const load = useCallback(async (reset = false) => {
+  const load = useCallback(async () => {
     setLoading(true)
-    const newOffset = reset ? 0 : offset
     const [h, p] = await Promise.all([
-      getHistory({ family_id: familyId, child_id: child.id, limit: LIMIT, offset: newOffset }),
+      getHistory({ family_id: familyId, child_id: child.id, limit: LIMIT, offset: 0 }),
       getPayouts(familyId, child.id),
     ])
-    setHistory(reset ? h.history : prev => [...prev, ...h.history])
+    setHistory(h.history)
     setPayouts(p.payouts)
-    setHasMore(h.history.length === LIMIT)
-    if (reset) setOffset(0)
     setLoading(false)
-  }, [familyId, child.id, offset])
+  }, [familyId, child.id])
 
-  useEffect(() => { load(true) }, [familyId, child.id])
+  useEffect(() => { load() }, [familyId, child.id])
 
   async function handlePayout(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -146,7 +144,7 @@ export function ActivityTab({ familyId, child, childCount, onCountChange, unpaid
       setShowPayout(false)
       setPayoutAmount('')
       setPayoutNote('')
-      await load(true)
+      await load()
     } catch (err: unknown) {
       setPayoutError((err as Error).message)
     } finally {
@@ -169,7 +167,7 @@ export function ActivityTab({ familyId, child, childCount, onCountChange, unpaid
       setShowBonus(false)
       setBonusAmount('')
       setBonusReason('')
-      await load(true)
+      await load()
     } catch (err: unknown) {
       setBonusError((err as Error).message)
     } finally {
@@ -429,56 +427,151 @@ export function ActivityTab({ familyId, child, childCount, onCountChange, unpaid
         />
       )}
 
-      {/* ── Chore history ────────────────────────────────────────────────────── */}
-      <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl divide-y divide-[var(--color-border)]">
-        <p className="px-4 py-2.5 text-[13px] font-bold text-[var(--color-text-muted)] uppercase tracking-wide">Chore history</p>
-        {loading && history.length === 0 ? (
-          <div className="px-4 py-6 text-center text-[14px] text-[var(--color-text-muted)]">Loading…</div>
-        ) : history.length === 0 ? (
-          <div className="px-4 py-6 text-center text-[14px] text-[var(--color-text-muted)]">No history yet.</div>
-        ) : (
-          <>
-            {history.map(item => {
-              const s = STATUS_STYLES[item.status] ?? { label: item.status, bg: 'bg-gray-100', text: 'text-gray-600' }
-              const itemDate = new Date(item.submitted_at * 1000)
-              return (
-                <button
-                  key={item.id}
-                  type="button"
-                  onClick={() => setDetailCompletion(item)}
-                  className="w-full text-left px-4 py-3 flex items-center justify-between gap-2 hover:bg-[var(--color-surface-alt)] active:bg-[var(--color-surface-alt)] transition-colors cursor-pointer"
-                >
-                  <div className="min-w-0 flex-1">
-                    <p className="text-[14px] font-semibold text-[var(--color-text)] truncate flex items-center gap-1.5">
-                      {item.chore_title}
-                      {item.proof_url && (
-                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="var(--brand-primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-label="Has photo">
-                          <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/>
-                        </svg>
-                      )}
-                    </p>
-                    <p className="text-[12px] text-[var(--color-text-muted)]">
-                      {formatCurrency(item.reward_amount, item.currency)} ·{' '}
-                      {itemDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
-                    </p>
-                  </div>
-                  <span className={`shrink-0 text-[11px] font-bold rounded-full px-2 py-1 ${s.bg} ${s.text}`}>
-                    {s.label}
-                  </span>
-                </button>
-              )
-            })}
-            {hasMore && (
+      {/* ── Chore history archive ─────────────────────────────────────────────── */}
+      {(() => {
+        // Group by YYYY-MM from submitted_at
+        const sorted = [...history].sort((a, b) =>
+          historySort === 'date-desc'
+            ? b.submitted_at - a.submitted_at
+            : a.submitted_at - b.submitted_at
+        )
+        const groupMap = new Map<string, Completion[]>()
+        for (const item of sorted) {
+          const d = new Date(item.submitted_at * 1000)
+          const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+          if (!groupMap.has(key)) groupMap.set(key, [])
+          groupMap.get(key)!.push(item)
+        }
+        const groups = [...groupMap.entries()].sort((a, b) =>
+          historySort === 'date-desc' ? b[0].localeCompare(a[0]) : a[0].localeCompare(b[0])
+        )
+
+        return (
+          <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl overflow-hidden">
+            {/* Archive header */}
+            <div className="flex items-center justify-between px-4 py-2.5 border-b border-[var(--color-border)]">
               <button
-                onClick={() => { setOffset(o => o + LIMIT); load() }}
-                className="w-full py-3 text-[13px] font-semibold text-[var(--color-text-muted)] hover:bg-[var(--color-surface-alt)] cursor-pointer"
+                type="button"
+                onClick={() => setHistoryOpen(o => !o)}
+                className="flex items-center gap-2 text-[13px] font-bold text-[var(--color-text-muted)] uppercase tracking-wide cursor-pointer"
               >
-                Load more
+                <svg
+                  width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                  strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+                  className={`transition-transform duration-200 ${historyOpen ? 'rotate-90' : ''}`}
+                >
+                  <path d="M9 18l6-6-6-6"/>
+                </svg>
+                Chore history
+                {history.length > 0 && (
+                  <span className="text-[11px] font-semibold text-[var(--color-text-muted)] normal-case tracking-normal">
+                    ({history.length})
+                  </span>
+                )}
               </button>
+              {history.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setHistorySort(s => s === 'date-desc' ? 'date-asc' : 'date-desc')}
+                  className="flex items-center gap-1 text-[11px] font-semibold text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors cursor-pointer px-2 py-1 rounded-lg hover:bg-[var(--color-surface-alt)]"
+                >
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                    <path d="M3 6h18M7 12h10M11 18h2"/>
+                  </svg>
+                  {historySort === 'date-desc' ? 'Newest first' : 'Oldest first'}
+                </button>
+              )}
+            </div>
+
+            {!historyOpen ? null : loading && history.length === 0 ? (
+              <div className="px-4 py-6 text-center text-[14px] text-[var(--color-text-muted)]">Loading…</div>
+            ) : history.length === 0 ? (
+              <div className="px-4 py-6 text-center text-[14px] text-[var(--color-text-muted)]">No history yet.</div>
+            ) : (
+              <div className="divide-y divide-[var(--color-border)]">
+                {groups.map(([key, items]) => {
+                  const [year, month] = key.split('-')
+                  const monthLabel = new Date(parseInt(year), parseInt(month) - 1, 1)
+                    .toLocaleString('default', { month: 'long', year: 'numeric' })
+                  const monthTotal = items.filter(i => i.status === 'completed').reduce((s, i) => s + i.reward_amount, 0)
+                  const currency = items[0]?.currency ?? 'GBP'
+                  const isOpen = openMonths.has(key)
+
+                  return (
+                    <div key={key}>
+                      {/* Month header */}
+                      <button
+                        type="button"
+                        onClick={() => setOpenMonths(prev => {
+                          const next = new Set(prev)
+                          next.has(key) ? next.delete(key) : next.add(key)
+                          return next
+                        })}
+                        className="w-full flex items-center justify-between px-4 py-2.5 bg-[var(--color-surface-alt)] hover:bg-[color-mix(in_srgb,var(--color-surface-alt)_80%,var(--color-border))] transition-colors cursor-pointer"
+                      >
+                        <div className="flex items-center gap-2">
+                          <svg
+                            width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+                            className={`text-[var(--color-text-muted)] transition-transform duration-150 ${isOpen ? 'rotate-90' : ''}`}
+                          >
+                            <path d="M9 18l6-6-6-6"/>
+                          </svg>
+                          <span className="text-[12px] font-bold text-[var(--color-text)]">{monthLabel}</span>
+                          <span className="text-[11px] text-[var(--color-text-muted)]">
+                            {items.length} chore{items.length !== 1 ? 's' : ''}
+                          </span>
+                        </div>
+                        {monthTotal > 0 && (
+                          <span className="text-[12px] font-bold tabular-nums text-[var(--brand-primary)]">
+                            {formatCurrency(monthTotal, currency)}
+                          </span>
+                        )}
+                      </button>
+
+                      {/* Month rows */}
+                      {isOpen && (
+                        <div className="divide-y divide-[var(--color-border)]">
+                          {items.map(item => {
+                            const s = STATUS_STYLES[item.status] ?? { label: item.status, bg: 'bg-gray-100', text: 'text-gray-600' }
+                            const itemDate = new Date(item.submitted_at * 1000)
+                            return (
+                              <button
+                                key={item.id}
+                                type="button"
+                                onClick={() => setDetailCompletion(item)}
+                                className="w-full text-left px-4 py-3 flex items-center justify-between gap-2 hover:bg-[var(--color-surface-alt)] active:bg-[var(--color-surface-alt)] transition-colors cursor-pointer opacity-90 hover:opacity-100"
+                              >
+                                <div className="min-w-0 flex-1">
+                                  <p className="text-[14px] font-semibold text-[var(--color-text)] truncate flex items-center gap-1.5">
+                                    {item.chore_title}
+                                    {item.proof_url && (
+                                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="var(--brand-primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-label="Has photo">
+                                        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/>
+                                      </svg>
+                                    )}
+                                  </p>
+                                  <p className="text-[12px] text-[var(--color-text-muted)]">
+                                    {formatCurrency(item.reward_amount, item.currency)} ·{' '}
+                                    {itemDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                  </p>
+                                </div>
+                                <span className={`shrink-0 text-[11px] font-bold rounded-full px-2 py-1 ${s.bg} ${s.text}`}>
+                                  {s.label}
+                                </span>
+                              </button>
+                            )
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
             )}
-          </>
-        )}
-      </div>
+          </div>
+        )
+      })()}
     </div>
   )
 }
