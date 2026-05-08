@@ -66,11 +66,11 @@ export function DataSettings({
   }, [triggerPrune])
 
   const shieldLabelText = (() => {
-    if (!shieldUpgradePrice || shieldUpgradePrice.already_paid === 0) {
-      return 'Requires Shield (£149.99 one-time)'
+    if (hasAiMentor && shieldUpgradePrice) {
+      const delta = (shieldUpgradePrice.delta / 100).toFixed(2)
+      return `Requires Shield (£${delta} to upgrade)`
     }
-    const delta = (shieldUpgradePrice.delta / 100).toFixed(2)
-    return `Requires Shield (£${delta} to upgrade)`
+    return 'Requires Shield (£149.99 one-time)'
   })()
 
   function exportLabel(key: Parameters<typeof stateOf>[0], idleLabel: string) {
