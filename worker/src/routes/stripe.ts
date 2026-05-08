@@ -248,6 +248,10 @@ export async function handleCreateCheckout(
   if (payment_type === 'SHIELD_AI') {
     const { delta } = await calcShieldCredit(env, auth.family_id);
     if (delta < SHIELD_FULL_PRICE_PENCE) {
+      if (!env.STRIPE_SHIELD_PRODUCT_ID) {
+        console.error('STRIPE_SHIELD_PRODUCT_ID is not configured');
+        return error('Shield upgrade not available — please contact support', 503);
+      }
       try {
         priceId = await createDynamicPrice(
           env.STRIPE_SHIELD_PRODUCT_ID,
@@ -348,7 +352,7 @@ async function handleCheckoutCompleted(session: StripeSession, env: Env): Promis
       INSERT INTO payment_audit_log (family_id, stripe_session_id, amount_paid_int, currency, payment_type)
       VALUES (?, ?, ?, ?, ?)
     `)
-    .bind(family_id, session.id, AUDIT_AMOUNTS[payment_type] ?? 0, 'GBP', payment_type)
+    .bind(family_id, session.id, session.amount_total ?? AUDIT_AMOUNTS[payment_type] ?? 0, 'GBP', payment_type)
     .run();
 
   // Grant license flags
@@ -568,4 +572,5 @@ interface StripeEvent {
 interface StripeSession {
   id: string;
   metadata?: Record<string, string>;
+  amount_total?: number;  // actual charge in minor units (pence for GBP)
 }
