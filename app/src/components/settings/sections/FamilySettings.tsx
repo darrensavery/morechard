@@ -39,6 +39,11 @@ interface Props {
   onSharedExpenseThresholdChange: (v: number) => void
   onSharedExpenseSplitChange:     (v: number) => void
   onSaveSharedExpense:            () => Promise<void>
+  pocketMoneyDay:        number
+  onSavePocketMoneyDay:  (day: number) => Promise<void>
+  overdraftEnabled:      boolean
+  overdraftLimitPence:   number
+  onSaveOverdraftPolicy: (enabled: boolean, limitPence: number) => Promise<void>
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -50,6 +55,8 @@ export function FamilySettings({
   toast, onBack, onComingSoon,
   onAddChild, onAppViewToggle, onGrowthUpdate, onRenameChild, onPinResetSuccess, onGenerateInvite,
   onSharedExpenseThresholdChange, onSharedExpenseSplitChange, onSaveSharedExpense,
+  pocketMoneyDay, onSavePocketMoneyDay,
+  overdraftEnabled, overdraftLimitPence, onSaveOverdraftPolicy,
 }: Props) {
   const { terminology } = useTone(0)  // parent settings — never teen view
   const [activeChildId,       setActiveChildId]       = useState<string | null>(null)
@@ -61,6 +68,15 @@ export function FamilySettings({
   const [inviteExpiry,        setInviteExpiry]        = useState<string | null>(null)
   const [genningInvite,       setGenningInvite]       = useState(false)
   const [showSharedExpenses,  setShowSharedExpenses]  = useState(false)
+
+  const [showPocketMoneyDay,  setShowPocketMoneyDay]  = useState(false)
+  const [selectedDay,         setSelectedDay]         = useState(pocketMoneyDay)
+  const [savingDay,           setSavingDay]           = useState(false)
+
+  const [showOverdraftPolicy, setShowOverdraftPolicy] = useState(false)
+  const [localEnabled,        setLocalEnabled]        = useState(overdraftEnabled)
+  const [localLimitPence,     setLocalLimitPence]     = useState(overdraftLimitPence)
+  const [savingOverdraft,     setSavingOverdraft]     = useState(false)
 
   async function handleAddChild(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -87,6 +103,62 @@ export function FamilySettings({
   }
 
   const activeChild = activeChildId ? children.find(c => c.id === activeChildId) ?? null : null
+
+  if (showPocketMoneyDay) {
+    const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+
+    async function handleSaveDay() {
+      setSavingDay(true)
+      try {
+        await onSavePocketMoneyDay(selectedDay)
+        setShowPocketMoneyDay(false)
+      } finally {
+        setSavingDay(false)
+      }
+    }
+
+    return (
+      <div className="space-y-4">
+        {toast && <Toast message={toast} />}
+        <SectionHeader title={`${terminology.allowanceLabel} Day`} onBack={() => setShowPocketMoneyDay(false)} />
+
+        <SectionCard>
+          <div className="px-4 py-3.5">
+            <p className="text-[13px] font-semibold text-[var(--color-text)] mb-0.5">
+              Weekly payout day
+            </p>
+            <p className="text-[12px] text-[var(--color-text-muted)] mb-3 leading-snug">
+              The day each child's allowance is automatically added to their balance.
+            </p>
+            <div className="flex gap-1.5">
+              {DAY_LABELS.map((label, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => setSelectedDay(idx)}
+                  className={`flex-1 py-2 rounded-lg text-[12px] font-semibold border cursor-pointer transition-colors ${
+                    selectedDay === idx
+                      ? 'bg-[var(--brand-primary)] text-white border-[var(--brand-primary)]'
+                      : 'bg-[var(--color-surface)] text-[var(--color-text-muted)] border-[var(--color-border)] hover:bg-[var(--color-surface-alt)]'
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+        </SectionCard>
+
+        <button
+          onClick={handleSaveDay}
+          disabled={savingDay}
+          className="w-full bg-[var(--brand-primary)] text-white font-semibold text-[14px] py-3 rounded-xl disabled:opacity-50 cursor-pointer"
+        >
+          {savingDay ? 'Saving…' : 'Save Changes'}
+        </button>
+      </div>
+    )
+  }
 
   if (showSharedExpenses) {
     return (
