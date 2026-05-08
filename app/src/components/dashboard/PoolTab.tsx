@@ -210,7 +210,7 @@ export function PoolTab({ familyId, currentUserId, parentingMode, refreshKey, on
           {isCoParenting && (
             <button
               onClick={() => onReconcileClick(openExpenses)}
-              className="text-sm font-semibold text-[var(--brand-primary)] border border-[var(--brand-primary)] rounded-lg px-3 py-1.5"
+              className="text-sm font-semibold text-[var(--brand-primary)] border border-[var(--brand-primary)] rounded-lg px-3 py-1.5 hover:bg-[color-mix(in_srgb,var(--brand-primary)_8%,transparent)] active:bg-[color-mix(in_srgb,var(--brand-primary)_15%,transparent)] active:scale-[0.97] transition-all cursor-pointer"
             >
               Reconcile
             </button>
