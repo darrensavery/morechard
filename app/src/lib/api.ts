@@ -264,6 +264,17 @@ export async function createCheckoutSession(
   })
 }
 
+export interface ShieldUpgradePrice {
+  full_price:   number   // pence
+  already_paid: number   // pence
+  delta:        number   // pence — amount that will be charged
+  currency:     string
+}
+
+export async function getShieldUpgradePrice(): Promise<ShieldUpgradePrice> {
+  return request('/api/stripe/shield-upgrade-price')
+}
+
 export async function cancelPlan(): Promise<{ refunded: boolean }> {
   return request('/api/billing/cancel', { method: 'DELETE' })
 }
