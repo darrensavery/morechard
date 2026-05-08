@@ -3,7 +3,9 @@ import { useEffect, useState } from 'react';
 import type { SharedExpense } from '../../lib/api';
 import { apiUrl, authHeaders, getSharedExpenses } from '../../lib/api';
 import { VoidExpenseSheet } from './VoidExpenseSheet';
+import { ExpenseDetailSheet } from './ExpenseDetailSheet';
 import { Button } from '../ui/button';
+import { Receipt } from 'lucide-react';
 
 function CategoryIcon({ category, size = 14 }: { category: string; size?: number }) {
   const p = { width: size, height: size, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: '1.8', strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const };
@@ -67,6 +69,7 @@ export function PoolTab({ familyId, currentUserId, parentingMode, refreshKey, on
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [voidingExpense, setVoidingExpense] = useState<SharedExpense | null>(null);
+  const [detailExpense, setDetailExpense] = useState<SharedExpense | null>(null);
   const [archiveSort, setArchiveSort] = useState<SortKey>('date-desc');
   const [archiveOpen, setArchiveOpen] = useState(false);
 
@@ -98,6 +101,39 @@ export function PoolTab({ familyId, currentUserId, parentingMode, refreshKey, on
     if (!confirm('Remove this flagged expense?')) return;
     await fetch(apiUrl(`/api/shared-expenses/${id}`), { method: 'DELETE', headers: authHeaders() });
     load();
+  }
+
+  function exportCsv() {
+    const settled = [...archiveBase].sort((a, b) => a.created_at - b.created_at);
+    const rows = [
+      ['Date', 'Description', 'Category', 'Amount', 'Currency', 'Logged By', 'Verified By', 'Settlement Period', 'Receipt'],
+      ...settled.map(e => {
+        const date = e.expense_date
+          ? e.expense_date
+          : new Date(e.created_at * 1000).toISOString().slice(0, 10);
+        return [
+          date,
+          `"${e.description.replace(/"/g, '""')}"`,
+          e.category,
+          (e.total_amount / 100).toFixed(2),
+          e.currency,
+          e.logged_by_name ?? '',
+          e.authorised_by_name ?? '',
+          e.settlement_period ?? '',
+          e.receipt_r2_key ? 'Yes' : 'No',
+        ].join(',');
+      }),
+    ];
+    const blob = new Blob([rows.join('\n')], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `morechard-expenses-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 100);
   }
 
   if (loading) return <div className="p-6 text-center text-[var(--color-text-muted)] text-sm">Loading…</div>;
@@ -273,28 +309,33 @@ export function PoolTab({ familyId, currentUserId, parentingMode, refreshKey, on
               const myAmount = e.logged_by === currentUserId ? loggedByAmount : otherAmount;
               const uneven = loggedByAmount !== otherAmount;
               return (
-                <div key={e.id} className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
+                <button
+                  key={e.id}
+                  type="button"
+                  onClick={() => setDetailExpense(e)}
+                  className="w-full text-left rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 hover:bg-[var(--color-surface-raised)] active:bg-[var(--color-surface-raised)] transition-colors cursor-pointer"
+                >
                   <div className="flex items-start justify-between gap-2">
-                    <div className="flex-1">
-                      <p className="font-semibold text-sm"><span className="inline-flex items-center gap-1.5"><CategoryIcon category={e.category} />{e.description}</span></p>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-sm">
+                        <span className="inline-flex items-center gap-1.5">
+                          <CategoryIcon category={e.category} />
+                          {e.description}
+                          {e.receipt_r2_key && (
+                            <Receipt size={11} className="text-[var(--brand-primary)] shrink-0" aria-label="Has receipt" />
+                          )}
+                        </span>
+                      </p>
                       <p className="text-xs text-[var(--color-text-muted)] mt-0.5 ml-5">{ledgerNote(e, currentUserId)}</p>
                       {isCoParenting && uneven && (
                         <p className="text-[10px] text-[var(--color-text-muted)] mt-0.5 italic">
-                          To keep things simple, we've rounded your share to {formatAmount(myAmount, e.currency)}.
+                          Your share: {formatAmount(myAmount, e.currency)}
                         </p>
                       )}
-                      {e.logged_by === currentUserId && (
-                        <button
-                          onClick={() => setVoidingExpense(e)}
-                          className="text-xs text-red-500 border border-red-300 rounded px-2 py-0.5 mt-1 cursor-pointer hover:bg-red-50 hover:border-red-400 hover:text-red-600 transition-colors"
-                        >
-                          Void
-                        </button>
-                      )}
                     </div>
-                    <p className="text-sm font-bold tabular-nums">{formatAmount(e.total_amount, e.currency)}</p>
+                    <p className="text-sm font-bold tabular-nums shrink-0">{formatAmount(e.total_amount, e.currency)}</p>
                   </div>
-                </div>
+                </button>
               );
             })}
           </div>
@@ -320,16 +361,27 @@ export function PoolTab({ familyId, currentUserId, parentingMode, refreshKey, on
       {/* Archive — all historical committed expenses, grouped by month */}
       {archiveBase.length > 0 && (
         <section className="px-4">
-          <button
-            type="button"
-            onClick={() => setArchiveOpen(o => !o)}
-            className="w-full flex items-center justify-between mb-2 cursor-pointer"
-          >
-            <h3 className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wide">
-              Archive ({archiveBase.length})
-            </h3>
-            <span className="text-xs text-[var(--color-text-muted)]">{archiveOpen ? '▲ Hide' : '▼ Show'}</span>
-          </button>
+          <div className="flex items-center justify-between mb-2">
+            <button
+              type="button"
+              onClick={() => setArchiveOpen(o => !o)}
+              className="flex items-center gap-2 cursor-pointer"
+            >
+              <h3 className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wide">
+                Archive ({archiveBase.length})
+              </h3>
+              <span className="text-xs text-[var(--color-text-muted)]">{archiveOpen ? '▲' : '▼'}</span>
+            </button>
+            {archiveBase.length > 0 && (
+              <button
+                type="button"
+                onClick={exportCsv}
+                className="text-xs font-semibold text-[var(--brand-primary)] border border-[var(--brand-primary)] rounded-lg px-2.5 py-1 hover:bg-[color-mix(in_srgb,var(--brand-primary)_8%,transparent)] transition-colors cursor-pointer"
+              >
+                Export CSV
+              </button>
+            )}
+          </div>
 
           {archiveOpen && (
             <>
@@ -365,13 +417,21 @@ export function PoolTab({ familyId, currentUserId, parentingMode, refreshKey, on
                             ? new Date(e.expense_date).toLocaleDateString('default', { day: 'numeric', month: 'short' })
                             : new Date(e.created_at * 1000).toLocaleDateString('default', { day: 'numeric', month: 'short' });
                           return (
-                            <div key={e.id} className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 opacity-75">
+                            <button
+                              key={e.id}
+                              type="button"
+                              onClick={() => setDetailExpense(e)}
+                              className="w-full text-left rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 opacity-75 hover:opacity-100 hover:bg-[var(--color-surface-raised)] transition-all cursor-pointer"
+                            >
                               <div className="flex items-start justify-between gap-2">
                                 <div className="flex-1 min-w-0">
                                   <p className="font-semibold text-sm">
                                     <span className="inline-flex items-center gap-1.5">
                                       <CategoryIcon category={e.category} />
                                       {e.description}
+                                      {e.receipt_r2_key && (
+                                        <Receipt size={11} className="text-[var(--brand-primary)] shrink-0" aria-label="Has receipt" />
+                                      )}
                                     </span>
                                   </p>
                                   <p className="text-xs text-[var(--color-text-muted)] mt-0.5 ml-5">{dateStr}</p>
@@ -380,7 +440,7 @@ export function PoolTab({ familyId, currentUserId, parentingMode, refreshKey, on
                                   {formatAmount(e.total_amount, e.currency)}
                                 </p>
                               </div>
-                            </div>
+                            </button>
                           );
                         })}
                       </div>
@@ -407,6 +467,19 @@ export function PoolTab({ familyId, currentUserId, parentingMode, refreshKey, on
           description={voidingExpense.description}
           onClose={() => setVoidingExpense(null)}
           onVoided={() => { setVoidingExpense(null); load(); }}
+        />
+      )}
+
+      {detailExpense && (
+        <ExpenseDetailSheet
+          expense={detailExpense}
+          currentUserId={currentUserId}
+          isCoParenting={isCoParenting}
+          onClose={() => setDetailExpense(null)}
+          onVoid={detailExpense.logged_by === currentUserId ? () => {
+            setVoidingExpense(detailExpense);
+            setDetailExpense(null);
+          } : undefined}
         />
       )}
     </div>
