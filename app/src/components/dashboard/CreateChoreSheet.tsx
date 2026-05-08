@@ -172,13 +172,6 @@ export function CreateChoreSheet({
 
   const sym = currencySymbol(currency)
 
-  // Focus title on open (don't open suggestions on initial focus)
-  useEffect(() => {
-    const t = setTimeout(() => {
-      titleRef.current?.focus({ preventScroll: true })
-    }, 120)
-    return () => clearTimeout(t)
-  }, [])
 
   // Dismiss suggestions on outside click
   useEffect(() => {

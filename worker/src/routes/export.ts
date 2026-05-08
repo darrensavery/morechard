@@ -480,42 +480,97 @@ interface BehavioralContext extends ReportContext {
   moduleRows: LearningModuleRow[];
 }
 
+// Pillar definitions for the report narrative
+const PILLARS_EN = [
+  { id: 1, name: 'Earning & Value',      metaphor: 'The Roots',     summary: 'Understanding that money is stored effort — every task has a labour value.' },
+  { id: 2, name: 'Spending & Choices',   metaphor: 'The Trunk',     summary: 'Distinguishing needs from wants, and recognising when outside forces are shaping decisions.' },
+  { id: 3, name: 'Saving & Growth',      metaphor: 'The Fruit',     summary: 'Building patience and momentum — the snowball effect of consistent saving.' },
+  { id: 4, name: 'Borrowing & Debt',     metaphor: 'The Vine',      summary: 'Understanding that borrowing has a cost, and that not all debt is the same.' },
+  { id: 5, name: 'Investing & Future',   metaphor: 'The Canopy',    summary: 'Protecting money from inflation and making it work through compound growth.' },
+  { id: 6, name: 'Society & Wellbeing',  metaphor: 'The Atmosphere',summary: 'Using surplus for others, understanding digital money, and building a healthy relationship with spending.' },
+];
+
+const PILLARS_PL = [
+  { id: 1, name: 'Zarabianie i wartość',     metaphor: 'Korzenie',      summary: 'Pieniądze to przechowana energia — każde zadanie ma wartość pracy.' },
+  { id: 2, name: 'Wydawanie i wybory',       metaphor: 'Pień',          summary: 'Odróżnianie potrzeb od zachcianek i rozpoznawanie, gdy otoczenie kształtuje decyzje.' },
+  { id: 3, name: 'Oszczędzanie i wzrost',    metaphor: 'Owoce',         summary: 'Budowanie cierpliwości i impetu — kula śnieżna regularnego oszczędzania.' },
+  { id: 4, name: 'Pożyczanie i dług',        metaphor: 'Winorośl',      summary: 'Pożyczanie ma cenę, a nie każdy dług jest taki sam.' },
+  { id: 5, name: 'Inwestowanie i przyszłość',metaphor: 'Korona',        summary: 'Ochrona pieniędzy przed inflacją i procentem składanym.' },
+  { id: 6, name: 'Społeczeństwo i dobrostan',metaphor: 'Atmosfera',     summary: 'Dzielenie nadwyżki z innymi, rozumienie pieniądza cyfrowego i zdrowa relacja z wydawaniem.' },
+];
+
+// Which pillar each module slug belongs to
+const MODULE_PILLAR: Record<string, number> = {
+  'effort-vs-reward': 1, 'taxes-net-pay': 1, 'entrepreneurship': 1, 'gig-trap-vs-salary-safety': 1,
+  'needs-vs-wants': 2, 'scams-digital-safety': 2, 'advertising-influence': 2,
+  'the-patience-tree': 3, 'banking-101': 3, 'opportunity-cost': 3, 'the-snowball': 3,
+  'the-interest-trap': 4, 'credit-scores-and-trust': 4, 'good-vs-bad-debt': 4,
+  'compound-growth': 5, 'inflation': 5, 'risk-and-diversification': 5,
+  'giving-and-charity': 6, 'digital-vs-physical-currency': 6, 'money-and-mental-health': 6, 'social-comparison': 6,
+};
+
 function buildBehavioralReport(ctx: BehavioralContext): string {
-  const { family, lang, ledgerRows, statusRows, moduleRows, labelMap,
-          fingerprint, shortFp, docUuid, exportTs,
-          verified, disputed, totalEarned, totalTasks } = ctx;
+  const { family, lang, ledgerRows, statusRows, moduleRows,
+          fingerprint, shortFp, docUuid, exportTs } = ctx;
   const pl = lang === 'pl';
 
-  const title = pl ? 'Curriculum Wzrostu i Nauki' : 'Growth & Learning Curriculum';
+  const title = pl ? 'Raport Wzrostu i Nauki' : 'Growth & Learning Report';
 
   // Derive behavioural pulse signals from ledger + status data
   const pulse = deriveBehaviouralPulse(ledgerRows, statusRows, lang);
 
+  const pillars = pl ? PILLARS_PL : PILLARS_EN;
+
   // Module display names
-  const moduleNames: Record<string, string> = {
-    'effort-vs-reward':         pl ? 'Wysiłek a nagroda'            : 'Effort vs. Reward',
-    'taxes-net-pay':            pl ? 'Podatki i wynagrodzenie netto' : 'Taxes & Net Pay',
-    'entrepreneurship':         pl ? 'Przedsiębiorczość'             : 'Entrepreneurship',
-    'gig-trap-vs-salary-safety':pl ? 'Pułapka freelance'            : 'Gig Trap vs. Salary Safety',
-    'needs-vs-wants':           pl ? 'Potrzeby a zachcianki'         : 'Needs vs. Wants',
-    'scams-digital-safety':     pl ? 'Oszustwa i bezpieczeństwo'     : 'Scams & Digital Safety',
-    'advertising-influence':    pl ? 'Reklama i wpływ'              : 'Advertising & Influence',
-    'the-patience-tree':        pl ? 'Drzewo cierpliwości'           : 'The Patience Tree',
-    'banking-101':              pl ? 'Bankowość 101'                 : 'Banking 101',
-    'opportunity-cost':         pl ? 'Koszt alternatywny'            : 'Opportunity Cost',
-    'the-snowball':             pl ? 'Kula śnieżna'                  : 'The Snowball',
-    'the-interest-trap':        pl ? 'Pułapka odsetek'              : 'The Interest Trap',
-    'credit-scores-and-trust':  pl ? 'Scoring kredytowy'            : 'Credit Scores & Trust',
-    'good-vs-bad-debt':         pl ? 'Dobry i zły dług'             : 'Good vs. Bad Debt',
-    'compound-growth':          pl ? 'Wzrost procentu składanego'   : 'Compound Growth',
-    'inflation':                pl ? 'Inflacja'                      : 'Inflation',
-    'risk-and-diversification': pl ? 'Ryzyko i dywersyfikacja'       : 'Risk & Diversification',
-    'giving-and-charity':       pl ? 'Dawanie i charytatywność'      : 'Giving & Charity',
-    'digital-vs-physical-currency': pl ? 'Waluta cyfrowa a fizyczna' : 'Digital vs. Physical Currency',
-    'money-and-mental-health':  pl ? 'Pieniądze i zdrowie psychiczne': 'Money & Mental Health',
-    'social-comparison':        pl ? 'Porównywanie społeczne'        : 'Social Comparison',
-    'cryptocurrency':           pl ? 'Kryptowaluty'                  : 'Cryptocurrency',
+  const moduleNames: Record<string, [string, number]> = {
+    'effort-vs-reward':              [pl ? 'Wysiłek a nagroda'            : 'Effort vs. Reward',              1],
+    'taxes-net-pay':                 [pl ? 'Podatki i wynagrodzenie netto' : 'Taxes & Net Pay',               1],
+    'entrepreneurship':              [pl ? 'Przedsiębiorczość'             : 'Entrepreneurship',              1],
+    'gig-trap-vs-salary-safety':     [pl ? 'Pułapka freelance'            : 'Gig Trap vs. Salary Safety',     1],
+    'needs-vs-wants':                [pl ? 'Potrzeby a zachcianki'         : 'Needs vs. Wants',               2],
+    'scams-digital-safety':          [pl ? 'Oszustwa i bezpieczeństwo'     : 'Scams & Digital Safety',        2],
+    'advertising-influence':         [pl ? 'Reklama i wpływ'              : 'Advertising & Influence',       2],
+    'the-patience-tree':             [pl ? 'Drzewo cierpliwości'           : 'The Patience Tree',             3],
+    'banking-101':                   [pl ? 'Bankowość 101'                 : 'Banking 101',                   3],
+    'opportunity-cost':              [pl ? 'Koszt alternatywny'            : 'Opportunity Cost',              3],
+    'the-snowball':                  [pl ? 'Kula śnieżna'                  : 'The Snowball',                  3],
+    'the-interest-trap':             [pl ? 'Pułapka odsetek'              : 'The Interest Trap',              4],
+    'credit-scores-and-trust':       [pl ? 'Scoring kredytowy'            : 'Credit Scores & Trust',         4],
+    'good-vs-bad-debt':              [pl ? 'Dobry i zły dług'             : 'Good vs. Bad Debt',              4],
+    'compound-growth':               [pl ? 'Wzrost procentu składanego'   : 'Compound Growth',               5],
+    'inflation':                     [pl ? 'Inflacja'                      : 'Inflation',                     5],
+    'risk-and-diversification':      [pl ? 'Ryzyko i dywersyfikacja'       : 'Risk & Diversification',        5],
+    'giving-and-charity':            [pl ? 'Dawanie i charytatywność'      : 'Giving & Charity',              6],
+    'digital-vs-physical-currency':  [pl ? 'Waluta cyfrowa a fizyczna'     : 'Digital vs. Physical Currency', 6],
+    'money-and-mental-health':       [pl ? 'Pieniądze i zdrowie psychiczne': 'Money & Mental Health',         6],
+    'social-comparison':             [pl ? 'Porównywanie społeczne'        : 'Social Comparison',             6],
   };
+
+  // Unique children in ledger
+  const childMap = new Map<string, string>();
+  for (const r of ledgerRows) {
+    if (r.child_id && r.child_name && !childMap.has(r.child_id)) {
+      childMap.set(r.child_id, r.child_name);
+    }
+  }
+  const children = [...childMap.entries()]; // [id, name][]
+
+  // Per-child stats
+  const childStats = children.map(([childId, childName]) => {
+    const rows    = ledgerRows.filter(r => r.child_id === childId);
+    const credits = rows.filter(r => r.entry_type === 'credit');
+    const earned  = credits.reduce((s, r) => s + r.amount, 0);
+    const tasks   = credits.length;
+    const mods    = moduleRows.filter(m => m.child_id === childId);
+    const unlockedPillars = [...new Set(mods.map(m => MODULE_PILLAR[m.slug]).filter(Boolean))];
+    return { childId, childName, earned, tasks, mods, unlockedPillars };
+  });
+
+  // Pillar progress: which pillars have at least one module unlocked across all children
+  const unlockedPillarIds = new Set(moduleRows.map(m => MODULE_PILLAR[m.slug]).filter(Boolean));
+
+  // Next milestone suggestions based on pulse and ledger
+  const nextMilestones = deriveNextMilestones(ledgerRows, moduleRows, lang);
 
   return `<!DOCTYPE html>
 <html lang="${lang}">
@@ -526,63 +581,150 @@ ${baseStyles()}
 <style>
   .summary-card { border-left: 4px solid #7b5ea7; }
   h1 span.tier-badge { background:#f3e5f5; color:#6a1b9a; font-size:12px; padding:2px 10px; border-radius:12px; font-weight:600; vertical-align:middle; margin-left:8px; }
-  .pulse-box { padding:14px 16px; border:1px solid #ce93d8; border-radius:6px; background:#fce4ec10; margin-bottom:16px; }
+
+  .child-header { background:#fdf6ff; border:1px solid #ce93d8; border-radius:8px; padding:12px 16px; margin-bottom:12px; }
+  .child-header .child-name { font-size:16px; font-weight:700; color:#4a148c; }
+  .child-header .child-stats { font-size:10px; color:#666; margin-top:4px; }
+  .child-stat-pill { display:inline-block; background:#f3e5f5; color:#6a1b9a; border-radius:10px; padding:2px 8px; margin-right:6px; font-weight:600; }
+
+  .pillar-grid { display:grid; grid-template-columns: repeat(3,1fr); gap:8px; margin-bottom:16px; }
+  .pillar-card { border:1px solid #e1bee7; border-radius:6px; padding:8px 10px; }
+  .pillar-card.unlocked { background:#f3e5f5; border-color:#ab47bc; }
+  .pillar-card.locked   { background:#fafafa; border-color:#ddd; opacity:0.7; }
+  .pillar-card .pillar-num  { font-size:9px; font-weight:700; color:#9c27b0; text-transform:uppercase; letter-spacing:.5px; }
+  .pillar-card.locked .pillar-num { color:#aaa; }
+  .pillar-card .pillar-name { font-size:11px; font-weight:600; margin:2px 0; }
+  .pillar-card .pillar-meta { font-size:9px; color:#777; font-style:italic; }
+  .pillar-card .pillar-desc { font-size:9px; color:#555; margin-top:4px; line-height:1.4; }
+  .pillar-status { font-size:9px; font-weight:700; margin-top:4px; }
+  .pillar-status.done    { color:#2e7d32; }
+  .pillar-status.pending { color:#aaa; }
+
+  .pulse-box { padding:14px 16px; border:1px solid #ce93d8; border-radius:6px; background:#fdf6ff; margin-bottom:16px; }
   .pulse-signal { display:inline-block; margin:3px 4px; padding:3px 10px; border-radius:12px; font-size:10px; font-weight:600; }
   .pulse-signal.positive { background:#e8f5e9; color:#2e7d32; }
   .pulse-signal.caution  { background:#fff8e1; color:#f57f17; }
   .pulse-signal.concern  { background:#fce4ec; color:#b71c1c; }
   .pulse-child { font-size:9px; font-weight:400; opacity:0.8; margin-left:4px; }
+
+  .pulse-explain { margin-top:10px; border-top:1px solid #e1bee7; padding-top:8px; }
+  .pulse-explain-row { margin:4px 0; font-size:10px; line-height:1.5; }
+  .pulse-explain-row .signal-tag { font-weight:700; }
+
   .module-grid { display:grid; grid-template-columns: repeat(2,1fr); gap:8px; margin-bottom:16px; }
   .module-card { border:1px solid #e1bee7; border-radius:6px; padding:8px 12px; background:#fdf6ff; }
-  .module-card .mod-name { font-weight:600; font-size:11px; }
-  .module-card .mod-meta { font-size:9px; color:#888; }
+  .module-card .mod-name  { font-weight:600; font-size:11px; }
+  .module-card .mod-pillar { font-size:9px; color:#9c27b0; font-weight:600; text-transform:uppercase; letter-spacing:.3px; margin-bottom:2px; }
+  .module-card .mod-meta  { font-size:9px; color:#888; }
+
+  .milestone-box { background:#fff8e1; border:1px solid #ffe082; border-radius:6px; padding:12px 14px; margin-bottom:16px; }
+  .milestone-box h3 { font-size:11px; font-weight:700; color:#f57f17; margin-bottom:6px; }
+  .milestone-row { font-size:10px; margin:4px 0; line-height:1.5; }
+  .milestone-row::before { content:"→ "; color:#f57f17; font-weight:700; }
+
+  .ledger-appendix h2 { border-top:2px dashed #ccc; margin-top:24px; padding-top:16px; color:#999; }
 </style>
 </head>
 <body>
 
-<h1>Morechard — ${escHtml(pl ? 'Raport Edukacyjny' : 'Educational Report')} <span class="tier-badge">${pl ? 'Wersja z Mentorem AI' : 'AI Mentor Edition'}</span></h1>
+<h1>Morechard — ${escHtml(title)} <span class="tier-badge">${pl ? 'Wersja z Mentorem AI' : 'AI Mentor Edition'}</span></h1>
 <div class="meta">
   ${pl ? 'Rodzina' : 'Family'}: <strong>${escHtml(family.name)}</strong> &nbsp;|&nbsp;
   ${pl ? 'Wygenerowano' : 'Exported at'}: <strong>${new Date(exportTs * 1000).toISOString()}</strong> &nbsp;|&nbsp;
   ${pl ? 'Waluta' : 'Currency'}: <strong>${family.currency}</strong>
 </div>
 <p class="report-description">${pl
-  ? 'Ten raport łączy podsumowanie finansowe z analizą edukacyjną, ukazując postępy w nauce finansowej.'
-  : 'This report combines the financial summary with educational analysis, showing progress in financial literacy.'}</p>
+  ? 'Ten raport pokazuje postępy w nauce finansowej według 6 filarów Programu Nauczania Sadu. Rejestr transakcji znajduje się w załączniku na końcu dokumentu.'
+  : 'This report tracks progress across the 6 pillars of the Orchard Financial Curriculum. The transaction ledger appears as an appendix at the end.'}</p>
 
-<h2>${pl ? 'Podsumowanie' : 'Summary'}</h2>
-<div class="summary-grid">
-  <div class="summary-card"><div class="num">${fmtAmount(totalEarned, family.currency)}</div><div class="label">${pl ? 'Łącznie zarobiono' : 'Total Earned'}</div></div>
-  <div class="summary-card"><div class="num">${totalTasks}</div><div class="label">${pl ? 'Ukończonych zadań' : 'Total Tasks'}</div></div>
-  <div class="summary-card"><div class="num">${moduleRows.length}</div><div class="label">${pl ? 'Odblokowanych modułów' : 'Modules Unlocked'}</div></div>
-  <div class="summary-card"><div class="num">${verified}</div><div class="label">${pl ? 'Zweryfikowanych' : 'Verified'}</div></div>
+${childStats.length === 0 ? `<p style="color:#999;font-size:11px;margin-bottom:16px">${pl ? 'Brak danych o dzieciach.' : 'No child data found.'}</p>` : ''}
+
+${childStats.map(cs => `
+<div class="child-header">
+  <div class="child-name">${escHtml(cs.childName)}</div>
+  <div class="child-stats">
+    <span class="child-stat-pill">${fmtAmount(cs.earned, family.currency)} ${pl ? 'zarobione' : 'earned'}</span>
+    <span class="child-stat-pill">${cs.tasks} ${pl ? (cs.tasks === 1 ? 'zadanie' : 'zadań') : (cs.tasks === 1 ? 'task' : 'tasks')}</span>
+    <span class="child-stat-pill">${cs.mods.length} ${pl ? 'modułów odblokowanych' : (cs.mods.length === 1 ? 'module unlocked' : 'modules unlocked')}</span>
+    <span class="child-stat-pill">${cs.unlockedPillars.length}/6 ${pl ? 'filarów' : 'pillars'}</span>
+  </div>
+</div>`).join('')}
+
+<h2>${pl ? 'Postęp w 6 Filarach Edukacji Finansowej' : 'Progress Across the 6 Financial Literacy Pillars'}</h2>
+<p style="font-size:10px;color:#666;margin-bottom:10px">${pl
+  ? 'Filar jest oznaczony jako rozpoczęty, gdy dziecko odblokuje co najmniej jeden moduł w tym obszarze.'
+  : 'A pillar is marked as started once a child unlocks at least one module in that area.'}</p>
+<div class="pillar-grid">
+  ${pillars.map(p => {
+    const active = unlockedPillarIds.has(p.id);
+    return `<div class="pillar-card ${active ? 'unlocked' : 'locked'}">
+    <div class="pillar-num">${pl ? 'Filar' : 'Pillar'} ${p.id}</div>
+    <div class="pillar-name">${escHtml(p.name)}</div>
+    <div class="pillar-meta">${escHtml(p.metaphor)}</div>
+    <div class="pillar-desc">${escHtml(p.summary)}</div>
+    <div class="pillar-status ${active ? 'done' : 'pending'}">${active ? (pl ? '✓ Rozpoczęty' : '✓ Started') : (pl ? 'Nierozpoczęty' : 'Not yet started')}</div>
+  </div>`;
+  }).join('')}
 </div>
-${disputed > 0 ? `<p class="warn">⚠ ${disputed} ${pl ? 'wpis(-ów) zakwestionowanych' : 'disputed entry/entries'}</p>` : ''}
 
 <h2>${pl ? 'Puls Zachowań' : 'Behavioural Pulse'}</h2>
 <div class="pulse-box">
   <p style="font-size:10px;margin-bottom:8px;color:#555">${pl
     ? 'Sygnały wyprowadzone z wzorców aktywności. Nie stanowią oceny — to wskazówki edukacyjne.'
-    : 'Signals derived from activity patterns. These are coaching guides, not judgements.'}</p>
-  ${pulse.map(p => `<span class="pulse-signal ${p.type}">${escHtml(p.label)}${p.child_name ? `<span class="pulse-child">— ${escHtml(p.child_name)}</span>` : ''}</span>`).join(' ')}
+    : 'Signals derived from activity patterns. These are coaching observations, not judgements.'}</p>
+  <div>
+    ${pulse.map(p => `<span class="pulse-signal ${p.type}">${escHtml(p.label)}${p.child_name ? `<span class="pulse-child">— ${escHtml(p.child_name)}</span>` : ''}</span>`).join(' ')}
+  </div>
+  <div class="pulse-explain">
+    ${pulse.map(p => `<div class="pulse-explain-row"><span class="signal-tag">${escHtml(p.label)}:</span> ${escHtml(p.explanation ?? '')}</div>`).join('')}
+  </div>
 </div>
+
+${nextMilestones.length > 0 ? `
+<div class="milestone-box">
+  <h3>${pl ? 'Następne kamienie milowe edukacyjne' : 'Next Educational Milestones'}</h3>
+  ${nextMilestones.map(m => `<div class="milestone-row">${escHtml(m)}</div>`).join('')}
+</div>` : ''}
 
 ${moduleRows.length > 0 ? `
 <h2>${pl ? 'Laboratorium Nauki — Odblokowane Moduły' : 'Learning Lab — Unlocked Modules'}</h2>
 <div class="module-grid">
-  ${moduleRows.map(m => `
-  <div class="module-card">
-    <div class="mod-name">${escHtml(moduleNames[m.slug] ?? m.slug)}</div>
+  ${moduleRows.map(m => {
+    const entry = moduleNames[m.slug];
+    const modName = entry ? entry[0] : m.slug;
+    const pillarId = entry ? entry[1] : (MODULE_PILLAR[m.slug] ?? 0);
+    const pillar = pillars.find(p => p.id === pillarId);
+    return `<div class="module-card">
+    <div class="mod-pillar">${pillar ? `${pl ? 'Filar' : 'Pillar'} ${pillar.id} · ${escHtml(pillar.name)}` : '—'}</div>
+    <div class="mod-name">${escHtml(modName)}</div>
     <div class="mod-meta">${pl ? 'Uczestnik' : 'Contributor'}: <strong>${escHtml(m.child_name ?? '—')}</strong> &nbsp;·&nbsp; ${pl ? 'Odblokowano' : 'Unlocked'}: ${fmtDate(m.unlocked_at)}</div>
-  </div>`).join('')}
-</div>` : `<p style="font-size:10px;color:#888;margin-bottom:16px">${pl ? 'Brak odblokowanych modułów.' : 'No modules unlocked yet.'}</p>`}
+  </div>`;
+  }).join('')}
+</div>` : `
+<div class="milestone-box" style="background:#f3f3f3;border-color:#ddd;">
+  <h3 style="color:#888">${pl ? 'Brak odblokowanych modułów — jak je zdobyć?' : 'No modules unlocked yet — how to get started'}</h3>
+  ${(pl ? [
+    'Zarobienie łącznie 20 zł odblokowuje Moduł 2: Podatki i wynagrodzenie netto (Filar 1)',
+    'Osiągnięcie salda powyżej 30 zł odblokowuje Moduł 8: Bankowość 101 (Filar 3)',
+    'Ukończenie 10 zadań bez sporu odblokowuje wymaganie Modułu 11: Scoring kredytowy (Filar 4)',
+    'Brak aktywności przez 21 dni odblokowuje Moduł 14: Inflacja (Filar 5)',
+  ] : [
+    'Earning a cumulative £20 unlocks Module 2: Taxes & Net Pay (Pillar 1)',
+    'Reaching a balance above £30 unlocks Module 8: Banking 101 (Pillar 3)',
+    'Completing 10 tasks with no disputes starts the path to Module 11: Credit Scores & Trust (Pillar 4)',
+    'Going 21 days without activity unlocks Module 14: Inflation (Pillar 5)',
+  ]).map(tip => `<div class="milestone-row">${escHtml(tip)}</div>`).join('')}
+</div>`}
 
-<h2>${pl ? 'Rejestr transakcji' : 'Transaction Ledger'}</h2>
+<div class="ledger-appendix">
+<h2>${pl ? 'Załącznik — Rejestr transakcji' : 'Appendix — Transaction Ledger'}</h2>
 <table>
   <thead>
     <tr>
-      <th>#</th><th>${pl ? 'Data' : 'Date'}</th><th>${pl ? 'Opis' : 'Description'}</th>
-      <th>${pl ? 'Kategoria' : 'Category'}</th><th>${pl ? 'Kwota' : 'Amount'}</th>
+      <th>#</th><th>${pl ? 'Data' : 'Date'}</th>
+      <th>${pl ? 'Uczestnik' : 'Contributor'}</th>
+      <th>${pl ? 'Opis' : 'Description'}</th>
+      <th>${pl ? 'Kwota' : 'Amount'}</th>
       <th>${pl ? 'Status' : 'Status'}</th>
     </tr>
   </thead>
@@ -591,19 +733,70 @@ ${moduleRows.length > 0 ? `
     <tr>
       <td>${r.id}</td>
       <td>${fmtDate(r.created_at)}</td>
+      <td><strong>${escHtml(r.child_name ?? '—')}</strong></td>
       <td>${escHtml(r.description)}</td>
-      <td>${r.category ? (labelMap[r.category] ?? r.category) : '—'}</td>
       <td class="num-cell">${fmtAmount(r.amount, r.currency)}</td>
       <td><span class="badge-${badgeClass(r.verification_status)}">${statusLabel(r.verification_status, lang)}</span></td>
     </tr>`).join('')}
   </tbody>
 </table>
+</div>
 
 ${fingerprintBlock(fingerprint, shortFp, lang)}
 ${declarationFooter(family.name, exportTs, lang, docUuid, false)}
 
 </body>
 </html>`;
+}
+
+// ----------------------------------------------------------------
+// Next milestone suggestions
+// ----------------------------------------------------------------
+function deriveNextMilestones(ledgerRows: LedgerRow[], moduleRows: LearningModuleRow[], lang: string): string[] {
+  const pl = lang === 'pl';
+  const milestones: string[] = [];
+  const unlockedSlugs = new Set(moduleRows.map(m => m.slug));
+
+  // Group by child
+  const childIds = [...new Set(ledgerRows.map(r => r.child_id ?? '').filter(Boolean))];
+
+  for (const childId of childIds) {
+    const childRows = ledgerRows.filter(r => r.child_id === childId);
+    const childName = childRows[0]?.child_name ?? (pl ? 'Uczestnik' : 'Contributor');
+    const credits   = childRows.filter(r => r.entry_type === 'credit');
+    const earned    = credits.reduce((s, r) => s + r.amount, 0); // pence/grosze
+
+    // M2 — Taxes & Net Pay: earn £20 cumulative
+    if (!unlockedSlugs.has('taxes-net-pay') && earned < 2000) {
+      const remaining = fmtAmount(2000 - earned, childRows[0]?.currency ?? 'GBP');
+      milestones.push(pl
+        ? `${childName}: Zarobienie jeszcze ${remaining} odblokowuje „Podatki i wynagrodzenie netto" (Filar 1)`
+        : `${childName}: Earn ${remaining} more to unlock "Taxes & Net Pay" (Pillar 1)`);
+    }
+
+    // M8 — Banking 101: balance > £30 — approximate as total earned (simplified)
+    if (!unlockedSlugs.has('banking-101') && earned < 3000) {
+      const remaining = fmtAmount(3000 - earned, childRows[0]?.currency ?? 'GBP');
+      milestones.push(pl
+        ? `${childName}: Osiągnięcie salda powyżej ${remaining} odblokowuje „Bankowość 101" (Filar 3)`
+        : `${childName}: Reach a total balance of ${remaining} to unlock "Banking 101" (Pillar 3)`);
+    }
+
+    // M11 — Credit Scores: 10 tasks, no disputes
+    const taskCount  = credits.length;
+    const hasDispute = childRows.some(r => r.verification_status === 'disputed');
+    if (!unlockedSlugs.has('credit-scores-and-trust') && taskCount < 10) {
+      milestones.push(pl
+        ? `${childName}: ${10 - taskCount} ${taskCount === 9 ? 'zadanie' : 'zadań'} do zdobycia bez sporu, aby odblokować „Scoring kredytowy" (Filar 4)`
+        : `${childName}: Complete ${10 - taskCount} more task${10 - taskCount === 1 ? '' : 's'} dispute-free to unlock "Credit Scores & Trust" (Pillar 4)`);
+    } else if (!unlockedSlugs.has('credit-scores-and-trust') && hasDispute) {
+      milestones.push(pl
+        ? `${childName}: Unikanie sporów przez kolejny okres odblokowuje „Scoring kredytowy" (Filar 4)`
+        : `${childName}: Avoid disputes to progress towards "Credit Scores & Trust" (Pillar 4)`);
+    }
+  }
+
+  return milestones.slice(0, 5); // cap at 5 to keep the report concise
 }
 
 // ----------------------------------------------------------------
@@ -976,6 +1169,7 @@ interface PulseSignal {
   label: string;
   type: 'positive' | 'caution' | 'concern';
   child_name: string | null;
+  explanation: string | null;
 }
 
 function deriveBehaviouralPulse(ledgerRows: LedgerRow[], statusRows: StatusLogRow[], lang: string): PulseSignal[] {
@@ -997,37 +1191,86 @@ function deriveBehaviouralPulse(ledgerRows: LedgerRow[], statusRows: StatusLogRo
     const cutoff30 = Math.floor(Date.now() / 1000) - 30 * 86400;
     const recent   = credits.filter(r => r.created_at > cutoff30).length;
     if (credits.length > 4 && recent < 2) {
-      signals.push({ label: pl ? 'Stagnujący zarabiacz' : 'Stagnant Earner', type: 'concern', child_name: childName });
+      signals.push({
+        label: pl ? 'Stagnujący zarabiacz' : 'Stagnant Earner',
+        type: 'concern',
+        child_name: childName,
+        explanation: pl
+          ? 'Mniej niż 2 zadania ukończone w ostatnich 30 dniach pomimo wcześniejszej aktywności. Warto sprawdzić, czy zestaw zadań jest nadal odpowiedni i motywujący.'
+          : 'Fewer than 2 tasks completed in the last 30 days despite prior activity. Worth reviewing whether the current chore set still feels relevant and motivating.',
+      });
     }
 
     // The Burner — high spend-to-earn ratio
     const earnedMinor = credits.reduce((s, r) => s + r.amount, 0);
     const spentMinor  = payments.reduce((s, r) => s + r.amount, 0);
     if (earnedMinor > 0 && spentMinor / earnedMinor > 0.8) {
-      signals.push({ label: pl ? 'Wydający wszystko' : 'The Burner', type: 'concern', child_name: childName });
+      signals.push({
+        label: pl ? 'Wydający wszystko' : 'The Burner',
+        type: 'concern',
+        child_name: childName,
+        explanation: pl
+          ? 'Wydano ponad 80% zarobionych środków. To sygnał Filaru 2 (Wydawanie i wybory) — dobry moment na wprowadzenie podziału 70/20/10 (wydatki/oszczędności/darowizny).'
+          : 'Over 80% of earnings have been spent. This is a Pillar 2 (Spending & Choices) signal — a good moment to introduce the 70/20/10 spend/save/give split.',
+      });
     } else if (earnedMinor > 0 && spentMinor / earnedMinor < 0.3 && earnedMinor > 500) {
-      signals.push({ label: pl ? 'Regularny oszczędzający' : 'Consistent Saver', type: 'positive', child_name: childName });
+      signals.push({
+        label: pl ? 'Regularny oszczędzający' : 'Consistent Saver',
+        type: 'positive',
+        child_name: childName,
+        explanation: pl
+          ? 'Wydano mniej niż 30% zarobków — silny nawyk odkładania. To fundament Filaru 3 (Oszczędzanie i wzrost). Następny krok: wprowadzenie celu oszczędnościowego, aby pieniądze "pracowały".'
+          : 'Less than 30% of earnings spent — a strong saving habit. This is the foundation of Pillar 3 (Saving & Growth). Next step: introduce a savings goal so the money has a destination.',
+      });
     }
 
     // Dispute rate
     if (disputed.length > 0 && credits.length > 0 && disputed.length / credits.length > 0.2) {
-      signals.push({ label: pl ? 'Wysoki wskaźnik sporów' : 'High Dispute Rate', type: 'concern', child_name: childName });
+      signals.push({
+        label: pl ? 'Wysoki wskaźnik sporów' : 'High Dispute Rate',
+        type: 'concern',
+        child_name: childName,
+        explanation: pl
+          ? 'Ponad 20% zadań zostało zakwestionowanych. Może to wskazywać na niejasne oczekiwania dotyczące jakości lub niezrozumienie kryteriów zatwierdzania.'
+          : 'More than 20% of tasks have been disputed. This may indicate unclear quality expectations or misunderstanding of what counts as complete.',
+      });
     }
 
     // Steady contributor
     if (credits.length >= 10 && disputed.length === 0) {
-      signals.push({ label: pl ? 'Stały uczestnik' : 'Steady Contributor', type: 'positive', child_name: childName });
+      signals.push({
+        label: pl ? 'Stały uczestnik' : 'Steady Contributor',
+        type: 'positive',
+        child_name: childName,
+        explanation: pl
+          ? '10 lub więcej zadań ukończonych bez żadnego sporu. Ten wskaźnik niezawodności odpowiada Filarowi 4 (Pożyczanie i dług) — konsekwencja buduje "scoring zaufania".'
+          : '10 or more tasks completed with zero disputes. This reliability track record maps directly to Pillar 4 (Borrowing & Debt) — consistency builds a real-world trust score.',
+      });
     }
   }
 
   // Revision pattern — family-wide (status log doesn't carry child_id directly)
   const revisions = statusRows.filter(s => s.to_status === 'pending' && s.from_status !== 'pending').length;
   if (revisions > 2) {
-    signals.push({ label: pl ? 'Potrzeba poprawy' : 'Needs Revision Pattern', type: 'caution', child_name: null });
+    signals.push({
+      label: pl ? 'Potrzeba poprawy' : 'Needs Revision Pattern',
+      type: 'caution',
+      child_name: null,
+      explanation: pl
+        ? 'Kilka zadań wymagało ponownego przesłania po wstępnej weryfikacji. Warto omówić standardy jakości, zanim zadanie zostanie uznane za ukończone.'
+        : 'Several tasks required re-submission after initial review. It may help to clarify quality standards before a task is considered done.',
+    });
   }
 
   if (signals.length === 0) {
-    signals.push({ label: pl ? 'Brak danych do analizy' : 'Insufficient data for pulse', type: 'caution', child_name: null });
+    signals.push({
+      label: pl ? 'Za mało danych do analizy' : 'Insufficient data for pulse',
+      type: 'caution',
+      child_name: null,
+      explanation: pl
+        ? 'Nie ma jeszcze wystarczającej aktywności, aby wygenerować sygnały behawioralne. Więcej zadań i celów dostarczy dokładniejszego obrazu.'
+        : 'Not enough activity yet to generate behavioural signals. More tasks and goals will paint a clearer picture.',
+    });
   }
 
   return signals;
