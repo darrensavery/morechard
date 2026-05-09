@@ -153,6 +153,10 @@ export async function handleRegister(request: Request, env: Env): Promise<Respon
 // Email + password login. Returns JWT.
 // Body: { email, password }
 // ----------------------------------------------------------------
+const LOGIN_MAX_ATTEMPTS  = 10;
+const LOGIN_WINDOW_SEC    = 600;   // 10-minute rolling window
+const LOGIN_LOCKOUT_SEC   = 900;   // 15-minute lockout after exceeding limit
+
 export async function handleLogin(request: Request, env: Env): Promise<Response> {
   const body = await parseBody(request);
   if (!body) return error('Invalid JSON body');
@@ -162,6 +166,28 @@ export async function handleLogin(request: Request, env: Env): Promise<Response>
   if (!password || typeof password !== 'string') return error('password required');
 
   const normEmail = (email as string).toLowerCase().trim();
+  const nowSec    = Math.floor(Date.now() / 1000);
+
+  // Check rate limit before touching the users table
+  const rl = await env.DB
+    .prepare('SELECT attempts, window_start, locked_until FROM login_attempts WHERE email = ?')
+    .bind(normEmail)
+    .first<{ attempts: number; window_start: number; locked_until: number }>()
+    .catch(() => null);
+
+  if (rl) {
+    if (rl.locked_until > nowSec) {
+      return error('Too many failed attempts — please try again later.', 429);
+    }
+    if (nowSec - rl.window_start < LOGIN_WINDOW_SEC && rl.attempts >= LOGIN_MAX_ATTEMPTS) {
+      await env.DB
+        .prepare('UPDATE login_attempts SET locked_until = ? WHERE email = ?')
+        .bind(nowSec + LOGIN_LOCKOUT_SEC, normEmail)
+        .run()
+        .catch(() => null);
+      return error('Too many failed attempts — please try again later.', 429);
+    }
+  }
 
   const user = await env.DB
     .prepare('SELECT id, family_id, password_hash, email_verified FROM users WHERE email = ?')
@@ -169,12 +195,47 @@ export async function handleLogin(request: Request, env: Env): Promise<Response>
     .first<{ id: string; family_id: string; password_hash: string | null; email_verified: number }>();
 
   // Deliberate vague error — don't reveal whether email exists
-  if (!user || !user.password_hash) return error('Invalid credentials', 401);
+  if (!user || !user.password_hash) {
+    // Still increment attempts to prevent user-enumeration timing sidechannel
+    await recordFailedLogin(env, normEmail, nowSec, rl).catch(() => null);
+    return error('Invalid credentials', 401);
+  }
 
   const valid = await verifyPassword(password as string, user.password_hash);
-  if (!valid) return error('Invalid credentials', 401);
+  if (!valid) {
+    await recordFailedLogin(env, normEmail, nowSec, rl).catch(() => null);
+    return error('Invalid credentials', 401);
+  }
+
+  // Success — clear rate limit record
+  await env.DB
+    .prepare('DELETE FROM login_attempts WHERE email = ?')
+    .bind(normEmail)
+    .run()
+    .catch(() => null);
 
   return issueParentJwt(user.id, user.family_id, request, env);
+}
+
+async function recordFailedLogin(
+  env: Env,
+  normEmail: string,
+  nowSec: number,
+  existing: { attempts: number; window_start: number; locked_until: number } | null,
+): Promise<void> {
+  if (!existing || nowSec - existing.window_start >= LOGIN_WINDOW_SEC) {
+    await env.DB
+      .prepare(`INSERT INTO login_attempts (email, attempts, window_start, locked_until)
+                VALUES (?, 1, ?, 0)
+                ON CONFLICT(email) DO UPDATE SET attempts = 1, window_start = excluded.window_start, locked_until = 0`)
+      .bind(normEmail, nowSec)
+      .run();
+  } else {
+    await env.DB
+      .prepare('UPDATE login_attempts SET attempts = attempts + 1 WHERE email = ?')
+      .bind(normEmail)
+      .run();
+  }
 }
 
 // ----------------------------------------------------------------
@@ -256,18 +317,19 @@ export async function handleMagicLinkVerify(request: Request, env: Env): Promise
 
   if (!user) return error('User not found', 404);
 
-  const slt = nanoid(32);
+  const rawSlt    = nanoid(32);
+  const sltHash   = await sha256(rawSlt);
 
   await env.DB.batch([
     env.DB.prepare('UPDATE magic_link_tokens SET used_at = ? WHERE id = ?').bind(now, row.id),
     env.DB.prepare('UPDATE users SET email_verified = 1 WHERE id = ?').bind(user.id),
     env.DB.prepare('INSERT INTO slt_tokens (token, user_id, expires_at, ip_address, user_agent) VALUES (?, ?, ?, ?, ?)')
-      .bind(slt, user.id, now + 300, clientIp(request), request.headers.get('User-Agent') ?? ''),
+      .bind(sltHash, user.id, now + 300, clientIp(request), request.headers.get('User-Agent') ?? ''),
   ]);
 
   return new Response(null, {
     status: 302,
-    headers: { 'Location': `${appUrl}/auth/callback?slt=${slt}` },
+    headers: { 'Location': `${appUrl}/auth/callback?slt=${rawSlt}` },
   });
 }
 
@@ -324,16 +386,46 @@ export async function handleChildLogin(request: Request, env: Env): Promise<Resp
   if (!pin       || typeof pin       !== 'string') return error('pin required');
 
   const user = await env.DB
-    .prepare(`SELECT u.id, u.pin_hash FROM users u
+    .prepare(`SELECT u.id, u.pin_hash, u.pin_attempt_count, u.pin_locked_until
+              FROM users u
               JOIN family_roles fr ON fr.user_id = u.id
               WHERE u.id = ? AND fr.family_id = ? AND fr.role = 'child'`)
     .bind(child_id, family_id)
-    .first<{ id: string; pin_hash: string | null }>();
+    .first<{ id: string; pin_hash: string | null; pin_attempt_count: number; pin_locked_until: number | null }>();
 
   if (!user || !user.pin_hash) return error('Invalid credentials', 401);
 
+  const now = Math.floor(Date.now() / 1000);
+
+  // Lockout check — mirrors parent PIN behaviour
+  if (user.pin_locked_until && user.pin_locked_until > now) {
+    const seconds = user.pin_locked_until - now;
+    return error(`Too many attempts. Try again in ${seconds} seconds.`, 429);
+  }
+
   const valid = await verifyPassword(pin as string, user.pin_hash);
-  if (!valid) return error('Invalid credentials', 401);
+
+  if (!valid) {
+    const newCount = (user.pin_attempt_count ?? 0) + 1;
+    if (newCount >= 5) {
+      await env.DB
+        .prepare('UPDATE users SET pin_attempt_count = 0, pin_locked_until = ? WHERE id = ?')
+        .bind(now + 30, user.id)
+        .run();
+    } else {
+      await env.DB
+        .prepare('UPDATE users SET pin_attempt_count = ? WHERE id = ?')
+        .bind(newCount, user.id)
+        .run();
+    }
+    return error('Invalid credentials', 401);
+  }
+
+  // Correct — reset counters
+  await env.DB
+    .prepare('UPDATE users SET pin_attempt_count = 0, pin_locked_until = NULL WHERE id = ?')
+    .bind(user.id)
+    .run();
 
   // Fetch current app_view for this child
   const settingsRow = await env.DB
@@ -351,7 +443,6 @@ export async function handleChildLogin(request: Request, env: Env): Promise<Resp
   const graduationPending = prevAppView === 'ORCHARD' && appView === 'CLEAN'
 
   const ip  = clientIp(request);
-  const now = Math.floor(Date.now() / 1000);
   const jti = nanoid();
 
   const ua = request.headers.get('User-Agent') ?? null;
@@ -468,10 +559,7 @@ export async function handleMePatch(request: Request, env: Env): Promise<Respons
       .first<{ id: number; record_hash: string }>();
     const previousHash = prevRow?.record_hash ?? GENESIS_HASH;
 
-    const maxRow = await env.DB
-      .prepare('SELECT COALESCE(MAX(id), 0) AS max_id FROM ledger')
-      .first<{ max_id: number }>();
-    const newId = (maxRow?.max_id ?? 0) + 1;
+    const newId = (prevRow?.id ?? 0) + 1;
 
     const recordHash = await computeRecordHash(
       newId,
@@ -527,7 +615,8 @@ export async function handleMePatch(request: Request, env: Env): Promise<Respons
     }
 
     // Stage the new address and issue a verification token
-    const token      = crypto.randomUUID();
+    const rawToken   = crypto.randomUUID();
+    const tokenHash  = await sha256(rawToken);
     const expiresAt  = Math.floor(Date.now() / 1000) + 24 * 60 * 60; // 24 h
 
     // Invalidate any prior unused tokens for this user
@@ -538,7 +627,7 @@ export async function handleMePatch(request: Request, env: Env): Promise<Respons
 
     await env.DB
       .prepare('INSERT INTO email_verify_tokens (user_id, token, new_email, expires_at) VALUES (?,?,?,?)')
-      .bind(caller.sub, token, trimmedEmail, expiresAt)
+      .bind(caller.sub, tokenHash, trimmedEmail, expiresAt)
       .run();
 
     await env.DB
@@ -546,7 +635,7 @@ export async function handleMePatch(request: Request, env: Env): Promise<Respons
       .bind(trimmedEmail, caller.sub)
       .run();
 
-    const verifyUrl = `${env.APP_URL}/auth/verify-email?token=${token}`;
+    const verifyUrl = `${env.APP_URL}/auth/verify-email?token=${rawToken}`;
     try {
       await new EmailService(env).sendTransactional({
         to:      trimmedEmail,
@@ -558,7 +647,7 @@ export async function handleMePatch(request: Request, env: Env): Promise<Respons
       console.error('[handleMePatch] verify email send failed', err);
       // Roll back staging so the user can try again
       await env.DB.prepare('UPDATE users SET email_pending = NULL WHERE id = ?').bind(caller.sub).run();
-      await env.DB.prepare('DELETE FROM email_verify_tokens WHERE token = ?').bind(token).run();
+      await env.DB.prepare('DELETE FROM email_verify_tokens WHERE token = ?').bind(tokenHash).run();
       return error('Could not send verification email — please try again', 502);
     }
 
@@ -590,9 +679,10 @@ export async function handleVerifyEmail(request: Request, env: Env): Promise<Res
 
   const now = Math.floor(Date.now() / 1000);
 
+  const incomingHash = await sha256(token);
   const row = await env.DB
     .prepare('SELECT id, user_id, new_email, expires_at, used_at FROM email_verify_tokens WHERE token = ?')
-    .bind(token)
+    .bind(incomingHash)
     .first<{ id: number; user_id: string; new_email: string; expires_at: number; used_at: number | null }>();
 
   if (!row)          return new Response('Invalid or expired link', { status: 400 });
@@ -694,12 +784,8 @@ export async function handleLeaveFamily(request: Request & { auth?: JwtPayload }
     .prepare('SELECT id, record_hash FROM ledger WHERE family_id = ? ORDER BY id DESC LIMIT 1')
     .bind(familyId)
     .first<{ id: number; record_hash: string }>();
-  const maxRow = await env.DB
-    .prepare('SELECT COALESCE(MAX(id), 0) AS max_id FROM ledger WHERE family_id = ?')
-    .bind(familyId)
-    .first<{ max_id: number }>();
   const previousHash = prevRow?.record_hash ?? GENESIS_HASH;
-  const newId        = (maxRow?.max_id ?? 0) + 1;
+  const newId        = (prevRow?.id ?? 0) + 1;
   const recordHash   = await computeRecordHash(newId, familyId, '', 0, 'GBP', 'system_note', previousHash);
 
   const capturedName = caller.display_name;
@@ -1089,18 +1175,19 @@ async function _handleGoogleCallback(request: Request, env: Env, appUrl: string)
     .run();
 
   // ── Step 5: Issue SLT ─────────────────────────────────────────
-  const slt = nanoid(32);
+  const rawSlt  = nanoid(32);
+  const sltHash = await sha256(rawSlt);
   const now = Math.floor(Date.now() / 1000);
 
   await env.DB
     .prepare('INSERT INTO slt_tokens (token, user_id, expires_at, ip_address, user_agent) VALUES (?, ?, ?, ?, ?)')
-    .bind(slt, user.id, now + 300, clientIp(request), request.headers.get('User-Agent') ?? '')
+    .bind(sltHash, user.id, now + 300, clientIp(request), request.headers.get('User-Agent') ?? '')
     .run();
 
   // ── Step 6: Redirect to frontend ─────────────────────────────
   return new Response(null, {
     status: 302,
-    headers: { 'Location': `${appUrl}/auth/callback?slt=${slt}` },
+    headers: { 'Location': `${appUrl}/auth/callback?slt=${rawSlt}` },
   });
 }
 
@@ -1129,10 +1216,11 @@ export async function handleSltExchange(request: Request, env: Env): Promise<Res
     return error('Too many attempts. Try again later.', 429);
   }
 
-  // ── Step 2: SLT lookup ────────────────────────────────────────
+  // ── Step 2: SLT lookup — compare against stored hash ─────────
+  const incomingSltHash = await sha256(slt as string);
   const tokenRow = await env.DB
     .prepare('SELECT user_id FROM slt_tokens WHERE token = ? AND expires_at > ?')
-    .bind(slt, now)
+    .bind(incomingSltHash, now)
     .first<{ user_id: string }>();
 
   if (!tokenRow) {
@@ -1154,7 +1242,7 @@ export async function handleSltExchange(request: Request, env: Env): Promise<Res
   // ── Step 3: Consume token ─────────────────────────────────────
   await env.DB
     .prepare('DELETE FROM slt_tokens WHERE token = ?')
-    .bind(slt)
+    .bind(incomingSltHash)
     .run();
 
   // ── Step 4: Load user ─────────────────────────────────────────

@@ -40,6 +40,7 @@ async function sendCohort(
       LEFT JOIN email_sends es ON es.family_id = f.id AND es.template_id = ? AND es.status != 'failed'
       WHERE f.has_lifetime_license = 0
         AND f.deleted_at IS NULL
+        AND (f.is_demo IS NULL OR f.is_demo = 0)
         AND f.trial_start_date IS NOT NULL
         AND date(f.trial_start_date, '+' || ? || ' days') = date('now')
         AND es.id IS NULL
@@ -71,6 +72,7 @@ async function sendWeek12Cohort(env: Env, emailService: EmailService): Promise<v
       LEFT JOIN email_sends es_ai   ON es_ai.family_id   = f.id AND es_ai.template_id   = ? AND es_ai.status   != 'failed'
       WHERE f.has_lifetime_license = 0
         AND f.deleted_at IS NULL
+        AND (f.is_demo IS NULL OR f.is_demo = 0)
         AND f.trial_start_date IS NOT NULL
         AND date(f.trial_start_date, '+98 days') = date('now')
         AND es_base.id IS NULL

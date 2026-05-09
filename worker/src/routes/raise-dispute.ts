@@ -5,23 +5,30 @@
  * /dispute endpoint with RODO-compliant structured dispute codes.
  *
  * Rules:
+ * - Caller must be a parent in the same family as the ledger entry.
  * - Entry must be 'pending' or 'verified_auto' (within dispute_before window).
  * - A dispute_code is mandatory — no free-text conflict content stored.
  * - Status transitions to 'disputed' and is logged in ledger_status_log.
  * - A new ledger entry (entry_type: 'reversal') is NOT automatically created;
  *   that requires an explicit follow-up action by the resolving parent.
  *
- * Body: { disputed_by: string, dispute_code: DisputeCode }
+ * Body: { dispute_code: DisputeCode }
  */
 
-import { Env, DISPUTE_CODES } from '../types.js';
+import { Env, DISPUTE_CODES, JwtPayload } from '../types.js';
 import { json, error, clientIp } from '../lib/response.js';
+
+type AuthedRequest = Request & { auth: JwtPayload };
 
 export async function handleRaiseDispute(
   request: Request,
   env: Env,
   ledgerIdStr: string,
 ): Promise<Response> {
+  const auth = (request as AuthedRequest).auth;
+  if (!auth) return error('Unauthorized', 401);
+  if (auth.role !== 'parent') return error('Forbidden — parents only', 403);
+
   let body: Record<string, unknown>;
   try {
     body = await request.json() as Record<string, unknown>;
@@ -29,8 +36,7 @@ export async function handleRaiseDispute(
     return error('Invalid JSON body');
   }
 
-  const { disputed_by, dispute_code } = body;
-  if (!disputed_by  || typeof disputed_by  !== 'string') return error('disputed_by required');
+  const { dispute_code } = body;
   if (!dispute_code || !DISPUTE_CODES.includes(dispute_code as never)) {
     return error(`dispute_code required. Must be one of: ${DISPUTE_CODES.join(', ')}`);
   }
@@ -50,6 +56,7 @@ export async function handleRaiseDispute(
     }>();
 
   if (!row) return error('Ledger entry not found', 404);
+  if (row.family_id !== auth.family_id) return error('Forbidden', 403);
 
   const now = Math.floor(Date.now() / 1000);
 
@@ -74,12 +81,12 @@ export async function handleRaiseDispute(
       WHERE id = ?
     `).bind(dispute_code, ledgerId),
 
-    // Immutable status transition log
+    // Immutable status transition log — actor_id sourced from verified JWT
     env.DB.prepare(`
       INSERT INTO ledger_status_log
         (ledger_id, from_status, to_status, actor_id, dispute_code, ip_address)
       VALUES (?, ?, 'disputed', ?, ?, ?)
-    `).bind(ledgerId, row.verification_status, disputed_by, dispute_code, ip),
+    `).bind(ledgerId, row.verification_status, auth.sub, dispute_code, ip),
   ]);
 
   return json({

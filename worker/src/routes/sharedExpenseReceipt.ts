@@ -94,8 +94,9 @@ export async function handleUploadReceipt(
 ): Promise<Response> {
   const auth = request.auth;
 
-  // 1. Auth check (caller must be a parent — enforced upstream, but guard here too)
+  // 1. Auth check — parent only
   if (!auth) return jsonErr('Unauthorized', 401);
+  if (auth.role !== 'parent') return jsonErr('Forbidden — parents only', 403);
 
   // 2. Fetch expense row
   const row = await fetchExpenseRow(env, expenseId, auth.family_id);

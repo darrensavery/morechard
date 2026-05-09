@@ -13,29 +13,33 @@
 
 import { Env } from '../types.js';
 import { json, error, clientIp } from '../lib/response.js';
+import type { JwtPayload } from '../lib/jwt.js';
+
+type AuthedRequest = Request & { auth: JwtPayload };
 
 export async function handleLedgerVerify(
   request: Request,
   env: Env,
   ledgerIdStr: string,
 ): Promise<Response> {
-  let body: Record<string, unknown>;
+  const auth = (request as AuthedRequest).auth;
+
+  // exchange_rate_bp remains optional; verified_by is always the authenticated caller
+  let body: Record<string, unknown> = {};
   try {
     body = await request.json() as Record<string, unknown>;
-  } catch {
-    return error('Invalid JSON body');
-  }
+  } catch { /* body is optional */ }
 
-  const { verified_by, exchange_rate_bp } = body;
-  if (!verified_by || typeof verified_by !== 'string') return error('verified_by required');
+  const verified_by    = auth.sub;
+  const exchange_rate_bp = body.exchange_rate_bp;
 
   const ledgerId = parseInt(ledgerIdStr, 10);
   if (isNaN(ledgerId)) return error('Invalid ledger id');
 
   const row = await env.DB
     .prepare(`SELECT id, family_id, currency, verification_status, authorised_by, created_at
-              FROM ledger WHERE id = ?`)
-    .bind(ledgerId)
+              FROM ledger WHERE id = ? AND family_id = ?`)
+    .bind(ledgerId, auth.family_id)
     .first<{
       id: number;
       family_id: string;

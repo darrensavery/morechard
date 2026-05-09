@@ -163,7 +163,14 @@ export async function handleMarketRateSuggest(request: Request, env: Env): Promi
   return json({ status: 'sent' }, 201);
 }
 
-export async function handleMarketRateCron(_request: Request, env: Env): Promise<Response> {
+export async function handleMarketRateCron(request: Request, env: Env): Promise<Response> {
+  // Protect this internal endpoint with a shared secret (set via wrangler secret put CRON_SECRET)
+  const cronSecret = (env as unknown as Record<string, string>).CRON_SECRET;
+  if (cronSecret) {
+    const provided = request.headers.get('x-cron-secret') ?? new URL(request.url).searchParams.get('secret');
+    if (provided !== cronSecret) return json({ error: 'Forbidden' }, 403);
+  }
+
   const result = await env.DB
     .prepare('SELECT COUNT(*) as total FROM market_rates')
     .first<{ total: number }>();

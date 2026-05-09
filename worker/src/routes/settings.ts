@@ -26,7 +26,7 @@ type AuthedRequest = Request & { auth: JwtPayload };
 export async function handleSettingsGet(request: Request, env: Env): Promise<Response> {
   const auth = (request as AuthedRequest).auth;
   const url  = new URL(request.url);
-  const targetId = resolveTargetUserId(url, auth);
+  const targetId = await resolveTargetUserId(url, auth, env.DB);
   if (!targetId) return error('user_id required or must be a parent', 403);
 
   const settings = await env.DB
@@ -55,7 +55,7 @@ export async function handleSettingsUpdate(request: Request, env: Env): Promise<
   const body = await parseBody(request);
   if (!body) return error('Invalid JSON');
 
-  const targetId = resolveTargetUserId(url, auth);
+  const targetId = await resolveTargetUserId(url, auth, env.DB);
   if (!targetId) return error('user_id required or must be a parent', 403);
 
   // app_view can only be changed by a parent
@@ -239,6 +239,13 @@ export async function handleAccountLock(request: Request, env: Env): Promise<Res
   if (!Number.isInteger(duration_seconds) || (duration_seconds as number) <= 0)
     return error('duration_seconds must be a positive integer');
 
+  // Verify child belongs to this family
+  const childCheck = await env.DB
+    .prepare(`SELECT user_id FROM family_roles WHERE user_id = ? AND family_id = ? AND role = 'child'`)
+    .bind(child_id, auth.family_id)
+    .first<{ user_id: string }>();
+  if (!childCheck) return error('Child not found', 404);
+
   // Max 1 week
   const maxDuration = 7 * 24 * 3600;
   const duration = Math.min(duration_seconds as number, maxDuration);
@@ -289,6 +296,13 @@ export async function handleParentMessageSet(request: Request, env: Env): Promis
   if (!child_id || typeof child_id !== 'string') return error('child_id required');
   if (!message  || typeof message  !== 'string') return error('message required');
   if ((message as string).trim().length > 280) return error('Message too long (max 280 chars)');
+
+  // Verify child belongs to this family
+  const childCheck = await env.DB
+    .prepare(`SELECT user_id FROM family_roles WHERE user_id = ? AND family_id = ? AND role = 'child'`)
+    .bind(child_id, auth.family_id)
+    .first<{ user_id: string }>();
+  if (!childCheck) return error('Child not found', 404);
 
   const now = Math.floor(Date.now() / 1000);
   const expiresAt = now + 7 * 24 * 3600; // 7 days
@@ -393,14 +407,25 @@ export async function handleChildGrowthUpdate(
   return json({ ok: true });
 }
 
-// Returns the user_id to act on.
-// - No query param → caller's own ID.
-// - user_id param present → only allowed if caller is a parent.
-function resolveTargetUserId(url: URL, auth: JwtPayload): string | null {
+// Returns the user_id to act on, or null when the caller is not permitted.
+// - No query param → caller's own ID (always allowed).
+// - user_id param present → only parents may target another user, and the
+//   target must be a member of the caller's family.
+// NOTE: async because it needs a DB lookup for the family membership check.
+async function resolveTargetUserId(
+  url: URL,
+  auth: JwtPayload,
+  db: Env['DB'],
+): Promise<string | null> {
   const requested = url.searchParams.get('user_id');
   if (!requested) return auth.sub;
   if (auth.role !== 'parent') return null;  // children cannot target other users
-  return requested;
+  // Verify the requested user belongs to the caller's family
+  const member = await db
+    .prepare('SELECT user_id FROM family_roles WHERE user_id = ? AND family_id = ?')
+    .bind(requested, auth.family_id)
+    .first<{ user_id: string }>();
+  return member ? requested : null;
 }
 
 async function parseBody(request: Request): Promise<Record<string, unknown> | null> {

@@ -17,6 +17,10 @@ export async function sha256(input: string): Promise<string> {
     .join('');
 }
 
+function esc(v: string | number): string {
+  return String(v).replace(/\\/g, '\\\\').replace(/\|/g, '\\|');
+}
+
 export async function computeRecordHash(
   id: number,
   familyId: string,
@@ -26,7 +30,7 @@ export async function computeRecordHash(
   entryType: string,
   previousHash: string,
 ): Promise<string> {
-  const payload = [id, familyId, childId, amount, currency, entryType, previousHash].join('|');
+  const payload = [id, familyId, childId, amount, currency, entryType, previousHash].map(esc).join('|');
   return sha256(payload);
 }
 

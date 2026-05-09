@@ -40,6 +40,15 @@ export async function handleGenerateInvite(request: Request, env: Env): Promise<
   const role = body['role'] as InviteRole | undefined;
   if (role !== 'child' && role !== 'co-parent') return error('role must be "child" or "co-parent"');
 
+  // Only the lead parent may invite a co-parent
+  if (role === 'co-parent') {
+    const callerRow = await env.DB
+      .prepare('SELECT parent_role FROM family_roles WHERE user_id = ? AND family_id = ?')
+      .bind(caller.sub, caller.family_id)
+      .first<{ parent_role: string | null }>();
+    if (callerRow?.parent_role !== 'lead') return error('Only the lead parent can invite co-parents', 403);
+  }
+
   const now = Math.floor(Date.now() / 1000);
 
   // Generate a unique code (retry on collision — extremely rare)
@@ -309,12 +318,7 @@ export async function handleAddChild(request: Request, env: Env): Promise<Respon
 
     const previousHash = prevRow?.record_hash ?? GENESIS_HASH;
 
-    const maxRow = await env.DB
-      .prepare('SELECT COALESCE(MAX(id), 0) AS max_id FROM ledger WHERE family_id = ?')
-      .bind(caller.family_id)
-      .first<{ max_id: number }>();
-
-    const newId = (maxRow?.max_id ?? 0) + 1;
+    const newId = (prevRow?.id ?? 0) + 1;
 
     const recordHash = await computeRecordHash(
       newId, caller.family_id, childId,

@@ -91,6 +91,16 @@ export function SavingsGrove({
     if (!title.trim())  return setErr('Please enter a goal name.')
     if (!targetPence)   return setErr('Enter a target amount greater than £0.')
     if (!deadline)      return setErr('Choose a save-by date.')
+    if (productUrl.trim()) {
+      try {
+        const parsed = new URL(productUrl.trim())
+        if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
+          return setErr('Product link must start with https://')
+        }
+      } catch {
+        return setErr('Product link must be a valid URL (e.g. https://...)')
+      }
+    }
 
     setSaving(true)
     try {

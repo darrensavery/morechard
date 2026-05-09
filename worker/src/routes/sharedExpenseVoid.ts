@@ -17,6 +17,7 @@ export async function handleVoidSharedExpense(
   expenseId: string,
 ): Promise<Response> {
   if (!req.auth) return jsonErr('Unauthorized', 401);
+  if (req.auth.role !== 'parent') return jsonErr('Forbidden — parents only', 403);
 
   // 1. Fetch the expense
   const expense = await env.DB

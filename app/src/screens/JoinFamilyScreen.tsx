@@ -15,7 +15,7 @@ import { useNavigate }                  from 'react-router-dom'
 import { ShieldCheck, ChevronRight }    from 'lucide-react'
 import { FullLogo }                     from '@/components/ui/Logo'
 import { cn }                           from '@/lib/utils'
-import { getDeviceIdentity, setDeviceIdentity, toInitials } from '@/lib/deviceIdentity'
+import { getDeviceIdentity, setDeviceIdentity, toInitials, hashPin } from '@/lib/deviceIdentity'
 import { isBiometricsAvailable, registerBiometrics }        from '@/lib/biometrics'
 import { analytics, track }             from '@/lib/analytics'
 import { apiUrl }                       from '@/lib/api'
@@ -227,10 +227,11 @@ export function JoinFamilyScreen() {
     }
   }
 
-  function finaliseIdentity(authMethod: 'biometrics' | 'pin' | 'none', pinValue: string | null) {
+  async function finaliseIdentity(authMethod: 'biometrics' | 'pin' | 'none', pinValue: string | null) {
     if (!redeemedData) return
     const name = redeemedData.display_name ?? displayName.trim()
     const role = redeemedData.role === 'co-parent' ? 'parent' as const : 'child' as const
+    const pin_hash = (authMethod === 'pin' && pinValue) ? await hashPin(pinValue) : undefined
 
     setDeviceIdentity({
       user_id:        redeemedData.user_id,
@@ -241,7 +242,7 @@ export function JoinFamilyScreen() {
       initials:       toInitials(name),
       registered_at:  new Date().toISOString(),
       auth_method:    authMethod,
-      pin:            pinValue ?? undefined,
+      pin_hash,
     })
 
     Sentry.setUser({ id: redeemedData.user_id })

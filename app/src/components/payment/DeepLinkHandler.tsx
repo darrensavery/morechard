@@ -7,6 +7,17 @@ type Props = {
   onFallback: () => void;  // fired when it didn't (show Smart Copy with apology)
 };
 
+const ALLOWED_SCHEMES = ['https:', 'monzo:', 'revolut:', 'paypal:', 'venmo:'];
+
+function isSafeDeepLink(raw: string): boolean {
+  try {
+    const { protocol } = new URL(raw);
+    return ALLOWED_SCHEMES.includes(protocol);
+  } catch {
+    return false;
+  }
+}
+
 // Best-effort detection of whether a custom-scheme or https deep link
 // actually opened an external app. @capacitor/app v8 does NOT expose openUrl
 // (see node_modules/@capacitor/app/dist/esm/definitions.d.ts), so both paths
@@ -19,6 +30,11 @@ export function DeepLinkHandler({ url, onOpened, onFallback }: Props) {
   const firedRef = useRef(false);
 
   useEffect(() => {
+    if (!isSafeDeepLink(url)) {
+      onFallback();
+      return;
+    }
+
     let cancelled = false;
     let pageHidden = false;
 

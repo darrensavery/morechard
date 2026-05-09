@@ -11,9 +11,9 @@ import { Env } from '../types.js';
 const DEMO_FAMILY_ID = 'demo-family-thomson';
 
 export async function runDemoReset(env: Env): Promise<void> {
-  // Guard: confirm the family is flagged is_demo before touching anything.
+  // Guard: confirm the family is flagged is_demo and not soft-deleted.
   const family = await env.DB
-    .prepare('SELECT is_demo FROM families WHERE id = ?')
+    .prepare('SELECT is_demo FROM families WHERE id = ? AND deleted_at IS NULL')
     .bind(DEMO_FAMILY_ID)
     .first<{ is_demo: number }>();
 

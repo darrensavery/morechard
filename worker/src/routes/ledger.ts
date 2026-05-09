@@ -22,6 +22,9 @@
 import { Env } from '../types.js';
 import { computeRecordHash, GENESIS_HASH } from '../lib/hash.js';
 import { json, error, clientIp } from '../lib/response.js';
+import type { JwtPayload } from '../lib/jwt.js';
+
+type AuthedRequest = Request & { auth: JwtPayload };
 
 export async function handleLedgerPost(request: Request, env: Env): Promise<Response> {
   let body: Record<string, unknown>;
@@ -67,18 +70,9 @@ export async function handleLedgerPost(request: Request, env: Env): Promise<Resp
 
   const previousHash = prevRow?.record_hash ?? GENESIS_HASH;
 
-  // --- We need the new row's id to compute its hash.
-  //     D1 doesn't return AUTOINCREMENT id before insert, so we:
-  //     1. Get MAX(id) + 1 as the next id
-  //     2. Compute hash
-  //     3. Insert with explicit id
-  // ---
-  const maxRow = await env.DB
-    .prepare('SELECT COALESCE(MAX(id), 0) AS max_id FROM ledger WHERE family_id = ?')
-    .bind(family_id)
-    .first<{ max_id: number }>();
-
-  const newId = (maxRow?.max_id ?? 0) + 1;
+  // We need the new row's id to compute its hash before insert.
+  // prevRow is already family-scoped so (prevRow?.id ?? 0) + 1 is safe.
+  const newId = (prevRow?.id ?? 0) + 1;
 
   const recordHash = await computeRecordHash(
     newId,
@@ -135,22 +129,15 @@ export async function handleLedgerDispute(
   env: Env,
   ledgerIdStr: string,
 ): Promise<Response> {
-  let body: Record<string, unknown>;
-  try {
-    body = await request.json() as Record<string, unknown>;
-  } catch {
-    return error('Invalid JSON body');
-  }
-
-  const { disputed_by } = body;
-  if (!disputed_by || typeof disputed_by !== 'string') return error('disputed_by required');
+  const auth = (request as AuthedRequest).auth;
+  const disputed_by = auth.sub;
 
   const ledgerId = parseInt(ledgerIdStr, 10);
   if (isNaN(ledgerId)) return error('Invalid ledger id');
 
   const row = await env.DB
-    .prepare('SELECT family_id, verification_status, dispute_before FROM ledger WHERE id = ?')
-    .bind(ledgerId)
+    .prepare('SELECT family_id, verification_status, dispute_before FROM ledger WHERE id = ? AND family_id = ?')
+    .bind(ledgerId, auth.family_id)
     .first<{ family_id: string; verification_status: string; dispute_before: number | null }>();
 
   if (!row) return error('Ledger entry not found', 404);

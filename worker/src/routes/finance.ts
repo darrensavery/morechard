@@ -148,10 +148,7 @@ export async function handleBonusCreate(request: Request, env: Env): Promise<Res
     .bind(family_id).first<{ id: number; record_hash: string }>();
   const previousHash = prevRow?.record_hash ?? GENESIS_HASH;
 
-  const maxRow = await env.DB
-    .prepare('SELECT COALESCE(MAX(id), 0) AS max_id FROM ledger')
-    .first<{ max_id: number }>();
-  const newLedgerId = (maxRow?.max_id ?? 0) + 1;
+  const newLedgerId = (prevRow?.id ?? 0) + 1;
 
   const recordHash = await computeRecordHash(
     newLedgerId, family_id as string, child_id as string,
@@ -300,38 +297,35 @@ export async function handleBalance(request: Request, env: Env): Promise<Respons
   if (!family_id || family_id !== auth.family_id) return error('Forbidden', 403);
   if (!child_id) return error('child_id required');
 
-  // Earned = sum of verified ledger credits
-  const earned = await env.DB.prepare(
-    `SELECT COALESCE(SUM(amount), 0) AS total FROM ledger
-     WHERE family_id = ? AND child_id = ? AND entry_type = 'credit'
-     AND verification_status IN ('verified_auto','verified_manual')`
-  ).bind(family_id, child_id).first<{ total: number }>();
+  const [earned, pending, reversals, payoutsRow, spentRow] = await Promise.all([
+    env.DB.prepare(
+      `SELECT COALESCE(SUM(amount), 0) AS total FROM ledger
+       WHERE family_id = ? AND child_id = ? AND entry_type = 'credit'
+       AND verification_status IN ('verified_auto','verified_manual')`
+    ).bind(family_id, child_id).first<{ total: number }>(),
 
-  // Pending = sum of pending completions reward_amount
-  const pending = await env.DB.prepare(
-    `SELECT COALESCE(SUM(ch.reward_amount), 0) AS total
-     FROM completions comp JOIN chores ch ON ch.id = comp.chore_id
-     WHERE comp.family_id = ? AND comp.child_id = ? AND comp.status = 'pending'`
-  ).bind(family_id, child_id).first<{ total: number }>();
+    env.DB.prepare(
+      `SELECT COALESCE(SUM(ch.reward_amount), 0) AS total
+       FROM completions comp JOIN chores ch ON ch.id = comp.chore_id
+       WHERE comp.family_id = ? AND comp.child_id = ? AND comp.status = 'pending'`
+    ).bind(family_id, child_id).first<{ total: number }>(),
 
-  // Reversals / payments out from ledger
-  const reversals = await env.DB.prepare(
-    `SELECT COALESCE(SUM(amount), 0) AS total FROM ledger
-     WHERE family_id = ? AND child_id = ? AND entry_type IN ('reversal','payment')
-     AND verification_status IN ('verified_auto','verified_manual')`
-  ).bind(family_id, child_id).first<{ total: number }>();
+    env.DB.prepare(
+      `SELECT COALESCE(SUM(amount), 0) AS total FROM ledger
+       WHERE family_id = ? AND child_id = ? AND entry_type IN ('reversal','payment')
+       AND verification_status IN ('verified_auto','verified_manual')`
+    ).bind(family_id, child_id).first<{ total: number }>(),
 
-  // Cash payouts (not in ledger)
-  const payoutsRow = await env.DB.prepare(
-    `SELECT COALESCE(SUM(amount), 0) AS total FROM payouts
-     WHERE family_id = ? AND child_id = ?`
-  ).bind(family_id, child_id).first<{ total: number }>();
+    env.DB.prepare(
+      `SELECT COALESCE(SUM(amount), 0) AS total FROM payouts
+       WHERE family_id = ? AND child_id = ?`
+    ).bind(family_id, child_id).first<{ total: number }>(),
 
-  // Spending
-  const spentRow = await env.DB.prepare(
-    `SELECT COALESCE(SUM(amount), 0) AS total FROM spending
-     WHERE family_id = ? AND child_id = ?`
-  ).bind(family_id, child_id).first<{ total: number }>();
+    env.DB.prepare(
+      `SELECT COALESCE(SUM(amount), 0) AS total FROM spending
+       WHERE family_id = ? AND child_id = ?`
+    ).bind(family_id, child_id).first<{ total: number }>(),
+  ]);
 
   const earnedTotal    = earned?.total    ?? 0;
   const pendingTotal   = pending?.total   ?? 0;

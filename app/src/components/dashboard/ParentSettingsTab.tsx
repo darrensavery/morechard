@@ -153,7 +153,8 @@ function SectionCard({ children }: { children: React.ReactNode }) {
 
 export function ParentSettingsTab({ familyId, online, onChildrenChange, onClose }: Props) {
   const identity        = getDeviceIdentity()
-  const isLead          = identity?.parenting_role !== 'CO_PARENT'  // default to lead if unset (existing accounts)
+  // Treat as co-parent (less privileged) if identity is missing — never default to lead without identity
+  const isLead          = identity != null && identity.parenting_role !== 'CO_PARENT'
   const { locale, setLocale } = useLocale()
 
   const [view,          setView]          = useState<View>({ type: 'menu' })

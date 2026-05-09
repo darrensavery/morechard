@@ -48,6 +48,7 @@ export async function handleGoalCreate(request: Request, env: Env): Promise<Resp
   } = body;
   if (!family_id || family_id !== auth.family_id) return error('Forbidden', 403);
   if (!child_id  || typeof child_id !== 'string') return error('child_id required');
+  if (auth.role === 'child' && child_id !== auth.sub) return error('Forbidden', 403);
   if (!title     || typeof title    !== 'string') return error('title required');
   if (!Number.isInteger(target_amount) || (target_amount as number) <= 0)
     return error('target_amount must be a positive integer');

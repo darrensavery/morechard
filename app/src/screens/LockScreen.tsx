@@ -12,22 +12,26 @@
 import { useRef, useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Lock } from 'lucide-react'
-import { getDeviceIdentity, clearDeviceIdentity } from '@/lib/deviceIdentity'
+import { getDeviceIdentity, clearDeviceIdentity, verifyPinHash } from '@/lib/deviceIdentity'
 import { challengeBiometrics, hasBiometricCredential } from '@/lib/biometrics'
 import { analytics, track } from '@/lib/analytics'
 import { FullLogo } from '@/components/ui/Logo'
 import * as Sentry from '@sentry/react'
 
-const PIN_LENGTH = 4
+const PIN_LENGTH    = 4
+const MAX_ATTEMPTS  = 5
+const LOCKOUT_MS    = 30_000 // 30 seconds
 
 export function LockScreen() {
   const navigate  = useNavigate()
   const identity  = getDeviceIdentity()
 
-  const [digits,      setDigits]      = useState<string[]>(Array(PIN_LENGTH).fill(''))
-  const [error,       setError]       = useState('')
-  const [unlocking,   setUnlocking]   = useState(false)
-  const [bioRunning,  setBioRunning]  = useState(false)
+  const [digits,       setDigits]      = useState<string[]>(Array(PIN_LENGTH).fill(''))
+  const [error,        setError]       = useState('')
+  const [unlocking,    setUnlocking]   = useState(false)
+  const [bioRunning,   setBioRunning]  = useState(false)
+  const [pinAttempts,  setPinAttempts] = useState(0)
+  const [lockedUntil,  setLockedUntil] = useState<number | null>(null)
   const inputRefs = useRef<(HTMLInputElement | null)[]>([])
 
   const destination = identity?.role === 'child' ? '/child' : '/parent'
@@ -64,8 +68,10 @@ export function LockScreen() {
       return
     }
 
-    // No security set — pass straight through
-    if (identity.auth_method === 'none') {
+    // No security set — pass straight through only when no PIN hash is stored.
+    // Guards against a tampered mc_device_identity that sets auth_method='none'
+    // while a pin_hash (or biometric credential) actually exists.
+    if (identity.auth_method === 'none' && !identity.pin_hash && !hasBiometricCredential()) {
       unlock('none')
       return
     }
@@ -91,7 +97,7 @@ export function LockScreen() {
     if (idx < PIN_LENGTH - 1) {
       inputRefs.current[idx + 1]?.focus()
     } else {
-      submitPin(next.join(''))
+      void submitPin(next.join(''))
     }
   }
 
@@ -106,17 +112,48 @@ export function LockScreen() {
     }
   }
 
-  function submitPin(entered: string) {
+  async function submitPin(entered: string) {
     if (entered.length < PIN_LENGTH) return
     if (!identity) return
+
+    // Check lockout
+    if (lockedUntil && Date.now() < lockedUntil) {
+      const secsLeft = Math.ceil((lockedUntil - Date.now()) / 1000)
+      setError(`Too many attempts — wait ${secsLeft}s`)
+      setDigits(Array(PIN_LENGTH).fill(''))
+      return
+    }
+
     setUnlocking(true)
-    if (identity.pin && identity.pin !== entered) {
-      setError('Wrong PIN — try again.')
+
+    const stored = identity.pin_hash
+    if (!stored) {
+      // No hash stored — let through (auth_method may be 'none' or biometrics fallback)
+      Sentry.setTag('auth_method', 'pin')
+      unlock('pin')
+      return
+    }
+
+    const match = await verifyPinHash(entered, stored)
+    if (!match) {
+      const newAttempts = pinAttempts + 1
+      setPinAttempts(newAttempts)
+      if (newAttempts >= MAX_ATTEMPTS) {
+        const until = Date.now() + LOCKOUT_MS
+        setLockedUntil(until)
+        setPinAttempts(0)
+        setError(`Too many attempts — locked for ${LOCKOUT_MS / 1000}s`)
+      } else {
+        setError(`Wrong PIN — ${MAX_ATTEMPTS - newAttempts} attempt${MAX_ATTEMPTS - newAttempts === 1 ? '' : 's'} left`)
+      }
       setDigits(Array(PIN_LENGTH).fill(''))
       setTimeout(() => inputRefs.current[0]?.focus(), 50)
       setUnlocking(false)
       return
     }
+
+    setPinAttempts(0)
+    setLockedUntil(null)
     Sentry.setTag('auth_method', 'pin')
     unlock('pin')
   }

@@ -11,7 +11,7 @@ import { ChildDashboard } from './screens/ChildDashboard'
 import { JoinFamilyScreen } from './screens/JoinFamilyScreen'
 import LoginScreen from './screens/LoginScreen'
 import AuthCallbackScreen from './screens/AuthCallbackScreen'
-import { getDeviceIdentity, setDeviceIdentity, toInitials } from './lib/deviceIdentity'
+import { getDeviceIdentity, setDeviceIdentity, toInitials, hashPin } from './lib/deviceIdentity'
 import { LocaleProvider } from './lib/locale'
 import { analytics, track } from './lib/analytics'
 import { verifyMagicLink, setToken, getMe } from './lib/api'
@@ -79,9 +79,7 @@ function MagicLinkVerifyScreen() {
           localStorage.removeItem('mc_token')
           throw e
         }
-        localStorage.setItem('mc_family_id', me.family_id)
-        localStorage.setItem('mc_user_id',   me.id)
-        localStorage.setItem('mc_role',      me.role)
+        // family_id / user_id / role are read from mc_device_identity — do not duplicate here.
         const id = { family_id: me.family_id, user_id: me.id, display_name: me.display_name }
         sessionStorage.setItem(ML_SESSION_KEY, JSON.stringify(id))
         setIdentity(id)
@@ -214,7 +212,7 @@ function RequireSession({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
-  function handleRegistrationComplete(
+  async function handleRegistrationComplete(
     familyId: string,
     _token: string,
     displayName: string,
@@ -222,6 +220,7 @@ export default function App() {
     authMethod: 'biometrics' | 'pin' | null,
     pin: string | null,
   ) {
+    const pin_hash = (authMethod === 'pin' && pin) ? await hashPin(pin) : undefined
     setDeviceIdentity({
       user_id:        userId,
       family_id:      familyId,
@@ -231,7 +230,7 @@ export default function App() {
       initials:       toInitials(displayName),
       registered_at:  new Date().toISOString(),
       auth_method:    authMethod ?? 'none',
-      pin:            pin ?? undefined,
+      pin_hash,
     })
     Sentry.setUser({ id: userId })
     Sentry.setTag('auth_method', authMethod ?? 'none')

@@ -11,7 +11,7 @@ import { User, Shield, AlertTriangle, X, LogOut } from 'lucide-react'
 import { AvatarSVG, DefaultAvatar, AVATAR_CATEGORIES, avatarsForCategory, type AvatarCategory } from '../../../lib/avatars'
 import type { MeResult } from '../../../lib/api'
 import { leaveFamily, deleteFamily, clearToken } from '../../../lib/api'
-import { clearDeviceIdentity, getDeviceIdentity } from '../../../lib/deviceIdentity'
+import { clearDeviceIdentity, getDeviceIdentity, verifyPinHash } from '../../../lib/deviceIdentity'
 import { cn } from '../../../lib/utils'
 import { Toast, SettingsRow, SectionCard, SectionHeader } from '../shared'
 
@@ -65,6 +65,23 @@ export function ProfileSettings({
   const [dangerBusy,      setDangerBusy]      = useState(false)
   const [dangerError,     setDangerError]     = useState<string | null>(null)
 
+  // PIN re-auth gate for sensitive operations
+  const [pinGate,       setPinGate]       = useState<'email' | 'leave' | 'uproot' | null>(null)
+  const [pinInput,      setPinInput]      = useState('')
+  const [pinError,      setPinError]      = useState<string | null>(null)
+  const [pinVerified,   setPinVerified]   = useState<'email' | 'leave' | 'uproot' | null>(null)
+
+  async function verifyPin(action: 'email' | 'leave' | 'uproot') {
+    const storedHash = identity?.pin_hash
+    if (!storedHash) { setPinVerified(action); setPinGate(null); return }
+    const ok = await verifyPinHash(pinInput, storedHash)
+    if (!ok) { setPinError('Incorrect PIN'); setPinInput(''); return }
+    setPinVerified(action)
+    setPinGate(null)
+    setPinInput('')
+    setPinError(null)
+  }
+
   async function handleSaveName(e: React.FormEvent) {
     e.preventDefault()
     const trimmed = nameInput.trim()
@@ -85,12 +102,17 @@ export function ProfileSettings({
     e.preventDefault()
     const trimmed = emailInput.trim()
     if (!trimmed || trimmed === (profile?.email ?? '')) return
+    if (identity?.pin_hash && pinVerified !== 'email') {
+      setPinGate('email')
+      return
+    }
     setEmailSaving(true)
     setEmailError(null)
     try {
       await onSaveEmail(trimmed)
       setEditingEmail(false)
       setEmailSentTo(trimmed)
+      setPinVerified(null)
     } catch (err: unknown) {
       setEmailError((err as Error).message)
     } finally {
@@ -117,6 +139,10 @@ export function ProfileSettings({
   }
 
   async function handleLeave() {
+    if (identity?.pin_hash && pinVerified !== 'leave') {
+      setPinGate('leave')
+      return
+    }
     setDangerBusy(true)
     setDangerError(null)
     try {
@@ -130,6 +156,10 @@ export function ProfileSettings({
 
   async function handleUproot() {
     if (uprootInput !== 'UPROOT') return
+    if (identity?.pin_hash && pinVerified !== 'uproot') {
+      setPinGate('uproot')
+      return
+    }
     setDangerBusy(true)
     setDangerError(null)
     try {
@@ -402,6 +432,41 @@ export function ProfileSettings({
               className="w-full py-3 rounded-xl text-[14px] font-bold bg-red-600 text-white disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
             >
               {dangerBusy ? 'Deleting…' : 'Delete Everything'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* PIN re-auth gate */}
+      {pinGate && (
+        <div className="fixed inset-0 z-[60] flex items-end justify-center bg-black/50 px-4 pb-8">
+          <div className="w-full max-w-sm bg-[var(--color-surface)] rounded-2xl p-5 space-y-4 shadow-2xl">
+            <div className="flex items-center justify-between">
+              <p className="text-[16px] font-bold text-[var(--color-text)]">Confirm your PIN</p>
+              <button onClick={() => { setPinGate(null); setPinInput(''); setPinError(null) }} className="text-[var(--color-text-muted)] cursor-pointer">
+                <X size={18} />
+              </button>
+            </div>
+            <p className="text-[13px] text-[var(--color-text-muted)]">
+              Enter your PIN to continue with this sensitive action.
+            </p>
+            <input
+              type="password"
+              inputMode="numeric"
+              maxLength={4}
+              value={pinInput}
+              onChange={e => { setPinInput(e.target.value.replace(/\D/g, '')); setPinError(null) }}
+              placeholder="••••"
+              className="w-full text-center text-[24px] tracking-[0.5em] border-2 border-[var(--color-border)] rounded-xl px-3 py-3 bg-[var(--color-bg)] text-[var(--color-text)] focus:outline-none focus:border-[var(--brand-primary)]"
+              autoFocus
+            />
+            {pinError && <p className="text-[12px] font-semibold text-red-600">{pinError}</p>}
+            <button
+              onClick={() => void verifyPin(pinGate)}
+              disabled={pinInput.length < 4}
+              className="w-full py-3 rounded-xl text-[14px] font-bold bg-[var(--brand-primary)] text-white disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+            >
+              Confirm
             </button>
           </div>
         </div>

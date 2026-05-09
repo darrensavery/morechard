@@ -14,14 +14,20 @@
 
 import { Env } from '../types.js';
 import { json, error, clientIp } from '../lib/response.js';
+import type { JwtPayload } from '../lib/jwt.js';
+
+type AuthedRequest = Request & { auth: JwtPayload };
 
 const EXPIRY_SECONDS = 72 * 60 * 60; // 72 hours
 
 // ----------------------------------------------------------------
 // POST /api/governance/request
-// Body: { family_id, requested_by, new_mode }
+// Body: { new_mode }
+// family_id and requested_by are taken from the JWT — never the body.
 // ----------------------------------------------------------------
 export async function handleGovernanceRequest(request: Request, env: Env): Promise<Response> {
+  const auth = (request as AuthedRequest).auth;
+
   let body: Record<string, unknown>;
   try {
     body = await request.json() as Record<string, unknown>;
@@ -29,10 +35,11 @@ export async function handleGovernanceRequest(request: Request, env: Env): Promi
     return error('Invalid JSON body');
   }
 
-  const { family_id, requested_by, new_mode } = body;
-  if (!family_id   || typeof family_id   !== 'string') return error('family_id required');
-  if (!requested_by || typeof requested_by !== 'string') return error('requested_by required');
+  const { new_mode } = body;
   if (!new_mode || !['amicable','standard'].includes(new_mode as string)) return error('Invalid new_mode');
+
+  const family_id    = auth.family_id;
+  const requested_by = auth.sub;
 
   // Fetch current mode
   const family = await env.DB
@@ -68,22 +75,15 @@ export async function handleGovernanceRequest(request: Request, env: Env): Promi
 
 // ----------------------------------------------------------------
 // POST /api/governance/:id/confirm
-// Body: { confirmed_by }
+// confirmed_by is taken from the JWT — never the body.
 // ----------------------------------------------------------------
 export async function handleGovernanceConfirm(
   request: Request,
   env: Env,
   requestId: string,
 ): Promise<Response> {
-  let body: Record<string, unknown>;
-  try {
-    body = await request.json() as Record<string, unknown>;
-  } catch {
-    return error('Invalid JSON body');
-  }
-
-  const { confirmed_by } = body;
-  if (!confirmed_by || typeof confirmed_by !== 'string') return error('confirmed_by required');
+  const auth = (request as AuthedRequest).auth;
+  const confirmed_by = auth.sub;
 
   const now = Math.floor(Date.now() / 1000);
   const ip  = clientIp(request);
@@ -97,6 +97,10 @@ export async function handleGovernanceConfirm(
     }>();
 
   if (!govRow) return error('Governance request not found', 404);
+
+  // Ensure the request belongs to the caller's family
+  if (govRow.family_id !== auth.family_id) return error('Governance request not found', 404);
+
   if (govRow.status !== 'pending')  return error(`Request is already ${govRow.status}`);
   if (now > govRow.expires_at)      return error('Request has expired');
   if (govRow.requested_by === confirmed_by) return error('The requesting parent cannot confirm their own request');
@@ -119,32 +123,29 @@ export async function handleGovernanceConfirm(
 
 // ----------------------------------------------------------------
 // POST /api/governance/:id/reject
-// Body: { rejected_by }
+// rejected_by is taken from the JWT — never the body.
 // ----------------------------------------------------------------
 export async function handleGovernanceReject(
   request: Request,
   env: Env,
   requestId: string,
 ): Promise<Response> {
-  let body: Record<string, unknown>;
-  try {
-    body = await request.json() as Record<string, unknown>;
-  } catch {
-    return error('Invalid JSON body');
-  }
-
-  const { rejected_by } = body;
-  if (!rejected_by || typeof rejected_by !== 'string') return error('rejected_by required');
+  const auth = (request as AuthedRequest).auth;
+  const rejected_by = auth.sub;
 
   const now = Math.floor(Date.now() / 1000);
   const ip  = clientIp(request);
 
   const govRow = await env.DB
-    .prepare('SELECT status, expires_at, requested_by FROM family_governance_log WHERE id = ?')
+    .prepare('SELECT status, expires_at, requested_by, family_id FROM family_governance_log WHERE id = ?')
     .bind(requestId)
-    .first<{ status: string; expires_at: number; requested_by: string }>();
+    .first<{ status: string; expires_at: number; requested_by: string; family_id: string }>();
 
   if (!govRow) return error('Governance request not found', 404);
+
+  // Ensure the request belongs to the caller's family
+  if (govRow.family_id !== auth.family_id) return error('Governance request not found', 404);
+
   if (govRow.status !== 'pending') return error(`Request is already ${govRow.status}`);
 
   await env.DB
@@ -180,11 +181,14 @@ export async function handleGovernanceExpire(_request: Request, env: Env): Promi
 
 // ----------------------------------------------------------------
 // GET /api/governance?family_id=
+// family_id is validated against the JWT — callers can only read their own family.
 // ----------------------------------------------------------------
 export async function handleGovernanceGet(request: Request, env: Env): Promise<Response> {
+  const auth = (request as AuthedRequest).auth;
   const url = new URL(request.url);
   const family_id = url.searchParams.get('family_id');
   if (!family_id) return error('family_id required');
+  if (family_id !== auth.family_id) return error('Forbidden', 403);
 
   const { results } = await env.DB
     .prepare('SELECT * FROM family_governance_log WHERE family_id = ? ORDER BY id DESC')

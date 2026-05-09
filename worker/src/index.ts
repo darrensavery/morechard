@@ -318,7 +318,8 @@ async function runPaydaySweep(env: Env, nowEpoch: number): Promise<void> {
     // Fetch previous ledger row for this family (hash chain + next-id prediction).
     // The cron runs single-threaded so max(id)+1 is a safe rowid estimate.
     const prevRow = await env.DB
-      .prepare('SELECT id, record_hash FROM ledger ORDER BY id DESC LIMIT 1')
+      .prepare('SELECT id, record_hash FROM ledger WHERE family_id = ? ORDER BY id DESC LIMIT 1')
+      .bind(child.family_id)
       .first<{ id: number; record_hash: string }>();
 
     const previousHash = prevRow?.record_hash ?? GENESIS_HASH;
@@ -648,6 +649,8 @@ async function route(request: Request, env: Env, method: string, path: string): 
     return handleExportJson(request, env);
   }
   if (path === '/api/export/pdf' && method === 'GET') {
+    const parentCheck = requireRole(auth, 'parent');
+    if (parentCheck) return parentCheck;
     const famCheck = requireFamilyMatch(auth, new URL(request.url).searchParams.get('family_id') ?? '');
     if (famCheck) return famCheck;
     return handleExportPdf(request, env);

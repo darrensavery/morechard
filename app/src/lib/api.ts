@@ -38,16 +38,15 @@ export function setToken(token: string): void {
 
 export function clearToken(): void {
   localStorage.removeItem('mc_token');
+  // mc_family_id / mc_user_id / mc_role are no longer written to localStorage.
+  // Remove any legacy values that may have been persisted by an older client version.
   localStorage.removeItem('mc_family_id');
   localStorage.removeItem('mc_user_id');
   localStorage.removeItem('mc_role');
 }
 
 export function getFamilyId(): string {
-  if (localStorage.getItem('mc_family_id')) {
-    return localStorage.getItem('mc_family_id')!;
-  }
-  // Fall back to device identity (set during registration)
+  // Read exclusively from device identity — avoids exposing a separate localStorage key.
   try {
     const raw = localStorage.getItem('mc_device_identity');
     if (raw) return (JSON.parse(raw) as { family_id?: string }).family_id ?? '';
@@ -56,11 +55,19 @@ export function getFamilyId(): string {
 }
 
 export function getUserId(): string {
-  return localStorage.getItem('mc_user_id') ?? '';
+  try {
+    const raw = localStorage.getItem('mc_device_identity');
+    if (raw) return (JSON.parse(raw) as { user_id?: string }).user_id ?? '';
+  } catch { /* ignore */ }
+  return '';
 }
 
 export function getRole(): 'parent' | 'child' | null {
-  return localStorage.getItem('mc_role') as 'parent' | 'child' | null;
+  try {
+    const raw = localStorage.getItem('mc_device_identity');
+    if (raw) return ((JSON.parse(raw) as { role?: string }).role ?? null) as 'parent' | 'child' | null;
+  } catch { /* ignore */ }
+  return null;
 }
 
 async function request<T>(path: string, options: RequestInit = {}, _retries = 2, skip402 = false): Promise<T> {

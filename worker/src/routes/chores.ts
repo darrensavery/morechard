@@ -405,10 +405,7 @@ export async function handleChoreSubmit(request: Request, env: Env, id: string):
       .first<{ id: number; record_hash: string }>();
 
     const previousHash = prevRow?.record_hash ?? GENESIS_HASH;
-    const maxRow = await env.DB
-      .prepare('SELECT COALESCE(MAX(id), 0) AS max_id FROM ledger')
-      .first<{ max_id: number }>();
-    const newLedgerId = (maxRow?.max_id ?? 0) + 1;
+    const newLedgerId = (prevRow?.id ?? 0) + 1;
 
     const recordHash = await computeRecordHash(
       newLedgerId, chore.family_id, auth.sub,
@@ -560,52 +557,71 @@ export async function lazyGenerateCompletions(
   const SKIP = new Set(['as_needed', 'quarterly']);
   const SCHOOL_DAYS = new Set([1, 2, 3, 4, 5]); // Mon–Fri
 
+  // --- Determine which chores are active today and their period start ---
+  type ActiveChore = { id: string; periodStart: number };
+  const activeChores: ActiveChore[] = [];
+
   for (const chore of chores) {
     if (SKIP.has(chore.frequency)) continue;
 
-    // Determine whether today is an active day for this chore:
-    //
-    // 1. Parent has explicitly planned days → only generate on those days.
-    // 2. No parent plan set:
-    //    - daily       → generate every day (no gate)
-    //    - school_days → generate Mon–Fri only
-    //    - everything else (weekly, bi_weekly, monthly) → generate today so
-    //      the chore appears in the child's list, but don't force a day —
-    //      the child can add it to their planner themselves.
     const parentPlan = plannedDays?.get(chore.id);
     if (parentPlan && parentPlan.size > 0) {
-      // Parent has planned specific days — respect them exactly
       if (!parentPlan.has(todayDow)) continue;
     } else {
-      // No parent plan — apply frequency defaults
       if (chore.frequency === 'school_days' && !SCHOOL_DAYS.has(todayDow)) continue;
-      // 'daily' → no gate (always generate)
-      // all other frequencies → generate today (child-led planner)
     }
 
     const periodStart =
       chore.frequency === 'daily' || chore.frequency === 'school_days' ? dayStart :
       chore.frequency === 'weekly' || chore.frequency === 'bi_weekly'  ? weekStart :
       chore.frequency === 'monthly'                                      ? monthStart :
-      weekStart; // fallback
+      weekStart;
 
-    // Check: does a non-orphan completion already exist for this period?
-    const existing = await env.DB.prepare(`
-      SELECT id FROM completions
-      WHERE chore_id = ? AND child_id = ?
-        AND status IN ('available','awaiting_review','completed','needs_revision')
-        AND submitted_at >= ?
-      LIMIT 1
-    `).bind(chore.id, childId, periodStart).first<{ id: string }>();
+    activeChores.push({ id: chore.id, periodStart });
+  }
 
-    if (existing) continue; // already covered
+  if (activeChores.length === 0) return;
 
-    // Insert lazy record
-    const id = nanoid();
-    await env.DB.prepare(`
-      INSERT INTO completions
-        (id, family_id, chore_id, child_id, status, submitted_at)
-      VALUES (?,?,?,?,'available',?)
-    `).bind(id, familyId, chore.id, childId, Math.floor(Date.now() / 1000)).run();
+  // --- Batch existence check: one query for all active chores ---
+  // Use the earliest periodStart across all active chores as the lower bound.
+  const earliestPeriodStart = Math.min(...activeChores.map(c => c.periodStart));
+  const choreIds = activeChores.map(c => c.id);
+  const placeholders = choreIds.map(() => '?').join(',');
+
+  const { results: existingRows } = await env.DB.prepare(`
+    SELECT chore_id, submitted_at FROM completions
+    WHERE child_id = ?
+      AND chore_id IN (${placeholders})
+      AND status IN ('available','awaiting_review','completed','needs_revision')
+      AND submitted_at >= ?
+  `).bind(childId, ...choreIds, earliestPeriodStart).all<{ chore_id: string; submitted_at: number }>();
+
+  // Build a map: chore_id → max submitted_at among covered completions
+  const coveredMap = new Map<string, number>();
+  for (const row of existingRows) {
+    const prev = coveredMap.get(row.chore_id) ?? 0;
+    if (row.submitted_at > prev) coveredMap.set(row.chore_id, row.submitted_at);
+  }
+
+  // --- Batch insert for chores not yet covered in their period ---
+  const nowEpoch = Math.floor(Date.now() / 1000);
+  const inserts: D1PreparedStatement[] = [];
+
+  for (const { id: choreId, periodStart } of activeChores) {
+    const lastCovered = coveredMap.get(choreId) ?? 0;
+    if (lastCovered >= periodStart) continue; // already covered this period
+
+    const completionId = nanoid();
+    inserts.push(
+      env.DB.prepare(`
+        INSERT INTO completions
+          (id, family_id, chore_id, child_id, status, submitted_at)
+        VALUES (?,?,?,?,'available',?)
+      `).bind(completionId, familyId, choreId, childId, nowEpoch),
+    );
+  }
+
+  if (inserts.length > 0) {
+    await env.DB.batch(inserts);
   }
 }

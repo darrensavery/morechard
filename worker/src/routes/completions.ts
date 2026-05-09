@@ -187,11 +187,7 @@ export async function handleCompletionApprove(
     .first<{ id: number; record_hash: string }>();
 
   const previousHash = prevRow?.record_hash ?? GENESIS_HASH;
-
-  const maxRow = await env.DB
-    .prepare('SELECT COALESCE(MAX(id), 0) AS max_id FROM ledger')
-    .first<{ max_id: number }>();
-  const newLedgerId = (maxRow?.max_id ?? 0) + 1;
+  const newLedgerId = (prevRow?.id ?? 0) + 1;
 
   const recordHash = await computeRecordHash(
     newLedgerId,
@@ -362,10 +358,7 @@ export async function handleApproveAll(request: Request, env: Env): Promise<Resp
       .first<{ id: number; record_hash: string }>();
 
     const previousHash = prevRow?.record_hash ?? GENESIS_HASH;
-    const maxRow = await env.DB
-      .prepare('SELECT COALESCE(MAX(id), 0) AS max_id FROM ledger')
-      .first<{ max_id: number }>();
-    const newLedgerId = (maxRow?.max_id ?? 0) + 1;
+    const newLedgerId = (prevRow?.id ?? 0) + 1;
     const disputeBefore = verificationStatus === 'verified_auto' ? now + 172800 : null;
 
     const recordHash = await computeRecordHash(

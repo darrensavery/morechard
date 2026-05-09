@@ -261,30 +261,23 @@ export async function handleInsights(request: Request, env: Env): Promise<Respon
   // Upsert today's snapshot if none exists for the current ISO week.
   const weekKey = getIsoWeekKey(new Date()); // e.g. '2026-W15'
 
-  const existingThisWeek = await env.DB.prepare(`
-    SELECT id FROM insight_snapshots
-    WHERE child_id = ? AND snapshot_date = ?
-  `).bind(effectiveChildId, weekKey).first<{ id: number }>();
-
-  if (!existingThisWeek) {
-    // INSERT OR IGNORE: the unique index on (child_id, snapshot_date) means a
-    // concurrent request for the same week will silently no-op rather than
-    // producing a duplicate row.
-    await env.DB.prepare(`
-      INSERT OR IGNORE INTO insight_snapshots
-        (child_id, family_id, snapshot_date, consistency_score, responsibility_score,
-         planning_horizon, total_earned_pence)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
-    `).bind(
-      effectiveChildId,
-      family_id,
-      weekKey,
-      consistencyScore,
-      firstTimePassRate,
-      planningHorizon,
-      lifetimeEarned,
-    ).run();
-  }
+  // INSERT OR IGNORE: the unique index on (child_id, snapshot_date) means a
+  // concurrent request for the same week will silently no-op rather than
+  // producing a duplicate row.
+  await env.DB.prepare(`
+    INSERT OR IGNORE INTO insight_snapshots
+      (child_id, family_id, snapshot_date, consistency_score, responsibility_score,
+       planning_horizon, total_earned_pence)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+  `).bind(
+    effectiveChildId,
+    family_id,
+    weekKey,
+    consistencyScore,
+    firstTimePassRate,
+    planningHorizon,
+    lifetimeEarned,
+  ).run();
 
   // Build trends object.
   const trends = buildTrends(
@@ -333,7 +326,6 @@ export async function handleInsights(request: Request, env: Env): Promise<Respon
   let mentorBriefing: MentorBriefing | null = null;
 
   if (!isDiscoveryPhase) {
-    // Re-fetch the snapshot row we just upserted so we have its briefing state.
     const snapshotRow = await env.DB.prepare(`
       SELECT id, observation, behavioral_root, the_nudge
       FROM insight_snapshots
@@ -1047,6 +1039,7 @@ async function buildSparklinePoints(
     WHERE family_id = ? AND child_id = ? AND status = 'completed'
       AND resolved_at >= ?
     ORDER BY resolved_at ASC
+    LIMIT 500
   `).bind(family_id, child_id, startEpoch).all<{
     resolved_at: number; attempt_count: number;
   }>();

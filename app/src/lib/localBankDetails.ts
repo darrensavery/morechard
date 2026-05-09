@@ -1,5 +1,7 @@
-// Temporary per-device storage of child bank details.
-// KNOWN TEMPORARY: Spec B replaces this with an encrypted IndexedDB vault.
+// Temporary per-session storage of child bank details.
+// Uses sessionStorage so sensitive data (sort code, account number) is not
+// persisted to disk between app sessions. KNOWN TEMPORARY: Spec B replaces
+// this with an encrypted IndexedDB vault.
 // Function NAMES (getDetails / setDetails / clearDetails) and the
 // StoredBankDetails shape are preserved. Signatures will become async
 // (Promise-returning) in Spec B, so call sites will need `await` added
@@ -21,7 +23,7 @@ function storageKey(familyId: string): string {
 
 function readStore(familyId: string): Store {
   try {
-    const raw = localStorage.getItem(storageKey(familyId));
+    const raw = sessionStorage.getItem(storageKey(familyId));
     if (!raw) return {};
     return JSON.parse(raw) as Store;
   } catch {
@@ -30,7 +32,7 @@ function readStore(familyId: string): Store {
 }
 
 function writeStore(familyId: string, store: Store): void {
-  localStorage.setItem(storageKey(familyId), JSON.stringify(store));
+  sessionStorage.setItem(storageKey(familyId), JSON.stringify(store));
 }
 
 export function getDetails(

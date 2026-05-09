@@ -28,8 +28,12 @@ export interface DeviceIdentity {
   registered_at:  string
   /** How this device is locked: biometrics, pin, or none (skipped) */
   auth_method:    'biometrics' | 'pin' | 'none'
-  /** 4-digit PIN — only set when auth_method === 'pin' */
-  pin?:           string
+  /**
+   * PBKDF2-derived hash of the 4-digit PIN.
+   * Never store the raw PIN — call hashPin() before setting this field.
+   * Format: "<base64-salt>:<base64-hash>" (both 16 bytes / 128 bits).
+   */
+  pin_hash?:      string
   /** Google profile picture URL; undefined for non-Google logins */
   google_picture?: string
 }
@@ -60,6 +64,50 @@ export function clearDeviceIdentity(): void {
   localStorage.removeItem(STORAGE_KEY)
   localStorage.removeItem('mc_token')
 }
+
+// ── PIN hashing helpers ──────────────────────────────────────────────────────
+
+/**
+ * Hash a raw 4-digit PIN with PBKDF2-SHA-256 (100,000 iterations).
+ * Returns a "<base64-salt>:<base64-hash>" string suitable for storage.
+ */
+export async function hashPin(rawPin: string): Promise<string> {
+  const enc     = new TextEncoder()
+  const salt    = crypto.getRandomValues(new Uint8Array(16))
+  const keyMat  = await crypto.subtle.importKey('raw', enc.encode(rawPin), 'PBKDF2', false, ['deriveBits'])
+  const derived = await crypto.subtle.deriveBits(
+    { name: 'PBKDF2', hash: 'SHA-256', salt, iterations: 100_000 },
+    keyMat,
+    128,
+  )
+  const b64 = (buf: ArrayBuffer) => btoa(String.fromCharCode(...new Uint8Array(buf)))
+  return `${b64(salt.buffer)}:${b64(derived)}`
+}
+
+/**
+ * Verify a raw PIN against a stored PBKDF2 hash string.
+ * Returns true when they match.
+ */
+export async function verifyPinHash(rawPin: string, storedHash: string): Promise<boolean> {
+  try {
+    const [saltB64, hashB64] = storedHash.split(':')
+    if (!saltB64 || !hashB64) return false
+    const salt    = Uint8Array.from(atob(saltB64), c => c.charCodeAt(0))
+    const enc     = new TextEncoder()
+    const keyMat  = await crypto.subtle.importKey('raw', enc.encode(rawPin), 'PBKDF2', false, ['deriveBits'])
+    const derived = await crypto.subtle.deriveBits(
+      { name: 'PBKDF2', hash: 'SHA-256', salt, iterations: 100_000 },
+      keyMat,
+      128,
+    )
+    const b64 = (buf: ArrayBuffer) => btoa(String.fromCharCode(...new Uint8Array(buf)))
+    return b64(derived) === hashB64
+  } catch {
+    return false
+  }
+}
+
+// ────────────────────────────────────────────────────────────────────────────
 
 /** Derive two-letter initials from a display name. */
 export function toInitials(name: string): string {

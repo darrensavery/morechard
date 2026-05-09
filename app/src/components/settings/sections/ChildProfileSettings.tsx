@@ -164,6 +164,166 @@ function ResetPinSheet({
   )
 }
 
+// ── Payment Settings View ─────────────────────────────────────────────────────
+
+type Handle = 'monzo' | 'revolut' | 'paypal' | 'venmo'
+
+interface PaymentSettingsProps {
+  child:           ChildRecord
+  isUS:            boolean
+  isPL:            boolean
+  locale:          string
+  sortCode:        string
+  setSortCode:     (v: string) => void
+  acctNum:         string
+  setAcctNum:      (v: string) => void
+  zelle:           string
+  setZelle:        (v: string) => void
+  saveBankDetails: () => void
+  onBack:          () => void
+}
+
+function PaymentSettingsView({
+  child, isUS, isPL, locale,
+  sortCode, setSortCode, acctNum, setAcctNum, zelle, setZelle,
+  saveBankDetails, onBack,
+}: PaymentSettingsProps) {
+  const handles: { key: Handle; label: string; placeholder: string }[] = [
+    ...(!isUS && !isPL ? [
+      { key: 'monzo'   as const, label: 'Monzo',   placeholder: 'alexj' },
+      { key: 'revolut' as const, label: 'Revolut', placeholder: 'alexj' },
+    ] : []),
+    { key: 'paypal', label: 'PayPal', placeholder: 'alexj' },
+    ...(isUS ? [{ key: 'venmo' as const, label: 'Venmo', placeholder: 'alexj' }] : []),
+  ]
+
+  const [handleValues, setHandleValues] = useState<Partial<Record<Handle, string>>>(
+    () => Object.fromEntries(handles.map(h => [h.key, child[`${h.key}_handle`] ?? ''])),
+  )
+  const [handleSaving, setHandleSaving] = useState(false)
+  const [handleSaved,  setHandleSaved]  = useState(false)
+  const [handleErr,    setHandleErr]    = useState<string | null>(null)
+
+  const [bankSaved, setBankSaved] = useState(false)
+
+  async function saveHandles() {
+    setHandleSaving(true)
+    setHandleErr(null)
+    setHandleSaved(false)
+    try {
+      const patch: Record<string, string | null> = {}
+      for (const h of handles) {
+        patch[`${h.key}_handle`] = handleValues[h.key]?.trim() || null
+      }
+      await setPaymentHandles(child.id, patch)
+      setHandleSaved(true)
+    } catch {
+      setHandleErr('Could not save — please try again.')
+    } finally {
+      setHandleSaving(false)
+    }
+  }
+
+  function saveBankAndMark() {
+    saveBankDetails()
+    setBankSaved(true)
+    setTimeout(() => setBankSaved(false), 2000)
+  }
+
+  return (
+    <div className="space-y-4">
+      <SectionHeader title="Payment Settings" onBack={onBack} />
+
+      {/* Payment Handles — locale-gated */}
+      <div>
+        <p className="text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wide px-1 mb-2">Payment Handles</p>
+        <SectionCard>
+          <div className="px-4 py-3">
+            <p className="text-[12px] text-[var(--color-text-muted)] mb-3">
+              Your child&apos;s username for their payment app — no @ sign. Used to
+              deep-link into your banking app when you pay rewards.
+            </p>
+            {handles.map(({ key, label, placeholder }) => (
+              <label key={key} className="flex items-center gap-3 py-2 border-b border-[var(--color-border)] last:border-0">
+                <span className="w-20 text-[13px] text-[var(--color-text)]">{label}</span>
+                <input
+                  type="text"
+                  value={handleValues[key] ?? ''}
+                  onChange={e => setHandleValues(prev => ({ ...prev, [key]: e.target.value }))}
+                  placeholder={placeholder}
+                  className="flex-1 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-alt)] px-2 py-1 text-[14px] text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]"
+                />
+              </label>
+            ))}
+            {handleErr && <p className="text-[12px] text-red-500 mt-2">{handleErr}</p>}
+            <button
+              type="button"
+              onClick={saveHandles}
+              disabled={handleSaving}
+              className="mt-3 w-full py-2 rounded-xl text-[13px] font-bold bg-[var(--brand-primary)] text-white disabled:opacity-50 cursor-pointer"
+            >
+              {handleSaving ? 'Saving…' : handleSaved ? '✓ Saved' : 'Save Handles'}
+            </button>
+          </div>
+        </SectionCard>
+      </div>
+
+      {/* Bank Transfer / Zelle — locale-gated */}
+      {(locale === 'en-GB' || locale === 'en-US') && (
+        <div>
+          <p className="text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wide px-1 mb-2">
+            {isUS ? 'Zelle' : 'Bank Transfer Details'}
+          </p>
+          <SectionCard>
+            <div className="px-4 py-3">
+              {!isUS && (
+                <div className="rounded-xl bg-neutral-50 border border-neutral-200 px-3 py-2 text-[11px] text-neutral-600 mb-3">
+                  Stored on this device only — never sent to our servers. If you switch
+                  phones, you&apos;ll re-enter them.
+                </div>
+              )}
+              {!isUS && (
+                <>
+                  <label className="flex items-center gap-3 py-2 border-b border-[var(--color-border)]">
+                    <span className="w-32 text-[13px] text-[var(--color-text)]">Sort code</span>
+                    <input inputMode="numeric" pattern="[0-9]{6}" maxLength={6}
+                      value={sortCode} onChange={e => setSortCode(e.target.value.replace(/\D/g, ''))}
+                      placeholder="201575"
+                      className="flex-1 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-alt)] px-2 py-1 font-mono text-[14px] text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]" />
+                  </label>
+                  <label className="flex items-center gap-3 py-2">
+                    <span className="w-32 text-[13px] text-[var(--color-text)]">Account number</span>
+                    <input inputMode="numeric" pattern="[0-9]{8}" maxLength={8}
+                      value={acctNum} onChange={e => setAcctNum(e.target.value.replace(/\D/g, ''))}
+                      placeholder="12345678"
+                      className="flex-1 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-alt)] px-2 py-1 font-mono text-[14px] text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]" />
+                  </label>
+                </>
+              )}
+              {isUS && (
+                <label className="flex items-center gap-3 py-2">
+                  <span className="w-32 text-[13px] text-[var(--color-text)]">Email / phone</span>
+                  <input type="text"
+                    value={zelle} onChange={e => setZelle(e.target.value)}
+                    placeholder="alex@example.com"
+                    className="flex-1 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-alt)] px-2 py-1 text-[14px] text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]" />
+                </label>
+              )}
+              <button
+                type="button"
+                onClick={saveBankAndMark}
+                className="mt-3 w-full py-2 rounded-xl text-[13px] font-bold bg-[var(--brand-primary)] text-white cursor-pointer"
+              >
+                {bankSaved ? '✓ Saved' : isUS ? 'Save Zelle Details' : 'Save Bank Details'}
+              </button>
+            </div>
+          </SectionCard>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── Component ─────────────────────────────────────────────────────────────────
 
 type ActiveView = 'root' | 'login-history' | 'payment-settings'
@@ -223,105 +383,20 @@ export function ChildProfileSettings({
   }
 
   if (activeView === 'payment-settings') {
-    return (
-      <div className="space-y-4">
-        <SectionHeader title="Payment Settings" onBack={() => setActiveView('root')} />
-
-        {/* Payment Handles — locale-gated */}
-        {(() => {
-          // Channels available per locale
-          // en-GB: Monzo, Revolut, PayPal
-          // en-US: PayPal, Venmo
-          // pl:    PayPal
-          type Handle = 'monzo' | 'revolut' | 'paypal' | 'venmo'
-          const handles: { key: Handle; label: string; placeholder: string }[] = [
-            ...(!isUS && !isPL ? [
-              { key: 'monzo'   as const, label: 'Monzo',   placeholder: 'alexj' },
-              { key: 'revolut' as const, label: 'Revolut', placeholder: 'alexj' },
-            ] : []),
-            { key: 'paypal', label: 'PayPal', placeholder: 'alexj' },
-            ...(isUS ? [{ key: 'venmo' as const, label: 'Venmo', placeholder: 'alexj' }] : []),
-          ]
-          return (
-            <div>
-              <p className="text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wide px-1 mb-2">Payment Handles</p>
-              <SectionCard>
-                <div className="px-4 py-3">
-                  <p className="text-[12px] text-[var(--color-text-muted)] mb-3">
-                    Your child&apos;s username for their payment app — no @ sign. Used to
-                    deep-link into your banking app when you pay rewards.
-                  </p>
-                  {handles.map(({ key, label, placeholder }) => (
-                    <label key={key} className="flex items-center gap-3 py-2 border-b border-[var(--color-border)] last:border-0">
-                      <span className="w-20 text-[13px] text-[var(--color-text)]">{label}</span>
-                      <input
-                        type="text"
-                        defaultValue={child[`${key}_handle`] ?? ''}
-                        onBlur={async (e) => {
-                          const val = e.target.value.trim() || null
-                          await setPaymentHandles(child.id, { [`${key}_handle`]: val })
-                        }}
-                        placeholder={placeholder}
-                        className="flex-1 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-alt)] px-2 py-1 text-[14px] text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]"
-                      />
-                    </label>
-                  ))}
-                </div>
-              </SectionCard>
-            </div>
-          )
-        })()}
-
-        {/* Bank Transfer / Zelle — locale-gated */}
-        {(locale === 'en-GB' || locale === 'en-US') && (
-          <div>
-            <p className="text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wide px-1 mb-2">
-              {isUS ? 'Zelle' : 'Bank Transfer Details'}
-            </p>
-            <SectionCard>
-              <div className="px-4 py-3">
-                {!isUS && (
-                  <div className="rounded-xl bg-neutral-50 border border-neutral-200 px-3 py-2 text-[11px] text-neutral-600 mb-3">
-                    Stored on this device only — never sent to our servers. If you switch
-                    phones, you&apos;ll re-enter them.
-                  </div>
-                )}
-                {!isUS && (
-                  <>
-                    <label className="flex items-center gap-3 py-2 border-b border-[var(--color-border)]">
-                      <span className="w-32 text-[13px] text-[var(--color-text)]">Sort code</span>
-                      <input inputMode="numeric" pattern="[0-9]{6}" maxLength={6}
-                        value={sortCode} onChange={(e) => setSortCode(e.target.value.replace(/\D/g, ''))}
-                        onBlur={saveBankDetails}
-                        placeholder="201575"
-                        className="flex-1 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-alt)] px-2 py-1 font-mono text-[14px] text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]" />
-                    </label>
-                    <label className="flex items-center gap-3 py-2">
-                      <span className="w-32 text-[13px] text-[var(--color-text)]">Account number</span>
-                      <input inputMode="numeric" pattern="[0-9]{8}" maxLength={8}
-                        value={acctNum} onChange={(e) => setAcctNum(e.target.value.replace(/\D/g, ''))}
-                        onBlur={saveBankDetails}
-                        placeholder="12345678"
-                        className="flex-1 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-alt)] px-2 py-1 font-mono text-[14px] text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]" />
-                    </label>
-                  </>
-                )}
-                {isUS && (
-                  <label className="flex items-center gap-3 py-2">
-                    <span className="w-32 text-[13px] text-[var(--color-text)]">Email / phone</span>
-                    <input type="text"
-                      value={zelle} onChange={(e) => setZelle(e.target.value)}
-                      onBlur={saveBankDetails}
-                      placeholder="alex@example.com"
-                      className="flex-1 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-alt)] px-2 py-1 text-[14px] text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]" />
-                  </label>
-                )}
-              </div>
-            </SectionCard>
-          </div>
-        )}
-      </div>
-    )
+    return <PaymentSettingsView
+      child={child}
+      isUS={isUS}
+      isPL={isPL}
+      locale={locale}
+      sortCode={sortCode}
+      setSortCode={setSortCode}
+      acctNum={acctNum}
+      setAcctNum={setAcctNum}
+      zelle={zelle}
+      setZelle={setZelle}
+      saveBankDetails={saveBankDetails}
+      onBack={() => setActiveView('root')}
+    />
   }
 
   async function handleSaveName(e: FormEvent) {

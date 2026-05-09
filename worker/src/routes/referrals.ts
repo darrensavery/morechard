@@ -12,9 +12,11 @@ import { AuthedRequest } from './auth.js';
 
 const APP_URL_FALLBACK = 'https://app.morechard.com';
 
-// Derives an 8-char alphanumeric code from the family ID (lazy-initialised on first call)
-function deriveCode(familyId: string): string {
-  return familyId.replace(/-/g, '').slice(-8).toUpperCase();
+// Generates a cryptographically random 8-char uppercase hex code
+function generateReferralCode(): string {
+  const arr = new Uint8Array(4);
+  crypto.getRandomValues(arr);
+  return Array.from(arr).map(b => b.toString(16).padStart(2, '0')).join('').toUpperCase();
 }
 
 // ── GET /api/referrals/me ────────────────────────────────────────────────────
@@ -31,21 +33,18 @@ export async function handleReferralMe(request: Request, env: Env): Promise<Resp
 
   let code = family.referral_code;
 
-  // Lazy-initialise the code if not yet set
+  // Lazy-initialise the code if not yet set — use random, not derived from family ID
   if (!code) {
-    code = deriveCode(caller.family_id);
-
-    // Handle the rare case where derived code collides with another family
-    const collision = await env.DB
-      .prepare('SELECT id FROM families WHERE referral_code = ? AND id != ?')
-      .bind(code, caller.family_id)
-      .first();
-
-    if (collision) {
-      const arr = new Uint8Array(4);
-      crypto.getRandomValues(arr);
-      code = Array.from(arr).map(b => b.toString(16).padStart(2, '0')).join('').toUpperCase();
-    }
+    let attempts = 0;
+    do {
+      code = generateReferralCode();
+      const collision = await env.DB
+        .prepare('SELECT id FROM families WHERE referral_code = ? AND id != ?')
+        .bind(code, caller.family_id)
+        .first();
+      if (!collision) break;
+      attempts++;
+    } while (attempts < 5);
 
     await env.DB
       .prepare('UPDATE families SET referral_code = ? WHERE id = ?')

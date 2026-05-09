@@ -175,6 +175,7 @@ export async function handleApproveSharedExpense(
   expenseId: string,
 ): Promise<Response> {
   if (!req.auth) return jsonErr('Unauthorized', 401);
+  if (req.auth.role !== 'parent') return jsonErr('Forbidden — parents only', 403);
 
   const expense = await env.DB
     .prepare('SELECT * FROM shared_expenses WHERE id = ? AND family_id = ?')
@@ -224,6 +225,7 @@ export async function handleRejectSharedExpense(
   expenseId: string,
 ): Promise<Response> {
   if (!req.auth) return jsonErr('Unauthorized', 401);
+  if (req.auth.role !== 'parent') return jsonErr('Forbidden — parents only', 403);
 
   const expense = await env.DB
     .prepare('SELECT * FROM shared_expenses WHERE id = ? AND family_id = ?')
@@ -341,16 +343,17 @@ export async function handleReconcileSharedExpenses(req: AuthedRequest, env: Env
   }
 
   const now = Math.floor(Date.now() / 1000);
-  for (const e of expenses.results) {
-    await env.DB
-      .prepare(
-        `UPDATE shared_expenses
-         SET settlement_period = ?, reconciled_at = ?, reconciled_by = ?
-         WHERE id = ?`,
-      )
-      .bind(period, now, req.auth.sub, e.id)
-      .run();
-  }
+  await env.DB.batch(
+    expenses.results.map(e =>
+      env.DB
+        .prepare(
+          `UPDATE shared_expenses
+           SET settlement_period = ?, reconciled_at = ?, reconciled_by = ?
+           WHERE id = ?`,
+        )
+        .bind(period, now, req.auth.sub, e.id),
+    ),
+  );
 
   return jsonOk({
     period,
