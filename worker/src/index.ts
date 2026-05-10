@@ -148,6 +148,7 @@ import {
   handlePeekInvite,
   handleRedeemInvite,
   handleAddChild,
+  handleRegenerateChildInvite,
   handleSaveRegistrationStep,
 } from './routes/invite.js';
 import { handleInsights } from './routes/insights.js';
@@ -615,6 +616,8 @@ async function route(request: Request, env: Env, method: string, path: string): 
   // Invite code generation + child onboarding + registration persistence
   if (path === '/auth/invite/generate'        && method === 'POST') return withAuth(request, auth, env, handleGenerateInvite);
   if (path === '/auth/child/add'               && method === 'POST') return withAuth(request, auth, env, handleAddChild);
+  const regenChildInviteMatch = path.match(/^\/auth\/child\/([^/]+)\/invite$/);
+  if (regenChildInviteMatch && method === 'POST') return withAuth(request, auth, env, (req, e) => handleRegenerateChildInvite(req, e, regenChildInviteMatch[1]));
   if (path === '/auth/registration/save-step'  && method === 'POST') return withAuth(request, auth, env, handleSaveRegistrationStep);
 
   // Ledger
