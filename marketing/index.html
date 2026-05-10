@@ -1855,8 +1855,10 @@
 
       let currentScreen = 0;
       let approveTimer  = null;
+      let balanceCancelFlag = null;
 
       function setScreen(n) {
+        if (n !== 1) clearTimeout(approveTimer);
         if (n === currentScreen && n !== 1) return;
         currentScreen = n;
 
@@ -1865,8 +1867,8 @@
         features.forEach((f, i) => f.classList.toggle('demo-active', i === n));
 
         if (n !== 1) {
-          clearTimeout(approveTimer);
-          if (approveBtn) {
+          balanceCancelFlag = null;
+          if (approveBtn && balanceEl) {
             approveBtn.classList.remove('approved');
             balanceEl.textContent = '£12.50';
           }
@@ -1881,8 +1883,11 @@
       }
 
       function tickBalance(from, to, duration) {
+        const myFlag = {};
+        balanceCancelFlag = myFlag;
         const start = performance.now();
         function step(now) {
+          if (balanceCancelFlag !== myFlag) return;
           const progress = Math.min((now - start) / duration, 1);
           const value = from + (to - from) * progress;
           balanceEl.textContent = '£' + (value / 100).toFixed(2);
