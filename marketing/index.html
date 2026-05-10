@@ -414,6 +414,10 @@
 
     .promo-feature {
       padding: 48px 0;
+      min-height: 60vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
       opacity: 0.35;
       transition: opacity 0.4s ease;
     }
@@ -1847,14 +1851,14 @@
 
     /* ── Scroll-driven phone demo ── */
     function initScrollDemo() {
-      const screens   = Array.from(document.querySelectorAll('.demo-screen'));
-      const dots      = Array.from(document.querySelectorAll('.demo-dot'));
-      const features  = Array.from(document.querySelectorAll('.promo-feature'));
-      const approveBtn  = document.getElementById('demo-approve-btn');
-      const balanceEl   = document.getElementById('demo-balance');
+      const screens    = Array.from(document.querySelectorAll('.demo-screen'));
+      const dots       = Array.from(document.querySelectorAll('.demo-dot'));
+      const features   = Array.from(document.querySelectorAll('.promo-feature'));
+      const approveBtn = document.getElementById('demo-approve-btn');
+      const balanceEl  = document.getElementById('demo-balance');
 
-      let currentScreen = 0;
-      let approveTimer  = null;
+      let currentScreen    = -1;
+      let approveTimer     = null;
       let balanceCancelFlag = null;
 
       function setScreen(n) {
@@ -1896,21 +1900,45 @@
         requestAnimationFrame(step);
       }
 
-      setScreen(0);
+      /* Pick the feature whose centre is closest to the viewport centre */
+      function getActiveIndex() {
+        const mid = window.innerHeight / 2;
+        let best = 0, bestDist = Infinity;
+        features.forEach((f, i) => {
+          const rect = f.getBoundingClientRect();
+          const dist = Math.abs((rect.top + rect.bottom) / 2 - mid);
+          if (dist < bestDist) { bestDist = dist; best = i; }
+        });
+        return best;
+      }
 
+      /* Dot click handlers */
+      dots.forEach((dot, i) => {
+        dot.style.cursor = 'pointer';
+        dot.addEventListener('click', () => {
+          features[i].scrollIntoView({ behavior: 'smooth', block: 'center' });
+          setScreen(i);
+        });
+      });
+
+      /* Scroll listener (desktop) */
       if (window.matchMedia('(min-width: 768px)').matches) {
-        const observer = new IntersectionObserver(entries => {
-          entries.forEach(entry => {
-            if (entry.isIntersecting) {
-              const idx = features.indexOf(entry.target);
-              if (idx !== -1) setScreen(idx);
-            }
-          });
-        }, { threshold: 0.5 });
-
-        features.forEach(f => observer.observe(f));
+        let ticking = false;
+        function onScroll() {
+          if (!ticking) {
+            requestAnimationFrame(() => {
+              setScreen(getActiveIndex());
+              ticking = false;
+            });
+            ticking = true;
+          }
+        }
+        window.addEventListener('scroll', onScroll, { passive: true });
+        setScreen(getActiveIndex());
       } else {
+        /* Mobile: auto-advance every 3s */
         let idx = 0;
+        setScreen(0);
         setInterval(() => {
           idx = (idx + 1) % screens.length;
           setScreen(idx);
