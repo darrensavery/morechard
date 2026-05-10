@@ -431,13 +431,16 @@
     .phone-frame {
       width: 260px;
       height: 540px;
-      background: #0f1a14;
+      background: #f5f4f0;
       border-radius: 38px;
       border: 6px solid #2a3d30;
       box-shadow: 0 32px 64px rgba(0,0,0,0.35), inset 0 0 0 1px rgba(255,255,255,0.06);
       position: relative;
       overflow: hidden;
+      display: flex;
+      flex-direction: column;
     }
+    body.dark .phone-frame { background: #1a2a1f; }
 
     /* Notch */
     .phone-frame::before {
@@ -464,16 +467,22 @@
     }
 
     /* ── Demo screens ── */
+    .demo-screen-wrap {
+      position: relative;
+      flex: 1;
+      overflow: hidden;
+    }
     .demo-screen {
       position: absolute;
       inset: 0;
       background: #f5f4f0;
       opacity: 0;
-      transform: translateY(12px);
-      transition: opacity 0.5s ease, transform 0.5s ease;
+      transform: translateY(10px);
+      transition: opacity 0.4s ease, transform 0.4s ease;
       pointer-events: none;
       display: flex;
       flex-direction: column;
+      overflow: hidden;
     }
     body.dark .demo-screen { background: #1a2a1f; }
 
@@ -488,9 +497,11 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 28px 14px 0;
+      padding: 28px 14px 6px;
       flex-shrink: 0;
+      background: #f5f4f0;
     }
+    body.dark .ds-topbar { background: #1a2a1f; }
     .ds-logo {
       display: flex;
       align-items: center;
@@ -515,11 +526,11 @@
     .ds-tabnav {
       display: flex;
       border-bottom: 1px solid rgba(0,0,0,0.07);
-      margin: 8px 0 0;
       position: relative;
       flex-shrink: 0;
+      background: #f5f4f0;
     }
-    body.dark .ds-tabnav { border-color: rgba(255,255,255,0.08); }
+    body.dark .ds-tabnav { border-color: rgba(255,255,255,0.08); background: #1a2a1f; }
     .ds-tabnav-item {
       flex: 1;
       text-align: center;
@@ -1447,8 +1458,8 @@
         <div class="promo-phone">
           <div class="phone-frame">
 
-            <!-- Shared top bar (logo + avatar) — sits above all screens -->
-            <div class="ds-topbar" style="position:relative;z-index:5;background:inherit;">
+            <!-- Shared top bar (logo + avatar) -->
+            <div class="ds-topbar">
               <div class="ds-logo">
                 <svg width="16" height="16" viewBox="0 0 441 442" fill="none" aria-hidden="true">
                   <path d="M427.64,1.69l-202.38,139.41c-1.39.97-3.04,1.46-4.74,1.46s-3.35-.49-4.74-1.46L13.42,1.69C7.64-2.79,0,2.16,0,10.37v421.58c0,5.72,3.89,10.35,8.68,10.35h168.33c5.21,0,9.82-3.37,11.4-8.33 14.85-46.07,6.41-120.47-23.32-144.21 16.85,37.37,44.08,54.11,44.08,54.11s27.23-16.74,44.08-54.11c-29.73,23.74-38.17,98.14-23.32,144.21 1.58,4.96,6.19,8.32,11.4,8.32h168.37c4.8,0,8.68-4.64,8.68-10.35V10.37c0-8.22-7.64-13.16-13.42-8.68Z" fill="#00959c"/>
@@ -1459,12 +1470,15 @@
             </div>
 
             <!-- Shared top tab nav -->
-            <div class="ds-tabnav" id="demo-tabnav" style="position:relative;z-index:5;background:inherit;">
+            <div class="ds-tabnav" id="demo-tabnav">
               <div class="ds-tabnav-item active" data-screen="0">Chores</div>
               <div class="ds-tabnav-item" data-screen="1">Activity</div>
               <div class="ds-tabnav-item" data-screen="2">Insights</div>
               <div class="ds-tabnav-indicator" id="demo-tabnav-indicator"></div>
             </div>
+
+            <!-- Screens wrap — screens stack here via position:absolute -->
+            <div class="demo-screen-wrap">
 
             <!-- Screen 1: Chore list -->
             <div class="demo-screen active" id="demo-screen-0">
@@ -1550,6 +1564,7 @@
               </div>
             </div>
 
+            </div><!-- /demo-screen-wrap -->
           </div><!-- /phone-frame -->
 
           <!-- Progress dots -->
