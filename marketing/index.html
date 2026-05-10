@@ -580,8 +580,7 @@
       100% { transform: scale(1);   opacity: 1; }
     }
     .ds-chore.anim-slide {
-      opacity: 0;
-      animation: choreSlideIn 0.38s cubic-bezier(0,0,0.2,1) forwards;
+      animation: choreSlideIn 0.38s cubic-bezier(0,0,0.2,1) both;
     }
     .ds-chore.overdue.anim-flash {
       animation: choreFlashRed 0.7s ease 0.1s 2;
@@ -1548,7 +1547,7 @@
                 <div class="ds-greeting">Ella's Chores</div>
               </div>
               <div class="ds-chore-list" id="demo-chore-list">
-                <div class="ds-chore overdue" id="dc-overdue" style="opacity:0">
+                <div class="ds-chore overdue" id="dc-overdue" style="opacity:0;">
                   <div class="ds-chore-icon">
                     <svg width="13" height="13" viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="2"/><path d="M10 6v4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="10" cy="14" r="1" fill="currentColor"/></svg>
                   </div>
@@ -2095,10 +2094,11 @@
         navIndicator.style.width = item.offsetWidth + 'px';
       }
 
-      /* Helper to restart a CSS animation by removing/re-adding the class */
+      /* Helper to restart a CSS animation — clears inline opacity so keyframes take over */
       function reAnimate(el, cls) {
+        el.style.opacity = '';   /* remove inline override so animation controls it */
         el.classList.remove(cls);
-        void el.offsetWidth; /* force reflow */
+        void el.offsetWidth;     /* force reflow */
         el.classList.add(cls);
       }
 
@@ -2112,11 +2112,11 @@
         const doneEl     = document.getElementById('dc-done');
         const badgeEl    = document.getElementById('dc-badge');
 
-        /* Reset all rows */
+        /* Reset all rows — remove animation classes, force hidden via opacity */
         [overdueEl, approvalEl, doneEl].forEach(el => {
           if (!el) return;
-          el.style.opacity = '0';
           el.classList.remove('anim-slide', 'anim-flash');
+          el.style.opacity = '0';
         });
         if (badgeEl) badgeEl.classList.remove('anim-pop');
         if (addedChore) { addedChore.remove(); addedChore = null; }
