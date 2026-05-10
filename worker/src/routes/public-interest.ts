@@ -1,5 +1,6 @@
 import { Env } from '../types.js'
 import { json, error, clientIp } from '../lib/response.js'
+import { EMAIL_RE } from '../lib/validation.js'
 
 // Simple in-memory rate limiter: 1 submission per IP per 60 seconds.
 // Resets on worker restart (cold start) — acceptable for a low-traffic promo page.
@@ -20,9 +21,11 @@ function isRateLimited(ip: string): boolean {
   return false
 }
 
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/
-
 export async function handlePublicInterest(request: Request, env: Env): Promise<Response> {
+  if (!env.BREVO_API_KEY) {
+    return error('Service unavailable', 503)
+  }
+
   const ip = clientIp(request)
 
   if (isRateLimited(ip)) {
