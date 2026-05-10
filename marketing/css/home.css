@@ -1058,3 +1058,10 @@ body.dark .ll-win-icon { background: rgba(0,149,156,0.18); }
 @media (max-width: 480px) {
   .hero-headline { font-size: 36px; }
 }
+
+@media (max-width: 600px) {
+  .ll-tabs { display: grid; grid-template-columns: 1fr 1fr; }
+  .ll-tab-indicator { display: none; }
+  .ll-tab.active { background: #fff; }
+  body.dark .ll-tab.active { background: rgba(255,255,255,0.12); }
+}
