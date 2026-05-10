@@ -661,9 +661,9 @@
       background: transparent;
       border: none;
       padding: 0 22px;
-      height: 52px;
+      height: 60px;
       font-family: var(--font-body);
-      font-size: 15px;
+      font-size: 16px;
       font-weight: 400;
       color: var(--text-dark);
       outline: none;
@@ -678,9 +678,9 @@
       color: #fff;
       font-family: var(--font-body);
       font-weight: 500;
-      font-size: 14px;
-      padding: 0 22px;
-      height: 52px;
+      font-size: 15px;
+      padding: 0 26px;
+      height: 60px;
       border: none;
       cursor: pointer;
       border-radius: 0 var(--r-pill) var(--r-pill) 0;
@@ -842,14 +842,15 @@
         border: 1px solid rgba(27,45,46,0.25);
         border-radius: var(--r-pill);
         background: transparent;
-        height: 56px;
-        padding: 0 20px;
+        height: 64px;
+        padding: 0 22px;
+        font-size: 16px;
       }
       body.dark .form-input {
         border-color: rgba(255,255,255,0.35);
         background: transparent;
       }
-      .form-submit { width: 100%; border-radius: var(--r-pill); justify-content: center; height: 56px; }
+      .form-submit { width: 100%; border-radius: var(--r-pill); justify-content: center; height: 64px; font-size: 16px; }
     }
   </style>
 </head>
@@ -1352,7 +1353,7 @@
       }
       setLoading(true);
       try {
-        const res = await fetch('https://darren-savery.workers.dev/api/public/interest', {
+        const res = await fetch('https://morechard-api.darren-savery.workers.dev/api/public/interest', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email, consent: true }),
