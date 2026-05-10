@@ -340,6 +340,42 @@ export async function handleAddChild(request: Request, env: Env): Promise<Respon
   return json({ child_id: childId, invite_code: code, expires_at: expiresAt }, 201);
 }
 
+// ── POST /auth/child/:childId/invite ─────────────────────────────────────────
+// Parent regenerates a child invite code. Invalidates any existing unredeemed
+// code for this child and issues a fresh one valid for 72h.
+// Returns: { invite_code: string; expires_at: number }
+export async function handleRegenerateChildInvite(request: Request, env: Env, childId: string): Promise<Response> {
+  const caller = (request as AuthedRequest).auth;
+  if (!caller || caller.role !== 'parent') return error('Unauthorised', 401);
+
+  // Verify the child belongs to the caller's family
+  const child = await env.DB
+    .prepare(`SELECT id FROM users WHERE id = ? AND family_id = ?`)
+    .bind(childId, caller.family_id)
+    .first<{ id: string }>();
+
+  if (!child) return error('Child not found', 404);
+
+  const code      = generateCode();
+  const now       = Math.floor(Date.now() / 1000);
+  const expiresAt = now + INVITE_TTL;
+
+  // Invalidate all existing unredeemed codes for this child, then insert fresh one
+  await env.DB.batch([
+    env.DB.prepare(`
+      DELETE FROM invite_codes
+      WHERE child_id = ? AND redeemed_at IS NULL
+    `).bind(childId),
+
+    env.DB.prepare(`
+      INSERT INTO invite_codes (code, family_id, created_by, role, expires_at, child_id)
+      VALUES (?, ?, ?, 'child', ?, ?)
+    `).bind(code, caller.family_id, caller.sub, expiresAt, childId),
+  ]);
+
+  return json({ invite_code: code, expires_at: expiresAt }, 200);
+}
+
 // ── POST /auth/registration/save-step ───────────────────────────────────────
 // Upserts the in-progress registration state. Called after each stage.
 // Body: { step: 1–4, data: { ... } }
