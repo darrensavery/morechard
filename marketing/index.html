@@ -565,13 +565,29 @@
     }
     body.dark .ds-greeting { color: #ededf3; }
 
-    /* Chore appearing animation */
+    /* Chore list animations */
     @keyframes choreSlideIn {
-      from { opacity: 0; transform: translateY(-8px); }
-      to   { opacity: 1; transform: translateY(0); }
+      from { opacity: 0; transform: translateX(18px); }
+      to   { opacity: 1; transform: translateX(0); }
     }
-    .ds-chore.animating-in {
-      animation: choreSlideIn 0.4s cubic-bezier(0,0,0.2,1) forwards;
+    @keyframes choreFlashRed {
+      0%,100% { background: rgba(224,82,82,0.06); }
+      40%     { background: rgba(224,82,82,0.22); }
+    }
+    @keyframes approvalPulseIn {
+      0%   { transform: scale(0.7); opacity: 0; }
+      60%  { transform: scale(1.1); }
+      100% { transform: scale(1);   opacity: 1; }
+    }
+    .ds-chore.anim-slide {
+      opacity: 0;
+      animation: choreSlideIn 0.38s cubic-bezier(0,0,0.2,1) forwards;
+    }
+    .ds-chore.overdue.anim-flash {
+      animation: choreFlashRed 0.7s ease 0.1s 2;
+    }
+    .ds-approval-badge.anim-pop {
+      animation: approvalPulseIn 0.4s cubic-bezier(0,0,0.2,1) forwards;
     }
 
     /* Overdue chore */
@@ -1532,24 +1548,24 @@
                 <div class="ds-greeting">Ella's Chores</div>
               </div>
               <div class="ds-chore-list" id="demo-chore-list">
-                <div class="ds-chore overdue">
+                <div class="ds-chore overdue" id="dc-overdue" style="opacity:0">
                   <div class="ds-chore-icon">
                     <svg width="13" height="13" viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="2"/><path d="M10 6v4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="10" cy="14" r="1" fill="currentColor"/></svg>
                   </div>
                   <span class="ds-chore-title">Make your bed</span>
                   <span class="ds-overdue-badge">Overdue</span>
                 </div>
-                <div class="ds-chore needs-approval">
+                <div class="ds-chore needs-approval" id="dc-approval" style="opacity:0">
                   <div class="ds-chore-icon">
                     <svg width="13" height="13" viewBox="0 0 20 20" fill="none" aria-hidden="true"><rect x="4" y="3" width="12" height="14" rx="2" stroke="currentColor" stroke-width="2"/><path d="M7 7h6M7 10h6M7 13h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
                   </div>
                   <span class="ds-chore-title">Tidied bedroom</span>
-                  <div class="ds-approval-badge">
+                  <div class="ds-approval-badge" id="dc-badge">
                     <span class="ds-approval-dot"></span>
                     Review
                   </div>
                 </div>
-                <div class="ds-chore">
+                <div class="ds-chore" id="dc-done" style="opacity:0">
                   <div class="ds-chore-icon">
                     <svg width="13" height="13" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 10l4 4 8-8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                   </div>
@@ -2068,7 +2084,7 @@
       let currentScreen     = -1;
       let approveTimer      = null;
       let balanceCancelFlag = null;
-      let choreAnimTimer    = null;
+      let choreTimers       = [];
       let addedChore        = null;
 
       /* Move the teal indicator under the active nav tab */
@@ -2079,25 +2095,63 @@
         navIndicator.style.width = item.offsetWidth + 'px';
       }
 
-      /* Slide a new chore into Screen 0, reset on each visit */
-      function animateNewChore() {
-        if (!choreList) return;
+      /* Helper to restart a CSS animation by removing/re-adding the class */
+      function reAnimate(el, cls) {
+        el.classList.remove(cls);
+        void el.offsetWidth; /* force reflow */
+        el.classList.add(cls);
+      }
+
+      /* Staggered chore sequence: slide in rows, flash overdue, pop badge, append new chore */
+      function runChoreAnimation() {
+        choreTimers.forEach(clearTimeout);
+        choreTimers = [];
+
+        const overdueEl  = document.getElementById('dc-overdue');
+        const approvalEl = document.getElementById('dc-approval');
+        const doneEl     = document.getElementById('dc-done');
+        const badgeEl    = document.getElementById('dc-badge');
+
+        /* Reset all rows */
+        [overdueEl, approvalEl, doneEl].forEach(el => {
+          if (!el) return;
+          el.style.opacity = '0';
+          el.classList.remove('anim-slide', 'anim-flash');
+        });
+        if (badgeEl) badgeEl.classList.remove('anim-pop');
         if (addedChore) { addedChore.remove(); addedChore = null; }
-        const chore = document.createElement('div');
-        chore.className = 'ds-chore animating-in';
-        chore.innerHTML = `
-          <div class="ds-chore-icon">
-            <svg width="13" height="13" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M3 17l4-4 3 3 7-10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          </div>
-          <span class="ds-chore-title">Feed the cat</span>
-          <span class="ds-chore-amount">£0.75</span>`;
-        choreList.appendChild(chore);
-        addedChore = chore;
+
+        function t(ms, fn) { choreTimers.push(setTimeout(fn, ms)); }
+
+        /* Row 1 — overdue slides in */
+        t(200, () => { if (overdueEl) reAnimate(overdueEl, 'anim-slide'); });
+        /* Row 1 — flash red after it lands */
+        t(700, () => { if (overdueEl) reAnimate(overdueEl, 'anim-flash'); });
+        /* Row 2 — approval slides in */
+        t(500, () => { if (approvalEl) reAnimate(approvalEl, 'anim-slide'); });
+        /* Badge pops */
+        t(950, () => { if (badgeEl) reAnimate(badgeEl, 'anim-pop'); });
+        /* Row 3 — done slides in */
+        t(800, () => { if (doneEl) reAnimate(doneEl, 'anim-slide'); });
+        /* New chore appears */
+        t(2000, () => {
+          if (!choreList) return;
+          const chore = document.createElement('div');
+          chore.className = 'ds-chore anim-slide';
+          chore.innerHTML = `
+            <div class="ds-chore-icon" style="background:rgba(0,149,156,0.12);color:#00959c;">
+              <svg width="13" height="13" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M3 17l4-4 3 3 7-10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </div>
+            <span class="ds-chore-title">Feed the cat</span>
+            <span class="ds-chore-amount">£0.75</span>`;
+          choreList.appendChild(chore);
+          addedChore = chore;
+        });
       }
 
       function setScreen(n) {
         if (n !== 1) clearTimeout(approveTimer);
-        clearTimeout(choreAnimTimer);
+        choreTimers.forEach(clearTimeout); choreTimers = [];
         if (n === currentScreen && n !== 1) return;
         currentScreen = n;
 
@@ -2116,9 +2170,9 @@
           }
         }
 
-        /* Screen 0 (Chores) — new chore slides in after 1.4s */
+        /* Screen 0 (Chores) — full staggered animation sequence */
         if (n === 0) {
-          choreAnimTimer = setTimeout(animateNewChore, 1400);
+          runChoreAnimation();
         }
 
         /* Screen 1 (Activity) — approve animation after 1s */
