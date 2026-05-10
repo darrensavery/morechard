@@ -3,7 +3,6 @@ import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import path from 'path'
 import { execSync } from 'child_process'
-import { cpSync } from 'fs'
 
 const gitSha = (() => {
   try { return execSync('git rev-parse --short HEAD').toString().trim() }
@@ -14,17 +13,6 @@ export default defineConfig({
   plugins: [
     react(),
     tailwindcss(),
-    {
-      name: 'copy-marketing',
-      closeBundle() {
-        // Copy marketing/ into dist/ so morechard.com serves the landing page
-        cpSync(
-          path.resolve(__dirname, '../marketing'),
-          path.resolve(__dirname, '../dist'),
-          { recursive: true, force: true }
-        )
-      },
-    },
   ],
   define: {
     __APP_VERSION__: JSON.stringify(gitSha),
