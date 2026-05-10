@@ -6,14 +6,14 @@
  * Parent (FamilySettings) owns: teen modes, growth settings, busy flags.
  */
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import type { FormEvent } from 'react'
 import {
   Shield, Calendar, AlertTriangle, Check,
   TreePine, Lock, CreditCard,
 } from 'lucide-react'
 import type { ChildRecord, ChildGrowthSettings } from '../../../lib/api'
-import { renameChild, setChildPin as apiSetChildPin, setPaymentHandles, getFamilyId } from '../../../lib/api'
+import { renameChild, setChildPin as apiSetChildPin, setPaymentHandles, getFamilyId, regenerateChildInvite } from '../../../lib/api'
 import { getDetails, setDetails, clearDetails } from '../../../lib/localBankDetails'
 import { cn } from '../../../lib/utils'
 import { SettingsRow, SectionCard, SectionHeader } from '../shared'
@@ -52,6 +52,105 @@ interface Props {
   onBack:           () => void
 }
 
+
+// ── Invite Code Sheet ─────────────────────────────────────────────────────────
+
+function InviteCodeSheet({
+  child, onClose,
+}: { child: ChildRecord; onClose: () => void }) {
+  const [code,    setCode]    = useState<string | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error,   setError]   = useState<string | null>(null)
+  const [copied,  setCopied]  = useState(false)
+
+  useEffect(() => {
+    let cancelled = false
+    regenerateChildInvite(child.id)
+      .then(res => { if (!cancelled) { setCode(res.invite_code); setLoading(false) } })
+      .catch(() => { if (!cancelled) { setError('Could not generate code — please try again.'); setLoading(false) } })
+    return () => { cancelled = true }
+  }, [child.id])
+
+  async function copyCode() {
+    if (!code) return
+    await navigator.clipboard.writeText(code)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  async function shareCode() {
+    if (!code) return
+    const text = `Join ${child.display_name}'s family on Morechard! Download the app at app.morechard.com and enter code: ${code}`
+    if (navigator.share) {
+      await navigator.share({ text })
+    } else {
+      await copyCode()
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40" onClick={onClose}>
+      <div
+        className="w-full max-w-lg bg-[var(--color-surface)] rounded-t-2xl p-6 space-y-5"
+        onClick={e => e.stopPropagation()}
+      >
+        <div className="text-center space-y-1">
+          <p className="text-[17px] font-bold text-[var(--color-text)]">
+            {child.display_name}&apos;s Invite Code
+          </p>
+          <p className="text-[12px] text-[var(--color-text-muted)]">
+            Share this code so {child.display_name} can log in on their device
+          </p>
+        </div>
+
+        {loading && (
+          <p className="text-center text-[14px] text-[var(--color-text-muted)] py-4">Generating…</p>
+        )}
+
+        {error && (
+          <p className="text-center text-[13px] text-red-500">{error}</p>
+        )}
+
+        {code && !loading && (
+          <>
+            <div className="flex justify-center">
+              <p className="text-[40px] font-extrabold tracking-[0.25em] text-[var(--brand-primary)] font-mono select-all">
+                {code}
+              </p>
+            </div>
+            <p className="text-[11px] text-[var(--color-text-muted)] text-center">
+              Valid for 72 hours · Single use · Generating a new code invalidates the old one
+            </p>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={copyCode}
+                className="flex-1 py-3 rounded-xl text-[14px] font-bold border border-[var(--color-border)] text-[var(--color-text)] hover:bg-[var(--color-surface-alt)] transition-colors cursor-pointer"
+              >
+                {copied ? '✓ Copied' : 'Copy Code'}
+              </button>
+              <button
+                type="button"
+                onClick={shareCode}
+                className="flex-1 py-3 rounded-xl text-[14px] font-bold bg-[var(--brand-primary)] text-white hover:opacity-90 transition-opacity cursor-pointer"
+              >
+                Share
+              </button>
+            </div>
+          </>
+        )}
+
+        <button
+          type="button"
+          onClick={onClose}
+          className="w-full text-[13px] text-[var(--color-text-muted)] hover:underline cursor-pointer pt-1"
+        >
+          Close
+        </button>
+      </div>
+    </div>
+  )
+}
 
 // ── Reset PIN Sheet ───────────────────────────────────────────────────────────
 
@@ -348,6 +447,7 @@ export function ChildProfileSettings({
   const [nameSaving,   setNameSaving]   = useState(false)
   const [nameError,    setNameError]    = useState<string | null>(null)
   const [showPinSheet, setShowPinSheet] = useState(false)
+  const [showInviteSheet, setShowInviteSheet] = useState(false)
   const [sortCode, setSortCode] = useState(
     () => getDetails(familyId, child.id)?.sortCode ?? '',
   )
@@ -425,6 +525,12 @@ export function ChildProfileSettings({
           onClose={() => setShowPinSheet(false)}
         />
       )}
+      {showInviteSheet && (
+        <InviteCodeSheet
+          child={child}
+          onClose={() => setShowInviteSheet(false)}
+        />
+      )}
 
       <div className="space-y-4">
         <SectionHeader title={child.display_name} onBack={onBack} />
@@ -478,6 +584,12 @@ export function ChildProfileSettings({
               label="Reset PIN"
               description="Update this child's 4-digit login PIN"
               onClick={() => setShowPinSheet(true)}
+            />
+            <SettingsRow
+              icon={<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg>}
+              label="Invite Code"
+              description="Get a 6-digit code so your child can log in"
+              onClick={() => setShowInviteSheet(true)}
             />
             <SettingsRow
               icon={<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>}
