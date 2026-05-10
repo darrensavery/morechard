@@ -403,25 +403,20 @@
     }
     body.dark .promo-feature-desc { color: var(--text-light-sub); }
 
-    /* ── Scroll demo layout ── */
-    .promo-grid {
-      align-items: flex-start; /* override center so sticky works */
-    }
-
-    .promo-feature-list {
-      gap: 0; /* remove gap — each item gets its own padding for scroll distance */
-    }
-
+    /* ── Tab-driven phone demo layout ── */
     .promo-feature {
-      padding: 48px 0;
-      min-height: 60vh;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      opacity: 0.35;
-      transition: opacity 0.4s ease;
+      padding: 20px 16px;
+      border-radius: var(--r-card);
+      cursor: pointer;
+      opacity: 0.45;
+      transition: opacity 0.3s ease, background 0.3s ease;
     }
-    .promo-feature.demo-active { opacity: 1; }
+    .promo-feature:hover { opacity: 0.75; }
+    .promo-feature.demo-active {
+      opacity: 1;
+      background: rgba(0,149,156,0.06);
+    }
+    body.dark .promo-feature.demo-active { background: rgba(0,149,156,0.1); }
 
     /* ── Phone frame (sticky) ── */
     .promo-phone {
@@ -685,7 +680,7 @@
     body.dark .demo-dot { background: rgba(255,255,255,0.2); }
     .demo-dot.active { background: var(--teal); transform: scale(1.3); }
 
-    /* ── Mobile: stack layout, no sticky ── */
+    /* ── Mobile: stack layout ── */
     @media (max-width: 767px) {
       .promo-grid {
         grid-template-columns: 1fr;
@@ -695,10 +690,6 @@
         order: -1;
         margin-bottom: 40px;
       }
-      .promo-feature {
-        opacity: 1;
-      }
-      .promo-feature.demo-active { opacity: 1; }
     }
 
     /* ── Pillar cards ── */
@@ -1849,7 +1840,7 @@
       }
     }
 
-    /* ── Scroll-driven phone demo ── */
+    /* ── Tab-driven phone demo ── */
     function initScrollDemo() {
       const screens    = Array.from(document.querySelectorAll('.demo-screen'));
       const dots       = Array.from(document.querySelectorAll('.demo-dot'));
@@ -1857,8 +1848,8 @@
       const approveBtn = document.getElementById('demo-approve-btn');
       const balanceEl  = document.getElementById('demo-balance');
 
-      let currentScreen    = -1;
-      let approveTimer     = null;
+      let currentScreen     = -1;
+      let approveTimer      = null;
       let balanceCancelFlag = null;
 
       function setScreen(n) {
@@ -1900,50 +1891,39 @@
         requestAnimationFrame(step);
       }
 
-      /* Pick the feature whose centre is closest to the viewport centre */
-      function getActiveIndex() {
-        const mid = window.innerHeight / 2;
-        let best = 0, bestDist = Infinity;
-        features.forEach((f, i) => {
-          const rect = f.getBoundingClientRect();
-          const dist = Math.abs((rect.top + rect.bottom) / 2 - mid);
-          if (dist < bestDist) { bestDist = dist; best = i; }
-        });
-        return best;
-      }
+      /* Click on a feature row to switch screen */
+      features.forEach((f, i) => {
+        f.addEventListener('click', () => setScreen(i));
+      });
 
-      /* Dot click handlers */
+      /* Click on a dot to switch screen */
       dots.forEach((dot, i) => {
         dot.style.cursor = 'pointer';
-        dot.addEventListener('click', () => {
-          features[i].scrollIntoView({ behavior: 'smooth', block: 'center' });
-          setScreen(i);
+        dot.addEventListener('click', () => setScreen(i));
+      });
+
+      /* Auto-advance every 3s, pauses on interaction */
+      let autoTimer = null;
+      function startAuto() {
+        stopAuto();
+        autoTimer = setInterval(() => {
+          setScreen((currentScreen + 1) % screens.length);
+        }, 3000);
+      }
+      function stopAuto() {
+        clearInterval(autoTimer);
+      }
+
+      /* Pause auto-advance on any manual interaction */
+      [...features, ...dots].forEach(el => {
+        el.addEventListener('click', () => {
+          stopAuto();
+          setTimeout(startAuto, 8000); /* resume after 8s idle */
         });
       });
 
-      /* Scroll listener (desktop) */
-      if (window.matchMedia('(min-width: 768px)').matches) {
-        let ticking = false;
-        function onScroll() {
-          if (!ticking) {
-            requestAnimationFrame(() => {
-              setScreen(getActiveIndex());
-              ticking = false;
-            });
-            ticking = true;
-          }
-        }
-        window.addEventListener('scroll', onScroll, { passive: true });
-        setScreen(getActiveIndex());
-      } else {
-        /* Mobile: auto-advance every 3s */
-        let idx = 0;
-        setScreen(0);
-        setInterval(() => {
-          idx = (idx + 1) % screens.length;
-          setScreen(idx);
-        }, 3000);
-      }
+      setScreen(0);
+      startAuto();
     }
 
     initScrollDemo();
