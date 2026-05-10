@@ -19,6 +19,7 @@ export interface Env {
   POSTHOG_HOST:         string;
   OPENAI_API_KEY:        string;
   FRESHDESK_SSO_SECRET:  string;
+  BREVO_API_KEY:         string;
 }
 
 // Completion lifecycle statuses
