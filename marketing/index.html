@@ -880,7 +880,10 @@
 
   <!-- ── Hero — full-bleed orchard image ── -->
   <section id="hero">
-    <img class="hero-img" src="hero-orchard_3_2.webp" alt="Morechard orchard illustration" loading="eager" />
+    <picture>
+      <source media="(max-width: 720px)" srcset="hero-orchard_2_3.webp" />
+      <img class="hero-img" src="hero-orchard_3_2.webp" alt="Morechard orchard illustration" loading="eager" />
+    </picture>
     <div class="hero-scrim"></div>
     <div class="hero-content">
       <div class="hero-badge reveal">
