@@ -1845,6 +1845,76 @@
       }
     }
 
+    /* ── Scroll-driven phone demo ── */
+    function initScrollDemo() {
+      const screens   = Array.from(document.querySelectorAll('.demo-screen'));
+      const dots      = Array.from(document.querySelectorAll('.demo-dot'));
+      const features  = Array.from(document.querySelectorAll('.promo-feature'));
+      const approveBtn  = document.getElementById('demo-approve-btn');
+      const balanceEl   = document.getElementById('demo-balance');
+
+      let currentScreen = 0;
+      let approveTimer  = null;
+
+      function setScreen(n) {
+        if (n === currentScreen && n !== 1) return;
+        currentScreen = n;
+
+        screens.forEach((s, i) => s.classList.toggle('active', i === n));
+        dots.forEach((d, i) => d.classList.toggle('active', i === n));
+        features.forEach((f, i) => f.classList.toggle('demo-active', i === n));
+
+        if (n !== 1) {
+          clearTimeout(approveTimer);
+          if (approveBtn) {
+            approveBtn.classList.remove('approved');
+            balanceEl.textContent = '£12.50';
+          }
+        }
+
+        if (n === 1 && approveBtn) {
+          approveTimer = setTimeout(() => {
+            approveBtn.classList.add('approved');
+            tickBalance(1250, 1400, 800);
+          }, 600);
+        }
+      }
+
+      function tickBalance(from, to, duration) {
+        const start = performance.now();
+        function step(now) {
+          const progress = Math.min((now - start) / duration, 1);
+          const value = from + (to - from) * progress;
+          balanceEl.textContent = '£' + (value / 100).toFixed(2);
+          if (progress < 1) requestAnimationFrame(step);
+        }
+        requestAnimationFrame(step);
+      }
+
+      setScreen(0);
+
+      if (window.matchMedia('(min-width: 768px)').matches) {
+        const observer = new IntersectionObserver(entries => {
+          entries.forEach(entry => {
+            if (entry.isIntersecting) {
+              const idx = features.indexOf(entry.target);
+              if (idx !== -1) setScreen(idx);
+            }
+          });
+        }, { threshold: 0.5 });
+
+        features.forEach(f => observer.observe(f));
+      } else {
+        let idx = 0;
+        setInterval(() => {
+          idx = (idx + 1) % screens.length;
+          setScreen(idx);
+        }, 3000);
+      }
+    }
+
+    initScrollDemo();
+
     form.addEventListener('submit', async e => {
       e.preventDefault();
       clearError();
