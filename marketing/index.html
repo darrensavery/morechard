@@ -6,374 +6,466 @@
   <title>Morechard — Coming Soon</title>
   <meta name="description" content="The chore tracker for any family — with real financial literacy built in and a tamper-proof record underneath. Coming soon." />
 
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,800;1,700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,400&display=swap" rel="stylesheet" />
 
   <style>
-    /* ── Reset & Variables ── */
+    /* ── Reset ── */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+    /* ── Design tokens ── */
     :root {
-      --parchment:    #f9f7f2;
-      --parchment-d:  #f0ece2;
-      --teal:         #00959c;
-      --teal-dark:    #007a80;
-      --gold:         #e6b222;
-      --gold-dark:    #c99b1a;
-      --canopy:       #1b2d2e;
-      --canopy-light: #2d4a4b;
-      --canopy-faint: #3a5a5b;
-      --text:         #1b2d2e;
-      --text-muted:   #5a7475;
-      --white:        #ffffff;
-      --radius:       12px;
-      --radius-sm:    8px;
-      --font-display: 'Playfair Display', Georgia, serif;
+      --bg-cream:      #f9f7f2;
+      --bg-dark:       #1b2d2e;
+      --teal:          #00959c;
+      --teal-dark:     #007a80;
+      --gold:          #e6b222;
+      --gold-dark:     #c99b1a;
+      --text-dark:     #1b2d2e;
+      --text-sub:      #5a7475;
+      --text-light:    #ededf0;
+      --text-light-sub:rgba(237,237,240,0.65);
+      --border-light:  rgba(27,45,46,0.09);
+      --border-dark:   rgba(255,255,255,0.09);
+      --card-light:    #f0ece0;
+      --card-dark:     rgba(255,255,255,0.06);
+
+      --font-display: 'Lora', Georgia, serif;
       --font-body:    'DM Sans', system-ui, sans-serif;
-      --shadow-sm:    0 2px 8px rgba(27,45,46,0.08);
-      --shadow-md:    0 4px 20px rgba(27,45,46,0.12);
-      --shadow-lg:    0 8px 40px rgba(27,45,46,0.16);
+
+      --r-pill:  32px;
+      --r-card:  12px;
+      --r-sm:     8px;
+
+      --h-nav: 72px;
+      --max-w: 1100px;
+      --pad-x: 32px;
     }
 
     html { scroll-behavior: smooth; }
 
+    /* ── Scroll-driven background ── */
     body {
       font-family: var(--font-body);
-      background: var(--parchment);
-      color: var(--text);
-      line-height: 1.6;
       -webkit-font-smoothing: antialiased;
+      background-color: var(--bg-cream);
+      color: var(--text-dark);
+      transition: background-color 0.25s ease, color 0.25s ease;
     }
-
-    /* ── Grain texture overlay ── */
-    body::before {
-      content: '';
-      position: fixed;
-      inset: 0;
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
-      pointer-events: none;
-      z-index: 0;
+    body.dark {
+      background-color: var(--bg-dark);
+      color: var(--text-light);
     }
 
     /* ── Scroll reveal ── */
     .reveal {
       opacity: 0;
-      transform: translateY(24px);
-      transition: opacity 0.6s ease, transform 0.6s ease;
+      transform: translateY(18px);
+      transition: opacity 0.65s cubic-bezier(0,0,0.2,1), transform 0.65s cubic-bezier(0,0,0.2,1);
     }
     .reveal.visible { opacity: 1; transform: translateY(0); }
-    .reveal-delay-1 { transition-delay: 0.1s; }
-    .reveal-delay-2 { transition-delay: 0.2s; }
-    .reveal-delay-3 { transition-delay: 0.3s; }
-    .reveal-delay-4 { transition-delay: 0.4s; }
+    .d1 { transition-delay: 0.08s; }
+    .d2 { transition-delay: 0.16s; }
+    .d3 { transition-delay: 0.24s; }
+    .d4 { transition-delay: 0.32s; }
 
     /* ── Nav ── */
     nav {
-      position: sticky;
-      top: 0;
-      z-index: 100;
-      background: var(--parchment);
-      border-bottom: 1px solid transparent;
-      padding: 0 max(24px, calc((100vw - 1100px) / 2));
-      height: 64px;
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 200;
+      height: var(--h-nav);
       display: flex;
       align-items: center;
       justify-content: space-between;
-      transition: border-color 0.3s, box-shadow 0.3s;
+      padding: 0 var(--pad-x);
+      background: transparent;
+      transition: background-color 0.2s ease, border-color 0.2s ease;
+      border-bottom: 1px solid transparent;
     }
     nav.scrolled {
-      border-color: rgba(27,45,46,0.1);
-      box-shadow: var(--shadow-sm);
+      background: var(--bg-cream);
+      border-color: var(--border-light);
     }
 
-    .nav-wordmark {
-      font-family: var(--font-display);
-      font-weight: 800;
-      font-size: 1.5rem;
-      color: var(--canopy);
+    /* Logo mark */
+    .nav-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
       text-decoration: none;
-      letter-spacing: -0.02em;
+      flex-shrink: 0;
     }
+    .nav-logo-mark { height: 36px; width: auto; }
 
-    .nav-cta {
+    /* Nav wordmark: all black */
+    .nav-logo-wordmark {
+      font-family: var(--font-body);
+      font-weight: 300;
+      font-size: 1.2rem;
+      letter-spacing: 0.06em;
+      text-transform: lowercase;
+      line-height: 1;
+      color: #000;
+    }
+    .nav-logo-wordmark span { color: #000; }
+
+    /* Primary CTA pill — Mercury style */
+    .btn-primary {
       display: inline-flex;
       align-items: center;
-      gap: 6px;
+      gap: 8px;
       background: var(--teal);
-      color: var(--white);
+      color: #fff;
       font-family: var(--font-body);
-      font-weight: 600;
-      font-size: 0.875rem;
-      padding: 10px 20px;
-      border-radius: var(--radius-sm);
+      font-weight: 500;
+      font-size: 15px;
+      line-height: 1;
+      padding: 0 22px;
+      height: 40px;
+      border-radius: var(--r-pill);
       text-decoration: none;
-      transition: background 0.2s, transform 0.15s;
+      border: none;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background-color 0.3s cubic-bezier(0,0,0.2,1);
     }
-    .nav-cta:hover { background: var(--teal-dark); transform: translateY(-1px); }
+    .btn-primary:hover { background: var(--teal-dark); }
+    .btn-primary:focus-visible { outline: 2px solid var(--teal); outline-offset: 4px; }
+    .btn-primary:disabled { opacity: 0.55; cursor: not-allowed; }
+
+    .btn-hero { height: 52px; padding: 0 30px; font-size: 17px; }
 
     /* ── Container ── */
     .container {
-      max-width: 1100px;
+      max-width: var(--max-w);
       margin: 0 auto;
-      padding: 0 24px;
+      padding: 0 var(--pad-x);
     }
 
-    /* ── Section shared ── */
-    section { padding: 96px 0; position: relative; z-index: 1; }
-    section:nth-child(even) { background: var(--parchment-d); }
+    /* ── Sections — all share same background (body handles the color) ── */
+    section { position: relative; padding: 80px 0; }
+    section + section { border-top: none; }
 
+    /* ── Section labels / headlines — adapt based on body color ── */
     .section-label {
       display: inline-block;
-      font-size: 0.75rem;
-      font-weight: 600;
-      letter-spacing: 0.12em;
+      font-family: var(--font-body);
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.2em;
       text-transform: uppercase;
-      color: var(--teal);
       margin-bottom: 16px;
+      color: var(--teal);
     }
+    body.dark .section-label { color: var(--gold); }
 
     .section-headline {
       font-family: var(--font-display);
-      font-size: clamp(2rem, 4vw, 3rem);
-      font-weight: 800;
-      color: var(--canopy);
+      font-size: clamp(30px, 3.5vw, 42px);
+      font-weight: 500;
       line-height: 1.15;
-      letter-spacing: -0.02em;
+      letter-spacing: 0.01em;
       margin-bottom: 16px;
+      /* inherits body color */
     }
 
     .section-sub {
-      font-size: 1.125rem;
-      color: var(--text-muted);
+      font-size: 18px;
+      font-weight: 300;
+      line-height: 1.65;
       max-width: 560px;
-      line-height: 1.7;
+      color: var(--text-sub);
     }
+    body.dark .section-sub { color: var(--text-light-sub); }
 
-    /* ── Hero ── */
+    /* ── Hero — full-bleed image ── */
     #hero {
-      min-height: 90vh;
+      padding: 0;
+      height: 100svh;
+      min-height: 600px;
+      max-height: 920px;
       display: flex;
-      align-items: center;
-      padding: 80px 0;
+      flex-direction: column;
+      justify-content: flex-end;
       overflow: hidden;
-      position: relative;
     }
 
-    /* Large M watermark */
-    #hero::after {
-      content: 'M';
+    .hero-img {
       position: absolute;
-      right: -2%;
-      top: 50%;
-      transform: translateY(-50%);
-      font-family: var(--font-display);
-      font-size: clamp(300px, 40vw, 600px);
-      font-weight: 800;
-      color: var(--canopy);
-      opacity: 0.035;
-      line-height: 1;
-      pointer-events: none;
-      user-select: none;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center top;
     }
 
-    .hero-inner {
-      max-width: 720px;
+    .hero-scrim {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(
+        to bottom,
+        rgba(27,45,46,0.2) 0%,
+        rgba(27,45,46,0.0) 30%,
+        rgba(27,45,46,0.6) 68%,
+        rgba(27,45,46,0.88) 100%
+      );
+    }
+
+    .hero-content {
       position: relative;
       z-index: 2;
+      padding: 0 var(--pad-x) 80px;
+      max-width: calc(var(--max-w) + var(--pad-x) * 2);
+      margin: 0 auto;
+      width: 100%;
     }
 
+    /* Coming Soon pill — white */
     .hero-badge {
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      background: rgba(230, 178, 34, 0.15);
-      border: 1px solid rgba(230, 178, 34, 0.4);
-      color: var(--gold-dark);
-      font-size: 0.8rem;
-      font-weight: 600;
-      letter-spacing: 0.08em;
+      background: rgba(255,255,255,0.18);
+      border: 1px solid rgba(255,255,255,0.5);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.18em;
       text-transform: uppercase;
-      padding: 6px 14px;
-      border-radius: 100px;
-      margin-bottom: 28px;
+      padding: 6px 16px;
+      border-radius: var(--r-pill);
+      margin-bottom: 24px;
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
     }
-
-    .hero-badge::before {
-      content: '';
-      width: 6px;
-      height: 6px;
+    .hero-badge-dot {
+      width: 6px; height: 6px;
       border-radius: 50%;
-      background: var(--gold);
-      animation: pulse 2s ease infinite;
+      background: #fff;
+      animation: pulse 2.2s ease infinite;
     }
-
     @keyframes pulse {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.5; transform: scale(0.8); }
+      0%,100% { opacity:1; transform:scale(1); }
+      50%      { opacity:0.4; transform:scale(0.7); }
     }
 
     .hero-headline {
       font-family: var(--font-display);
-      font-size: clamp(2.8rem, 6vw, 5rem);
-      font-weight: 800;
-      color: var(--canopy);
+      font-size: clamp(40px, 5.5vw, 66px);
+      font-weight: 500;
       line-height: 1.05;
-      letter-spacing: -0.03em;
-      margin-bottom: 24px;
+      letter-spacing: 0.01em;
+      color: #ededf3;
+      margin-bottom: 16px;
+      max-width: 780px;
     }
+    .hero-headline em { color: var(--gold); font-style: normal; }
 
-    .hero-headline em {
-      font-style: italic;
-      color: var(--teal);
-    }
-
-    .hero-subhead {
-      font-size: clamp(1.1rem, 2vw, 1.3rem);
-      color: var(--text-muted);
-      line-height: 1.65;
+    .hero-sub {
+      font-size: clamp(15px, 1.7vw, 19px);
+      font-weight: 300;
+      line-height: 1.62;
+      color: rgba(237,237,243,0.8);
+      max-width: 520px;
       margin-bottom: 40px;
-      max-width: 580px;
     }
 
-    .hero-cta {
-      display: inline-flex;
+    .hero-actions { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+
+    .hero-note {
+      font-size: 13px;
+      font-weight: 400;
+      color: rgba(237,237,243,0.5);
+    }
+
+    /* ── App promo section — 2-col with phone image ── */
+    #app-promo {
+      overflow: hidden;
+    }
+
+    .promo-grid {
+      display: grid;
+      grid-template-columns: 1fr 420px;
+      gap: 64px;
       align-items: center;
-      gap: 10px;
-      background: var(--teal);
-      color: var(--white);
-      font-family: var(--font-body);
-      font-weight: 600;
-      font-size: 1.05rem;
-      padding: 16px 32px;
-      border-radius: var(--radius);
-      text-decoration: none;
-      transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
-      box-shadow: 0 4px 16px rgba(0, 149, 156, 0.3);
     }
-    .hero-cta:hover {
-      background: var(--teal-dark);
-      transform: translateY(-2px);
-      box-shadow: 0 8px 24px rgba(0, 149, 156, 0.4);
-    }
-    .hero-cta svg { transition: transform 0.2s; }
-    .hero-cta:hover svg { transform: translateX(4px); }
 
-    /* ── Pillar Cards ── */
+    .promo-feature-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 28px;
+      margin-top: 40px;
+    }
+
+    .promo-feature {
+      display: flex;
+      gap: 18px;
+      align-items: flex-start;
+    }
+
+    .promo-icon {
+      flex-shrink: 0;
+      width: 42px;
+      height: 42px;
+      background: rgba(0,149,156,0.1);
+      border-radius: var(--r-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--teal);
+      margin-top: 2px;
+    }
+    body.dark .promo-icon { background: rgba(0,149,156,0.18); }
+
+    .promo-feature-title {
+      font-family: var(--font-body);
+      font-size: 16px;
+      font-weight: 500;
+      margin-bottom: 4px;
+      /* inherits body color */
+    }
+
+    .promo-feature-desc {
+      font-size: 14px;
+      font-weight: 400;
+      line-height: 1.6;
+      color: var(--text-sub);
+    }
+    body.dark .promo-feature-desc { color: var(--text-light-sub); }
+
+    .promo-phone {
+      position: relative;
+      display: flex;
+      justify-content: center;
+    }
+
+    .promo-phone img {
+      width: 100%;
+      max-width: 360px;
+      height: auto;
+      display: block;
+      /* subtle drop shadow to lift off background */
+      filter: drop-shadow(0 24px 48px rgba(27,45,46,0.22));
+    }
+
+    /* ── Pillar cards ── */
     .card-grid-3 {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap: 24px;
+      gap: 20px;
       margin-top: 56px;
     }
 
     .pillar-card {
-      background: var(--white);
-      border-radius: var(--radius);
-      padding: 32px 28px;
-      box-shadow: var(--shadow-sm);
-      border-top: 3px solid var(--teal);
-      transition: box-shadow 0.2s, transform 0.2s;
+      background: var(--card-light);
+      border-radius: var(--r-card);
+      padding: 28px 24px;
+      border: 1px solid var(--border-light);
+      transition: background-color 0.3s cubic-bezier(0,0,0.2,1);
     }
-    .pillar-card:hover {
-      box-shadow: var(--shadow-md);
-      transform: translateY(-3px);
+    body.dark .pillar-card {
+      background: var(--card-dark);
+      border-color: var(--border-dark);
     }
+    .pillar-card:hover { background: #e8e2d3; }
+    body.dark .pillar-card:hover { background: rgba(255,255,255,0.1); }
 
     .pillar-icon {
-      width: 44px;
-      height: 44px;
+      width: 42px; height: 42px;
       background: rgba(0,149,156,0.1);
-      border-radius: var(--radius-sm);
+      border-radius: var(--r-sm);
       display: flex;
       align-items: center;
       justify-content: center;
       margin-bottom: 20px;
       color: var(--teal);
     }
+    body.dark .pillar-icon { background: rgba(0,149,156,0.18); }
 
     .pillar-title {
       font-family: var(--font-display);
-      font-size: 1.2rem;
-      font-weight: 700;
-      color: var(--canopy);
-      margin-bottom: 10px;
+      font-size: 19px;
+      font-weight: 500;
+      margin-bottom: 8px;
+      /* inherits body color */
     }
 
     .pillar-body {
-      font-size: 0.9rem;
-      color: var(--text-muted);
+      font-size: 14px;
+      font-weight: 400;
+      color: var(--text-sub);
       line-height: 1.65;
     }
+    body.dark .pillar-body { color: var(--text-light-sub); }
 
-    /* ── Audience Cards ── */
+    /* ── Audience cards ── */
     .audience-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 24px;
+      gap: 20px;
       margin-top: 56px;
     }
 
     .audience-card {
-      border-radius: var(--radius);
-      padding: 40px 36px;
-      box-shadow: var(--shadow-sm);
-      transition: box-shadow 0.2s, transform 0.2s;
+      border-radius: var(--r-card);
+      padding: 36px 32px;
+      background: var(--card-light);
+      border: 1px solid var(--border-light);
     }
-    .audience-card:hover {
-      box-shadow: var(--shadow-md);
-      transform: translateY(-2px);
-    }
-
-    .audience-card.primary {
-      background: var(--white);
-      border: 1px solid rgba(27,45,46,0.08);
+    body.dark .audience-card {
+      background: var(--card-dark);
+      border-color: var(--border-dark);
     }
 
-    .audience-card.secondary {
-      background: var(--canopy);
-      color: var(--white);
+    /* Dark-tinted variant for the co-parenting card */
+    .audience-card.tinted {
+      background: rgba(0,149,156,0.08);
+    }
+    body.dark .audience-card.tinted {
+      background: rgba(0,149,156,0.14);
     }
 
     .audience-tag {
       display: inline-block;
-      font-size: 0.7rem;
-      font-weight: 700;
-      letter-spacing: 0.1em;
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.14em;
       text-transform: uppercase;
-      padding: 4px 12px;
-      border-radius: 100px;
+      padding: 4px 14px;
+      border-radius: var(--r-pill);
       margin-bottom: 20px;
-    }
-
-    .audience-card.primary .audience-tag {
-      background: rgba(0,149,156,0.1);
+      background: rgba(0,149,156,0.12);
       color: var(--teal);
     }
-
-    .audience-card.secondary .audience-tag {
-      background: rgba(230,178,34,0.2);
-      color: var(--gold);
+    .audience-card.tinted .audience-tag {
+      background: rgba(230,178,34,0.15);
+      color: var(--gold-dark);
     }
+    body.dark .audience-card.tinted .audience-tag { color: var(--gold); }
 
     .audience-title {
       font-family: var(--font-display);
-      font-size: 1.5rem;
-      font-weight: 700;
-      margin-bottom: 14px;
+      font-size: clamp(20px, 2vw, 26px);
+      font-weight: 500;
       line-height: 1.2;
+      margin-bottom: 12px;
+      /* inherits body color */
     }
-
-    .audience-card.secondary .audience-title { color: var(--white); }
-    .audience-card.primary .audience-title { color: var(--canopy); }
 
     .audience-body {
-      font-size: 0.95rem;
+      font-size: 14px;
+      font-weight: 400;
       line-height: 1.7;
+      color: var(--text-sub);
     }
-    .audience-card.primary .audience-body { color: var(--text-muted); }
-    .audience-card.secondary .audience-body { color: rgba(255,255,255,0.75); }
+    body.dark .audience-body { color: var(--text-light-sub); }
 
     .audience-points {
       list-style: none;
@@ -382,315 +474,324 @@
       flex-direction: column;
       gap: 10px;
     }
-
     .audience-points li {
       display: flex;
       align-items: flex-start;
       gap: 10px;
-      font-size: 0.875rem;
+      font-size: 13px;
+      font-weight: 400;
+      line-height: 1.5;
+      color: var(--text-sub);
     }
-
-    .audience-card.primary .audience-points li { color: var(--text-muted); }
-    .audience-card.secondary .audience-points li { color: rgba(255,255,255,0.8); }
+    body.dark .audience-points li { color: var(--text-light-sub); }
 
     .check-icon {
       flex-shrink: 0;
-      width: 18px;
-      height: 18px;
+      width: 18px; height: 18px;
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
       margin-top: 1px;
+      background: rgba(0,149,156,0.12);
+      color: var(--teal);
     }
-    .audience-card.primary .check-icon { background: rgba(0,149,156,0.12); color: var(--teal); }
-    .audience-card.secondary .check-icon { background: rgba(230,178,34,0.2); color: var(--gold); }
+    .audience-card.tinted .check-icon {
+      background: rgba(230,178,34,0.15);
+      color: var(--gold-dark);
+    }
+    body.dark .audience-card.tinted .check-icon { color: var(--gold); }
 
-    /* ── Differentiation Strip ── */
+    /* ── Why Morechard ── */
     .diff-grid {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
-      gap: 20px;
+      gap: 16px;
       margin-top: 56px;
     }
 
     .diff-tile {
-      background: var(--white);
-      border-radius: var(--radius);
-      padding: 28px 24px;
+      border-radius: var(--r-card);
+      padding: 22px 22px;
       display: flex;
-      gap: 18px;
+      gap: 16px;
       align-items: flex-start;
-      box-shadow: var(--shadow-sm);
       border-left: 3px solid var(--teal);
-      transition: box-shadow 0.2s, transform 0.2s;
+      background: var(--card-light);
+      border-top: 1px solid var(--border-light);
+      border-right: 1px solid var(--border-light);
+      border-bottom: 1px solid var(--border-light);
+      transition: background-color 0.3s cubic-bezier(0,0,0.2,1);
     }
-    .diff-tile:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
+    body.dark .diff-tile {
+      background: var(--card-dark);
+      border-top-color: var(--border-dark);
+      border-right-color: var(--border-dark);
+      border-bottom-color: var(--border-dark);
+    }
+    .diff-tile:hover { background: #e8e2d3; }
+    body.dark .diff-tile:hover { background: rgba(255,255,255,0.1); }
 
     .diff-icon {
       flex-shrink: 0;
-      width: 40px;
-      height: 40px;
+      width: 38px; height: 38px;
       background: rgba(0,149,156,0.1);
-      border-radius: var(--radius-sm);
+      border-radius: var(--r-sm);
       display: flex;
       align-items: center;
       justify-content: center;
       color: var(--teal);
     }
+    body.dark .diff-icon { background: rgba(0,149,156,0.18); }
 
-    .diff-content {}
     .diff-label {
-      font-weight: 700;
-      font-size: 0.95rem;
-      color: var(--canopy);
+      font-weight: 500;
+      font-size: 14px;
       margin-bottom: 4px;
+      /* inherits body color */
     }
-    .diff-desc { font-size: 0.85rem; color: var(--text-muted); line-height: 1.5; }
+    .diff-desc { font-size: 13px; font-weight: 400; color: var(--text-sub); line-height: 1.55; }
+    body.dark .diff-desc { color: var(--text-light-sub); }
 
     /* ── Pricing ── */
     .pricing-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap: 24px;
+      gap: 20px;
       margin-top: 56px;
       align-items: start;
     }
 
     .plan-card {
-      background: var(--white);
-      border-radius: var(--radius);
-      padding: 32px 28px;
-      box-shadow: var(--shadow-sm);
-      border: 1px solid rgba(27,45,46,0.08);
+      background: var(--card-light);
+      border-radius: var(--r-card);
+      padding: 28px 24px;
+      border: 1px solid var(--border-light);
       position: relative;
-      transition: box-shadow 0.2s, transform 0.2s;
+      transition: background-color 0.3s cubic-bezier(0,0,0.2,1);
     }
-    .plan-card:hover { box-shadow: var(--shadow-md); transform: translateY(-3px); }
+    body.dark .plan-card {
+      background: var(--card-dark);
+      border-color: var(--border-dark);
+    }
+    .plan-card:hover { background: #e8e2d3; }
+    body.dark .plan-card:hover { background: rgba(255,255,255,0.1); }
 
-    .plan-card.featured {
-      border: 2px solid var(--teal);
-      box-shadow: var(--shadow-md);
-    }
+    .plan-card.featured { border: 2px solid var(--teal); }
 
     .plan-badge {
       position: absolute;
-      top: -12px;
-      left: 50%;
+      top: -13px; left: 50%;
       transform: translateX(-50%);
       background: var(--gold);
-      color: var(--canopy);
-      font-size: 0.7rem;
-      font-weight: 700;
-      letter-spacing: 0.08em;
+      color: var(--text-dark);
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
       text-transform: uppercase;
-      padding: 4px 14px;
-      border-radius: 100px;
+      padding: 4px 16px;
+      border-radius: var(--r-pill);
       white-space: nowrap;
     }
 
     .plan-name {
       font-family: var(--font-display);
-      font-size: 1.3rem;
-      font-weight: 700;
-      color: var(--canopy);
+      font-size: 22px;
+      font-weight: 500;
       margin-bottom: 8px;
+      /* inherits body color */
     }
 
     .plan-price {
       display: flex;
       align-items: baseline;
-      gap: 4px;
+      gap: 1px;
       margin-bottom: 4px;
     }
+    .plan-price-currency { font-size: 18px; font-weight: 400; }
+    .plan-price-amount   { font-size: 44px; font-weight: 400; font-family: var(--font-display); line-height: 1; }
+    .plan-price-dec      { font-size: 18px; font-weight: 400; align-self: flex-end; margin-bottom: 5px; }
+    .plan-one-time       { font-size: 12px; font-weight: 500; color: var(--teal); margin-bottom: 20px; }
 
-    .plan-price-currency { font-size: 1.4rem; font-weight: 600; color: var(--canopy); }
-    .plan-price-amount { font-family: var(--font-display); font-size: 3rem; font-weight: 800; color: var(--canopy); line-height: 1; }
-    .plan-price-label { font-size: 0.8rem; color: var(--text-muted); }
-    .plan-one-time { font-size: 0.8rem; color: var(--teal); font-weight: 600; margin-bottom: 24px; }
+    .plan-divider { border: none; border-top: 1px solid var(--border-light); margin: 20px 0; }
+    body.dark .plan-divider { border-top-color: var(--border-dark); }
 
-    .plan-divider { border: none; border-top: 1px solid rgba(27,45,46,0.08); margin: 20px 0; }
-
-    .plan-features {
-      list-style: none;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-
+    .plan-features { list-style: none; display: flex; flex-direction: column; gap: 10px; }
     .plan-features li {
       display: flex;
       align-items: flex-start;
-      gap: 10px;
-      font-size: 0.875rem;
-      color: var(--text-muted);
+      gap: 8px;
+      font-size: 13px;
+      line-height: 1.5;
+      color: var(--text-sub);
     }
+    body.dark .plan-features li { color: var(--text-light-sub); }
+    .plan-check { flex-shrink: 0; color: var(--teal); margin-top: 1px; }
 
-    .plan-check {
-      flex-shrink: 0;
-      color: var(--teal);
-      margin-top: 1px;
-    }
+    /* ── Signup ── */
+    #signup { padding: 80px 0; text-align: center; }
+    #signup .section-sub { margin-left: auto; margin-right: auto; }
+    #signup .form-wrap { margin-left: auto; margin-right: auto; }
 
-    /* ── Interest Form ── */
-    #signup {
-      background: var(--canopy);
-      color: var(--white);
-    }
+    .form-wrap { max-width: 540px; margin-top: 48px; }
 
-    #signup .section-headline { color: var(--white); }
-    #signup .section-sub { color: rgba(255,255,255,0.65); }
-    #signup .section-label { color: var(--gold); }
-
-    .form-wrap {
-      max-width: 560px;
-      margin-top: 48px;
-    }
-
-    .form-row {
+    /* Mercury pill input+button pair */
+    .form-pill {
       display: flex;
-      gap: 12px;
+      border-radius: var(--r-pill);
+      border: 1px solid rgba(27,45,46,0.2);
+      overflow: hidden;
+      background: rgba(27,45,46,0.05);
+      transition: border-color 0.3s, background 0.3s;
     }
+    body.dark .form-pill {
+      background: rgba(255,255,255,0.08);
+      border-color: rgba(255,255,255,0.18);
+    }
+    .form-pill:focus-within {
+      border-color: var(--teal);
+      background: rgba(0,149,156,0.04);
+    }
+    body.dark .form-pill:focus-within { background: rgba(255,255,255,0.12); }
+    .form-pill.error { border-color: #e05252; }
 
     .form-input {
       flex: 1;
-      background: rgba(255,255,255,0.08);
-      border: 1px solid rgba(255,255,255,0.2);
-      border-radius: var(--radius-sm);
-      padding: 14px 18px;
+      background: transparent;
+      border: none;
+      padding: 0 22px;
+      height: 52px;
       font-family: var(--font-body);
-      font-size: 1rem;
-      color: var(--white);
+      font-size: 15px;
+      font-weight: 400;
+      color: var(--text-dark);
       outline: none;
-      transition: border-color 0.2s, background 0.2s;
     }
-    .form-input::placeholder { color: rgba(255,255,255,0.4); }
-    .form-input:focus {
-      border-color: var(--teal);
-      background: rgba(255,255,255,0.12);
-    }
-    .form-input.error { border-color: #e05252; }
+    body.dark .form-input { color: var(--text-light); }
+    .form-input::placeholder { color: var(--text-sub); }
+    body.dark .form-input::placeholder { color: rgba(237,237,240,0.4); }
 
     .form-submit {
       flex-shrink: 0;
       background: var(--teal);
-      color: var(--white);
+      color: #fff;
       font-family: var(--font-body);
-      font-weight: 600;
-      font-size: 1rem;
-      padding: 14px 28px;
-      border-radius: var(--radius-sm);
+      font-weight: 500;
+      font-size: 14px;
+      padding: 0 22px;
+      height: 52px;
       border: none;
       cursor: pointer;
-      transition: background 0.2s, transform 0.15s;
+      border-radius: 0 var(--r-pill) var(--r-pill) 0;
       display: flex;
       align-items: center;
       gap: 8px;
-      min-width: 130px;
-      justify-content: center;
+      white-space: nowrap;
+      transition: background-color 0.3s cubic-bezier(0,0,0.2,1);
     }
-    .form-submit:hover:not(:disabled) { background: var(--teal-dark); transform: translateY(-1px); }
-    .form-submit:disabled { opacity: 0.6; cursor: not-allowed; }
+    .form-submit:hover:not(:disabled) { background: var(--teal-dark); }
+    .form-submit:disabled { opacity: 0.55; cursor: not-allowed; }
 
+    /* Consent text — always legible */
     .form-consent {
       display: flex;
       align-items: flex-start;
       gap: 12px;
       margin-top: 16px;
     }
-
     .form-consent input[type="checkbox"] {
       flex-shrink: 0;
-      width: 18px;
-      height: 18px;
-      margin-top: 2px;
+      width: 18px; height: 18px;
+      margin-top: 3px;
       accent-color: var(--teal);
       cursor: pointer;
     }
-
     .form-consent label {
-      font-size: 0.85rem;
-      color: rgba(255,255,255,0.65);
-      line-height: 1.5;
+      font-size: 13px;
+      font-weight: 400;
+      line-height: 1.55;
       cursor: pointer;
+      color: var(--text-sub);
     }
+    body.dark .form-consent label { color: rgba(237,237,240,0.75); }
 
     .form-gdpr {
-      margin-top: 20px;
-      font-size: 0.78rem;
-      color: rgba(255,255,255,0.35);
+      margin-top: 14px;
+      font-size: 11px;
+      font-weight: 400;
+      color: rgba(27,45,46,0.38);
       line-height: 1.6;
+      letter-spacing: 0.02em;
     }
-
-    .form-gdpr a { color: rgba(255,255,255,0.5); text-decoration: underline; }
+    body.dark .form-gdpr { color: rgba(237,237,240,0.3); }
+    .form-gdpr a { text-decoration: underline; color: inherit; }
 
     .form-error {
-      margin-top: 12px;
-      font-size: 0.875rem;
-      color: #ff8a8a;
+      margin-top: 10px;
+      font-size: 13px;
+      color: #c0392b;
       display: none;
     }
+    body.dark .form-error { color: #ff8a8a; }
     .form-error.visible { display: block; }
 
-    .form-success {
-      display: none;
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 12px;
-      margin-top: 48px;
-    }
+    .form-success { display: none; flex-direction: column; gap: 12px; margin-top: 48px; }
     .form-success.visible { display: flex; }
 
     .success-icon {
-      width: 52px;
-      height: 52px;
-      background: rgba(0,149,156,0.15);
+      width: 52px; height: 52px;
+      background: rgba(0,149,156,0.12);
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
       color: var(--teal);
     }
-
-    .success-text {
+    .success-title {
       font-family: var(--font-display);
-      font-size: 1.4rem;
-      font-weight: 700;
-      color: var(--white);
+      font-size: 26px;
+      font-weight: 500;
     }
-
-    .success-sub { font-size: 0.9rem; color: rgba(255,255,255,0.55); }
+    .success-sub { font-size: 14px; color: var(--text-sub); }
+    body.dark .success-sub { color: var(--text-light-sub); }
 
     /* Spinner */
     @keyframes spin { to { transform: rotate(360deg); } }
     .spinner {
-      width: 18px;
-      height: 18px;
+      width: 15px; height: 15px;
       border: 2px solid rgba(255,255,255,0.3);
-      border-top-color: var(--white);
+      border-top-color: #fff;
       border-radius: 50%;
       animation: spin 0.7s linear infinite;
     }
 
     /* ── Footer ── */
     footer {
-      background: var(--canopy);
+      background: var(--bg-dark);
       border-top: 1px solid rgba(255,255,255,0.07);
-      padding: 40px 24px;
+      padding: 40px 32px;
       text-align: center;
-      position: relative;
-      z-index: 1;
     }
 
-    .footer-wordmark {
-      font-family: var(--font-display);
-      font-weight: 800;
-      font-size: 1.3rem;
-      color: rgba(255,255,255,0.85);
-      display: block;
-      margin-bottom: 16px;
+    .footer-logo {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
       text-decoration: none;
+      margin-bottom: 16px;
     }
+    .footer-logo-mark { height: 28px; width: auto; opacity: 0.7; }
+    /* Footer wordmark — white */
+    .footer-logo-wordmark {
+      font-family: var(--font-body);
+      font-weight: 300;
+      font-size: 1.1rem;
+      letter-spacing: 0.06em;
+      text-transform: lowercase;
+      color: rgba(255,255,255,0.85);
+    }
+    .footer-logo-wordmark span { color: rgba(255,255,255,0.85); }
 
     .footer-links {
       display: flex;
@@ -699,39 +800,55 @@
       margin-bottom: 16px;
       flex-wrap: wrap;
     }
-
     .footer-links a {
-      font-size: 0.82rem;
-      color: rgba(255,255,255,0.4);
+      font-size: 12px;
+      color: rgba(255,255,255,0.38);
       text-decoration: none;
       transition: color 0.2s;
     }
-    .footer-links a:hover { color: rgba(255,255,255,0.75); }
+    .footer-links a:hover { color: rgba(255,255,255,0.7); }
 
     .footer-copy {
-      font-size: 0.78rem;
-      color: rgba(255,255,255,0.25);
-      line-height: 1.6;
+      font-size: 11px;
+      color: rgba(255,255,255,0.22);
+      line-height: 1.7;
     }
 
     /* ── Responsive ── */
-    @media (max-width: 900px) {
+    @media (max-width: 960px) {
+      .promo-grid { grid-template-columns: 1fr; gap: 48px; }
+      .promo-phone { order: -1; }
+      .promo-phone img { max-width: 280px; }
       .card-grid-3 { grid-template-columns: 1fr; }
-      .pricing-grid { grid-template-columns: 1fr; max-width: 480px; margin-left: auto; margin-right: auto; }
+      .pricing-grid { grid-template-columns: 1fr; max-width: 400px; margin-left: auto; margin-right: auto; }
+      .plan-card { text-align: center; }
+      .plan-price { justify-content: center; }
+      .plan-features { align-items: center; }
     }
 
     @media (max-width: 720px) {
-      section { padding: 64px 0; }
+      :root { --pad-x: 20px; }
+      section { padding: 60px 0; }
       .audience-grid { grid-template-columns: 1fr; }
       .diff-grid { grid-template-columns: 1fr; }
-      .form-row { flex-direction: column; }
-      .form-submit { width: 100%; }
+      #hero { max-height: none; height: auto; min-height: 88svh; }
     }
 
     @media (max-width: 480px) {
-      nav { padding: 0 16px; }
-      .container { padding: 0 16px; }
-      .hero-headline { font-size: 2.4rem; }
+      .hero-headline { font-size: 36px; }
+      .form-pill { flex-direction: column; border-radius: var(--r-card); overflow: visible; background: none; border: none; gap: 8px; }
+      .form-input {
+        border: 1px solid rgba(27,45,46,0.2);
+        border-radius: var(--r-pill);
+        background: rgba(27,45,46,0.05);
+        height: 48px;
+        padding: 0 20px;
+      }
+      body.dark .form-input {
+        border-color: rgba(255,255,255,0.18);
+        background: rgba(255,255,255,0.08);
+      }
+      .form-submit { width: 100%; border-radius: var(--r-pill); justify-content: center; }
     }
   </style>
 </head>
@@ -739,33 +856,120 @@
 
   <!-- ── Nav ── -->
   <nav id="nav">
-    <a class="nav-wordmark" href="#">Morechard</a>
-    <a class="nav-cta" href="#signup">
+    <a class="nav-logo" href="#">
+      <svg class="nav-logo-mark" viewBox="0 0 441.06 442.31" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <defs>
+          <linearGradient id="nav-grad" x1="0" y1="221.15" x2="441.06" y2="221.15" gradientUnits="userSpaceOnUse">
+            <stop offset="0.5" stop-color="#00959c"/>
+            <stop offset="0.5" stop-color="#e6b222"/>
+          </linearGradient>
+        </defs>
+        <path fill="url(#nav-grad)" d="M427.64,1.69l-202.38,139.41c-.32.25-.66.46-1,.66-.1.06-.2.11-.3.16-.32.16-.64.32-.97.43-.02,0-.03,0-.05.02-.37.13-.75.22-1.13.29-.03,0-.06.01-.1.02-.39.06-.79.1-1.18.1-1.65,0-3.3-.56-4.74-1.67L13.42,1.69C7.64-2.79,0,2.16,0,10.37v421.58c0,5.72,3.89,10.35,8.68,10.35h168.33c5.21,0,9.82-3.37,11.4-8.33.98-3.06,2.13-6.89,3.34-11.35.39-1.44.79-2.95,1.18-4.52.2-.78.4-1.58.6-2.4.4-1.63.8-3.32,1.19-5.07.39-1.75.78-3.55,1.16-5.4.76-3.71,1.49-7.62,2.15-11.7.17-1.02.33-2.05.48-3.09.78-5.21,1.45-10.67,1.94-16.32.1-1.13.19-2.27.27-3.41,2.09-28.61-.6-61.56-15.95-90.46-2.45-4.62-5.23-9.14-8.37-13.53,0,0,27.23,16.74,44.08,54.11,16.85-37.37,44.08-54.11,44.08-54.11-41.71,58.29-20.37,141.01-11.99,167.25,1.58,4.96,6.19,8.32,11.4,8.32h168.37c4.8,0,8.68-4.64,8.68-10.35V10.37c0-8.22-7.64-13.16-13.42-8.68ZM278.05,203.52c8.68-1.11,17.68,2.48,23.07,10.14,5.39,7.65,5.76,17.33,1.79,25.14-8.68,1.11-17.68-2.48-23.07-10.14-5.39-7.65-5.76-17.33-1.79-25.14ZM257.86,182.83c6.09,2.37,10.04,7.85,10.75,13.92-4.62,4-11.24,5.38-17.33,3.02-6.09-2.37-10.04-7.85-10.75-13.92,4.62-4,11.24-5.38,17.33-3.02ZM220.5,174.69c5.02-.02,9.39,2.79,11.6,6.93-2.18,4.16-6.52,7.01-11.54,7.03-5.02.02-9.39-2.79-11.6-6.93,2.18-4.16,6.52-7.01,11.54-7.03ZM138.43,222.92c9.47-3.52,20.53-1.82,28.59,5.38,8.06,7.2,11,17.99,8.57,27.8-9.47,3.52-20.53,1.82-28.59-5.38-8.06-7.2-11-17.99-8.57-27.8ZM123.74,265.47c1.15-6.91,6.46-12.19,13.3-14.15,5.83,4.07,9.15,10.79,8,17.7-1.15,6.91-6.46,12.19-13.3,14.15-5.83-4.07-9.15-10.79-8-17.7ZM191.82,358.95c-8.69,3.37-18.99,1.94-26.68-4.63-7.69-6.56-10.72-16.52-8.74-25.63,8.69-3.37,18.99-1.94,26.68,4.63,7.69,6.56,10.72,16.52,8.74,25.63ZM182.94,308.24c-7.36,8.49-19.08,12.74-30.85,10.05-11.77-2.69-20.47-11.62-23.41-22.47,7.36-8.49,19.08-12.74,30.85-10.05,11.77,2.69,20.47,11.62,23.41,22.47ZM161.78,216.36c-1.43-10.47,2.82-21.36,12.01-27.94,9.18-6.59,20.86-7.12,30.32-2.41,1.43,10.47-2.82,21.36-12.01,27.94-9.18-6.59-20.86-7.12-30.32-2.41ZM186.67,236.75c2.82-12.73,12.45-22.19,24.21-25.42,9.29,7.9,14.02,20.54,11.2,33.27-2.82,12.73-12.45,22.19-24.21,25.42-9.29-7.9-14.02-20.54-11.2-33.27ZM231.53,285.81c-6.01,5.93-14.57,7.68-22.1,5.3-2.27-7.56-.4-16.09,5.62-22.02,6.01-5.93,14.57-7.68,22.1-5.3,2.27,7.56.4,16.09-5.62,22.02ZM239.57,247.8c-9.19-10.21-11.41-24.25-6.98-36.31,12.46-3.13,26.19.54,35.38,10.75,9.19,10.21,11.41,24.25,6.98,36.31-12.46,3.13-26.19-.54-35.38-10.75ZM279.72,349.22c-6.01,9.4-16.53,14.17-26.93,13.31-5.14-9.08-5.23-20.62.78-30.03,6.01-9.4,16.53-14.17,26.93-13.31,5.14,9.08,5.23,20.62-.78,30.03ZM262.83,307.05c-4.37-8.89-3.82-19.83,2.39-28.41,6.21-8.58,16.44-12.52,26.25-11.13,4.37,8.89,3.82,19.83-2.39,28.41-6.21,8.58-16.44,12.52-26.25,11.13ZM310.84,313.15c-3.42,7.3-10.51,11.71-18.04,12.07-4.54-6.02-5.69-14.28-2.27-21.58,3.42-7.3,10.51-11.71,18.04-12.07,4.54,6.02,5.69,14.28,2.27,21.58ZM309.95,281.38c-6.91-3.09-11.94-9.79-12.48-17.87-.54-8.08,3.55-15.39,9.99-19.37,6.91,3.09,11.94,9.79,12.48,17.87.54,8.08-3.55,15.39-9.99,19.37Z"/>
+      </svg>
+      <span class="nav-logo-wordmark">
+        <span class="wm-M">M</span><span class="wm-or">or</span><span class="wm-e">e</span><span class="wm-chard">chard</span>
+      </span>
+    </a>
+    <a class="btn-primary" href="#signup">
       Register interest
-      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+      <svg width="13" height="13" viewBox="0 0 14 14" fill="none" aria-hidden="true">
         <path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
     </a>
   </nav>
 
-  <!-- ── Hero ── -->
+  <!-- ── Hero — full-bleed orchard image ── -->
   <section id="hero">
-    <div class="container">
-      <div class="hero-inner">
-        <div class="hero-badge reveal">Coming Soon</div>
-        <h1 class="hero-headline reveal reveal-delay-1">
-          The chore tracker<br /><em>for any family.</em>
-        </h1>
-        <p class="hero-subhead reveal reveal-delay-2">
-          Assign, approve, and pay — with financial literacy built in
-          and a tamper-proof record underneath.
-        </p>
-        <a href="#signup" class="hero-cta reveal reveal-delay-3">
+    <img class="hero-img" src="hero-orchard.webp" alt="Morechard orchard illustration" loading="eager" />
+    <div class="hero-scrim"></div>
+    <div class="hero-content">
+      <div class="hero-badge reveal">
+        <span class="hero-badge-dot"></span>
+        Coming Soon
+      </div>
+      <h1 class="hero-headline reveal d1">
+        The chore tracker<br /><em>for any family.</em>
+      </h1>
+      <p class="hero-sub reveal d2">
+        Assign, approve, and pay — with financial literacy built in
+        and a tamper-proof record underneath.
+      </p>
+      <div class="hero-actions reveal d3">
+        <a href="#signup" class="btn-primary btn-hero">
           Register my interest
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true">
             <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
         </a>
+        <span class="hero-note">No spam — one email at launch.</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── App Promo — phone mockup ── -->
+  <section id="app-promo">
+    <div class="container">
+      <div class="promo-grid">
+        <!-- Left: copy -->
+        <div>
+          <span class="section-label reveal">The app</span>
+          <h2 class="section-headline reveal">A phone app that makes pocket money actually work.</h2>
+          <p class="section-sub reveal">Morechard lives on your phone. Parents manage, children track — in one shared, secure space.</p>
+
+          <ul class="promo-feature-list">
+            <li class="promo-feature reveal d1">
+              <div class="promo-icon">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                  <path d="M4 10l4 4 8-8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </div>
+              <div>
+                <div class="promo-feature-title">Assign &amp; approve chores</div>
+                <div class="promo-feature-desc">Set a chore, a rate, and a deadline. Your child marks it done — you approve and the ledger updates instantly.</div>
+              </div>
+            </li>
+            <li class="promo-feature reveal d2">
+              <div class="promo-icon">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                  <circle cx="10" cy="10" r="7" stroke="currentColor" stroke-width="1.8"/>
+                  <path d="M10 6v4l2.5 2.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                </svg>
+              </div>
+              <div>
+                <div class="promo-feature-title">Real-time pocket money balance</div>
+                <div class="promo-feature-desc">Children see their balance grow with every approved job. A live, honest account they own.</div>
+              </div>
+            </li>
+            <li class="promo-feature reveal d3">
+              <div class="promo-icon">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                  <path d="M3 17l4-4 3 3 7-10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </div>
+              <div>
+                <div class="promo-feature-title">Savings goals &amp; progress tracking</div>
+                <div class="promo-feature-desc">Children set goals, watch progress bars fill, and learn what saving actually feels like.</div>
+              </div>
+            </li>
+            <li class="promo-feature reveal d4">
+              <div class="promo-icon">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                  <path d="M10 2a8 8 0 100 16A8 8 0 0010 2z" stroke="currentColor" stroke-width="1.8"/>
+                  <path d="M10 6v4l3 2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                </svg>
+              </div>
+              <div>
+                <div class="promo-feature-title">AI Mentor for every milestone</div>
+                <div class="promo-feature-desc">Financial lessons triggered by your child's real earning and spending — not generic slides.</div>
+              </div>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Right: phone mockup image -->
+        <div class="promo-phone reveal d2">
+          <img src="phone-mockup.webp" alt="Morechard app running on a phone" loading="lazy" />
+        </div>
       </div>
     </div>
   </section>
@@ -775,35 +979,35 @@
     <div class="container">
       <span class="section-label reveal">What is Morechard</span>
       <h2 class="section-headline reveal">Everything a family needs.<br />Nothing they don't.</h2>
-      <p class="section-sub reveal">Three pillars — working together from day one. No debit card. No bank account required.</p>
+      <p class="section-sub reveal">Three pillars — working together from day one. No debit card or bank account required.</p>
 
       <div class="card-grid-3">
-        <div class="pillar-card reveal reveal-delay-1">
+        <div class="pillar-card reveal d1">
           <div class="pillar-icon">
-            <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
-              <path d="M4 11l5 5L18 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+              <path d="M4 10l4 4 8-8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
           </div>
           <div class="pillar-title">Chore Tracker</div>
           <p class="pillar-body">Assign jobs. Mark them done. Approve and pay. Pocket money updates automatically — no bank account required.</p>
         </div>
 
-        <div class="pillar-card reveal reveal-delay-2">
+        <div class="pillar-card reveal d2">
           <div class="pillar-icon">
-            <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
-              <circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="2"/>
-              <path d="M11 7v4l3 3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+              <circle cx="10" cy="10" r="7" stroke="currentColor" stroke-width="2"/>
+              <path d="M10 6v4l2.5 2.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
             </svg>
           </div>
           <div class="pillar-title">Real-Data Literacy</div>
           <p class="pillar-body">Financial lessons triggered by your child's own earning and spending — not generic slides. Lessons land at exactly the right moment.</p>
         </div>
 
-        <div class="pillar-card reveal reveal-delay-3">
+        <div class="pillar-card reveal d3">
           <div class="pillar-icon">
-            <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
-              <rect x="4" y="3" width="14" height="16" rx="2" stroke="currentColor" stroke-width="2"/>
-              <path d="M8 7h6M8 11h6M8 15h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+              <rect x="4" y="3" width="12" height="14" rx="2" stroke="currentColor" stroke-width="2"/>
+              <path d="M7 7h6M7 10h6M7 13h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
             </svg>
           </div>
           <div class="pillar-title">Truth Engine</div>
@@ -820,65 +1024,41 @@
       <h2 class="section-headline reveal">Built for real families.</h2>
 
       <div class="audience-grid">
-        <div class="audience-card primary reveal reveal-delay-1">
+        <div class="audience-card reveal d1">
           <span class="audience-tag">Any household</span>
           <div class="audience-title">Any family, from day one</div>
           <p class="audience-body">Nuclear families, single parents, blended households. Morechard works on day one for every family structure — simple, fair, and always in sync.</p>
           <ul class="audience-points">
             <li>
-              <span class="check-icon">
-                <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-                  <path d="M2 5l2.5 2.5L8 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-              </span>
+              <span class="check-icon"><svg width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true"><path d="M2 5l2.5 2.5L8 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
               No debit card or bank account required
             </li>
             <li>
-              <span class="check-icon">
-                <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-                  <path d="M2 5l2.5 2.5L8 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-              </span>
+              <span class="check-icon"><svg width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true"><path d="M2 5l2.5 2.5L8 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
               Financial literacy woven into everyday chores
             </li>
             <li>
-              <span class="check-icon">
-                <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-                  <path d="M2 5l2.5 2.5L8 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-              </span>
+              <span class="check-icon"><svg width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true"><path d="M2 5l2.5 2.5L8 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
               One-time payment — own it forever
             </li>
           </ul>
         </div>
 
-        <div class="audience-card secondary reveal reveal-delay-2">
+        <div class="audience-card tinted reveal d2">
           <span class="audience-tag">Separated &amp; co-parenting</span>
           <div class="audience-title">Two households. One source of truth.</div>
           <p class="audience-body">Your data. Your evidence. Your life — owned by you, not rented from us. An immutable shared record that protects both parents.</p>
           <ul class="audience-points">
             <li>
-              <span class="check-icon">
-                <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-                  <path d="M2 5l2.5 2.5L8 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-              </span>
+              <span class="check-icon"><svg width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true"><path d="M2 5l2.5 2.5L8 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
               Cryptographic SHA-256 hashing on every entry
             </li>
             <li>
-              <span class="check-icon">
-                <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-                  <path d="M2 5l2.5 2.5L8 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-              </span>
+              <span class="check-icon"><svg width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true"><path d="M2 5l2.5 2.5L8 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
               Court-ready PDF exports — one click
             </li>
             <li>
-              <span class="check-icon">
-                <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-                  <path d="M2 5l2.5 2.5L8 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-              </span>
+              <span class="check-icon"><svg width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true"><path d="M2 5l2.5 2.5L8 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
               No disputes about who paid what
             </li>
           </ul>
@@ -887,62 +1067,63 @@
     </div>
   </section>
 
-  <!-- ── Differentiation ── -->
+  <!-- ── Why Morechard ── -->
   <section id="different">
     <div class="container">
       <span class="section-label reveal">Why Morechard</span>
       <h2 class="section-headline reveal">Built differently from the start.</h2>
-      <p class="section-sub reveal">Other apps need a debit card. Others charge monthly. None of them serve separated families. Morechard was built to be different.</p>
+      <p class="section-sub reveal">Other apps need a debit card. Others charge monthly. None of them serve separated families.</p>
 
       <div class="diff-grid">
-        <div class="diff-tile reveal reveal-delay-1">
+        <div class="diff-tile reveal d1">
           <div class="diff-icon">
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <svg width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden="true">
               <path d="M10 2a8 8 0 100 16A8 8 0 0010 2z" stroke="currentColor" stroke-width="1.8"/>
               <path d="M7 10l2 2 4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
           </div>
-          <div class="diff-content">
+          <div>
             <div class="diff-label">No debit card required</div>
             <div class="diff-desc">Works for any family from day one. RoosterMoney and GoHenry need a card — Morechard doesn't.</div>
           </div>
         </div>
 
-        <div class="diff-tile reveal reveal-delay-2">
+        <div class="diff-tile reveal d2">
           <div class="diff-icon">
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-              <path d="M3 10h14M10 3v14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+            <svg width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+              <rect x="3" y="5" width="14" height="10" rx="2" stroke="currentColor" stroke-width="1.8"/>
+              <path d="M7 5V4a2 2 0 014 0v1" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
             </svg>
           </div>
-          <div class="diff-content">
+          <div>
             <div class="diff-label">One-time payment — own it forever</div>
             <div class="diff-desc">No £3.99/mo trap. No cancellation anxiety. Pay once and it's yours for life.</div>
           </div>
         </div>
 
-        <div class="diff-tile reveal reveal-delay-3">
+        <div class="diff-tile reveal d3">
           <div class="diff-icon">
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <svg width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden="true">
               <rect x="3" y="4" width="14" height="13" rx="2" stroke="currentColor" stroke-width="1.8"/>
               <path d="M7 2v4M13 2v4M3 9h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
             </svg>
           </div>
-          <div class="diff-content">
+          <div>
             <div class="diff-label">Court-ready records</div>
-            <div class="diff-desc">SHA-256 hashed, cryptographically verifiable PDF exports. OurFamilyWizard and AppClose don't offer this for children's finances.</div>
+            <div class="diff-desc">SHA-256 hashed, cryptographically verifiable PDF exports. No other children's finance app offers this.</div>
           </div>
         </div>
 
-        <div class="diff-tile reveal reveal-delay-4">
+        <div class="diff-tile reveal d4">
           <div class="diff-icon">
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <svg width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden="true">
               <path d="M4 15c0-4 2.5-6 6-6s6 2 6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
               <circle cx="10" cy="6" r="3" stroke="currentColor" stroke-width="1.8"/>
             </svg>
           </div>
-          <div class="diff-content">
+          <div>
             <div class="diff-label">Real-data lessons — not generic slides</div>
-            <div class="diff-desc">Financial literacy triggered by your child's actual earning and spending. Gimi and GoHenry offer generic content; Morechard responds to real behaviour.</div>
+            <div class="diff-desc">Financial literacy triggered by your child's actual earning and spending. Responds to real behaviour.</div>
           </div>
         </div>
       </div>
@@ -957,55 +1138,55 @@
       <p class="section-sub reveal">One-time payment — yours for life. No renewal reminders. No price hikes. No cancellations.</p>
 
       <div class="pricing-grid">
-        <div class="plan-card reveal reveal-delay-1">
+        <div class="plan-card reveal d1">
           <div class="plan-name">Core</div>
           <div class="plan-price">
             <span class="plan-price-currency">£</span>
             <span class="plan-price-amount">44</span>
-            <span class="plan-price-label">.99</span>
+            <span class="plan-price-dec">.99</span>
           </div>
           <div class="plan-one-time">One-time payment</div>
           <hr class="plan-divider" />
           <ul class="plan-features">
-            <li><span class="plan-check"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2.5 7l3 3 6-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Chore tracker &amp; approval flow</li>
-            <li><span class="plan-check"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2.5 7l3 3 6-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Immutable SHA-256 ledger</li>
-            <li><span class="plan-check"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2.5 7l3 3 6-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>PDF export</li>
-            <li><span class="plan-check"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2.5 7l3 3 6-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>14-day full-access trial</li>
+            <li><span class="plan-check"><svg width="13" height="13" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M2.5 7l3 3 6-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Chore tracker &amp; approval flow</li>
+            <li><span class="plan-check"><svg width="13" height="13" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M2.5 7l3 3 6-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Immutable SHA-256 ledger</li>
+            <li><span class="plan-check"><svg width="13" height="13" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M2.5 7l3 3 6-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>PDF export</li>
+            <li><span class="plan-check"><svg width="13" height="13" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M2.5 7l3 3 6-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>14-day full-access trial</li>
           </ul>
         </div>
 
-        <div class="plan-card featured reveal reveal-delay-2">
+        <div class="plan-card featured reveal d2">
           <div class="plan-badge">Most Popular</div>
           <div class="plan-name">Core AI</div>
           <div class="plan-price">
             <span class="plan-price-currency">£</span>
             <span class="plan-price-amount">64</span>
-            <span class="plan-price-label">.99</span>
+            <span class="plan-price-dec">.99</span>
           </div>
           <div class="plan-one-time">One-time payment</div>
           <hr class="plan-divider" />
           <ul class="plan-features">
-            <li><span class="plan-check"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2.5 7l3 3 6-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Everything in Core</li>
-            <li><span class="plan-check"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2.5 7l3 3 6-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>AI Mentor coaching</li>
-            <li><span class="plan-check"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2.5 7l3 3 6-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Weekly parent insights</li>
-            <li><span class="plan-check"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2.5 7l3 3 6-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Financial literacy modules</li>
+            <li><span class="plan-check"><svg width="13" height="13" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M2.5 7l3 3 6-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Everything in Core</li>
+            <li><span class="plan-check"><svg width="13" height="13" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M2.5 7l3 3 6-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>AI Mentor coaching</li>
+            <li><span class="plan-check"><svg width="13" height="13" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M2.5 7l3 3 6-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Weekly parent insights</li>
+            <li><span class="plan-check"><svg width="13" height="13" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M2.5 7l3 3 6-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Financial literacy modules</li>
           </ul>
         </div>
 
-        <div class="plan-card reveal reveal-delay-3">
+        <div class="plan-card reveal d3">
           <div class="plan-name">Shield</div>
           <div class="plan-price">
             <span class="plan-price-currency">£</span>
             <span class="plan-price-amount">149</span>
-            <span class="plan-price-label">.99</span>
+            <span class="plan-price-dec">.99</span>
           </div>
           <div class="plan-one-time">One-time payment</div>
           <hr class="plan-divider" />
           <ul class="plan-features">
-            <li><span class="plan-check"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2.5 7l3 3 6-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Everything in Core AI</li>
-            <li><span class="plan-check"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2.5 7l3 3 6-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Forensic-grade PDF export</li>
-            <li><span class="plan-check"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2.5 7l3 3 6-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Legal integrity bundle</li>
-            <li><span class="plan-check"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2.5 7l3 3 6-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Court-admissible records</li>
+            <li><span class="plan-check"><svg width="13" height="13" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M2.5 7l3 3 6-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Everything in Core AI</li>
+            <li><span class="plan-check"><svg width="13" height="13" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M2.5 7l3 3 6-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Forensic-grade PDF export</li>
+            <li><span class="plan-check"><svg width="13" height="13" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M2.5 7l3 3 6-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Legal integrity bundle</li>
+            <li><span class="plan-check"><svg width="13" height="13" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M2.5 7l3 3 6-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Court-admissible records</li>
           </ul>
         </div>
       </div>
@@ -1021,7 +1202,7 @@
 
       <div class="form-wrap">
         <form id="interest-form">
-          <div class="form-row">
+          <div class="form-pill" id="form-pill">
             <input
               type="email"
               id="email-input"
@@ -1032,6 +1213,9 @@
             />
             <button type="submit" id="submit-btn" class="form-submit" disabled>
               <span id="btn-label">Notify me</span>
+              <svg id="btn-arrow" width="13" height="13" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                <path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
             </button>
           </div>
 
@@ -1052,11 +1236,11 @@
 
         <div class="form-success" id="form-success">
           <div class="success-icon">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
               <path d="M5 12l4 4L19 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
           </div>
-          <div class="success-text">You're on the list.</div>
+          <div class="success-title">You're on the list.</div>
           <div class="success-sub">We'll send you one email when Morechard is ready to launch. That's it.</div>
         </div>
       </div>
@@ -1065,31 +1249,53 @@
 
   <!-- ── Footer ── -->
   <footer>
-    <a class="footer-wordmark" href="#">Morechard</a>
-    <nav class="footer-links">
-      <a href="https://app.morechard.com/privacy" target="_blank" rel="noopener">Privacy Policy</a>
-      <a href="https://app.morechard.com/terms" target="_blank" rel="noopener">Terms of Use</a>
-      <a href="mailto:hello@morechard.com">Contact</a>
-    </nav>
-    <p class="footer-copy">
-      App launching soon at <a href="https://app.morechard.com" style="color:rgba(255,255,255,0.4);text-decoration:underline;">app.morechard.com</a><br />
-      &copy; 2026 Morechard. All rights reserved.
-    </p>
+    <a class="footer-logo" href="#">
+      <svg class="footer-logo-mark" viewBox="0 0 441.06 442.31" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <defs>
+          <linearGradient id="footer-grad" x1="0" y1="221.15" x2="441.06" y2="221.15" gradientUnits="userSpaceOnUse">
+            <stop offset="0.5" stop-color="#00959c"/>
+            <stop offset="0.5" stop-color="#e6b222"/>
+          </linearGradient>
+        </defs>
+        <path fill="url(#footer-grad)" d="M427.64,1.69l-202.38,139.41c-.32.25-.66.46-1,.66-.1.06-.2.11-.3.16-.32.16-.64.32-.97.43-.02,0-.03,0-.05.02-.37.13-.75.22-1.13.29-.03,0-.06.01-.1.02-.39.06-.79.1-1.18.1-1.65,0-3.3-.56-4.74-1.67L13.42,1.69C7.64-2.79,0,2.16,0,10.37v421.58c0,5.72,3.89,10.35,8.68,10.35h168.33c5.21,0,9.82-3.37,11.4-8.33.98-3.06,2.13-6.89,3.34-11.35.39-1.44.79-2.95,1.18-4.52.2-.78.4-1.58.6-2.4.4-1.63.8-3.32,1.19-5.07.39-1.75.78-3.55,1.16-5.4.76-3.71,1.49-7.62,2.15-11.7.17-1.02.33-2.05.48-3.09.78-5.21,1.45-10.67,1.94-16.32.1-1.13.19-2.27.27-3.41,2.09-28.61-.6-61.56-15.95-90.46-2.45-4.62-5.23-9.14-8.37-13.53,0,0,27.23,16.74,44.08,54.11,16.85-37.37,44.08-54.11,44.08-54.11-41.71,58.29-20.37,141.01-11.99,167.25,1.58,4.96,6.19,8.32,11.4,8.32h168.37c4.8,0,8.68-4.64,8.68-10.35V10.37c0-8.22-7.64-13.16-13.42-8.68ZM278.05,203.52c8.68-1.11,17.68,2.48,23.07,10.14,5.39,7.65,5.76,17.33,1.79,25.14-8.68,1.11-17.68-2.48-23.07-10.14-5.39-7.65-5.76-17.33-1.79-25.14ZM257.86,182.83c6.09,2.37,10.04,7.85,10.75,13.92-4.62,4-11.24,5.38-17.33,3.02-6.09-2.37-10.04-7.85-10.75-13.92,4.62-4,11.24-5.38,17.33-3.02ZM220.5,174.69c5.02-.02,9.39,2.79,11.6,6.93-2.18,4.16-6.52,7.01-11.54,7.03-5.02.02-9.39-2.79-11.6-6.93,2.18-4.16,6.52-7.01,11.54-7.03ZM138.43,222.92c9.47-3.52,20.53-1.82,28.59,5.38,8.06,7.2,11,17.99,8.57,27.8-9.47,3.52-20.53,1.82-28.59-5.38-8.06-7.2-11-17.99-8.57-27.8ZM123.74,265.47c1.15-6.91,6.46-12.19,13.3-14.15,5.83,4.07,9.15,10.79,8,17.7-1.15,6.91-6.46,12.19-13.3,14.15-5.83-4.07-9.15-10.79-8-17.7ZM191.82,358.95c-8.69,3.37-18.99,1.94-26.68-4.63-7.69-6.56-10.72-16.52-8.74-25.63,8.69-3.37,18.99-1.94,26.68,4.63,7.69,6.56,10.72,16.52,8.74,25.63ZM182.94,308.24c-7.36,8.49-19.08,12.74-30.85,10.05-11.77-2.69-20.47-11.62-23.41-22.47,7.36-8.49,19.08-12.74,30.85-10.05,11.77,2.69,20.47,11.62,23.41,22.47ZM161.78,216.36c-1.43-10.47,2.82-21.36,12.01-27.94,9.18-6.59,20.86-7.12,30.32-2.41,1.43,10.47-2.82,21.36-12.01,27.94-9.18-6.59-20.86-7.12-30.32-2.41ZM186.67,236.75c2.82-12.73,12.45-22.19,24.21-25.42,9.29,7.9,14.02,20.54,11.2,33.27-2.82,12.73-12.45,22.19-24.21,25.42-9.29-7.9-14.02-20.54-11.2-33.27ZM231.53,285.81c-6.01,5.93-14.57,7.68-22.1,5.3-2.27-7.56-.4-16.09,5.62-22.02,6.01-5.93,14.57-7.68,22.1-5.3,2.27,7.56.4,16.09-5.62,22.02ZM239.57,247.8c-9.19-10.21-11.41-24.25-6.98-36.31,12.46-3.13,26.19.54,35.38,10.75,9.19,10.21,11.41,24.25,6.98,36.31-12.46,3.13-26.19-.54-35.38-10.75ZM279.72,349.22c-6.01,9.4-16.53,14.17-26.93,13.31-5.14-9.08-5.23-20.62.78-30.03,6.01-9.4,16.53-14.17,26.93-13.31,5.14,9.08,5.23,20.62-.78,30.03ZM262.83,307.05c-4.37-8.89-3.82-19.83,2.39-28.41,6.21-8.58,16.44-12.52,26.25-11.13,4.37,8.89,3.82,19.83-2.39,28.41-6.21,8.58-16.44,12.52-26.25,11.13ZM310.84,313.15c-3.42,7.3-10.51,11.71-18.04,12.07-4.54-6.02-5.69-14.28-2.27-21.58,3.42-7.3,10.51-11.71,18.04-12.07,4.54,6.02,5.69,14.28,2.27,21.58ZM309.95,281.38c-6.91-3.09-11.94-9.79-12.48-17.87-.54-8.08,3.55-15.39,9.99-19.37,6.91,3.09,11.94,9.79,12.48,17.87.54,8.08-3.55,15.39-9.99,19.37Z"/>
+      </svg>
+      <span class="footer-logo-wordmark">
+        <span class="wm-M">M</span><span class="wm-or">or</span><span class="wm-e">e</span><span class="wm-chard">chard</span>
+      </span>
+    </a>
+    <div class="footer-links">
+      <a href="https://morechard.com/privacy-policy" target="_blank" rel="noopener">Privacy Policy</a>
+      <a href="https://morechard.com/terms" target="_blank" rel="noopener">Terms of Use</a>
+    </div>
+    <p class="footer-copy">&copy; 2026 Morechard. All rights reserved.</p>
   </footer>
 
   <script>
     // ── Scroll-reveal ──
-    const observer = new IntersectionObserver(
-      (entries) => entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); }),
-      { threshold: 0.12 }
+    const io = new IntersectionObserver(
+      entries => entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); }),
+      { threshold: 0.08 }
     );
-    document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+    document.querySelectorAll('.reveal').forEach(el => io.observe(el));
 
-    // ── Nav scroll shadow ──
+    // ── Nav: transparent → cream on scroll ──
     const nav = document.getElementById('nav');
-    window.addEventListener('scroll', () => {
-      nav.classList.toggle('scrolled', window.scrollY > 60);
-    }, { passive: true });
+    // Nav always shows cream bar after first scroll
+    window.addEventListener('scroll', updateScroll, { passive: true });
+
+    // ── Scroll-driven background: flip dark at #different ──
+    const darkTrigger = document.getElementById('who');
+    function updateScroll() {
+      const scrollY    = window.scrollY;
+      const triggerTop = darkTrigger.getBoundingClientRect().top + scrollY;
+
+      nav.classList.toggle('scrolled', scrollY > 60);
+
+      // Go dark when #different is about to enter the viewport
+      document.body.classList.toggle('dark', scrollY >= triggerTop - window.innerHeight * 0.15);
+    }
+
+    updateScroll();
 
     // ── Form logic ──
     const form        = document.getElementById('interest-form');
@@ -1097,60 +1303,56 @@
     const consentBox  = document.getElementById('consent-check');
     const submitBtn   = document.getElementById('submit-btn');
     const btnLabel    = document.getElementById('btn-label');
+    const btnArrow    = document.getElementById('btn-arrow');
+    const formPill    = document.getElementById('form-pill');
     const formError   = document.getElementById('form-error');
     const formSuccess = document.getElementById('form-success');
 
     const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
-    function updateSubmitState() {
-      const emailOk   = EMAIL_RE.test(emailInput.value.trim());
-      const consentOk = consentBox.checked;
-      submitBtn.disabled = !(emailOk && consentOk);
+    function updateSubmit() {
+      submitBtn.disabled = !(EMAIL_RE.test(emailInput.value.trim()) && consentBox.checked);
     }
-
-    emailInput.addEventListener('input', updateSubmitState);
-    consentBox.addEventListener('change', updateSubmitState);
+    emailInput.addEventListener('input', updateSubmit);
+    consentBox.addEventListener('change', updateSubmit);
 
     function showError(msg) {
       formError.textContent = msg;
       formError.classList.add('visible');
+      formPill.classList.add('error');
     }
-
     function clearError() {
       formError.classList.remove('visible');
+      formPill.classList.remove('error');
     }
-
-    function setLoading(loading) {
-      if (loading) {
+    function setLoading(on) {
+      if (on) {
         btnLabel.innerHTML = '<span class="spinner"></span>';
+        if (btnArrow) btnArrow.style.display = 'none';
         submitBtn.disabled = true;
       } else {
         btnLabel.textContent = 'Notify me';
-        updateSubmitState();
+        if (btnArrow) btnArrow.style.display = '';
+        updateSubmit();
       }
     }
 
-    form.addEventListener('submit', async (e) => {
+    form.addEventListener('submit', async e => {
       e.preventDefault();
       clearError();
-
       const email = emailInput.value.trim().toLowerCase();
       if (!EMAIL_RE.test(email)) {
         showError('Please enter a valid email address.');
-        emailInput.classList.add('error');
+        emailInput.focus();
         return;
       }
-      emailInput.classList.remove('error');
-
       setLoading(true);
-
       try {
         const res = await fetch('https://darren-savery.workers.dev/api/public/interest', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email, consent: true }),
         });
-
         if (res.ok) {
           form.style.display = 'none';
           formSuccess.classList.add('visible');

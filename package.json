@@ -1,6 +1,6 @@
 {
   "scripts": {
-    "build": "cd app && npm install && npm run build",
+    "build": "cd app && npm install && npm run build && cp -r ../marketing/. ../dist/",
     "dev": "concurrently --kill-others --names \"worker,app\" --prefix-colors \"cyan,green\" \"cd worker && npm run dev\" \"cd app && npm run dev\""
   },
   "devDependencies": {
