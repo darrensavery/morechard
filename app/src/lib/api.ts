@@ -688,6 +688,11 @@ export async function generateInvite(role: 'child' | 'co-parent'): Promise<{ cod
     method: 'POST', body: JSON.stringify({ family_id: getFamilyId(), role }),
   });
 }
+export async function regenerateChildInvite(childId: string): Promise<{ invite_code: string; expires_at: number }> {
+  return request(`/auth/child/${encodeURIComponent(childId)}/invite`, {
+    method: 'POST',
+  });
+}
 export async function saveRegistrationStep(step: number, data: Record<string, unknown>): Promise<void> {
   const family_id = getFamilyId();
   if (!family_id) return;
