@@ -3,16 +3,69 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Morechard — Coming Soon</title>
-  <meta name="description" content="The chore tracker for any family — with real financial literacy built in and a tamper-proof record underneath. Coming soon." />
+  <title>Morechard — Chore Tracker &amp; Pocket Money App for Families</title>
+  <meta name="description" content="Morechard is a chore tracker and pocket money app for any family — including separated and co-parenting households. Real financial literacy built in. One-time payment." />
+  <link rel="canonical" href="https://morechard.com/" />
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://morechard.com/" />
+  <meta property="og:site_name" content="Morechard" />
+  <meta property="og:title" content="Morechard — Chore Tracker &amp; Pocket Money App for Families" />
+  <meta property="og:description" content="A chore tracker and pocket money app for any family — including separated and co-parenting households. Real financial literacy built in. One-time payment." />
+  <meta property="og:image" content="https://morechard.com/og-image.jpg" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:locale" content="en_GB" />
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Morechard — Chore Tracker &amp; Pocket Money App for Families" />
+  <meta name="twitter:description" content="A chore tracker and pocket money app for any family — including separated and co-parenting households. Real financial literacy built in. One-time payment." />
+  <meta name="twitter:image" content="https://morechard.com/og-image.jpg" />
 
   <!-- Favicon -->
   <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+
+  <!-- Hero image preload -->
+  <link rel="preload" as="image" href="hero-orchard-portrait.webp" type="image/webp" media="(max-width: 720px)" />
+  <link rel="preload" as="image" href="hero-orchard_3_2.webp" type="image/webp" media="(min-width: 721px)" />
 
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,400&display=swap" rel="stylesheet" />
+
+  <!-- Structured data -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "name": "Morechard",
+    "url": "https://morechard.com",
+    "logo": "https://morechard.com/favicon.svg",
+    "contactPoint": {
+      "@type": "ContactPoint",
+      "email": "hello@morechard.com",
+      "contactType": "customer support"
+    }
+  }
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "Morechard",
+    "operatingSystem": "iOS, Android",
+    "applicationCategory": "FinanceApplication",
+    "description": "A chore tracker and pocket money app for families, including separated and co-parenting households. Real financial literacy built in.",
+    "offers": [
+      { "@type": "Offer", "name": "Core", "price": "44.99", "priceCurrency": "GBP" },
+      { "@type": "Offer", "name": "Core AI", "price": "64.99", "priceCurrency": "GBP" },
+      { "@type": "Offer", "name": "Shield AI", "price": "149.99", "priceCurrency": "GBP" }
+    ]
+  }
+  </script>
 
   <style>
     /* ── Reset ── */
@@ -891,7 +944,7 @@
 
   <!-- ── Nav ── -->
   <nav id="nav">
-    <a class="nav-logo" href="#">
+    <a class="nav-logo" href="#" aria-label="Morechard homepage">
       <svg class="nav-logo-mark" viewBox="0 0 441.06 442.31" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
         <defs>
           <linearGradient id="nav-grad" x1="0" y1="221.15" x2="441.06" y2="221.15" gradientUnits="userSpaceOnUse">
@@ -917,7 +970,7 @@
   <section id="hero">
     <picture>
       <source media="(max-width: 720px)" srcset="hero-orchard-portrait.webp" />
-      <img class="hero-img" src="hero-orchard_3_2.webp" alt="Morechard orchard illustration" loading="eager" />
+      <img class="hero-img" src="hero-orchard_3_2.webp" alt="Morechard — a family chore tracker and pocket money app, illustrated with an orchard scene" loading="eager" />
     </picture>
     <div class="hero-scrim"></div>
     <div class="hero-content">
@@ -1006,7 +1059,7 @@
 
         <!-- Right: phone mockup image -->
         <div class="promo-phone reveal d2">
-          <img src="phone-mockup.webp" alt="Morechard app running on a phone" loading="lazy" />
+          <img src="phone-mockup.webp" alt="Morechard app running on a phone" loading="lazy" width="360" height="780" />
         </div>
       </div>
     </div>
