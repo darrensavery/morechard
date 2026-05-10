@@ -574,6 +574,52 @@
       animation: choreSlideIn 0.4s cubic-bezier(0,0,0.2,1) forwards;
     }
 
+    /* Overdue chore */
+    .ds-chore.overdue {
+      border-color: #e05252;
+      background: rgba(224,82,82,0.06);
+    }
+    .ds-chore.overdue .ds-chore-icon { background: rgba(224,82,82,0.12); color: #e05252; }
+    .ds-overdue-badge {
+      font-size: 9px; font-weight: 600; letter-spacing: 0.08em;
+      text-transform: uppercase; color: #e05252;
+      background: rgba(224,82,82,0.1); border-radius: 20px;
+      padding: 2px 7px;
+    }
+
+    /* Learning Lab cards on Insights screen */
+    .ds-lab-section {
+      padding: 8px 14px 0;
+    }
+    .ds-lab-label {
+      font-size: 9px; font-weight: 600; letter-spacing: 0.1em;
+      text-transform: uppercase; color: #6b7b6e; margin-bottom: 6px;
+    }
+    body.dark .ds-lab-label { color: rgba(237,237,243,0.45); }
+    .ds-lab-card {
+      display: flex; align-items: center; gap: 10px;
+      background: #fff; border-radius: 10px;
+      padding: 9px 11px; margin-bottom: 6px;
+      border: 1px solid rgba(0,0,0,0.06);
+    }
+    body.dark .ds-lab-card { background: rgba(255,255,255,0.07); border-color: rgba(255,255,255,0.08); }
+    .ds-lab-icon {
+      width: 28px; height: 28px; border-radius: 8px; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .ds-lab-icon.earn  { background: rgba(0,149,156,0.12); color: #00959c; }
+    .ds-lab-icon.save  { background: rgba(230,178,34,0.15); color: #b8860b; }
+    .ds-lab-icon.spend { background: rgba(139,92,246,0.12); color: #7c3aed; }
+    .ds-lab-title { font-size: 11px; font-weight: 600; color: #1b2d2e; flex: 1; line-height: 1.3; }
+    body.dark .ds-lab-title { color: #ededf3; }
+    .ds-lab-pill {
+      font-size: 8px; font-weight: 600; letter-spacing: 0.06em;
+      text-transform: uppercase; border-radius: 20px; padding: 2px 7px; white-space: nowrap;
+    }
+    .ds-lab-pill.done  { background: rgba(0,149,156,0.1); color: #00959c; }
+    .ds-lab-pill.next  { background: rgba(230,178,34,0.15); color: #b8860b; }
+    .ds-lab-pill.lock  { background: rgba(0,0,0,0.06); color: #9eada0; }
+
     /* Chore rows */
     .ds-chore-list {
       flex: 1;
@@ -1486,14 +1532,14 @@
                 <div class="ds-greeting">Ella's Chores</div>
               </div>
               <div class="ds-chore-list" id="demo-chore-list">
-                <div class="ds-chore">
+                <div class="ds-chore overdue">
                   <div class="ds-chore-icon">
-                    <svg width="13" height="13" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 10l4 4 8-8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    <svg width="13" height="13" viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="2"/><path d="M10 6v4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="10" cy="14" r="1" fill="currentColor"/></svg>
                   </div>
-                  <span class="ds-chore-title">Washed up after dinner</span>
-                  <span class="ds-chore-amount">£1.00</span>
+                  <span class="ds-chore-title">Make your bed</span>
+                  <span class="ds-overdue-badge">Overdue</span>
                 </div>
-                <div class="ds-chore needs-approval" id="demo-chore-approval">
+                <div class="ds-chore needs-approval">
                   <div class="ds-chore-icon">
                     <svg width="13" height="13" viewBox="0 0 20 20" fill="none" aria-hidden="true"><rect x="4" y="3" width="12" height="14" rx="2" stroke="currentColor" stroke-width="2"/><path d="M7 7h6M7 10h6M7 13h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
                   </div>
@@ -1505,10 +1551,10 @@
                 </div>
                 <div class="ds-chore">
                   <div class="ds-chore-icon">
-                    <svg width="13" height="13" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M3 17l4-4 3 3 7-10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    <svg width="13" height="13" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 10l4 4 8-8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                   </div>
-                  <span class="ds-chore-title">Took out recycling</span>
-                  <span class="ds-chore-amount">£0.50</span>
+                  <span class="ds-chore-title">Washed up after dinner</span>
+                  <span class="ds-chore-amount">£1.00</span>
                 </div>
               </div>
             </div>
@@ -1561,6 +1607,30 @@
               <div class="ds-mentor-card">
                 <div class="ds-mentor-badge">✦ Orchard Mentor</div>
                 <div class="ds-mentor-text">Ella completed 4 of 5 chores this week — her strongest streak yet. She's consistently choosing harder tasks, which suggests growing confidence with money.</div>
+              </div>
+              <div class="ds-lab-section">
+                <div class="ds-lab-label">Learning Lab</div>
+                <div class="ds-lab-card">
+                  <div class="ds-lab-icon earn">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48 2.83 2.83M2 12h4m12 0h4"/></svg>
+                  </div>
+                  <span class="ds-lab-title">Effort &amp; Reward</span>
+                  <span class="ds-lab-pill done">Done</span>
+                </div>
+                <div class="ds-lab-card">
+                  <div class="ds-lab-icon save">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 7v5l3 3"/></svg>
+                  </div>
+                  <span class="ds-lab-title">Saving &amp; Goals</span>
+                  <span class="ds-lab-pill next">Up next</span>
+                </div>
+                <div class="ds-lab-card">
+                  <div class="ds-lab-icon spend">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3h18M3 9h18M3 15h18M3 21h18"/></svg>
+                  </div>
+                  <span class="ds-lab-title">Spending Choices</span>
+                  <span class="ds-lab-pill lock">Locked</span>
+                </div>
               </div>
             </div>
 
@@ -1999,30 +2069,30 @@
       let approveTimer      = null;
       let balanceCancelFlag = null;
       let choreAnimTimer    = null;
-      let choreAdded        = false;
+      let addedChore        = null;
 
       /* Move the teal indicator under the active nav tab */
       function updateNavIndicator(n) {
         if (!navIndicator || !navItems[n]) return;
         const item = navItems[n];
-        navIndicator.style.left   = item.offsetLeft + 'px';
-        navIndicator.style.width  = item.offsetWidth + 'px';
+        navIndicator.style.left  = item.offsetLeft + 'px';
+        navIndicator.style.width = item.offsetWidth + 'px';
       }
 
-      /* Add a new chore row to Screen 1 with a slide-in animation */
+      /* Slide a new chore into Screen 0, reset on each visit */
       function animateNewChore() {
-        if (choreAdded || !choreList) return;
-        choreAdded = true;
+        if (!choreList) return;
+        if (addedChore) { addedChore.remove(); addedChore = null; }
         const chore = document.createElement('div');
         chore.className = 'ds-chore animating-in';
-        chore.style.opacity = '0';
         chore.innerHTML = `
           <div class="ds-chore-icon">
-            <svg width="13" height="13" viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="10" cy="10" r="7" stroke="currentColor" stroke-width="2"/><path d="M10 6v4l2.5 2.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            <svg width="13" height="13" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M3 17l4-4 3 3 7-10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </div>
           <span class="ds-chore-title">Feed the cat</span>
           <span class="ds-chore-amount">£0.75</span>`;
         choreList.appendChild(chore);
+        addedChore = chore;
       }
 
       function setScreen(n) {
@@ -2046,17 +2116,17 @@
           }
         }
 
-        /* Screen 1 — chore appears after 1.2s */
+        /* Screen 0 (Chores) — new chore slides in after 1.4s */
         if (n === 0) {
-          choreAnimTimer = setTimeout(animateNewChore, 1200);
+          choreAnimTimer = setTimeout(animateNewChore, 1400);
         }
 
-        /* Screen 2 (Activity) — approve animation after 800ms */
+        /* Screen 1 (Activity) — approve animation after 1s */
         if (n === 1 && approveBtn) {
           approveTimer = setTimeout(() => {
             approveBtn.classList.add('approved');
             tickBalance(1250, 1400, 800);
-          }, 800);
+          }, 1000);
         }
       }
 
@@ -2087,7 +2157,7 @@
       let autoTimer = null;
       function startAuto() {
         stopAuto();
-        autoTimer = setInterval(() => setScreen((currentScreen + 1) % screens.length), 3500);
+        autoTimer = setInterval(() => setScreen((currentScreen + 1) % screens.length), 6000);
       }
       function stopAuto() { clearInterval(autoTimer); }
 
