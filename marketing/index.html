@@ -730,6 +730,56 @@
     body.dark .form-gdpr { color: rgba(237,237,240,0.3); }
     .form-gdpr a { text-decoration: underline; color: inherit; }
 
+    /* Segmented questions */
+    .form-question { margin-top: 20px; text-align: left; }
+    .form-question-label {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-dark);
+      margin-bottom: 10px;
+      display: block;
+    }
+    body.dark .form-question-label { color: rgba(237,237,240,0.85); }
+    .form-options {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .form-option {
+      flex: 1;
+      min-width: 120px;
+      padding: 10px 16px;
+      border-radius: var(--r-pill);
+      border: 1px solid rgba(27,45,46,0.2);
+      background: transparent;
+      font-family: var(--font-body);
+      font-size: 14px;
+      font-weight: 400;
+      color: var(--text-dark);
+      cursor: pointer;
+      text-align: center;
+      transition: border-color 0.2s, background 0.2s, color 0.2s;
+    }
+    body.dark .form-option {
+      border-color: rgba(255,255,255,0.2);
+      color: rgba(237,237,240,0.85);
+    }
+    .form-option:hover {
+      border-color: var(--teal);
+    }
+    .form-option.selected {
+      border-color: var(--teal);
+      background: rgba(0,149,156,0.1);
+      color: var(--teal);
+      font-weight: 500;
+    }
+    body.dark .form-option.selected {
+      background: rgba(0,149,156,0.15);
+      color: #4ecdd3;
+      border-color: #4ecdd3;
+    }
+    .form-question.hidden { display: none; }
+
     .form-error {
       margin-top: 10px;
       font-size: 13px;
@@ -1227,6 +1277,22 @@
             </button>
           </div>
 
+          <div class="form-question" id="q-contact-type">
+            <span class="form-question-label">Which best describes you?</span>
+            <div class="form-options">
+              <button type="button" class="form-option" data-group="contact_type" data-value="parent">Parent</button>
+              <button type="button" class="form-option" data-group="contact_type" data-value="professional">Professional</button>
+            </div>
+          </div>
+
+          <div class="form-question hidden" id="q-family-type">
+            <span class="form-question-label">Which best describes your family structure?</span>
+            <div class="form-options">
+              <button type="button" class="form-option" data-group="family_type" data-value="single_household">Single household</button>
+              <button type="button" class="form-option" data-group="family_type" data-value="multi_household">Multi household</button>
+            </div>
+          </div>
+
           <label class="form-consent">
             <input type="checkbox" id="consent-check" />
             <span>Yes — Morechard can send me product updates, launch news, and offers by email. I can unsubscribe at any time.</span>
@@ -1318,8 +1384,34 @@
 
     const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
+    const qFamilyType = document.getElementById('q-family-type');
+    const selections  = { contact_type: null, family_type: null };
+
+    document.querySelectorAll('.form-option').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const group = btn.dataset.group;
+        document.querySelectorAll(`[data-group="${group}"]`).forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        selections[group] = btn.dataset.value;
+
+        if (group === 'contact_type') {
+          if (btn.dataset.value === 'parent') {
+            qFamilyType.classList.remove('hidden');
+          } else {
+            qFamilyType.classList.add('hidden');
+            selections.family_type = null;
+            document.querySelectorAll('[data-group="family_type"]').forEach(b => b.classList.remove('selected'));
+          }
+        }
+        updateSubmit();
+      });
+    });
+
     function updateSubmit() {
-      submitBtn.disabled = !(EMAIL_RE.test(emailInput.value.trim()) && consentBox.checked);
+      const emailOk   = EMAIL_RE.test(emailInput.value.trim());
+      const typeOk    = selections.contact_type !== null;
+      const familyOk  = selections.contact_type !== 'parent' || selections.family_type !== null;
+      submitBtn.disabled = !(emailOk && consentBox.checked && typeOk && familyOk);
     }
     emailInput.addEventListener('input', updateSubmit);
     consentBox.addEventListener('change', updateSubmit);
@@ -1359,7 +1451,7 @@
         const res = await fetch('https://morechard-api.darren-savery.workers.dev/api/public/interest', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, consent: true }),
+          body: JSON.stringify({ email, consent: true, contact_type: selections.contact_type, family_type: selections.family_type }),
         });
         if (res.ok) {
           form.style.display = 'none';

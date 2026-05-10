@@ -32,7 +32,7 @@ export async function handlePublicInterest(request: Request, env: Env): Promise<
     return error('Too many requests — please wait a moment', 429)
   }
 
-  let body: { email?: unknown; consent?: unknown }
+  let body: { email?: unknown; consent?: unknown; contact_type?: unknown; family_type?: unknown }
   try {
     body = await request.json()
   } catch {
@@ -48,6 +48,15 @@ export async function handlePublicInterest(request: Request, env: Env): Promise<
     return error('Consent is required', 400)
   }
 
+  const VALID_CONTACT_TYPES = ['parent', 'professional']
+  const VALID_FAMILY_TYPES  = ['single_household', 'multi_household']
+  const contactType = typeof body.contact_type === 'string' && VALID_CONTACT_TYPES.includes(body.contact_type) ? body.contact_type : null
+  const familyType  = typeof body.family_type  === 'string' && VALID_FAMILY_TYPES.includes(body.family_type)   ? body.family_type  : null
+
+  const attributes: Record<string, string> = { SOURCE: 'morechard.com-prelaunch' }
+  if (contactType) attributes['CONTACT_TYPE'] = contactType
+  if (familyType)  attributes['FAMILY_TYPE']  = familyType
+
   const brevoRes = await fetch('https://api.brevo.com/v3/contacts', {
     method: 'POST',
     headers: {
@@ -57,7 +66,7 @@ export async function handlePublicInterest(request: Request, env: Env): Promise<
     body: JSON.stringify({
       email,
       listIds: [4],
-      attributes: { SOURCE: 'morechard.com-prelaunch' },
+      attributes,
       updateEnabled: true,
     }),
   })
