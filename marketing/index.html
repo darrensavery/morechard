@@ -420,7 +420,7 @@
             <h3 class="ll-panel-headline">A structured Life-Skills Syllabus — from work ethic to wealth strategy.</h3>
             <p class="ll-panel-body">The curriculum is organised into six pillars that build on each other in a deliberate sequence. Your child doesn't jump to investing before they understand taxes and debt — each module unlocks only when real behaviour triggers it.</p>
           </div>
-          <div class="ll-roadmap">
+          <div class="ll-roadmap-scroll"><div class="ll-roadmap">
             <button class="ll-pillar" data-pillar="1" aria-expanded="false">
               <div class="ll-pillar-dot ll-dot-teal"></div>
               <div class="ll-pillar-label">Pillar 1</div>
@@ -462,7 +462,7 @@
               <div class="ll-pillar-name">Society &amp; Wellbeing</div>
               <div class="ll-pillar-modules">4 modules</div>
             </button>
-          </div>
+          </div></div>
           <div class="ll-pillar-drawer" id="ll-pillar-drawer" aria-live="polite"></div>
         </div>
 
@@ -1023,18 +1023,18 @@
     (function() {
       const MODULES = {
         1: [
-          { name: 'Effort vs. Reward', phase2: true },
+          { name: 'Effort vs. Reward', phase2: false },
           { name: 'Taxes & Net Pay', phase2: false },
           { name: 'Entrepreneurship', phase2: false },
           { name: 'Gig Trap vs. Salary Safety', phase2: false }
         ],
         2: [
-          { name: 'Needs vs. Wants', phase2: true },
+          { name: 'Needs vs. Wants', phase2: false },
           { name: 'Scams & Digital Safety', phase2: false },
           { name: 'Advertising & Influence', phase2: false }
         ],
         3: [
-          { name: 'The Patience Tree', phase2: true },
+          { name: 'The Patience Tree', phase2: false },
           { name: 'Banking 101', phase2: false },
           { name: 'Opportunity Cost', phase2: false },
           { name: 'The Snowball', phase2: false }
@@ -1050,7 +1050,7 @@
           { name: 'Risk & Diversification', phase2: false }
         ],
         6: [
-          { name: 'Giving & Charity', phase2: true },
+          { name: 'Giving & Charity', phase2: false },
           { name: 'Digital vs. Physical Currency', phase2: false },
           { name: 'Money & Mental Health', phase2: false },
           { name: 'Social Comparison', phase2: false }
