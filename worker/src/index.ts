@@ -55,6 +55,7 @@
  * Public (no auth):
  *   GET    /api/market-rates/cron       CRON health check — reports market_rates row count
  *   POST   /api/referrals/click         Record a referral link click
+ *   POST   /api/public/interest         Register pre-launch interest → Brevo list 4
  *
  * Public — invite redemption:
  *   POST   /auth/invite/peek            Validate code without redeeming → { role }
@@ -176,6 +177,7 @@ import {
   handleReferralClick,
 } from './routes/referrals.js';
 import { handleConsentPost, handleConsentGet } from './routes/consent.js';
+import { handlePublicInterest } from './routes/public-interest.js';
 import { json, error } from './lib/response.js';
 import { JwtPayload } from './lib/jwt.js';
 import {
@@ -388,6 +390,9 @@ async function route(request: Request, env: Env, method: string, path: string): 
 
   // Demo registration — public (professional path, no existing account)
   if (path === '/auth/demo/register' && method === 'POST') return handleDemoRegister(request, env);
+
+  // Pre-launch interest registration — public, no auth
+  if (path === '/api/public/interest' && method === 'POST') return handlePublicInterest(request, env);
 
   // ── All authenticated routes require a valid JWT ─────────────
   const auth = await requireAuth(request, env);
