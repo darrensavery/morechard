@@ -421,48 +421,49 @@
             <p class="ll-panel-body">The curriculum is organised into six pillars that build on each other in a deliberate sequence. Your child doesn't jump to investing before they understand taxes and debt — each module unlocks only when real behaviour triggers it.</p>
           </div>
           <div class="ll-roadmap">
-            <div class="ll-pillar">
+            <button class="ll-pillar" data-pillar="1" aria-expanded="false">
               <div class="ll-pillar-dot ll-dot-teal"></div>
               <div class="ll-pillar-label">Pillar 1</div>
               <div class="ll-pillar-name">Earning &amp; Value</div>
               <div class="ll-pillar-modules">4 modules</div>
-            </div>
+            </button>
             <div class="ll-pillar-connector"></div>
-            <div class="ll-pillar">
+            <button class="ll-pillar" data-pillar="2" aria-expanded="false">
               <div class="ll-pillar-dot ll-dot-teal"></div>
               <div class="ll-pillar-label">Pillar 2</div>
               <div class="ll-pillar-name">Spending &amp; Choices</div>
               <div class="ll-pillar-modules">3 modules</div>
-            </div>
+            </button>
             <div class="ll-pillar-connector"></div>
-            <div class="ll-pillar">
+            <button class="ll-pillar" data-pillar="3" aria-expanded="false">
               <div class="ll-pillar-dot ll-dot-teal"></div>
               <div class="ll-pillar-label">Pillar 3</div>
               <div class="ll-pillar-name">Saving &amp; Growth</div>
               <div class="ll-pillar-modules">4 modules</div>
-            </div>
+            </button>
             <div class="ll-pillar-connector"></div>
-            <div class="ll-pillar">
+            <button class="ll-pillar" data-pillar="4" aria-expanded="false">
               <div class="ll-pillar-dot ll-dot-gold"></div>
               <div class="ll-pillar-label">Pillar 4</div>
               <div class="ll-pillar-name">Borrowing &amp; Debt</div>
               <div class="ll-pillar-modules">3 modules</div>
-            </div>
+            </button>
             <div class="ll-pillar-connector"></div>
-            <div class="ll-pillar">
+            <button class="ll-pillar" data-pillar="5" aria-expanded="false">
               <div class="ll-pillar-dot ll-dot-gold"></div>
               <div class="ll-pillar-label">Pillar 5</div>
               <div class="ll-pillar-name">Investing &amp; Future</div>
               <div class="ll-pillar-modules">3 modules</div>
-            </div>
+            </button>
             <div class="ll-pillar-connector"></div>
-            <div class="ll-pillar">
+            <button class="ll-pillar" data-pillar="6" aria-expanded="false">
               <div class="ll-pillar-dot ll-dot-gold"></div>
               <div class="ll-pillar-label">Pillar 6</div>
               <div class="ll-pillar-name">Society &amp; Wellbeing</div>
               <div class="ll-pillar-modules">4 modules</div>
-            </div>
+            </button>
           </div>
+          <div class="ll-pillar-drawer" id="ll-pillar-drawer" aria-live="polite"></div>
         </div>
 
         <!-- Panel 1: Competitive — The Missing Education -->
@@ -1015,6 +1016,87 @@
       window.addEventListener('resize', () => {
         const active = tabs.findIndex(t => t.classList.contains('active'));
         if (active >= 0) setIndicator(tabs[active]);
+      });
+    })();
+
+    /* ── Pillar drawer ── */
+    (function() {
+      const MODULES = {
+        1: [
+          { name: 'Effort vs. Reward', phase2: true },
+          { name: 'Taxes & Net Pay', phase2: false },
+          { name: 'Entrepreneurship', phase2: false },
+          { name: 'Gig Trap vs. Salary Safety', phase2: false }
+        ],
+        2: [
+          { name: 'Needs vs. Wants', phase2: true },
+          { name: 'Scams & Digital Safety', phase2: false },
+          { name: 'Advertising & Influence', phase2: false }
+        ],
+        3: [
+          { name: 'The Patience Tree', phase2: true },
+          { name: 'Banking 101', phase2: false },
+          { name: 'Opportunity Cost', phase2: false },
+          { name: 'The Snowball', phase2: false }
+        ],
+        4: [
+          { name: 'The Interest Trap', phase2: false },
+          { name: 'Credit Scores & Trust', phase2: false },
+          { name: 'Good vs. Bad Debt', phase2: false }
+        ],
+        5: [
+          { name: 'Stocks & Shares', phase2: false },
+          { name: 'Inflation', phase2: false },
+          { name: 'Risk & Diversification', phase2: false }
+        ],
+        6: [
+          { name: 'Giving & Charity', phase2: true },
+          { name: 'Digital vs. Physical Currency', phase2: false },
+          { name: 'Money & Mental Health', phase2: false },
+          { name: 'Social Comparison', phase2: false }
+        ]
+      };
+
+      const NAMES = {
+        1: 'Earning & Value', 2: 'Spending & Choices', 3: 'Saving & Growth',
+        4: 'Borrowing & Debt', 5: 'Investing & Future', 6: 'Society & Wellbeing'
+      };
+
+      const drawer = document.getElementById('ll-pillar-drawer');
+      let activePillar = null;
+
+      document.querySelectorAll('.ll-pillar[data-pillar]').forEach(btn => {
+        btn.addEventListener('click', function() {
+          const idx = parseInt(this.dataset.pillar, 10);
+
+          // Close if same pillar tapped again
+          if (activePillar === idx) {
+            this.classList.remove('active');
+            this.setAttribute('aria-expanded', 'false');
+            drawer.classList.remove('open');
+            activePillar = null;
+            return;
+          }
+
+          // Deactivate previous
+          document.querySelectorAll('.ll-pillar[data-pillar]').forEach(b => {
+            b.classList.remove('active');
+            b.setAttribute('aria-expanded', 'false');
+          });
+
+          // Activate this one
+          this.classList.add('active');
+          this.setAttribute('aria-expanded', 'true');
+          activePillar = idx;
+
+          // Build drawer content
+          const modules = MODULES[idx];
+          const chips = modules.map(m =>
+            `<span class="ll-drawer-module${m.phase2 ? ' phase2' : ''}">${m.name}</span>`
+          ).join('');
+          drawer.innerHTML = `<div class="ll-drawer-inner"><div class="ll-drawer-pillar-label">Pillar ${idx} — ${NAMES[idx]}</div>${chips}</div>`;
+          drawer.classList.add('open');
+        });
       });
     })();
 
