@@ -21,6 +21,10 @@ function die(msg) {
   process.exit(1);
 }
 
+function escapeAttr(s) {
+  return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+}
+
 function resolveDataPath(data, dotPath, context) {
   const parts = dotPath.split('.');
   let cur = data;
@@ -37,10 +41,15 @@ function resolveDataPath(data, dotPath, context) {
 // ── Build hash (cache busting) ────────────────────────────────────────────────
 
 function buildHash() {
-  const baseCssPath = path.join(ROOT, 'css', 'base.css');
-  const baseCss = fs.existsSync(baseCssPath) ? read(baseCssPath) : '';
-  const seed = Date.now().toString() + baseCss;
-  return crypto.createHash('sha256').update(seed).digest('hex').slice(0, 8);
+  const cssDir = path.join(ROOT, 'css');
+  const allCss = fs.readdirSync(cssDir)
+    .sort()
+    .map(f => {
+      const full = path.join(cssDir, f);
+      return fs.statSync(full).isDirectory() ? '' : fs.readFileSync(full, 'utf8');
+    })
+    .join('');
+  return crypto.createHash('sha256').update(allCss).digest('hex').slice(0, 8);
 }
 
 // ── Pricing card HTML generation ─────────────────────────────────────────────
@@ -87,7 +96,7 @@ function generatePricingCards(pricing) {
 
 function buildHomepageHeadExtras(pricing) {
   const offers = Object.values(pricing).map(p =>
-    `      { "@type": "Offer", "name": "${p.name}", "price": "${p.price_whole}${p.price_dec}", "priceCurrency": "GBP" }`
+    `      { "@type": "Offer", "name": ${JSON.stringify(p.name)}, "price": ${JSON.stringify(p.price_whole + p.price_dec)}, "priceCurrency": "GBP" }`
   ).join(',\n');
 
   return `
@@ -164,8 +173,10 @@ function build() {
   const components = {};
   for (const file of fs.readdirSync(componentsDir)) {
     if (!file.endsWith('.html')) continue;
+    const full = path.join(componentsDir, file);
+    if (fs.statSync(full).isDirectory()) continue;
     const name = file.replace('.html', '');
-    components[name] = read(path.join(componentsDir, file));
+    components[name] = read(full);
   }
 
   // 5. Pre-generate data-driven HTML
@@ -223,10 +234,10 @@ function build() {
     let extraHead = '';
     if (meta.OG_TITLE) {
       extraHead = buildHomepageHeadExtras(pricing)
-        .replace(/\{\{CANONICAL\}\}/g, meta.CANONICAL || '')
-        .replace(/\{\{OG_TITLE\}\}/g, meta.OG_TITLE || '')
-        .replace(/\{\{OG_DESCRIPTION\}\}/g, meta.OG_DESCRIPTION || '')
-        .replace(/\{\{OG_IMAGE\}\}/g, meta.OG_IMAGE || '');
+        .replace(/\{\{CANONICAL\}\}/g, escapeAttr(meta.CANONICAL || ''))
+        .replace(/\{\{OG_TITLE\}\}/g, escapeAttr(meta.OG_TITLE || ''))
+        .replace(/\{\{OG_DESCRIPTION\}\}/g, escapeAttr(meta.OG_DESCRIPTION || ''))
+        .replace(/\{\{OG_IMAGE\}\}/g, escapeAttr(meta.OG_IMAGE || ''));
     } else if (meta.CANONICAL) {
       extraHead = `\n  <link rel="canonical" href="${meta.CANONICAL}" />`;
     }
@@ -236,8 +247,8 @@ function build() {
 <html lang="en">
 <head>
 ${headCommon}
-  <title>${meta.TITLE}</title>
-  <meta name="description" content="${meta.DESCRIPTION}" />${extraHead}
+  <title>${escapeAttr(meta.TITLE)}</title>
+  <meta name="description" content="${escapeAttr(meta.DESCRIPTION)}" />${extraHead}
 ${pageCssLink}
 </head>
 <body>
@@ -267,7 +278,9 @@ ${scripts}
   const distCssDir = path.join(DIST, 'css');
   fs.mkdirSync(distCssDir, { recursive: true });
   for (const f of fs.readdirSync(cssDir)) {
-    fs.copyFileSync(path.join(cssDir, f), path.join(distCssDir, f));
+    const full = path.join(cssDir, f);
+    if (fs.statSync(full).isDirectory()) continue;
+    fs.copyFileSync(full, path.join(distCssDir, f));
   }
   console.log('[build] ✓ css/ (copied)');
 
