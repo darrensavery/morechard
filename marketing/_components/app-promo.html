@@ -1,0 +1,216 @@
+<!-- component: app-promo | css: none -->
+  <section id="app-promo">
+    <div class="container">
+      <div class="promo-grid">
+        <!-- Left: copy -->
+        <div>
+          <span class="section-label reveal">The app</span>
+          <h2 class="section-headline reveal">A pocket money app that actually works - and teaches valuable financial concepts as it goes.</h2>
+          <p class="section-sub reveal">Morechard lives on your phone. Parents manage, children track - in one shared, secure space.</p>
+
+          <ul class="promo-feature-list">
+            <li class="promo-feature reveal d1">
+              <div class="promo-icon">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                  <path d="M4 10l4 4 8-8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </div>
+              <div>
+                <div class="promo-feature-title">Assign &amp; approve chores</div>
+                <div class="promo-feature-desc">Set a chore, a rate, and a deadline. Your child marks it done - you approve and the ledger updates instantly - building responsibility and autonomy.</div>
+              </div>
+            </li>
+            <li class="promo-feature reveal d2">
+              <div class="promo-icon">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                  <circle cx="10" cy="10" r="7" stroke="currentColor" stroke-width="1.8"/>
+                  <path d="M10 6v4l2.5 2.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                </svg>
+              </div>
+              <div>
+                <div class="promo-feature-title">Real-time pocket money balance</div>
+                <div class="promo-feature-desc">Children see their balance grow with every approved job. A live, honest account they own and can allocate to their chosen goals.</div>
+              </div>
+            </li>
+            <li class="promo-feature reveal d3">
+              <div class="promo-icon">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                  <path d="M3 17l4-4 3 3 7-10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </div>
+              <div>
+                <div class="promo-feature-title">AI Mentor weekly briefing</div>
+                <div class="promo-feature-desc">A real-time AI powered financial mentor, teaching your children the value of money, aligned to government approved curriculum and approved by qualified child psychologists.</div>
+              </div>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Right: tab-driven phone demo -->
+        <div class="promo-phone">
+          <div class="phone-frame">
+
+            <!-- Shared top bar (logo + avatar) -->
+            <div class="ds-topbar">
+              <div class="ds-logo">
+                <svg width="16" height="16" viewBox="0 0 441 442" fill="none" aria-hidden="true">
+                  <path d="M427.64,1.69l-202.38,139.41c-1.39.97-3.04,1.46-4.74,1.46s-3.35-.49-4.74-1.46L13.42,1.69C7.64-2.79,0,2.16,0,10.37v421.58c0,5.72,3.89,10.35,8.68,10.35h168.33c5.21,0,9.82-3.37,11.4-8.33 14.85-46.07,6.41-120.47-23.32-144.21 16.85,37.37,44.08,54.11,44.08,54.11s27.23-16.74,44.08-54.11c-29.73,23.74-38.17,98.14-23.32,144.21 1.58,4.96,6.19,8.32,11.4,8.32h168.37c4.8,0,8.68-4.64,8.68-10.35V10.37c0-8.22-7.64-13.16-13.42-8.68Z" fill="#00959c"/>
+                </svg>
+                <span class="ds-logo-wordmark">Morechard</span>
+              </div>
+              <div class="ds-avatar">D</div>
+            </div>
+
+            <!-- Shared top tab nav -->
+            <div class="ds-tabnav" id="demo-tabnav">
+              <div class="ds-tabnav-item active" data-screen="0">Chores</div>
+              <div class="ds-tabnav-item" data-screen="1">Activity</div>
+              <div class="ds-tabnav-item" data-screen="2">Insights</div>
+              <div class="ds-tabnav-indicator" id="demo-tabnav-indicator"></div>
+            </div>
+
+            <!-- Screens wrap - screens stack here via position:absolute -->
+            <div class="demo-screen-wrap">
+
+            <!-- Screen 1: Chore list -->
+            <div class="demo-screen active" id="demo-screen-0">
+              <div class="ds-header">
+                <div class="ds-greeting">Ella's Chores</div>
+              </div>
+              <div class="ds-chore-list" id="demo-chore-list">
+                <div class="ds-chore overdue" id="dc-overdue" style="opacity:0;">
+                  <div class="ds-chore-icon">
+                    <svg width="13" height="13" viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="2"/><path d="M10 6v4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="10" cy="14" r="1" fill="currentColor"/></svg>
+                  </div>
+                  <span class="ds-chore-title">Make your bed</span>
+                  <span class="ds-overdue-badge">Overdue</span>
+                </div>
+                <div class="ds-chore needs-approval" id="dc-approval" style="opacity:0">
+                  <div class="ds-chore-icon">
+                    <svg width="13" height="13" viewBox="0 0 20 20" fill="none" aria-hidden="true"><rect x="4" y="3" width="12" height="14" rx="2" stroke="currentColor" stroke-width="2"/><path d="M7 7h6M7 10h6M7 13h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                  </div>
+                  <span class="ds-chore-title">Tidied bedroom</span>
+                  <div class="ds-approval-badge" id="dc-badge">
+                    <span class="ds-approval-dot"></span>
+                    Review
+                  </div>
+                </div>
+                <div class="ds-chore" id="dc-done" style="opacity:0">
+                  <div class="ds-chore-icon">
+                    <svg width="13" height="13" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 10l4 4 8-8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  </div>
+                  <span class="ds-chore-title">Washed up after dinner</span>
+                  <span class="ds-chore-amount">£1.00</span>
+                </div>
+              </div>
+              <!-- Archive section -->
+              <div class="ds-archive-section">
+                <div class="ds-archive-label">
+                  <svg width="11" height="11" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M3 5h14M3 5v11a1 1 0 001 1h12a1 1 0 001-1V5M8 9h4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  Archive
+                </div>
+                <div class="ds-chore ds-chore-archived">
+                  <div class="ds-chore-icon">
+                    <svg width="13" height="13" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 10l4 4 8-8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  </div>
+                  <span class="ds-chore-title">Hoovered upstairs</span>
+                  <span class="ds-chore-amount">£2.00</span>
+                </div>
+                <div class="ds-chore ds-chore-archived">
+                  <div class="ds-chore-icon">
+                    <svg width="13" height="13" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 10l4 4 8-8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  </div>
+                  <span class="ds-chore-title">Emptied dishwasher</span>
+                  <span class="ds-chore-amount">£0.75</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Screen 2: Activity -->
+            <div class="demo-screen" id="demo-screen-1">
+              <div class="ds-activity-header">Ella's Activity</div>
+              <div class="ds-action-row">
+                <button class="ds-btn-payout" tabindex="-1">Pay out</button>
+                <button class="ds-btn-bonus" tabindex="-1">+ Bonus</button>
+              </div>
+              <div class="ds-pending-label">Pending approval</div>
+              <div class="ds-history-item pending">
+                <div class="ds-history-icon">
+                  <svg width="13" height="13" viewBox="0 0 20 20" fill="none" aria-hidden="true"><rect x="4" y="3" width="12" height="14" rx="2" stroke="currentColor" stroke-width="2"/><path d="M7 7h6M7 10h6M7 13h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                </div>
+                <span class="ds-history-name">Tidied bedroom</span>
+                <span class="ds-history-badge">Review</span>
+                <span class="ds-history-amount">£1.50</span>
+              </div>
+              <div class="ds-approve-card" style="margin-top:8px;">
+                <div class="ds-approve-title">Tidied bedroom</div>
+                <div class="ds-approve-sub">Ella · £1.50</div>
+                <div class="ds-approve-balance">Balance: <span id="demo-balance">£12.50</span></div>
+                <div class="ds-btn-row">
+                  <button class="ds-btn-decline" tabindex="-1">Decline</button>
+                  <button class="ds-btn-approve" id="demo-approve-btn" tabindex="-1">
+                    <span class="btn-label">Approve</span>
+                    <span class="btn-tick">✓ Approved</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Screen 3: Insights -->
+            <div class="demo-screen" id="demo-screen-2">
+              <div class="ds-insights-header">Weekly Insights - Ella</div>
+              <div class="ds-gauges">
+                <div class="ds-gauge">
+                  <div class="ds-gauge-label">Consistency</div>
+                  <div class="ds-gauge-bar"><div class="ds-gauge-fill" style="--fill:80%"></div></div>
+                  <div class="ds-gauge-value">80%</div>
+                </div>
+                <div class="ds-gauge">
+                  <div class="ds-gauge-label">Responsibility</div>
+                  <div class="ds-gauge-bar"><div class="ds-gauge-fill" style="--fill:70%"></div></div>
+                  <div class="ds-gauge-value">70%</div>
+                </div>
+              </div>
+              <div class="ds-mentor-card">
+                <div class="ds-mentor-badge">✦ Orchard Mentor</div>
+                <div class="ds-mentor-text">Ella completed 4 of 5 chores this week - her strongest streak yet. She's consistently choosing harder tasks, which suggests growing confidence with money.</div>
+              </div>
+              <div class="ds-lab-section">
+                <div class="ds-lab-label">Learning Lab</div>
+                <div class="ds-lab-card">
+                  <div class="ds-lab-icon earn">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48 2.83 2.83M2 12h4m12 0h4"/></svg>
+                  </div>
+                  <span class="ds-lab-title">Effort &amp; Reward</span>
+                  <span class="ds-lab-pill done">Done</span>
+                </div>
+                <div class="ds-lab-card">
+                  <div class="ds-lab-icon save">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 7v5l3 3"/></svg>
+                  </div>
+                  <span class="ds-lab-title">Saving &amp; Goals</span>
+                  <span class="ds-lab-pill next">Up next</span>
+                </div>
+                <div class="ds-lab-card">
+                  <div class="ds-lab-icon spend">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3h18M3 9h18M3 15h18M3 21h18"/></svg>
+                  </div>
+                  <span class="ds-lab-title">Spending Choices</span>
+                  <span class="ds-lab-pill lock">Locked</span>
+                </div>
+              </div>
+            </div>
+
+            </div><!-- /demo-screen-wrap -->
+          </div><!-- /phone-frame -->
+
+          <!-- Progress dots -->
+          <div class="demo-dots" aria-hidden="true">
+            <div class="demo-dot active"></div>
+            <div class="demo-dot"></div>
+            <div class="demo-dot"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>

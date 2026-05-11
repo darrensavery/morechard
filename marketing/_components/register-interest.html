@@ -1,0 +1,70 @@
+<!-- component: register-interest | css: none -->
+  <section id="signup">
+    <div class="container">
+      <span class="section-label reveal">Early access</span>
+      <h2 class="section-headline reveal">Be the first to know<br />when Morechard launches.</h2>
+      <p class="section-sub reveal">No spam. Just a single email when we open the doors.</p>
+
+      <div class="form-wrap">
+        <form id="interest-form">
+          <div id="form-pill">
+            <input
+              type="email"
+              id="email-input"
+              class="form-input"
+              placeholder="your@email.com"
+              autocomplete="email"
+              required
+            />
+          </div>
+
+          <div class="form-question" id="q-contact-type">
+            <span class="form-question-label">Which best describes you?</span>
+            <div class="form-options">
+              <button type="button" class="form-option" data-group="contact_type" data-value="parent">Parent</button>
+              <button type="button" class="form-option" data-group="contact_type" data-value="professional">Professional</button>
+            </div>
+          </div>
+
+          <div class="form-question hidden" id="q-family-type">
+            <span class="form-question-label">Which best describes your family structure?</span>
+            <div class="form-options">
+              <button type="button" class="form-option" data-group="family_type" data-value="single_household">Single household</button>
+              <button type="button" class="form-option" data-group="family_type" data-value="multi_household">Multi household</button>
+            </div>
+          </div>
+
+          <label class="form-consent">
+            <input type="checkbox" id="consent-check" />
+            <span>Yes - Morechard can send me product updates, launch news, and offers by email. I can unsubscribe at any time.</span>
+          </label>
+
+          <button type="submit" id="submit-btn" class="form-submit" disabled>
+            <span id="btn-label">Notify me</span>
+            <svg id="btn-arrow" width="13" height="13" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+              <path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+
+          <div class="form-error" id="form-error"></div>
+
+          <p class="form-gdpr">
+            Your email is stored securely with Brevo. We won't share it with third parties.
+            You can withdraw consent at any time by emailing
+            <a href="mailto:hello@morechard.com">hello@morechard.com</a>.
+            By submitting, you confirm you are 16 or older.
+          </p>
+        </form>
+
+        <div class="form-success" id="form-success">
+          <div class="success-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M5 12l4 4L19 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <div class="success-title">You're on the list.</div>
+          <div class="success-sub">We'll send you one email when Morechard is ready to launch. That's it.</div>
+        </div>
+      </div>
+    </div>
+  </section>
