@@ -1,0 +1,235 @@
+<!--
+  TITLE: Morechard - Chore Tracker &amp; Pocket Money App for Families
+  DESCRIPTION: Morechard is a chore tracker and pocket money app for any family - including separated and co-parenting households. Real financial literacy built in. One-time payment.
+  CANONICAL: https://morechard.com/
+  OG_TITLE: Morechard - Chore Tracker &amp; Pocket Money App for Families
+  OG_DESCRIPTION: A chore tracker and pocket money app for any family - including separated and co-parenting households. Real financial literacy built in. One-time payment.
+  OG_IMAGE: https://morechard.com/og-image.jpg
+  PAGE_CSS: home.css
+-->
+
+<!-- BODY_START -->
+{{component:hero-fullbleed}}
+{{component:app-promo}}
+{{component:what-is-morechard}}
+{{component:learning-lab-pillars}}
+{{component:who-its-for}}
+{{component:why-morechard}}
+{{component:pricing-table}}
+{{component:register-interest}}
+<!-- BODY_END -->
+
+<!-- SCRIPTS_START -->
+<script>
+  // ── Scroll-reveal ──
+  const io = new IntersectionObserver(
+    entries => entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); }),
+    { threshold: 0.08 }
+  );
+  document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+
+  // ── Nav: transparent → cream on scroll ──
+  const nav = document.getElementById('nav');
+  const darkTrigger = document.getElementById('who');
+  function updateScroll() {
+    const scrollY    = window.scrollY;
+    const triggerTop = darkTrigger.getBoundingClientRect().top + scrollY;
+    nav.classList.toggle('scrolled', scrollY > 60);
+    document.body.classList.toggle('dark', scrollY >= triggerTop - window.innerHeight * 0.15);
+  }
+  window.addEventListener('scroll', updateScroll, { passive: true });
+  updateScroll();
+
+  // ── Form logic ──
+  const form        = document.getElementById('interest-form');
+  const emailInput  = document.getElementById('email-input');
+  const consentBox  = document.getElementById('consent-check');
+  const submitBtn   = document.getElementById('submit-btn');
+  const btnLabel    = document.getElementById('btn-label');
+  const btnArrow    = document.getElementById('btn-arrow');
+  const formPill    = document.getElementById('form-pill');
+  const formError   = document.getElementById('form-error');
+  const formSuccess = document.getElementById('form-success');
+
+  const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+  const qFamilyType = document.getElementById('q-family-type');
+  const selections  = { contact_type: null, family_type: null };
+
+  document.querySelectorAll('.form-option').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const group = btn.dataset.group;
+      document.querySelectorAll(`[data-group="${group}"]`).forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      selections[group] = btn.dataset.value;
+      if (group === 'contact_type') {
+        if (btn.dataset.value === 'parent') {
+          qFamilyType.classList.remove('hidden');
+        } else {
+          qFamilyType.classList.add('hidden');
+          selections.family_type = null;
+          document.querySelectorAll('[data-group="family_type"]').forEach(b => b.classList.remove('selected'));
+        }
+      }
+      updateSubmit();
+    });
+  });
+
+  function updateSubmit() {
+    const emailOk  = EMAIL_RE.test(emailInput.value.trim());
+    const typeOk   = selections.contact_type !== null;
+    const familyOk = selections.contact_type !== 'parent' || selections.family_type !== null;
+    submitBtn.disabled = !(emailOk && consentBox.checked && typeOk && familyOk);
+  }
+  emailInput.addEventListener('input', updateSubmit);
+  consentBox.addEventListener('change', updateSubmit);
+
+  function showError(msg) { formError.textContent = msg; formError.classList.add('visible'); formPill.classList.add('error'); }
+  function clearError() { formError.classList.remove('visible'); formPill.classList.remove('error'); }
+  function setLoading(on) {
+    if (on) { btnLabel.innerHTML = '<span class="spinner"></span>'; if (btnArrow) btnArrow.style.display = 'none'; submitBtn.disabled = true; }
+    else { btnLabel.textContent = 'Notify me'; if (btnArrow) btnArrow.style.display = ''; updateSubmit(); }
+  }
+
+  /* ── Learning Lab persona tabs ── */
+  (function() {
+    const tabs      = Array.from(document.querySelectorAll('#ll-tabs .ll-tab'));
+    const panels    = Array.from(document.querySelectorAll('.ll-panel'));
+    const indicator = document.getElementById('ll-tab-indicator');
+
+    function positionIndicator(tab) {
+      const tabsRect = document.getElementById('ll-tabs').getBoundingClientRect();
+      const tabRect  = tab.getBoundingClientRect();
+      indicator.style.width  = tabRect.width + 'px';
+      indicator.style.left   = (tabRect.left - tabsRect.left) + 'px';
+    }
+
+    function activateTab(idx) {
+      tabs.forEach((t, i) => {
+        t.classList.toggle('active', i === idx);
+        t.setAttribute('aria-selected', i === idx);
+      });
+      panels.forEach((p, i) => p.classList.toggle('active', i === idx));
+      positionIndicator(tabs[idx]);
+    }
+
+    tabs.forEach((tab, i) => tab.addEventListener('click', () => activateTab(i)));
+    requestAnimationFrame(() => positionIndicator(tabs[0]));
+
+    /* ── Pillar accordion ── */
+    const pillars = Array.from(document.querySelectorAll('.ll-pillar'));
+    const drawer  = document.getElementById('ll-pillar-drawer');
+
+    const pillarData = [
+      { id: 1, modules: ['Effort & Reward', 'Fair Pay', 'Value of Work', 'Negotiation Basics'] },
+      { id: 2, modules: ['Needs vs. Wants', 'Impulse Control', 'Digital vs. Physical Currency'] },
+      { id: 3, modules: ['The Snowball', 'Goal Setting', 'Emergency Funds', 'Delayed Gratification'] },
+      { id: 4, modules: ['What is Debt?', 'Good Debt vs. Bad Debt', 'Credit Scores'] },
+      { id: 5, modules: ['Compound Interest', 'Index Funds', 'Long-Term Thinking'] },
+      { id: 6, modules: ['Tax Basics', 'Giving & Charity', 'Ethical Spending', 'Financial Wellbeing'] },
+    ];
+
+    function openPillar(idx) {
+      const data = pillarData[idx];
+      pillars.forEach((p, i) => p.setAttribute('aria-expanded', i === idx ? 'true' : 'false'));
+      drawer.innerHTML = `
+        <div class="ll-drawer-inner">
+          <div class="ll-drawer-label">Pillar ${data.id} modules</div>
+          <ul class="ll-drawer-modules">
+            ${data.modules.map(m => `<li>${m}</li>`).join('')}
+          </ul>
+        </div>`;
+      drawer.style.display = 'block';
+    }
+
+    pillars.forEach((p, i) => p.addEventListener('click', () => {
+      if (p.getAttribute('aria-expanded') === 'true') {
+        p.setAttribute('aria-expanded', 'false');
+        drawer.style.display = 'none';
+        drawer.innerHTML = '';
+      } else {
+        openPillar(i);
+      }
+    }));
+  })();
+
+  /* ── Phone demo tab/screen switcher ── */
+  (function initScrollDemo() {
+    const screens = Array.from(document.querySelectorAll('.demo-screen'));
+    const dots    = Array.from(document.querySelectorAll('.demo-dot'));
+    const features = Array.from(document.querySelectorAll('.promo-feature'));
+    const tabItems = Array.from(document.querySelectorAll('.ds-tabnav-item'));
+    const tabIndicator = document.getElementById('demo-tabnav-indicator');
+    let currentScreen = 0;
+
+    function positionTabIndicator(idx) {
+      const container = document.getElementById('demo-tabnav');
+      if (!container) return;
+      const item = tabItems[idx];
+      if (!item) return;
+      tabIndicator.style.width = item.offsetWidth + 'px';
+      tabIndicator.style.left  = item.offsetLeft + 'px';
+    }
+
+    function setScreen(idx) {
+      currentScreen = idx;
+      screens.forEach((s, i) => s.classList.toggle('active', i === idx));
+      dots.forEach((d, i) => d.classList.toggle('active', i === idx));
+      features.forEach((f, i) => f.classList.toggle('active', i === idx));
+      tabItems.forEach((t, i) => t.classList.toggle('active', i === idx));
+      positionTabIndicator(idx);
+    }
+
+    features.forEach((f, i) => f.addEventListener('click', () => setScreen(i)));
+    dots.forEach((dot, i) => { dot.style.cursor = 'pointer'; dot.addEventListener('click', () => setScreen(i)); });
+    tabItems.forEach((t, i) => t.addEventListener('click', () => setScreen(i)));
+
+    let autoTimer = null;
+    function startAuto() { stopAuto(); autoTimer = setInterval(() => setScreen((currentScreen + 1) % screens.length), 6000); }
+    function stopAuto() { clearInterval(autoTimer); }
+    [...features, ...dots, ...tabItems].forEach(el => el.addEventListener('click', () => { stopAuto(); setTimeout(startAuto, 8000); }));
+
+    setScreen(0);
+    startAuto();
+  })();
+
+  /* ── Approve button demo animation ── */
+  (function() {
+    const approveBtn = document.getElementById('demo-approve-btn');
+    const balanceEl  = document.getElementById('demo-balance');
+    if (!approveBtn || !balanceEl) return;
+    approveBtn.addEventListener('click', function() {
+      if (approveBtn.classList.contains('approved')) return;
+      approveBtn.classList.add('approved');
+      balanceEl.textContent = '£14.00';
+      setTimeout(() => { approveBtn.classList.remove('approved'); balanceEl.textContent = '£12.50'; }, 2500);
+    });
+  })();
+
+  form.addEventListener('submit', async e => {
+    e.preventDefault();
+    clearError();
+    const email = emailInput.value.trim().toLowerCase();
+    if (!EMAIL_RE.test(email)) { showError('Please enter a valid email address.'); emailInput.focus(); return; }
+    setLoading(true);
+    try {
+      const res = await fetch('https://morechard-api.darren-savery.workers.dev/api/public/interest', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, consent: true, contact_type: selections.contact_type, family_type: selections.family_type }),
+      });
+      if (res.ok) {
+        posthog.capture('signup_submitted', { contact_type: selections.contact_type, family_type: selections.family_type });
+        form.style.display = 'none';
+        formSuccess.classList.add('visible');
+      } else {
+        const data = await res.json().catch(() => ({}));
+        showError(data.error || 'Something went wrong - please try again.');
+        setLoading(false);
+      }
+    } catch {
+      showError('Something went wrong - please check your connection and try again.');
+      setLoading(false);
+    }
+  });
+</script>
+<!-- SCRIPTS_END -->
