@@ -1,0 +1,118 @@
+{
+  "core": {
+    "name": "Core",
+    "price_whole": "44",
+    "price_dec": ".99",
+    "badge": "",
+    "featured": false,
+    "groups": [
+      {
+        "label": "Chores & Ledger",
+        "check_color": "teal",
+        "items": [
+          "Chore tracker & approval flow",
+          "Immutable SHA-256 ledger",
+          "Child 6-digit code access",
+          "Unlimited children",
+          "Single & multi-household compatible"
+        ]
+      },
+      {
+        "label": "Goals & Money",
+        "check_color": "teal",
+        "items": [
+          "Savings goals (Savings Grove)",
+          "Payment bridge (Monzo, Revolut, PayPal)",
+          "Rate Guide benchmarking"
+        ]
+      }
+    ]
+  },
+  "core_ai": {
+    "name": "Core AI",
+    "name_suffix_ai": true,
+    "price_whole": "64",
+    "price_dec": ".99",
+    "badge": "Most Popular",
+    "featured": true,
+    "groups": [
+      {
+        "label": "Chores & Ledger",
+        "check_color": "teal",
+        "items": [
+          "Chore tracker & approval flow",
+          "Immutable SHA-256 ledger",
+          "Child 6-digit code access",
+          "Unlimited children",
+          "Single & multi-household compatible"
+        ]
+      },
+      {
+        "label": "Goals & Money",
+        "check_color": "teal",
+        "items": [
+          "Savings goals (Savings Grove)",
+          "Payment bridge (Monzo, Revolut, PayPal)",
+          "Rate Guide benchmarking"
+        ]
+      },
+      {
+        "label": "AI & Insights",
+        "check_color": "purple",
+        "items": [
+          "Parent Insights AI",
+          "AI Mentor coaching",
+          "Learning Lab (20-module financial curriculum)"
+        ]
+      }
+    ]
+  },
+  "shield_ai": {
+    "name": "Shield AI",
+    "name_suffix_ai": true,
+    "price_whole": "149",
+    "price_dec": ".99",
+    "badge": "",
+    "featured": false,
+    "groups": [
+      {
+        "label": "Chores & Ledger",
+        "check_color": "teal",
+        "items": [
+          "Chore tracker & approval flow",
+          "Immutable SHA-256 ledger",
+          "Child 6-digit code access",
+          "Unlimited children",
+          "Single & multi-household compatible"
+        ]
+      },
+      {
+        "label": "Goals & Money",
+        "check_color": "teal",
+        "items": [
+          "Savings goals (Savings Grove)",
+          "Payment bridge (Monzo, Revolut, PayPal)",
+          "Rate Guide benchmarking"
+        ]
+      },
+      {
+        "label": "AI & Insights",
+        "check_color": "purple",
+        "items": [
+          "Parent Insights AI",
+          "AI Mentor coaching",
+          "Learning Lab (20-module financial curriculum)"
+        ]
+      },
+      {
+        "label": "Legal & Records",
+        "check_color": "gold",
+        "items": [
+          "Tamper-evident PDF exports",
+          "Court-ready audit export",
+          "Ledger seal & verification"
+        ]
+      }
+    ]
+  }
+}

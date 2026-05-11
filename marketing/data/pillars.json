@@ -1,0 +1,46 @@
+{
+  "pillars": [
+    {
+      "id": 1,
+      "label": "Pillar 1",
+      "name": "Earning & Value",
+      "modules": 4,
+      "dot_color": "teal"
+    },
+    {
+      "id": 2,
+      "label": "Pillar 2",
+      "name": "Spending & Choices",
+      "modules": 3,
+      "dot_color": "teal"
+    },
+    {
+      "id": 3,
+      "label": "Pillar 3",
+      "name": "Saving & Growth",
+      "modules": 4,
+      "dot_color": "teal"
+    },
+    {
+      "id": 4,
+      "label": "Pillar 4",
+      "name": "Borrowing & Debt",
+      "modules": 3,
+      "dot_color": "gold"
+    },
+    {
+      "id": 5,
+      "label": "Pillar 5",
+      "name": "Investing & Future",
+      "modules": 3,
+      "dot_color": "gold"
+    },
+    {
+      "id": 6,
+      "label": "Pillar 6",
+      "name": "Society & Wellbeing",
+      "modules": 4,
+      "dot_color": "gold"
+    }
+  ]
+}
