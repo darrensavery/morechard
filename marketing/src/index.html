@@ -9,14 +9,646 @@
 -->
 
 <!-- BODY_START -->
-{{component:hero-fullbleed}}
-{{component:app-promo}}
-{{component:what-is-morechard}}
-{{component:learning-lab-pillars}}
-{{component:who-its-for}}
-{{component:why-morechard}}
-{{component:pricing-table}}
-{{component:register-interest}}
+  <section id="hero">
+    <picture>
+      <source media="(max-width: 720px)" srcset="/hero-orchard-portrait.webp" />
+      <img class="hero-img" src="/hero-orchard_3_2.webp" alt="Morechard - a family chore tracker and pocket money app, illustrated with an orchard scene" loading="eager" />
+    </picture>
+    <div class="hero-scrim"></div>
+    <div class="hero-content">
+      <div class="hero-badge reveal">
+        <span class="hero-badge-dot"></span>
+        Coming Soon
+      </div>
+      <h1 class="hero-headline reveal d1">
+        The chore and pocket money app <em>that builds <br />real independence.</em>
+      </h1>
+      <p class="hero-sub reveal d2">
+        Morechard is a logical, bank-free training ground where parents teach financial discipline through everyday responsibility. No monthly fees, no bank "funnels" - just a forensic-level source of truth for your family's growth.
+      </p>
+      <div class="hero-actions reveal d3">
+        <a href="#signup" class="btn-primary btn-hero">
+          Register my interest
+          <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+            <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </a>
+        <span class="hero-note">No spam - one email at launch.</span>
+      </div>
+    </div>
+  </section>
+
+  <section id="app-promo">
+    <div class="container">
+      <div class="promo-grid">
+        <!-- Left: copy -->
+        <div>
+          <span class="section-label reveal">The app</span>
+          <h2 class="section-headline reveal">A pocket money app that actually works - and teaches valuable financial concepts as it goes.</h2>
+          <p class="section-sub reveal">Morechard lives on your phone. Parents manage, children track - in one shared, secure space.</p>
+
+          <ul class="promo-feature-list">
+            <li class="promo-feature reveal d1">
+              <div class="promo-icon">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                  <path d="M4 10l4 4 8-8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </div>
+              <div>
+                <div class="promo-feature-title">Assign &amp; approve chores</div>
+                <div class="promo-feature-desc">Set a chore, a rate, and a deadline. Your child marks it done - you approve and the ledger updates instantly - building responsibility and autonomy.</div>
+              </div>
+            </li>
+            <li class="promo-feature reveal d2">
+              <div class="promo-icon">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                  <circle cx="10" cy="10" r="7" stroke="currentColor" stroke-width="1.8"/>
+                  <path d="M10 6v4l2.5 2.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                </svg>
+              </div>
+              <div>
+                <div class="promo-feature-title">Real-time pocket money balance</div>
+                <div class="promo-feature-desc">Children see their balance grow with every approved job. A live, honest account they own and can allocate to their chosen goals.</div>
+              </div>
+            </li>
+            <li class="promo-feature reveal d3">
+              <div class="promo-icon">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                  <path d="M3 17l4-4 3 3 7-10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </div>
+              <div>
+                <div class="promo-feature-title">AI Mentor weekly briefing</div>
+                <div class="promo-feature-desc">A real-time AI powered financial mentor, teaching your children the value of money, developed in consultation with a registered child psychologist and aligned with Money and Pensions Service financial education guidelines.</div>
+              </div>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Right: tab-driven phone demo -->
+        <div class="promo-phone">
+          <div class="phone-frame">
+
+            <!-- Shared top bar (logo + avatar) -->
+            <div class="ds-topbar">
+              <div class="ds-logo">
+                <svg width="16" height="16" viewBox="0 0 441 442" fill="none" aria-hidden="true">
+                  <path d="M427.64,1.69l-202.38,139.41c-1.39.97-3.04,1.46-4.74,1.46s-3.35-.49-4.74-1.46L13.42,1.69C7.64-2.79,0,2.16,0,10.37v421.58c0,5.72,3.89,10.35,8.68,10.35h168.33c5.21,0,9.82-3.37,11.4-8.33 14.85-46.07,6.41-120.47-23.32-144.21 16.85,37.37,44.08,54.11,44.08,54.11s27.23-16.74,44.08-54.11c-29.73,23.74-38.17,98.14-23.32,144.21 1.58,4.96,6.19,8.32,11.4,8.32h168.37c4.8,0,8.68-4.64,8.68-10.35V10.37c0-8.22-7.64-13.16-13.42-8.68Z" fill="#00959c"/>
+                </svg>
+                <span class="ds-logo-wordmark">Morechard</span>
+              </div>
+              <div class="ds-avatar">D</div>
+            </div>
+
+            <!-- Shared top tab nav -->
+            <div class="ds-tabnav" id="demo-tabnav">
+              <div class="ds-tabnav-item active" data-screen="0">Chores</div>
+              <div class="ds-tabnav-item" data-screen="1">Activity</div>
+              <div class="ds-tabnav-item" data-screen="2">Insights</div>
+              <div class="ds-tabnav-indicator" id="demo-tabnav-indicator"></div>
+            </div>
+
+            <!-- Screens wrap -->
+            <div class="demo-screen-wrap">
+
+            <!-- Screen 1: Chore list -->
+            <div class="demo-screen active" id="demo-screen-0">
+              <div class="ds-header">
+                <div class="ds-greeting">Ella's Chores</div>
+              </div>
+              <div class="ds-chore-list" id="demo-chore-list">
+                <div class="ds-chore overdue" id="dc-overdue" style="opacity:0;">
+                  <div class="ds-chore-icon">
+                    <svg width="13" height="13" viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="2"/><path d="M10 6v4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="10" cy="14" r="1" fill="currentColor"/></svg>
+                  </div>
+                  <span class="ds-chore-title">Make your bed</span>
+                  <span class="ds-overdue-badge">Overdue</span>
+                </div>
+                <div class="ds-chore needs-approval" id="dc-approval" style="opacity:0">
+                  <div class="ds-chore-icon">
+                    <svg width="13" height="13" viewBox="0 0 20 20" fill="none" aria-hidden="true"><rect x="4" y="3" width="12" height="14" rx="2" stroke="currentColor" stroke-width="2"/><path d="M7 7h6M7 10h6M7 13h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                  </div>
+                  <span class="ds-chore-title">Tidied bedroom</span>
+                  <div class="ds-approval-badge" id="dc-badge">
+                    <span class="ds-approval-dot"></span>
+                    Review
+                  </div>
+                </div>
+                <div class="ds-chore" id="dc-done" style="opacity:0">
+                  <div class="ds-chore-icon">
+                    <svg width="13" height="13" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 10l4 4 8-8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  </div>
+                  <span class="ds-chore-title">Washed up after dinner</span>
+                  <span class="ds-chore-amount">£1.00</span>
+                </div>
+              </div>
+              <div class="ds-archive-section">
+                <div class="ds-archive-label">
+                  <svg width="11" height="11" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M3 5h14M3 5v11a1 1 0 001 1h12a1 1 0 001-1V5M8 9h4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  Archive
+                </div>
+                <div class="ds-chore ds-chore-archived">
+                  <div class="ds-chore-icon">
+                    <svg width="13" height="13" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 10l4 4 8-8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  </div>
+                  <span class="ds-chore-title">Hoovered upstairs</span>
+                  <span class="ds-chore-amount">£2.00</span>
+                </div>
+                <div class="ds-chore ds-chore-archived">
+                  <div class="ds-chore-icon">
+                    <svg width="13" height="13" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 10l4 4 8-8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  </div>
+                  <span class="ds-chore-title">Emptied dishwasher</span>
+                  <span class="ds-chore-amount">£0.75</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Screen 2: Activity -->
+            <div class="demo-screen" id="demo-screen-1">
+              <div class="ds-activity-header">Ella's Activity</div>
+              <div class="ds-action-row">
+                <button class="ds-btn-payout" tabindex="-1">Pay out</button>
+                <button class="ds-btn-bonus" tabindex="-1">+ Bonus</button>
+              </div>
+              <div class="ds-pending-label">Pending approval</div>
+              <div class="ds-history-item pending">
+                <div class="ds-history-icon">
+                  <svg width="13" height="13" viewBox="0 0 20 20" fill="none" aria-hidden="true"><rect x="4" y="3" width="12" height="14" rx="2" stroke="currentColor" stroke-width="2"/><path d="M7 7h6M7 10h6M7 13h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                </div>
+                <span class="ds-history-name">Tidied bedroom</span>
+                <span class="ds-history-badge">Review</span>
+                <span class="ds-history-amount">£1.50</span>
+              </div>
+              <div class="ds-approve-card" style="margin-top:8px;">
+                <div class="ds-approve-title">Tidied bedroom</div>
+                <div class="ds-approve-sub">Ella · £1.50</div>
+                <div class="ds-approve-balance">Balance: <span id="demo-balance">£12.50</span></div>
+                <div class="ds-btn-row">
+                  <button class="ds-btn-decline" tabindex="-1">Decline</button>
+                  <button class="ds-btn-approve" id="demo-approve-btn" tabindex="-1">
+                    <span class="btn-label">Approve</span>
+                    <span class="btn-tick">✓ Approved</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Screen 3: Insights -->
+            <div class="demo-screen" id="demo-screen-2">
+              <div class="ds-insights-header">Weekly Insights - Ella</div>
+              <div class="ds-gauges">
+                <div class="ds-gauge">
+                  <div class="ds-gauge-label">Consistency</div>
+                  <div class="ds-gauge-bar"><div class="ds-gauge-fill" style="--fill:80%"></div></div>
+                  <div class="ds-gauge-value">80%</div>
+                </div>
+                <div class="ds-gauge">
+                  <div class="ds-gauge-label">Responsibility</div>
+                  <div class="ds-gauge-bar"><div class="ds-gauge-fill" style="--fill:70%"></div></div>
+                  <div class="ds-gauge-value">70%</div>
+                </div>
+              </div>
+              <div class="ds-mentor-card">
+                <div class="ds-mentor-badge">✦ Orchard Mentor</div>
+                <div class="ds-mentor-text">Ella completed 4 of 5 chores this week - her strongest streak yet. She's consistently choosing harder tasks, which suggests growing confidence with money.</div>
+              </div>
+              <div class="ds-lab-section">
+                <div class="ds-lab-label">Learning Lab</div>
+                <div class="ds-lab-card">
+                  <div class="ds-lab-icon earn">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48 2.83 2.83M2 12h4m12 0h4"/></svg>
+                  </div>
+                  <span class="ds-lab-title">Effort &amp; Reward</span>
+                  <span class="ds-lab-pill done">Done</span>
+                </div>
+                <div class="ds-lab-card">
+                  <div class="ds-lab-icon save">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 7v5l3 3"/></svg>
+                  </div>
+                  <span class="ds-lab-title">Saving &amp; Goals</span>
+                  <span class="ds-lab-pill next">Up next</span>
+                </div>
+                <div class="ds-lab-card">
+                  <div class="ds-lab-icon spend">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3h18M3 9h18M3 15h18M3 21h18"/></svg>
+                  </div>
+                  <span class="ds-lab-title">Spending Choices</span>
+                  <span class="ds-lab-pill lock">Locked</span>
+                </div>
+              </div>
+            </div>
+
+            </div><!-- /demo-screen-wrap -->
+          </div><!-- /phone-frame -->
+
+          <!-- Progress dots -->
+          <div class="demo-dots" aria-hidden="true">
+            <div class="demo-dot active"></div>
+            <div class="demo-dot"></div>
+            <div class="demo-dot"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="what">
+    <div class="container">
+      <span class="section-label reveal">What is Morechard</span>
+      <h2 class="section-headline reveal">Everything a family needs.<br />Nothing they don't.</h2>
+      <p class="section-sub reveal">Three pillars - working together from day one. No debit card or bank account required.</p>
+
+      <div class="card-grid-3">
+        <div class="pillar-card reveal d1">
+          <div class="pillar-icon">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+              <path d="M4 10l4 4 8-8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <div class="pillar-title">Chore Tracker</div>
+          <p class="pillar-body">Assign jobs. Mark them done. Approve and pay. Pocket money updates automatically - no bank account, and no sharing personal info, required.</p>
+        </div>
+
+        <div class="pillar-card reveal d2">
+          <div class="pillar-icon">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+              <circle cx="10" cy="10" r="7" stroke="currentColor" stroke-width="2"/>
+              <path d="M10 6v4l2.5 2.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <div class="pillar-title">Real-Data Financial Literacy</div>
+          <p class="pillar-body">Financial lessons triggered by your child's own real earning and spending - not generic slides. Government curriculum aligned lessons land at exactly the right moment.</p>
+        </div>
+
+        <div class="pillar-card reveal d3">
+          <div class="pillar-icon">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+              <rect x="4" y="3" width="12" height="14" rx="2" stroke="currentColor" stroke-width="2"/>
+              <path d="M7 7h6M7 10h6M7 13h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <div class="pillar-title">Truth Engine</div>
+          <p class="pillar-body">Every transaction is SHA-256 hashed. Tamper-proof records - and one-click court-ready PDF exports when separated families need them.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="learning-lab">
+    <div class="container">
+      <span class="section-label reveal">The Learning Lab</span>
+      <h2 class="section-headline reveal">Schools don't teach this. <em>We do.</em></h2>
+      <p class="section-sub reveal">A 20-module financial curriculum triggered by your child's real earning and spending - not generic slides. From first chore to long-term investing, every lesson arrives at exactly the right moment.</p>
+
+      <!-- Persona tabs -->
+      <div class="ll-tabs reveal" id="ll-tabs" role="tablist" aria-label="Learning Lab perspectives">
+        <button class="ll-tab active" role="tab" aria-selected="true"  aria-controls="ll-panel-0" id="ll-tab-0">Life-Skills Syllabus</button>
+        <button class="ll-tab"        role="tab" aria-selected="false" aria-controls="ll-panel-1" id="ll-tab-1">The Missing Education</button>
+        <button class="ll-tab"        role="tab" aria-selected="false" aria-controls="ll-panel-2" id="ll-tab-2">Guided Growth</button>
+        <button class="ll-tab"        role="tab" aria-selected="false" aria-controls="ll-panel-3" id="ll-tab-3">Actionable Wins</button>
+        <div class="ll-tab-indicator" id="ll-tab-indicator"></div>
+      </div>
+
+      <div class="ll-panel-wrap">
+
+        <!-- Panel 0: Curriculum Roadmap -->
+        <div class="ll-panel active" id="ll-panel-0" role="tabpanel" aria-labelledby="ll-tab-0">
+          <div class="ll-panel-copy">
+            <div class="ll-panel-eyebrow">For the structured parent</div>
+            <h3 class="ll-panel-headline">A structured Life-Skills Syllabus — from work ethic to wealth strategy.</h3>
+            <p class="ll-panel-body">The curriculum is organised into six pillars that build on each other in a deliberate sequence. Your child doesn't jump to investing before they understand taxes and debt — each module unlocks only when real behaviour triggers it.</p>
+          </div>
+          <div class="ll-roadmap-scroll"><div class="ll-roadmap">
+            <button class="ll-pillar" data-pillar="1" aria-expanded="false">
+              <div class="ll-pillar-dot ll-dot-teal"></div>
+              <div class="ll-pillar-label">Pillar 1</div>
+              <div class="ll-pillar-name">Earning &amp; Value</div>
+              <div class="ll-pillar-modules">4 modules</div>
+            </button>
+            <div class="ll-pillar-connector"></div>
+            <button class="ll-pillar" data-pillar="2" aria-expanded="false">
+              <div class="ll-pillar-dot ll-dot-teal"></div>
+              <div class="ll-pillar-label">Pillar 2</div>
+              <div class="ll-pillar-name">Spending &amp; Choices</div>
+              <div class="ll-pillar-modules">3 modules</div>
+            </button>
+            <div class="ll-pillar-connector"></div>
+            <button class="ll-pillar" data-pillar="3" aria-expanded="false">
+              <div class="ll-pillar-dot ll-dot-teal"></div>
+              <div class="ll-pillar-label">Pillar 3</div>
+              <div class="ll-pillar-name">Saving &amp; Growth</div>
+              <div class="ll-pillar-modules">4 modules</div>
+            </button>
+            <div class="ll-pillar-connector"></div>
+            <button class="ll-pillar" data-pillar="4" aria-expanded="false">
+              <div class="ll-pillar-dot ll-dot-gold"></div>
+              <div class="ll-pillar-label">Pillar 4</div>
+              <div class="ll-pillar-name">Borrowing &amp; Debt</div>
+              <div class="ll-pillar-modules">3 modules</div>
+            </button>
+            <div class="ll-pillar-connector"></div>
+            <button class="ll-pillar" data-pillar="5" aria-expanded="false">
+              <div class="ll-pillar-dot ll-dot-gold"></div>
+              <div class="ll-pillar-label">Pillar 5</div>
+              <div class="ll-pillar-name">Investing &amp; Future</div>
+              <div class="ll-pillar-modules">3 modules</div>
+            </button>
+            <div class="ll-pillar-connector"></div>
+            <button class="ll-pillar" data-pillar="6" aria-expanded="false">
+              <div class="ll-pillar-dot ll-dot-gold"></div>
+              <div class="ll-pillar-label">Pillar 6</div>
+              <div class="ll-pillar-name">Society &amp; Wellbeing</div>
+              <div class="ll-pillar-modules">4 modules</div>
+            </button>
+          </div></div>
+          <div class="ll-pillar-drawer" id="ll-pillar-drawer" aria-live="polite"></div>
+        </div>
+
+        <!-- Panel 1: The Missing Education -->
+        <div class="ll-panel" id="ll-panel-1" role="tabpanel" aria-labelledby="ll-tab-1">
+          <div class="ll-panel-copy ll-panel-copy--wide">
+            <div class="ll-panel-eyebrow">For the competitive edge</div>
+            <h3 class="ll-panel-headline">The financial IQ that 90% of their peers will never have.</h3>
+            <p class="ll-panel-body">GCSEs cover quadratic equations. Not compound interest. Not credit scores. Not the difference between good debt and bad debt. Morechard teaches the 20 concepts that determine long-term financial outcomes — topics that no school syllabus covers, delivered at the exact moment your child is ready to absorb them.</p>
+          </div>
+          <div class="ll-stat-row">
+            <div class="ll-stat">
+              <div class="ll-stat-number">20</div>
+              <div class="ll-stat-label">Curriculum modules</div>
+            </div>
+            <div class="ll-stat-divider"></div>
+            <div class="ll-stat">
+              <div class="ll-stat-number">6</div>
+              <div class="ll-stat-label">Financial pillars</div>
+            </div>
+            <div class="ll-stat-divider"></div>
+            <div class="ll-stat">
+              <div class="ll-stat-number">4</div>
+              <div class="ll-stat-label">Age levels (6–16+)</div>
+            </div>
+            <div class="ll-stat-divider"></div>
+            <div class="ll-stat">
+              <div class="ll-stat-number">0</div>
+              <div class="ll-stat-label">Covered by school</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Panel 2: Guided Growth -->
+        <div class="ll-panel" id="ll-panel-2" role="tabpanel" aria-labelledby="ll-tab-2">
+          <div class="ll-panel-copy">
+            <div class="ll-panel-eyebrow">For the relationship-focused parent</div>
+            <h3 class="ll-panel-headline">Lessons that open conversations — not just screens.</h3>
+            <p class="ll-panel-body">Each module is designed to be a starting point for a real discussion between you and your child, not a solo exercise they complete alone. When a lesson unlocks, Morechard gives you the context to have the conversation — and a simple prompt to start it.</p>
+          </div>
+          <div class="ll-conversation-cards">
+            <div class="ll-conv-card">
+              <div class="ll-conv-trigger">Your child saved for 4 weeks in a row</div>
+              <div class="ll-conv-module">Module unlocks: <strong>The Snowball</strong></div>
+              <div class="ll-conv-prompt">"Ask them: What do you think happens to your savings if they keep growing at the same rate for a whole year?"</div>
+            </div>
+            <div class="ll-conv-card">
+              <div class="ll-conv-trigger">Your child created a gaming goal</div>
+              <div class="ll-conv-module">Module unlocks: <strong>Digital vs. Physical Currency</strong></div>
+              <div class="ll-conv-prompt">"Ask them: If V-Bucks disappear tomorrow, what have you actually bought?"</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Panel 3: Actionable Wins -->
+        <div class="ll-panel" id="ll-panel-3" role="tabpanel" aria-labelledby="ll-tab-3">
+          <div class="ll-panel-copy">
+            <div class="ll-panel-eyebrow">For the results-first parent</div>
+            <h3 class="ll-panel-headline">5-minute lessons. Real results. From day one.</h3>
+            <p class="ll-panel-body">No 40-minute video series. No textbook chapters. Each module is bite-sized by design — triggered by something your child just did, delivered in under five minutes, and linked directly to an action they can take right now.</p>
+          </div>
+          <div class="ll-win-list">
+            <div class="ll-win">
+              <div class="ll-win-icon">
+                <svg width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 10l4 4 8-8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+              <div><strong>Lesson triggered</strong> — only when your child's real data matches the concept. Never random.</div>
+            </div>
+            <div class="ll-win">
+              <div class="ll-win-icon">
+                <svg width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 10l4 4 8-8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+              <div><strong>Under 5 minutes</strong> — focused on one concept, not a full syllabus review.</div>
+            </div>
+            <div class="ll-win">
+              <div class="ll-win-icon">
+                <svg width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 10l4 4 8-8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+              <div><strong>Linked to action</strong> — every lesson ends with something your child can do immediately in the app.</div>
+            </div>
+            <div class="ll-win">
+              <div class="ll-win-icon">
+                <svg width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 10l4 4 8-8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+              <div><strong>No homework</strong> — your child sees a module once. It fires once. Then it's done.</div>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /ll-panel-wrap -->
+    </div>
+  </section>
+
+  <section id="who">
+    <div class="container">
+      <span class="section-label reveal">Who it's for</span>
+      <h2 class="section-headline reveal">Built for the next generation of independence.</h2>
+      <p class="section-sub section-sub--wide reveal">Raising capable, self-sufficient children shouldn't feel like a constant battle of wills. Morechard provides a logical, high-integrity framework that turns daily chores into a masterclass in financial discipline and personal responsibility. By connecting effort to outcome within a fair, transparent system, we help you foster the autonomy your children need to thrive.</p>
+      <p class="section-sub section-sub--wide reveal"><br>Whether you are managing one home or two, our forensic-level tools provide the ultimate source of truth, ensuring that every lesson in accountability is consistent, clear, and built to last.</p>
+      <div class="audience-grid">
+        <div class="audience-card reveal d1">
+          <span class="audience-tag">One Home. One Vision.</span>
+          <div class="audience-title">Any family, from day one</div>
+          <p class="audience-body">Morechard streamlines your family's daily rhythm by replacing nagging with a structured, bank-free system of rewards and responsibilities. It's designed for parents who want to instill a unified set of values, ensuring children understand the direct link between their contributions and their financial growth.</p>
+          <ul class="audience-points">
+            <li>
+              <span class="check-icon"><svg width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true"><path d="M2 5l2.5 2.5L8 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+              Encourage Autonomy: Let your children manage their own progress within your set boundaries.
+            </li>
+            <li>
+              <span class="check-icon"><svg width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true"><path d="M2 5l2.5 2.5L8 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+              Total Transparency: No more "did I or didn't I" - every achievement is tracked and validated.
+            </li>
+            <li>
+              <span class="check-icon"><svg width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true"><path d="M2 5l2.5 2.5L8 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+              Future-Proof Skills: Master the fundamentals of money management without needing a debit card.
+            </li>
+          </ul>
+        </div>
+
+        <div class="audience-card tinted reveal d2">
+          <span class="audience-tag">Separated &amp; co-parenting</span>
+          <div class="audience-title">Two Households. One Source of Truth.</div>
+          <p class="audience-body">Consistency is the hardest part of co-parenting. Morechard bridges the gap, providing an immutable shared record that protects both parents and ensures children stay on track regardless of whose roof they are under. Your data is owned by you, not rented from us - providing a tamper-proof audit trail of parental contributions and child milestones.</p>
+          <ul class="audience-points">
+            <li>
+              <span class="check-icon"><svg width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true"><path d="M2 5l2.5 2.5L8 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+              Tamper-Proof Records: Every entry is secured with a unique, unbreakable digital fingerprint.
+            </li>
+            <li>
+              <span class="check-icon"><svg width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true"><path d="M2 5l2.5 2.5L8 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+              Audit-Ready: Export court-ready PDF reports of chores, payments, and contributions in one click.
+            </li>
+            <li>
+              <span class="check-icon"><svg width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true"><path d="M2 5l2.5 2.5L8 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+              Eliminate Friction: Stop disputes before they start with a clear, shared history of who paid what.
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="different">
+    <div class="container">
+      <span class="section-label reveal">Why Morechard</span>
+      <h2 class="section-headline reveal">Built for Parents, Not for Banks.</h2>
+      <p class="section-sub reveal">Finally, a tool that doesn't treat your children like future bank leads.</p>
+      <p>Most "kids' money" apps have a hidden agenda: they want to funnel your children into a specific banking ecosystem. They require debit cards, harvest data, and trap you in "rent-to-own" monthly subscriptions.<br><br></p><p>Morechard is built differently - we don't require a bank account or a debit card because we believe financial discipline starts with understanding value, not just swiping plastic. We provide a forensic-level framework that belongs to you - not a financial institution. <br><br>No monthly fees, no data-mining, and no hidden funnels. Just a pure, immutable record of responsibility that serves your family's interests, not a bank's bottom line.</p>
+
+      <div class="diff-grid">
+        <div class="diff-tile reveal d1">
+          <div class="diff-icon">
+            <svg width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+              <path d="M10 2a8 8 0 100 16A8 8 0 0010 2z" stroke="currentColor" stroke-width="1.8"/>
+              <path d="M7 10l2 2 4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <div>
+            <div class="diff-label">No debit card required</div>
+            <div class="diff-desc">Works for any family from day one. RoosterMoney and GoHenry need a card - Morechard doesn't.</div>
+          </div>
+        </div>
+
+        <div class="diff-tile reveal d2">
+          <div class="diff-icon">
+            <svg width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+              <rect x="3" y="5" width="14" height="10" rx="2" stroke="currentColor" stroke-width="1.8"/>
+              <path d="M7 5V4a2 2 0 014 0v1" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <div>
+            <div class="diff-label">No "Funnel" Traps</div>
+            <div class="diff-desc">Unlike other apps, we aren't a lead-generator for a bank. Your child's financial journey remains private and under your control, not tracked by a corporation for future marketing.</div>
+          </div>
+        </div>
+
+        <div class="diff-tile reveal d3">
+          <div class="diff-icon">
+            <svg width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+              <rect x="3" y="4" width="14" height="13" rx="2" stroke="currentColor" stroke-width="1.8"/>
+              <path d="M7 2v4M13 2v4M3 9h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <div>
+            <div class="diff-label">Asset, Not an Expense</div>
+            <div class="diff-desc">Stop paying "parent tax" via monthly subscriptions. With one payment, you own the tool forever. Your data is your property - not something you rent from us.</div>
+          </div>
+        </div>
+
+        <div class="diff-tile reveal d4">
+          <div class="diff-icon">
+            <svg width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+              <path d="M4 15c0-4 2.5-6 6-6s6 2 6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+              <circle cx="10" cy="6" r="3" stroke="currentColor" stroke-width="1.8"/>
+            </svg>
+          </div>
+          <div>
+            <div class="diff-label">Built for Every Reality</div>
+            <div class="diff-desc">Big bank apps are built for "perfect" scenarios. They often fail separated families who need a shared, tamper-proof source of truth. Morechard was designed from day one to handle the complexities of two-household parenting with forensic-level integrity.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="pricing">
+    <div class="container">
+      <span class="section-label reveal">Pricing</span>
+      <h2 class="section-headline reveal">Own it. No subscription, ever.</h2>
+      <p class="section-sub reveal">One-time payment - yours for life. No renewal reminders. No price hikes. No cancellations.</p>
+
+      <div class="pricing-grid">
+        {{data:pricing_cards}}
+      </div>
+    </div>
+  </section>
+
+  <section id="signup">
+    <div class="container">
+      <span class="section-label reveal">Early access</span>
+      <h2 class="section-headline reveal">Be the first to know<br />when Morechard launches.</h2>
+      <p class="section-sub reveal">No spam. Just a single email when we open the doors.</p>
+
+      <div class="form-wrap">
+        <form id="interest-form">
+          <div id="form-pill">
+            <input
+              type="email"
+              id="email-input"
+              class="form-input"
+              placeholder="your@email.com"
+              autocomplete="email"
+              required
+            />
+          </div>
+
+          <div class="form-question" id="q-contact-type">
+            <span class="form-question-label">Which best describes you?</span>
+            <div class="form-options">
+              <button type="button" class="form-option" data-group="contact_type" data-value="parent">Parent</button>
+              <button type="button" class="form-option" data-group="contact_type" data-value="professional">Professional</button>
+            </div>
+          </div>
+
+          <div class="form-question hidden" id="q-family-type">
+            <span class="form-question-label">Which best describes your family structure?</span>
+            <div class="form-options">
+              <button type="button" class="form-option" data-group="family_type" data-value="single_household">Single household</button>
+              <button type="button" class="form-option" data-group="family_type" data-value="multi_household">Multi household</button>
+            </div>
+          </div>
+
+          <label class="form-consent">
+            <input type="checkbox" id="consent-check" />
+            <span>Yes - Morechard can send me product updates, launch news, and offers by email. I can unsubscribe at any time.</span>
+          </label>
+
+          <button type="submit" id="submit-btn" class="form-submit" disabled>
+            <span id="btn-label">Notify me</span>
+            <svg id="btn-arrow" width="13" height="13" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+              <path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+
+          <div class="form-error" id="form-error"></div>
+
+          <p class="form-gdpr">
+            Your email is stored securely with Brevo. We won't share it with third parties.
+            You can withdraw consent at any time by emailing
+            <a href="mailto:hello@morechard.com">hello@morechard.com</a>.
+            By submitting, you confirm you are 16 or older.
+          </p>
+        </form>
+
+        <div class="form-success" id="form-success">
+          <div class="success-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M5 12l4 4L19 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <div class="success-title">You're on the list.</div>
+          <div class="success-sub">We'll send you one email when Morechard is ready to launch. That's it.</div>
+        </div>
+      </div>
+    </div>
+  </section>
 <!-- BODY_END -->
 
 <!-- SCRIPTS_START -->

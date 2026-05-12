@@ -67,7 +67,7 @@ export function DemoUpsellCard({ trialStatus }: Props) {
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-semibold text-gray-800 leading-snug">
-            Explore AI Mentor and Shield
+            Explore AI Mentor and Shield AI
           </p>
           <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">
             Try the full experience using our demo family, the Thomsons. You can add and edit chores to get a feel for the app. The demo resets every night at midnight.

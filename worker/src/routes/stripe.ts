@@ -9,7 +9,7 @@
  * SKU catalogue:
  *   COMPLETE     £44.99  — Morechard Core: base tracker; AI Mentor / Learning Lab locked after trial
  *   COMPLETE_AI  £64.99  — Morechard Core AI: Core + AI Mentor + Learning Lab permanently unlocked
- *   SHIELD_AI    £149.99 — Morechard Shield: Core AI + court-admissible hashed PDF exports
+ *   SHIELD_AI    £149.99 — Morechard Shield AI: Core AI + court-admissible hashed PDF exports
  *   AI_UPGRADE   £29.99  — AI Mentor + Learning Lab one-time upgrade (existing Core purchasers)
  *
  * Legacy SKUs (no longer sold; handled in webhook for idempotency only):

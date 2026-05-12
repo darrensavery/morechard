@@ -18,7 +18,7 @@ interface Props {
 }
 
 const LABELS: Record<Feature, string> = {
-  shield:       'Morechard Shield',
+  shield:       'Morechard Shield AI',
   ai_mentor:    'AI Mentor',
   learning_lab: 'Learning Lab',
 }

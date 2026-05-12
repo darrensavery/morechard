@@ -1,3 +1,9 @@
+/* ── Nav: always solid on prose pages ── */
+body.prose-body nav {
+  background: var(--bg-cream);
+  border-bottom: 1px solid var(--border-light);
+}
+
 /* ── Inner page prose layout ── */
 .prose-page {
   padding-top: calc(var(--h-nav) + 60px);

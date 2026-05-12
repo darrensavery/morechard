@@ -10,7 +10,7 @@
  *   basic       — Family Orchard Summary (Morechard Core licence)
  *                 Summary cards, ledger table, status log.
  *
- *   behavioral  — Growth & Learning Curriculum (requires AI Mentor — Core AI or Morechard Shield)
+ *   behavioral  — Growth & Learning Curriculum (requires AI Mentor — Core AI or Morechard Shield AI)
  *                 All basic content plus Learning Lab modules and Behavioural Pulse.
  *
  *   forensic    — Immutable Chain of Custody (Legal version)

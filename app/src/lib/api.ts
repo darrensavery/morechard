@@ -235,7 +235,7 @@ export interface TrialStatus {
   is_expired:           boolean
   has_lifetime_license: boolean
   has_ai_mentor:        boolean  // AI Mentor + Learning Lab permanently unlocked
-  has_shield:           boolean  // Morechard Shield — includes AI Mentor + PDF exports
+  has_shield:           boolean  // Morechard Shield AI — includes AI Mentor + PDF exports
 }
 
 export async function getTrialStatus(): Promise<TrialStatus> {

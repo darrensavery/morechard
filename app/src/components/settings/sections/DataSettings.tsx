@@ -68,9 +68,9 @@ export function DataSettings({
   const shieldLabelText = (() => {
     if (hasAiMentor && shieldUpgradePrice) {
       const delta = (shieldUpgradePrice.delta / 100).toFixed(2)
-      return `Requires Shield (£${delta} to upgrade)`
+      return `Requires Shield AI (£${delta} to upgrade)`
     }
-    return 'Requires Shield (£149.99 one-time)'
+    return 'Requires Shield AI (£149.99 one-time)'
   })()
 
   function exportLabel(key: Parameters<typeof stateOf>[0], idleLabel: string) {
@@ -209,7 +209,7 @@ export function DataSettings({
               </p>
             </div>
             <span className="shrink-0 text-[11px] font-bold text-amber-600 whitespace-nowrap">
-              Add Shield →
+              Add Shield AI →
             </span>
           </button>
         )}

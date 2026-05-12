@@ -32,7 +32,7 @@ export type CompletionStatus = 'available' | 'awaiting_review' | 'completed' | '
 // Active SKUs (all one-time payments, UK Phase 1):
 //   COMPLETE     — £44.99  Morechard Core: base tracker; AI Mentor / Learning Lab locked after trial
 //   COMPLETE_AI  — £64.99  Morechard Core AI: Core + AI Mentor + Learning Lab bundled
-//   SHIELD_AI    — £149.99 Morechard Shield: Core AI + court-admissible hashed PDF exports
+//   SHIELD_AI    — £149.99 Morechard Shield AI: Core AI + court-admissible hashed PDF exports
 //   AI_UPGRADE   — £29.99  AI Mentor + Learning Lab one-time upgrade (for existing Core purchasers)
 //
 // Legacy SKUs (retained for webhook idempotency only — never issued to new customers):
@@ -82,7 +82,7 @@ export interface TrialStatus {
   is_expired: boolean;
   has_lifetime_license: boolean;
   has_ai_mentor: boolean;          // AI Mentor + Learning Lab permanently unlocked
-  has_shield: boolean;             // Morechard Shield plan — includes AI Mentor + PDF exports
+  has_shield: boolean;             // Morechard Shield AI plan — includes AI Mentor + PDF exports
 }
 
 export type Currency = 'GBP' | 'PLN' | 'USD';

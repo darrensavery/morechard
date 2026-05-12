@@ -47,12 +47,12 @@ function formatDate(iso: string): string {
 const PLAN_LABELS: Record<string, string> = {
   COMPLETE:    'Morechard Core',
   COMPLETE_AI: 'Morechard Core AI',
-  SHIELD_AI:   'Morechard Shield',
+  SHIELD_AI:   'Morechard Shield AI',
   AI_UPGRADE:  'AI Mentor + Learning Lab',
   // legacy labels for payment history display
   LIFETIME:    'Morechard Core (Legacy)',
   AI_ANNUAL:   'AI Mentor (Legacy)',
-  SHIELD:      'Morechard Shield (Legacy)',
+  SHIELD:      'Morechard Shield AI (Legacy)',
 }
 
 // ── Compare Plans modal ────────────────────────────────────────────────────────
@@ -144,7 +144,7 @@ function ComparePlansModal({ onClose }: { onClose: () => void }) {
 
           <div className="mt-4 space-y-2">
             <p className="text-[11px] text-amber-700 bg-amber-50 rounded-lg px-3 py-2 leading-relaxed font-medium">
-              UK family mediation averages £140/hr. Morechard Shield is a one-time £149.99.
+              UK family mediation averages £140/hr. Morechard Shield AI is a one-time £149.99.
             </p>
             <p className="text-[11px] text-violet-700 bg-violet-50 rounded-lg px-3 py-2 leading-relaxed font-medium">
               Already on Core? Add AI Mentor + Learning Lab for £29.99 — one-time.
@@ -174,7 +174,7 @@ function TrialView({ onBack }: { onBack: () => void }) {
 
   const planLabel = trial?.has_lifetime_license
     ? trial.has_shield
-      ? 'Morechard Shield'
+      ? 'Morechard Shield AI'
       : trial.has_ai_mentor
       ? 'Morechard Core AI'
       : 'Morechard Core'
@@ -323,7 +323,7 @@ function PlanView({ onBack, showToast, shieldUpgradePrice }: {
   // Derive current plan label — only show a purchased plan if has_lifetime_license is true
   const currentPlan = hasBase
     ? hasShield
-      ? 'Morechard Shield'
+      ? 'Morechard Shield AI'
       : hasAi
       ? 'Morechard Core AI'
       : 'Morechard Core'
@@ -515,7 +515,7 @@ function PlanView({ onBack, showToast, shieldUpgradePrice }: {
                       </span>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
-                          <p className="text-[15px] font-bold text-[var(--color-text)]">Morechard Shield</p>
+                          <p className="text-[15px] font-bold text-[var(--color-text)]">Morechard Shield AI</p>
                           <span className="px-1.5 py-0.5 rounded-md bg-amber-100 text-amber-700 text-[10px] font-bold uppercase tracking-wide">Professional</span>
                         </div>
                         <p className="text-[20px] font-bold text-amber-600 leading-none mt-0.5">
@@ -561,8 +561,8 @@ function PlanView({ onBack, showToast, shieldUpgradePrice }: {
                       {buying === 'SHIELD_AI'
                         ? 'Loading…'
                         : shieldIsUpgrade
-                        ? `Upgrade to Morechard Shield — ${formatGBP(shieldDelta)}`
-                        : 'Get Morechard Shield — £149.99'}
+                        ? `Upgrade to Morechard Shield AI — ${formatGBP(shieldDelta)}`
+                        : 'Get Morechard Shield AI — £149.99'}
                     </button>
                   </div>
                 </div>
