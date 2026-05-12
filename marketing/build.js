@@ -225,6 +225,13 @@ function build() {
     const scriptsMatch = src.match(/<!-- SCRIPTS_START -->([\s\S]*?)<!-- SCRIPTS_END -->/);
     if (scriptsMatch) scripts = scriptsMatch[1];
 
+    // Extract optional per-page schema block
+    let schemaTag = '';
+    const schemaMatch = src.match(/<!-- SCHEMA_START -->([\s\S]*?)<!-- SCHEMA_END -->/);
+    if (schemaMatch) {
+      schemaTag = `\n  <script type="application/ld+json">${schemaMatch[1].trim()}<\/script>`;
+    }
+
     // Build page CSS link
     const pageCssLink = meta.PAGE_CSS
       ? `  <link rel="stylesheet" href="/css/${meta.PAGE_CSS}?v=${hash}" />`
@@ -241,6 +248,7 @@ function build() {
     } else if (meta.CANONICAL) {
       extraHead = `\n  <link rel="canonical" href="${meta.CANONICAL}" />`;
     }
+    extraHead += schemaTag;
 
     // Assemble full page
     const page = `<!DOCTYPE html>
