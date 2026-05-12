@@ -301,11 +301,13 @@ ${scripts}
   }
   console.log('[build] ✓ images (copied)');
 
-  // Copy favicon.svg from root if present
-  const rootFavicon = path.join(ROOT, '..', 'favicon.svg');
-  if (fs.existsSync(rootFavicon)) {
-    fs.copyFileSync(rootFavicon, path.join(DIST, 'favicon.svg'));
-    console.log('[build] ✓ favicon.svg (copied from root)');
+  // Copy favicon.svg — prefer marketing/favicon.svg, fall back to project root
+  const localFavicon = path.join(ROOT, 'favicon.svg');
+  const rootFavicon  = path.join(ROOT, '..', 'favicon.svg');
+  const faviconSrc   = fs.existsSync(localFavicon) ? localFavicon : rootFavicon;
+  if (fs.existsSync(faviconSrc)) {
+    fs.copyFileSync(faviconSrc, path.join(DIST, 'favicon.svg'));
+    console.log('[build] ✓ favicon.svg (copied)');
   }
 
   console.log(`\n[build] Done — ${Object.keys(components).length} components, hash=${hash}\n`);
