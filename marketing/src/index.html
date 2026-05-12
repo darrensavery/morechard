@@ -820,6 +820,21 @@
     function stopAuto() { clearInterval(autoTimer); }
     [...features, ...dots, ...tabItems].forEach(el => el.addEventListener('click', () => { stopAuto(); setTimeout(startAuto, 8000); }));
 
+    /* Touch swipe on the phone frame */
+    const phoneFrame = document.querySelector('.phone-frame');
+    if (phoneFrame) {
+      let touchStartX = 0;
+      phoneFrame.addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX; }, { passive: true });
+      phoneFrame.addEventListener('touchend', e => {
+        const dx = e.changedTouches[0].clientX - touchStartX;
+        if (Math.abs(dx) < 40) return;
+        stopAuto();
+        if (dx < 0) setScreen((currentScreen + 1) % screens.length);
+        else        setScreen((currentScreen - 1 + screens.length) % screens.length);
+        setTimeout(startAuto, 8000);
+      }, { passive: true });
+    }
+
     setScreen(0);
     startAuto();
   })();
