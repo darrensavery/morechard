@@ -304,6 +304,62 @@
   );
   document.querySelectorAll('.reveal').forEach(el => io.observe(el));
 
+  // ── Polish layer: hero parallax + scrim, editorial intro parallax, reading progress bar.
+  //    Single rAF-batched scroll handler so we never run more than one layout pass per frame. ──
+  (function () {
+    const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const hero      = document.querySelector('.audience-hero');
+    const heroImg   = hero ? hero.querySelector('.hero-img')   : null;
+    const heroScrim = hero ? hero.querySelector('.hero-scrim') : null;
+    const intro     = document.querySelector('.audience-intro');
+    const introPs   = intro ? Array.from(intro.querySelectorAll('p')) : [];
+
+    const progress = document.createElement('div');
+    progress.className = 'read-progress';
+    progress.setAttribute('aria-hidden', 'true');
+    const progressFill = document.createElement('div');
+    progressFill.className = 'read-progress-fill';
+    progress.appendChild(progressFill);
+    document.body.appendChild(progress);
+
+    let ticking = false;
+    function frame() {
+      const scrollY = window.scrollY;
+      const viewportH = window.innerHeight;
+      const docH    = document.documentElement.scrollHeight - viewportH;
+
+      const pct = docH > 0 ? Math.min(1, Math.max(0, scrollY / docH)) : 0;
+      progressFill.style.width = (pct * 100).toFixed(2) + '%';
+
+      if (!prefersReduced) {
+        if (hero && heroImg) {
+          const rect = hero.getBoundingClientRect();
+          if (rect.bottom > 0 && rect.top < viewportH) {
+            const y = Math.min(scrollY * 0.3, hero.offsetHeight * 0.3);
+            heroImg.style.setProperty('--hero-parallax-y', '-' + y.toFixed(1) + 'px');
+            const scrimT = Math.min(1, scrollY / (viewportH * 0.6));
+            heroScrim.style.setProperty('--hero-scrim-opacity', (1 - scrimT * 0.15).toFixed(3));
+          }
+        }
+        if (intro && introPs.length) {
+          const rect = intro.getBoundingClientRect();
+          if (rect.bottom > 0 && rect.top < viewportH) {
+            const progress = ((rect.top + rect.height / 2) - viewportH / 2) / (viewportH);
+            const shift = Math.max(-1, Math.min(1, progress)) * -8;
+            intro.style.setProperty('--intro-shift', shift.toFixed(1) + 'px');
+          }
+        }
+      }
+      ticking = false;
+    }
+    function onScroll() {
+      if (!ticking) { window.requestAnimationFrame(frame); ticking = true; }
+    }
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll, { passive: true });
+    frame();
+  })();
+
   // ── Background transition: cream → deep canopy when truth-engine enters viewport ──
   (function () {
     const trigger = document.getElementById('truth-engine-section');
@@ -349,13 +405,39 @@
       return { a: a, b: b, shared: shared };
     }
 
+    // Cached running values per counter (used to roll smoothly from old → new)
+    const counterState = new Map();
+    counters.forEach(function (el) { counterState.set(el, 0); });
+
+    function rollCounter(el, targetValue) {
+      const from = counterState.get(el) || 0;
+      if (Math.abs(from - targetValue) < 0.005) return;
+      counterState.set(el, targetValue);
+      const ROLL_MS = 480;
+      const start = performance.now();
+      function easeOut(t) { return 1 - Math.pow(1 - t, 3); }
+      function tick(now) {
+        const t = Math.min(1, (now - start) / ROLL_MS);
+        const v = from + (targetValue - from) * easeOut(t);
+        el.textContent = fmtGBP(v);
+        if (t < 1) requestAnimationFrame(tick);
+        else el.textContent = fmtGBP(targetValue);
+      }
+      requestAnimationFrame(tick);
+      // Scale "pop" — class is cleared shortly after for the next tick to re-trigger
+      el.classList.add('is-bumping');
+      setTimeout(function () { el.classList.remove('is-bumping'); }, 320);
+    }
+
     function updateCounters(currentStep) {
       const t = totalsAt(currentStep);
       counters.forEach(function (el) {
         const key = el.dataset.counter;
-        if (key === 'parent-a') el.textContent = fmtGBP(t.a);
-        else if (key === 'parent-b') el.textContent = fmtGBP(t.b);
-        else if (key === 'shared')   el.textContent = fmtGBP(t.shared);
+        let target = 0;
+        if (key === 'parent-a') target = t.a;
+        else if (key === 'parent-b') target = t.b;
+        else if (key === 'shared')   target = t.shared;
+        rollCounter(el, target);
       });
     }
 

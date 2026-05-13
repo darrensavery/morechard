@@ -49,12 +49,22 @@
   width: 100%; height: 100%;
   object-fit: cover;
   z-index: 0;
+  will-change: transform;
+  /* JS sets --hero-parallax-y to a translate value; we let the browser interpolate */
+  transform: translate3d(0, var(--hero-parallax-y, 0px), 0);
+  transition: transform 60ms linear;
 }
 .audience-hero .hero-scrim {
   position: absolute;
   inset: 0;
   background: linear-gradient(180deg, rgba(27,45,46,0.10) 0%, rgba(27,45,46,0.55) 60%, rgba(27,45,46,0.78) 100%);
   z-index: 1;
+  opacity: var(--hero-scrim-opacity, 1);
+  transition: opacity 60ms linear;
+}
+@media (prefers-reduced-motion: reduce) {
+  .audience-hero img.hero-img { transform: none !important; transition: none !important; }
+  .audience-hero .hero-scrim { opacity: 1 !important; transition: none !important; }
 }
 .audience-hero .hero-content {
   position: relative;
@@ -84,6 +94,11 @@
   width: 6px; height: 6px;
   border-radius: 50%;
   background: var(--gold);
+  animation: heroBadgePulse 2.2s cubic-bezier(0.4,0,0.6,1) infinite;
+}
+@keyframes heroBadgePulse {
+  0%, 100% { opacity: 1; transform: scale(1); box-shadow: 0 0 0 0 rgba(230,178,34,0.6); }
+  50%      { opacity: 0.55; transform: scale(0.7); box-shadow: 0 0 0 6px rgba(230,178,34,0); }
 }
 .audience-hero h1 {
   font-family: var(--font-display);
@@ -446,7 +461,14 @@ body.dark .signature-day-caption { color: var(--text-light-sub); }
   font-size: 22px;
   color: var(--text-dark);
   margin-top: 4px;
+  font-variant-numeric: tabular-nums;
+  transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1), color 0.3s ease;
 }
+.ledger-col .ledger-total strong.is-bumping {
+  transform: scale(1.08);
+  color: var(--teal);
+}
+.ledger-col.shared .ledger-total strong.is-bumping { color: var(--gold); }
 
 .ledger-col.shared {
   background: var(--bg-dark);
@@ -1022,4 +1044,169 @@ body.dark .success-sub { color: var(--text-light-sub); }
   width: 15px; height: 15px;
   border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff;
   border-radius: 50%; animation: spin 0.7s linear infinite;
+}
+
+/* ──────────────────────────────────────────────────────────────────
+   Polish layer — subtle animations applied across all audience pages
+   ────────────────────────────────────────────────────────────────── */
+
+/* Item 2 — Benefit-card icon micro-animation on hover */
+.benefit-card .benefit-icon {
+  transition:
+    background-color 0.3s ease,
+    transform 0.45s cubic-bezier(0.34,1.56,0.64,1);
+}
+.benefit-card:hover .benefit-icon {
+  background: rgba(0,149,156,0.18);
+  transform: translateY(-3px) rotate(-4deg);
+}
+body.dark .benefit-card:hover .benefit-icon {
+  background: rgba(0,149,156,0.28);
+}
+.benefit-card .benefit-icon svg {
+  transition: transform 0.4s cubic-bezier(0.34,1.56,0.64,1);
+}
+.benefit-card:hover .benefit-icon svg {
+  transform: rotate(4deg) scale(1.06);
+}
+
+/* Item 5 — CTA button micro-interaction (arrow slide + soft lift)
+   Scoped to hero & form CTAs on audience pages; preserves the global .btn-primary defaults. */
+.audience-hero .btn-primary,
+.form-submit {
+  position: relative;
+  transition:
+    background-color 0.3s cubic-bezier(0,0,0.2,1),
+    transform 0.25s cubic-bezier(0.34,1.56,0.64,1),
+    box-shadow 0.25s cubic-bezier(0,0,0.2,1);
+}
+.audience-hero .btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0,149,156,0.35);
+}
+.form-submit:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0,149,156,0.28);
+}
+.audience-hero .btn-primary svg,
+.form-submit svg {
+  transition: transform 0.3s cubic-bezier(0.16,1,0.3,1);
+}
+.audience-hero .btn-primary:hover svg,
+.form-submit:hover:not(:disabled) svg {
+  transform: translateX(4px);
+}
+
+/* Item 6 — Scroll-driven reading progress bar
+   A thin teal hairline at the very top of the viewport that fills as the user scrolls. */
+.read-progress {
+  position: fixed;
+  top: 0; left: 0;
+  height: 2px;
+  width: 100%;
+  background: transparent;
+  z-index: 250;
+  pointer-events: none;
+}
+.read-progress-fill {
+  height: 100%;
+  background: var(--teal);
+  width: 0%;
+  transition: width 60ms linear;
+  transform-origin: left center;
+}
+body.dark .read-progress-fill { background: var(--gold); }
+
+/* Item 7 — Editorial intro parallax (gentle Y shift on scroll, scoped to .audience-intro) */
+.audience-intro {
+  --intro-shift: 0px;
+}
+.audience-intro p {
+  transform: translate3d(0, var(--intro-shift), 0);
+  transition: transform 60ms linear;
+  will-change: transform;
+}
+@media (prefers-reduced-motion: reduce) {
+  .audience-intro p { transform: none !important; }
+}
+
+/* Item 8 — Refined card hover depth (benefit-card + day-actor + case-card + step-card + recommend-card) */
+.benefit-card,
+.case-card,
+.step-card,
+.recommend-card {
+  box-shadow: 0 1px 0 rgba(27,45,46,0);
+  transition:
+    background-color 0.3s cubic-bezier(0,0,0.2,1),
+    border-color 0.2s ease,
+    transform 0.25s cubic-bezier(0.16,1,0.3,1),
+    box-shadow 0.3s cubic-bezier(0,0,0.2,1);
+}
+.case-card:hover,
+.step-card:hover,
+.recommend-card:hover {
+  transform: translateY(-3px);
+  box-shadow:
+    0 14px 32px rgba(27,45,46,0.10),
+    0 2px 6px rgba(27,45,46,0.04);
+}
+.benefit-card:hover {
+  box-shadow:
+    0 14px 32px rgba(27,45,46,0.12),
+    0 2px 6px rgba(27,45,46,0.04);
+}
+body.dark .benefit-card:hover,
+body.dark .case-card:hover,
+body.dark .step-card:hover,
+body.dark .recommend-card:hover {
+  box-shadow:
+    0 14px 36px rgba(0,0,0,0.45),
+    0 2px 8px rgba(0,0,0,0.25);
+}
+
+/* Item 9 — Orchestrated body.dark transition smoothness.
+   The body transitions its bg/color over 0.5s; align every card/strip surface
+   that previously snapped, so the whole canvas changes mood as one moment. */
+body, body.dark { transition: background-color 0.55s cubic-bezier(0,0,0.6,1), color 0.55s cubic-bezier(0,0,0.6,1); }
+.benefit-card,
+.case-card,
+.step-card,
+.spec-col,
+.audience-callout,
+.recommend-card,
+.sample-pdf,
+.audience-why .why-tile,
+.audience-faq details,
+.audience-faq summary,
+.audience-faq .faq-answer,
+.audience-intro p,
+.audience-section .section-headline,
+.audience-section .section-sub,
+.ledger-col:not(.shared),
+.ledger-col .ledger-total strong,
+.audience-image-wide,
+#nav,
+#nav.scrolled {
+  transition-property:
+    background-color,
+    border-color,
+    color,
+    box-shadow,
+    transform;
+  transition-duration: 0.55s;
+  transition-timing-function: cubic-bezier(0,0,0.6,1);
+}
+/* Keep micro-interaction overrides (hover lifts, FAQ height) on their own faster timing.
+   These rules below intentionally re-apply the snappier timings the polish layer uses. */
+.benefit-card:hover,
+.case-card:hover,
+.step-card:hover,
+.recommend-card:hover { transition-duration: 0.25s; }
+.audience-faq details { transition: grid-template-rows 0.45s cubic-bezier(0.16,1,0.3,1); }
+.audience-faq .faq-answer {
+  transition:
+    opacity 0.35s cubic-bezier(0.16,1,0.3,1) 0.05s,
+    transform 0.45s cubic-bezier(0.16,1,0.3,1) 0.05s,
+    padding-top 0.45s cubic-bezier(0.16,1,0.3,1),
+    color 0.55s cubic-bezier(0,0,0.6,1);
 }

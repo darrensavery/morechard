@@ -346,6 +346,68 @@
   );
   document.querySelectorAll('.reveal').forEach(el => io.observe(el));
 
+  // ── Polish layer: hero parallax + scrim, editorial intro parallax, reading progress bar.
+  //    Single rAF-batched scroll handler so we never run more than one layout pass per frame. ──
+  (function () {
+    const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const hero      = document.querySelector('.audience-hero');
+    const heroImg   = hero ? hero.querySelector('.hero-img')   : null;
+    const heroScrim = hero ? hero.querySelector('.hero-scrim') : null;
+    const intro     = document.querySelector('.audience-intro');
+    const introPs   = intro ? Array.from(intro.querySelectorAll('p')) : [];
+
+    // Build a non-intrusive top-of-page reading progress bar
+    const progress = document.createElement('div');
+    progress.className = 'read-progress';
+    progress.setAttribute('aria-hidden', 'true');
+    const progressFill = document.createElement('div');
+    progressFill.className = 'read-progress-fill';
+    progress.appendChild(progressFill);
+    document.body.appendChild(progress);
+
+    let ticking = false;
+    function frame() {
+      const scrollY = window.scrollY;
+      const viewportH = window.innerHeight;
+      const docH    = document.documentElement.scrollHeight - viewportH;
+
+      // Reading progress (always runs, ignores reduced-motion since it's discrete state)
+      const pct = docH > 0 ? Math.min(1, Math.max(0, scrollY / docH)) : 0;
+      progressFill.style.width = (pct * 100).toFixed(2) + '%';
+
+      if (!prefersReduced) {
+        // Hero parallax: image translates up at ~30% scroll speed while hero is in view
+        if (hero && heroImg) {
+          const rect = hero.getBoundingClientRect();
+          if (rect.bottom > 0 && rect.top < viewportH) {
+            const y = Math.min(scrollY * 0.3, hero.offsetHeight * 0.3);
+            heroImg.style.setProperty('--hero-parallax-y', '-' + y.toFixed(1) + 'px');
+            // Scrim deepens as user scrolls into the page (from 1 down to ~0.85, stay legible at top)
+            const scrimT = Math.min(1, scrollY / (viewportH * 0.6));
+            heroScrim.style.setProperty('--hero-scrim-opacity', (1 - scrimT * 0.15).toFixed(3));
+          }
+        }
+        // Editorial intro parallax: each paragraph drifts a few pixels in opposite directions
+        if (intro && introPs.length) {
+          const rect = intro.getBoundingClientRect();
+          if (rect.bottom > 0 && rect.top < viewportH) {
+            // 0 when section centred, ±1 when at edges
+            const progress = ((rect.top + rect.height / 2) - viewportH / 2) / (viewportH);
+            const shift = Math.max(-1, Math.min(1, progress)) * -8;
+            intro.style.setProperty('--intro-shift', shift.toFixed(1) + 'px');
+          }
+        }
+      }
+      ticking = false;
+    }
+    function onScroll() {
+      if (!ticking) { window.requestAnimationFrame(frame); ticking = true; }
+    }
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll, { passive: true });
+    frame();
+  })();
+
   // ── Background transition: cream → deep canopy when day-section enters viewport ──
   (function () {
     const trigger = document.getElementById('day-section');
