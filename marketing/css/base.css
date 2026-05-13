@@ -31,13 +31,16 @@
 }
 
 html { scroll-behavior: smooth; }
+html.no-transition *, html.no-transition *::before, html.no-transition *::after {
+  transition: none !important;
+}
 
 body {
   font-family: var(--font-body);
   -webkit-font-smoothing: antialiased;
   background-color: var(--bg-cream);
   color: var(--text-dark);
-  transition: background-color 0.5s cubic-bezier(0,0,0.6,1), color 0.5s cubic-bezier(0,0,0.6,1);
+  transition: background-color 0.3s cubic-bezier(0,0.2,0.4,1), color 0.3s cubic-bezier(0,0.2,0.4,1);
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -46,6 +49,7 @@ footer { margin-top: auto; }
 body.dark {
   background-color: var(--bg-dark);
   color: var(--text-light);
+  transition: background-color 0.55s cubic-bezier(0.4,0,0.2,1), color 0.55s cubic-bezier(0.4,0,0.2,1);
 }
 
 /* ── Scroll reveal ── */
@@ -59,6 +63,10 @@ body.dark {
 .d2 { transition-delay: 0.16s; }
 .d3 { transition-delay: 0.24s; }
 .d4 { transition-delay: 0.32s; }
+.reveal.visible.d1,
+.reveal.visible.d2,
+.reveal.visible.d3,
+.reveal.visible.d4 { transition-delay: 0s; }
 
 /* ── Nav ── */
 nav {
@@ -124,11 +132,23 @@ body.dark .nav-logo-wordmark span { color: var(--text-light); }
   border: none;
   cursor: pointer;
   white-space: nowrap;
-  transition: background-color 0.3s cubic-bezier(0,0,0.2,1);
+  transition: background-color 0.3s cubic-bezier(0,0,0.2,1), box-shadow 0.3s cubic-bezier(0,0,0.2,1), transform 0.2s cubic-bezier(0,0,0.2,1);
+  overflow: hidden;
 }
-.btn-primary:hover { background: var(--teal-dark); }
+.btn-primary svg {
+  transition: transform 0.25s cubic-bezier(0.34,1.56,0.64,1);
+}
+.btn-primary:hover { background: var(--teal-dark); box-shadow: 0 6px 20px rgba(0,149,156,0.35); transform: translateY(-1px); }
+.btn-primary:hover svg { transform: translateX(3px); }
+.btn-primary:active { transform: translateY(0); box-shadow: none; }
 .btn-primary:focus-visible { outline: 2px solid var(--teal); outline-offset: 4px; }
 .btn-primary:disabled { opacity: 0.55; cursor: not-allowed; }
+@media (prefers-reduced-motion: reduce) {
+  .btn-primary { transition: background-color 0.3s; }
+  .btn-primary:hover { transform: none; box-shadow: none; }
+  .btn-primary svg { transition: none; }
+  .btn-primary:hover svg { transform: none; }
+}
 
 .btn-hero { height: 52px; padding: 0 30px; font-size: 17px; }
 
@@ -294,7 +314,9 @@ footer {
   transform: translateY(0);
 }
 .nav-panel a {
-  display: block;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
   padding: 10px 12px;
   font-size: 14px;
   color: var(--text-dark);
@@ -303,6 +325,16 @@ footer {
   transition: background-color 0.15s ease, color 0.15s ease;
 }
 .nav-panel a:hover { background: rgba(0,149,156,0.08); color: var(--teal); }
+/* Nav panel items with title + description */
+.nav-item-title {
+  font-weight: 500;
+  color: var(--text-dark);
+}
+.nav-item-desc {
+  font-size: 12px;
+  color: var(--text-sub);
+  font-weight: 400;
+}
 
 .nav-cta { flex-shrink: 0; }
 
@@ -342,9 +374,9 @@ nav.is-open .nav-toggle span:nth-child(3) { transform: translateY(-7px) rotate(-
     background: var(--bg-cream);
     overflow-y: auto;
     transform: translateX(100%);
-    transition: transform 0.28s cubic-bezier(0.16,1,0.3,1);
     border-top: 1px solid var(--border-light);
   }
+  .nav-list { transition: transform 0.28s cubic-bezier(0.16,1,0.3,1); }
   nav.is-open .nav-list { transform: translateX(0); }
   .nav-toggle { display: inline-flex; }
   .nav-cta {
@@ -382,8 +414,8 @@ nav.is-open .nav-toggle span:nth-child(3) { transform: translateY(-7px) rotate(-
     padding: 0 0 8px 12px;
     max-height: 0;
     overflow: hidden;
-    transition: max-height 0.25s ease;
   }
+  .nav-panel { transition: max-height 0.25s ease; }
   .nav-group.is-expanded .nav-panel {
     max-height: 400px;
   }
@@ -406,7 +438,10 @@ a.audience-card {
   display: block;
   text-decoration: none;
   color: inherit;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition: background-color 0.3s cubic-bezier(0,0.2,0.4,1), border-color 0.3s cubic-bezier(0,0.2,0.4,1), transform 0.2s ease, box-shadow 0.2s ease;
+}
+body.dark a.audience-card {
+  transition: background-color 0.55s cubic-bezier(0.4,0,0.2,1), border-color 0.55s cubic-bezier(0.4,0,0.2,1), transform 0.2s ease, box-shadow 0.2s ease;
 }
 a.audience-card:hover {
   transform: translateY(-2px);
