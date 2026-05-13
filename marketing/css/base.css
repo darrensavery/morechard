@@ -400,3 +400,25 @@ body.dark .nav-toggle span { background: var(--text-light); }
 }
 
 [hidden] { display: none !important; }
+
+/* ── Homepage who-its-for: clickable card variant ── */
+a.audience-card {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+a.audience-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 28px rgba(27,45,46,0.08);
+}
+.audience-read-more {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 18px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--teal);
+}
+a.audience-card:hover .audience-read-more svg { transform: translateX(2px); transition: transform 0.2s ease; }
