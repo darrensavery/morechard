@@ -374,6 +374,8 @@
   font-size: 10px;
   font-weight: 500;
   margin-bottom: 6px;
+  background: color-mix(in srgb, var(--pill-color, var(--teal)) 13%, transparent);
+  color: var(--pill-color, var(--teal));
 }
 .app-module-name {
   font-size: 12px;
