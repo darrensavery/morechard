@@ -25,10 +25,24 @@
           <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><path d="M2 4l3 3 3-3" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </button>
         <ul class="nav-panel" role="menu">
-          <li><a href="/features/chore-tracker" role="menuitem">Chore Tracker</a></li>
-          <li><a href="/features/learning-lab" role="menuitem">Learning Lab</a></li>
-          <li><a href="/features/ai-mentor" role="menuitem">AI Mentor</a></li>
-          <li><a href="/features/cryptographic-reports" role="menuitem">Cryptographic Reports</a></li>
+          <li>
+            <a href="/features/earn-save-spend" role="menuitem">
+              <span class="nav-item-title">Earn / Save / Spend</span>
+              <span class="nav-item-desc">Chores, goals, and instant payouts</span>
+            </a>
+          </li>
+          <li>
+            <a href="/features/financial-literacy" role="menuitem">
+              <span class="nav-item-title">Financial Literacy</span>
+              <span class="nav-item-desc">AI coaching and 20-module curriculum</span>
+            </a>
+          </li>
+          <li>
+            <a href="/features/trust-and-peace-of-mind" role="menuitem">
+              <span class="nav-item-title">Trust &amp; Peace of Mind</span>
+              <span class="nav-item-desc">Cryptographic ledger and court-ready exports</span>
+            </a>
+          </li>
         </ul>
       </li>
 
@@ -179,5 +193,17 @@
       }
       window.addEventListener('scroll', onScroll, { passive: true });
       onScroll();
+
+      // Suppress all transitions while the browser is being resized so that
+      // media-query layout changes snap instantly rather than animating
+      var resizeTimer;
+      var html = document.documentElement;
+      window.addEventListener('resize', function () {
+        html.classList.add('no-transition');
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(function () {
+          html.classList.remove('no-transition');
+        }, 100);
+      });
     })();
   </script>
