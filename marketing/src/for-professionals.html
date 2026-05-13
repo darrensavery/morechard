@@ -1,0 +1,277 @@
+<!--
+  TITLE: For Family Lawyers & Mediators | Morechard
+  DESCRIPTION: A neutral, tamper-proof record of pocket money, chores, and shared child expenses across two households — built for the clients you advise.
+  CANONICAL: https://morechard.com/for-professionals
+  PAGE_CSS: page-audience.css
+  HERO_IMAGE: /Images/professional_16_9.png
+  HERO_IMAGE_MOBILE: /Images/professional_3_4.png
+-->
+
+<!-- SCHEMA_START -->
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    { "@type": "Question", "name": "Is the Morechard export admissible as evidence?", "acceptedAnswer": { "@type": "Answer", "text": "Morechard generates a PDF/A-2b export with embedded XMP metadata, a chain-head SHA-256 hash, and a public verification URL. The underlying ledger is append-only and cryptographically chained. Whether a specific court admits the export depends on jurisdictional rules of evidence — but the format is built to meet standard documentary evidence requirements." } },
+    { "@type": "Question", "name": "What jurisdiction does Morechard's data sit in?", "acceptedAnswer": { "@type": "Answer", "text": "Family data is stored on Cloudflare D1, with replicas confined to UK and EU regions. No data is routed to or stored in non-EEA jurisdictions. Compliance: UK GDPR, EU GDPR, COPPA, GDPR-K, and Polish NSFE alignment for financial education content." } },
+    { "@type": "Question", "name": "How is the ledger's tamper-evidence demonstrated?", "acceptedAnswer": { "@type": "Answer", "text": "Each ledger entry is hashed (SHA-256) together with the prior entry's hash, producing a chain. A single altered byte in any entry — past or present — breaks every subsequent hash in the chain. The chain-head hash is embedded in every export and independently verifiable at a public URL." } },
+    { "@type": "Question", "name": "Do both parents need accounts for the record to be useful?", "acceptedAnswer": { "@type": "Answer", "text": "No, but two-parent records are stronger. A single-parent ledger is still cryptographically sealed and exportable. A two-parent ledger additionally attributes each entry to the parent who recorded it, producing a richer evidentiary picture." } },
+    { "@type": "Question", "name": "Is there a referral or commission scheme?", "acceptedAnswer": { "@type": "Answer", "text": "No commission. No paid referral scheme. Practitioners who join the partner waitlist receive a one-page client pack at launch and ongoing updates. Vouching is optional and only after a practitioner has used the product themselves." } },
+    { "@type": "Question", "name": "Can a mediator be added as a neutral observer?", "acceptedAnswer": { "@type": "Answer", "text": "Not in the current scope — Morechard accounts are family-owned and not designed for third-party observer roles. A mediator can request that the family generate a PDF audit export at any review point, which can be independently verified without an account." } },
+    { "@type": "Question", "name": "What if a client asks Morechard to delete their records?", "acceptedAnswer": { "@type": "Answer", "text": "The family controls deletion. A family-initiated account deletion ('Uproot') anonymises personal identifiers while preserving the cryptographically chained ledger entries — the audit chain remains verifiable, but no personal data is retained. Selective deletion of individual ledger entries is not possible by design — that's the point." } }
+  ]
+}
+<!-- SCHEMA_END -->
+
+<!-- BODY_START -->
+<main class="audience-page">
+
+  <!-- ── Hero ── -->
+  <section class="audience-hero" id="hero">
+    <picture>
+      <source media="(max-width: 720px)" srcset="/Images/professional_3_4.png" />
+      <img class="hero-img" src="/Images/professional_16_9.png" alt="A neutral, professional desk with documents and a laptop, suggesting careful record-keeping" loading="eager" />
+    </picture>
+    <div class="hero-scrim"></div>
+    <div class="hero-content">
+      <div class="hero-badge reveal">
+        <span class="hero-badge-dot"></span>
+        For family lawyers &amp; mediators
+      </div>
+      <h1 class="reveal d1">A neutral source of truth for the families <em>you advise.</em></h1>
+      <p class="hero-sub reveal d2">A tamper-proof shared ledger of chores, pocket money, and shared child expenses across two households &mdash; with cryptographic integrity and one-click PDF/A audit export. Built so the small disputes resolve themselves before they reach your desk.</p>
+      <div class="hero-actions reveal d3">
+        <a href="#signup" class="btn-primary btn-hero">
+          Join the partner waitlist
+          <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+            <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </a>
+        <span class="hero-note">We&rsquo;ll be in touch ahead of launch.</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Editorial intro ── -->
+  <section class="audience-section audience-intro">
+    <div class="container">
+      <p class="reveal">You see the same disputes month after month. Who paid what. Who agreed which rate. Who promised the &pound;20 birthday boost.</p>
+      <p class="reveal d1">Morechard removes the dispute by removing the doubt. A cryptographically sealed shared ledger that both households contribute to and either can export &mdash; built so the small arguments resolve themselves long before they need a meeting room.</p>
+    </div>
+  </section>
+
+  <!-- ── Is / Isn't spec table ── -->
+  <section class="audience-section">
+    <div class="container">
+      <span class="section-label reveal">Before you recommend it</span>
+      <h2 class="section-headline reveal">What Morechard is (and isn&rsquo;t).</h2>
+      <p class="section-sub reveal">A quick disambiguation, because it sits in an unusual category.</p>
+
+      <div class="audience-spec-cols">
+        <div class="spec-col positive reveal d1">
+          <h3>Morechard is&hellip;</h3>
+          <ul>
+            <li>A tamper-proof shared ledger</li>
+            <li>A neutral record of effort and reward</li>
+            <li>A one-click PDF/A audit export</li>
+            <li>A tool that respects both households equally</li>
+          </ul>
+        </div>
+        <div class="spec-col negative reveal d2">
+          <h3>Morechard is not&hellip;</h3>
+          <ul>
+            <li>A debit card or banking product</li>
+            <li>A children&rsquo;s bank account</li>
+            <li>A parental control or surveillance app</li>
+            <li>A substitute for legal or financial advice</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Benefits grid ── -->
+  <section class="audience-section" style="background:#f3eee0;">
+    <div class="container">
+      <span class="section-label reveal">Why mediators and family lawyers like Morechard</span>
+      <h2 class="section-headline reveal">Six things that matter to a practitioner.</h2>
+
+      <div class="audience-benefits-grid">
+        <article class="benefit-card reveal d1">
+          <span class="benefit-lens">Logical</span>
+          <span class="benefit-feature">SHA-256 hash chain</span>
+          <h3 class="benefit-headline">Evidentiary integrity, not stored &mdash; proved.</h3>
+          <p class="benefit-body">Every ledger entry is cryptographically chained to the previous one. A single altered byte breaks the whole chain. The proof is in the maths, not in our word.</p>
+        </article>
+        <article class="benefit-card reveal d1">
+          <span class="benefit-lens">Logical</span>
+          <span class="benefit-feature">One-click PDF audit export</span>
+          <h3 class="benefit-headline">A complete record, in the form you already use.</h3>
+          <p class="benefit-body">PDF/A export with embedded hash, signature line, and a public verification URL. Drop it straight into a bundle.</p>
+        </article>
+        <article class="benefit-card reveal d1">
+          <span class="benefit-lens">Humanistic</span>
+          <span class="benefit-feature">Household-neutral framing</span>
+          <h3 class="benefit-headline">A tool that doesn&rsquo;t take sides.</h3>
+          <p class="benefit-body">No &ldquo;primary&rdquo; parent. No scoring. No rankings. Both parties see the same data through the same lens &mdash; which is often what mediation needs first.</p>
+        </article>
+        <article class="benefit-card reveal d2">
+          <span class="benefit-lens">Competitive</span>
+          <span class="benefit-feature">Cost-of-conflict reduction</span>
+          <h3 class="benefit-headline">Resolves the small disputes before they become your problem.</h3>
+          <p class="benefit-body">Most &ldquo;who paid what&rdquo; arguments never reach your desk because they no longer have anywhere to go. The ledger is the answer.</p>
+        </article>
+        <article class="benefit-card reveal d2">
+          <span class="benefit-lens">Logical</span>
+          <span class="benefit-feature">Client-owned data</span>
+          <h3 class="benefit-headline">Your client&rsquo;s evidence belongs to your client.</h3>
+          <p class="benefit-body">Morechard does not sell, monetise, or use the underlying data. The family&rsquo;s audit chain is theirs &mdash; exportable, portable, and verifiable independently.</p>
+        </article>
+        <article class="benefit-card reveal d2">
+          <span class="benefit-lens">Spontaneous</span>
+          <span class="benefit-feature">Zero onboarding friction</span>
+          <h3 class="benefit-headline">Recommend it on a Tuesday. They&rsquo;re using it by Wednesday.</h3>
+          <p class="benefit-body">No bank account, no debit card, no credit check. A family can be on the ledger in under five minutes.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Signature: Forensic Spec ── -->
+  <section class="audience-section">
+    <div class="container">
+      <span class="section-label reveal">Built for evidence</span>
+      <h2 class="section-headline reveal">The forensic specification.</h2>
+      <p class="section-sub reveal">For practitioners who want the technical detail before they recommend a tool.</p>
+
+      <div class="signature-forensic reveal">
+        <div class="forensic-header">Morechard &middot; Forensic Specification</div>
+        <h3>Ledger, export, jurisdiction, retention.</h3>
+        <dl class="forensic-grid">
+          <dt>Ledger model</dt>           <dd>Append-only, cryptographically chained</dd>
+          <dt>Hash function</dt>          <dd>SHA-256 (FIPS 180-4)</dd>
+          <dt>Chain integrity</dt>        <dd>Each entry hashes prior entry + payload</dd>
+          <dt>Mutability</dt>             <dd>None. No edit. No delete. No backdate.</dd>
+          <dt>Export format</dt>          <dd>PDF/A-2b with embedded XMP metadata</dd>
+          <dt>Export signing</dt>         <dd>Final-page seal: chain head hash + timestamp</dd>
+          <dt>Public verification</dt>    <dd>https://morechard.com/verify/&lt;hash&gt;</dd>
+          <dt>Data jurisdiction</dt>      <dd>Cloudflare D1 &middot; UK / EU regions</dd>
+          <dt>Standards alignment</dt>    <dd>UK GDPR &middot; COPPA &middot; GDPR-K &middot; NSFE (PL)</dd>
+          <dt>Retention</dt>              <dd>Family-controlled &middot; ledger persists post-account</dd>
+          <dt>Data ownership</dt>         <dd>The family. Always.</dd>
+          <dt>Languages</dt>              <dd>English (UK) &middot; English (US) &middot; Polish</dd>
+          <dt>Currencies</dt>             <dd>GBP &middot; USD &middot; PLN</dd>
+        </dl>
+        <p class="forensic-disclaimer">This block is not legal advice. Morechard is a record-keeping tool.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Wide image placeholder ── -->
+  <section class="audience-section" style="padding:0 0 56px;">
+    <div class="container">
+      <!-- TODO: replace placeholder. Generate at 1600x900 (16/9) for desktop and 900x1200 (3/4) for mobile. Alt: "A family solicitor at a tidy desk reviewing a Morechard verification page on a laptop — neutral office tones, no faces required." -->
+      <div class="audience-image-wide reveal">
+        <picture>
+          <source media="(max-width: 720px)" srcset="/Images/professional-laptop_3_4.png" />
+          <img src="/Images/professional-laptop_16_9.png" alt="A family solicitor at a tidy desk reviewing a Morechard verification page on a laptop, neutral office tones" loading="lazy" />
+        </picture>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Sample audit export ── -->
+  <section class="audience-section" style="background:#f3eee0;">
+    <div class="container">
+      <span class="section-label reveal">A sample export</span>
+      <h2 class="section-headline reveal">What lands in your client&rsquo;s inbox.</h2>
+      <p class="section-sub reveal">A schematic preview of the first page of a court-ready PDF/A audit export.</p>
+
+      <div class="sample-pdf reveal">
+        <div class="pdf-header">Morechard Audit Report</div>
+        <div class="pdf-subtitle">Child profile: &ldquo;Alex&rdquo; &middot; Period: 01 Apr 2026 &mdash; 30 Apr 2026 &middot; Households: 2</div>
+
+        <div class="pdf-row"><span>#4f9e &middot; 2026-04-02 &middot; Tidy room</span><span>+&pound;1.50</span></div>
+        <div class="pdf-row"><span>#3a01 &middot; 2026-04-06 &middot; Dishes</span><span>+&pound;3.00</span></div>
+        <div class="pdf-row"><span>#b7c2 &middot; 2026-04-09 &middot; Dog walk</span><span>+&pound;2.00</span></div>
+        <div class="pdf-row"><span>#d8f4 &middot; 2026-04-14 &middot; Boost (Parent A)</span><span>+&pound;5.00</span></div>
+        <div class="pdf-row"><span>#1ea6 &middot; 2026-04-21 &middot; Homework</span><span>+&pound;4.50</span></div>
+        <div class="pdf-row"><span>#7c12 &middot; 2026-04-26 &middot; Withdrawal</span><span>&minus;&pound;10.00</span></div>
+
+        <div class="pdf-seal">
+          Chain-head hash: <span class="seal-hash">9b3a c1f0 4d22 e8f7 51bd 6204 a9c1 d3ef</span><br />
+          Sealed at: 2026-04-30 23:59:59 UTC<br />
+          Verify: https://morechard.com/verify/9b3a&hellip;d3ef
+        </div>
+      </div>
+      <p class="sample-pdf-caption reveal">Every export carries a cryptographic seal and a public verification URL. Tampered exports fail verification instantly.</p>
+    </div>
+  </section>
+
+  <!-- ── How to recommend Morechard ── -->
+  <section class="audience-section">
+    <div class="container">
+      <span class="section-label reveal">If you&rsquo;d like to recommend it</span>
+      <h2 class="section-headline reveal">A light, three-step partner ladder.</h2>
+      <p class="section-sub reveal">No commission. No contract. No obligation. Just a tool you can pass on if it helps the families you advise.</p>
+
+      <div class="recommend-row">
+        <div class="recommend-card reveal d1">
+          <h3>Mention it</h3>
+          <p>A name to drop in a difficult meeting. When clients ask &ldquo;how do we keep track between two homes?&rdquo;, you have a one-line answer.</p>
+        </div>
+        <div class="recommend-card reveal d2">
+          <h3>Share it</h3>
+          <p>A page you can send. Forward this URL or share the partner pack we&rsquo;ll send to everyone on the waitlist.</p>
+        </div>
+        <div class="recommend-card reveal d3">
+          <h3>Vouch for it</h3>
+          <p>Lend your name if you like the tool. Optional. Practitioners who&rsquo;d be happy to be named as a referrer can opt in after they&rsquo;ve used it. No commission, no obligation.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── FAQ ── -->
+  <section class="audience-section" style="background:#f3eee0;">
+    <div class="container">
+      <span class="section-label reveal">Common questions</span>
+      <h2 class="section-headline reveal">For practitioners.</h2>
+
+      <div class="audience-faq">
+        <details class="reveal">
+          <summary>Is the export admissible as evidence?</summary>
+          <div class="faq-answer">Morechard generates a PDF/A-2b export with embedded XMP metadata, a chain-head SHA-256 hash, and a public verification URL. The underlying ledger is append-only and cryptographically chained. Whether a specific court admits the export depends on jurisdictional rules of evidence &mdash; but the format is built to meet standard documentary evidence requirements.</div>
+        </details>
+        <details class="reveal">
+          <summary>What jurisdiction does Morechard&rsquo;s data sit in?</summary>
+          <div class="faq-answer">Family data is stored on Cloudflare D1, with replicas confined to UK and EU regions. No data is routed to or stored in non-EEA jurisdictions. Compliance: UK GDPR, EU GDPR, COPPA, GDPR-K, and Polish NSFE alignment for financial education content.</div>
+        </details>
+        <details class="reveal">
+          <summary>How is the ledger&rsquo;s tamper-evidence demonstrated?</summary>
+          <div class="faq-answer">Each ledger entry is hashed (SHA-256) together with the prior entry&rsquo;s hash, producing a chain. A single altered byte in any entry &mdash; past or present &mdash; breaks every subsequent hash in the chain. The chain-head hash is embedded in every export and independently verifiable at a public URL.</div>
+        </details>
+        <details class="reveal">
+          <summary>Do both parents need accounts for the record to be useful?</summary>
+          <div class="faq-answer">No, but two-parent records are stronger. A single-parent ledger is still cryptographically sealed and exportable. A two-parent ledger additionally attributes each entry to the parent who recorded it, producing a richer evidentiary picture.</div>
+        </details>
+        <details class="reveal">
+          <summary>Is there a referral or commission scheme?</summary>
+          <div class="faq-answer">No commission. No paid referral scheme. Practitioners who join the partner waitlist receive a one-page client pack at launch and ongoing updates. Vouching is optional and only after a practitioner has used the product themselves.</div>
+        </details>
+        <details class="reveal">
+          <summary>Can a mediator be added as a neutral observer?</summary>
+          <div class="faq-answer">Not in the current scope &mdash; Morechard accounts are family-owned and not designed for third-party observer roles. A mediator can request that the family generate a PDF audit export at any review point, which can be independently verified without an account.</div>
+        </details>
+        <details class="reveal">
+          <summary>What if a client asks Morechard to delete their records?</summary>
+          <div class="faq-answer">The family controls deletion. A family-initiated account deletion (&lsquo;Uproot&rsquo;) anonymises personal identifiers while preserving the cryptographically chained ledger entries &mdash; the audit chain remains verifiable, but no personal data is retained. Selective deletion of individual ledger entries is not possible by design &mdash; that&rsquo;s the point.</div>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  {{component:register-interest}}
+
+</main>
+<!-- BODY_END -->
