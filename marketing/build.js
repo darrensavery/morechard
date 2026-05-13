@@ -52,17 +52,22 @@ const PLACEHOLDER_SVG_3_4  = `data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w
 
 function substituteMissingImages(html, srcFile) {
   // Match img src="/Images/..." or src="/foo.webp" — anything starting with /
-  return html.replace(/(src|srcset)="(\/[^"]+\.(?:png|jpg|jpeg|webp|svg))"/g, (full, attr, href) => {
+  // Note: only `src=` is handled. `srcset=` is skipped because its value can be a
+  // comma-separated list of URLs which this regex cannot safely parse.
+  return html.replace(/src="(\/[^"]+\.(?:png|jpg|jpeg|webp|svg))"/g, (full, href) => {
     // Strip query string if any
     const cleanHref = href.split('?')[0];
-    // Resolve against marketing/ root
-    const fsPath = path.join(ROOT, cleanHref.replace(/^\//, ''));
-    if (fs.existsSync(fsPath)) return full;
+    const relative = cleanHref.replace(/^\//, '');
+    // Try root-level images (e.g. /hero-orchard_3_2.webp → marketing/hero-orchard_3_2.webp)
+    const rootPath = path.join(ROOT, relative);
+    // Try src/-tree images (e.g. /Images/foo.png → marketing/src/Images/foo.png)
+    const srcPath = path.join(ROOT, 'src', relative);
+    if (fs.existsSync(rootPath) || fs.existsSync(srcPath)) return full;
     // Pick aspect by filename hint
     const isPortrait = /_3_4|portrait|_3x4/i.test(cleanHref);
     const sub = isPortrait ? PLACEHOLDER_SVG_3_4 : PLACEHOLDER_SVG_16_9;
     console.log(`[build] ! placeholder for missing image: ${cleanHref} (in ${srcFile})`);
-    return `${attr}="${sub}"`;
+    return `src="${sub}"`;
   });
 }
 
@@ -345,6 +350,21 @@ ${scripts}
     }
   }
   console.log('[build] ✓ images (copied)');
+
+  // Copy src/Images/ → dist/Images/ (audience-page imagery referenced as /Images/...)
+  const srcImagesDir = path.join(ROOT, 'src', 'Images');
+  if (fs.existsSync(srcImagesDir)) {
+    const distImagesDir = path.join(DIST, 'Images');
+    fs.mkdirSync(distImagesDir, { recursive: true });
+    for (const f of fs.readdirSync(srcImagesDir)) {
+      const full = path.join(srcImagesDir, f);
+      if (fs.statSync(full).isDirectory()) continue;
+      if (IMAGE_EXTS.includes(path.extname(f).toLowerCase())) {
+        fs.copyFileSync(full, path.join(distImagesDir, f));
+      }
+    }
+    console.log('[build] ✓ Images/ (copied)');
+  }
 
   // Copy favicon.svg — prefer marketing/favicon.svg, fall back to project root
   const localFavicon = path.join(ROOT, 'favicon.svg');
