@@ -350,7 +350,8 @@
         if (hero && heroImg) {
           const rect = hero.getBoundingClientRect();
           if (rect.bottom > 0 && rect.top < viewportH) {
-            const y = Math.min(scrollY * 0.3, hero.offsetHeight * 0.3);
+            // Cap translation at 15% of hero height (matches the image's top:-15% / height:130% headroom)
+            const y = Math.min(scrollY * 0.3, hero.offsetHeight * 0.15);
             heroImg.style.setProperty('--hero-parallax-y', '-' + y.toFixed(1) + 'px');
             const scrimT = Math.min(1, scrollY / (viewportH * 0.6));
             heroScrim.style.setProperty('--hero-scrim-opacity', (1 - scrimT * 0.15).toFixed(3));

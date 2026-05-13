@@ -380,7 +380,8 @@
         if (hero && heroImg) {
           const rect = hero.getBoundingClientRect();
           if (rect.bottom > 0 && rect.top < viewportH) {
-            const y = Math.min(scrollY * 0.3, hero.offsetHeight * 0.3);
+            // Cap translation at 15% of hero height (matches the image's top:-15% / height:130% headroom)
+            const y = Math.min(scrollY * 0.3, hero.offsetHeight * 0.15);
             heroImg.style.setProperty('--hero-parallax-y', '-' + y.toFixed(1) + 'px');
             // Scrim deepens as user scrolls into the page (from 1 down to ~0.85, stay legible at top)
             const scrimT = Math.min(1, scrollY / (viewportH * 0.6));

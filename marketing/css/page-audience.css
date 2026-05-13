@@ -45,8 +45,11 @@
 }
 .audience-hero img.hero-img {
   position: absolute;
-  inset: 0;
-  width: 100%; height: 100%;
+  /* Image is taller than the hero container so it has room to translate upward
+     during parallax without exposing the container background. */
+  top: -15%; left: 0; right: 0;
+  width: 100%;
+  height: 130%;
   object-fit: cover;
   z-index: 0;
   will-change: transform;
