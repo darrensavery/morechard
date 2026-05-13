@@ -282,6 +282,8 @@
   font-size: 11px;
   color: var(--text-sub);
   letter-spacing: 0.02em;
+  overflow-wrap: break-word;
+  word-break: break-all;
 }
 
 .app-btn-row {
