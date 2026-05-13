@@ -264,3 +264,14 @@
 
 </main>
 <!-- BODY_END -->
+
+<!-- SCRIPTS_START -->
+<script>
+  // ── Scroll-reveal ──
+  const io = new IntersectionObserver(
+    entries => entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); }),
+    { threshold: 0.08 }
+  );
+  document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+</script>
+<!-- SCRIPTS_END -->
