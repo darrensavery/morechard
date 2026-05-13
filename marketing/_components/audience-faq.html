@@ -1,0 +1,39 @@
+<!--
+  component: audience-faq (REFERENCE ONLY)
+  source-page: src/for-single-households.html (and other audience pages)
+  depends-on: page-audience.css (.audience-faq, details/summary styling)
+  structure: visible accordion via <details> + mirrored JSON-LD FAQ schema in page SCHEMA_START block.
+  guidance: phrase each summary as a real search query the audience would type. Keep answers
+            2-3 sentences. Always emit the matching JSON-LD entry so AI Overviews and Google can
+            cite the answer.
+  swap when re-using: 6-7 question/answer pairs + corresponding SCHEMA_START FAQPage entries.
+-->
+  <section class="audience-section">
+    <div class="container">
+      <span class="section-label reveal">Common questions</span>
+      <h2 class="section-headline reveal">SECTION HEADLINE.</h2>
+
+      <div class="audience-faq">
+        <details class="reveal">
+          <summary>QUESTION 1?</summary>
+          <div class="faq-answer">ANSWER 1.</div>
+        </details>
+        <!-- ... repeat ... -->
+      </div>
+    </div>
+  </section>
+
+<!--
+  Corresponding SCHEMA_START fragment to add to the page header:
+
+  <!-- SCHEMA_START -->
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      { "@type": "Question", "name": "QUESTION 1?", "acceptedAnswer": { "@type": "Answer", "text": "ANSWER 1." } },
+      ...
+    ]
+  }
+  <!-- SCHEMA_END -->
+-->

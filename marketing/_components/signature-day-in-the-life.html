@@ -1,0 +1,26 @@
+<!--
+  component: signature-day-in-the-life (REFERENCE ONLY)
+  source-page: src/for-single-households.html
+  depends-on: page-audience.css (.signature-day, .day-card, .signature-day-caption)
+  structure: 4 cards horizontal on desktop, 1-col on mobile.
+  guidance: each card represents a moment in the day. Two roles per card (Parent + Child).
+            Keep each role line under 12 words. Lead the role line with strong noun (no metaphor).
+  swap when re-using: 4 time labels, 4 parent lines, 4 child lines, closing caption.
+-->
+  <section class="audience-section" style="background:#f3eee0;">
+    <div class="container">
+      <span class="section-label reveal">SECTION LABEL</span>
+      <h2 class="section-headline reveal">SECTION HEADLINE.</h2>
+      <p class="section-sub reveal">SECTION INTRO.</p>
+
+      <div class="signature-day">
+        <div class="day-card reveal d1">
+          <div class="day-time">TIME 1</div>
+          <p class="day-role"><span class="day-icon">&#127793;</span><strong>Parent:</strong> PARENT MOMENT 1.</p>
+          <p class="day-role"><span class="day-icon">&#127822;</span><strong>Child:</strong> CHILD MOMENT 1.</p>
+        </div>
+        <!-- Repeat for cards 2-4 with d2 / d3 / d4 reveal classes -->
+      </div>
+      <p class="signature-day-caption reveal">CLOSING CAPTION.</p>
+    </div>
+  </section>

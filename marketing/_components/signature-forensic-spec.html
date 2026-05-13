@@ -1,0 +1,26 @@
+<!--
+  component: signature-forensic-spec (REFERENCE ONLY)
+  source-page: src/for-professionals.html
+  depends-on: page-audience.css (.signature-forensic, .forensic-grid, .forensic-disclaimer)
+              JetBrains Mono font (loaded via _head-common.html)
+  structure: Deep Canopy block with dl/dt/dd grid. Two-column desktop, single-column mobile.
+  guidance: use real technical values — this block builds trust through specificity, not marketing.
+            Always end with the italic disclaimer.
+-->
+  <section class="audience-section">
+    <div class="container">
+      <span class="section-label reveal">SECTION LABEL</span>
+      <h2 class="section-headline reveal">SECTION HEADLINE.</h2>
+      <p class="section-sub reveal">SECTION INTRO.</p>
+
+      <div class="signature-forensic reveal">
+        <div class="forensic-header">PRODUCT &middot; SPECIFICATION TYPE</div>
+        <h3>SHORT SUMMARY OF WHAT THIS BLOCK COVERS.</h3>
+        <dl class="forensic-grid">
+          <dt>FIELD LABEL</dt> <dd>VALUE (in JetBrains Mono)</dd>
+          <!-- ... repeat for each field -->
+        </dl>
+        <p class="forensic-disclaimer">DISCLAIMER — usually a single italic sentence at the bottom.</p>
+      </div>
+    </div>
+  </section>

@@ -1,0 +1,38 @@
+<!--
+  component: signature-split-screen-ledger (REFERENCE ONLY)
+  source-page: src/for-separated-families.html
+  depends-on: page-audience.css (.signature-ledger, .ledger-col, .ledger-entry, .ledger-total)
+  structure: 3 columns — Parent A (teal-bordered light), Shared (dark with gold hashes), Parent B (gold-bordered light).
+             Stacks vertically on mobile.
+  guidance: keep entries short — chore name, day, amount. The hash on the shared column is what sells the
+            "Truth Engine" idea. Hash strings are illustrative — use 4-char hex.
+-->
+  <section class="audience-section" style="background:#f3eee0;">
+    <div class="container">
+      <span class="section-label reveal">The Truth Engine</span>
+      <h2 class="section-headline reveal">One child. Two houses. One ledger.</h2>
+      <p class="section-sub reveal">SUPPORTING COPY.</p>
+
+      <div class="signature-ledger">
+        <div class="ledger-col parent-a reveal d1">
+          <div class="ledger-label">Parent A</div>
+          <div class="ledger-entry"><span>DAY &middot; CHORE</span><span>&pound;X.XX &check;</span></div>
+          <!-- ... -->
+          <div class="ledger-total">Total contributed<strong>&pound;X.XX</strong></div>
+        </div>
+        <div class="ledger-col shared reveal d2">
+          <div class="ledger-label">Shared ledger</div>
+          <div class="ledger-entry"><span><span class="ledger-hash">#xxxx</span> &middot; ENTRY</span><span>&pound;X.XX &check;</span></div>
+          <!-- ... -->
+          <div class="ledger-total">Total this month<strong>&pound;X.XX</strong></div>
+        </div>
+        <div class="ledger-col parent-b reveal d3">
+          <div class="ledger-label">Parent B</div>
+          <div class="ledger-entry"><span>DAY &middot; CHORE</span><span>&pound;X.XX &check;</span></div>
+          <!-- ... -->
+          <div class="ledger-total">Total contributed<strong>&pound;X.XX</strong></div>
+        </div>
+      </div>
+      <p class="signature-ledger-caption reveal">CAPTION.</p>
+    </div>
+  </section>

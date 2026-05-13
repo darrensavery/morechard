@@ -1,0 +1,28 @@
+<!--
+  component: audience-benefits-grid (REFERENCE ONLY)
+  source-page: src/for-single-households.html (and other audience pages)
+  depends-on: page-audience.css
+  structure: 6 cards in a 3×2 grid on desktop, 2-col tablet, 1-col mobile.
+  authoring guidance: cover all four decision-making lenses (Logical / Competitive /
+                      Spontaneous / Humanistic). Two cards per lens is typical.
+  swap when re-using: lens label, feature name, benefit headline, body copy. Keep cards short —
+                      ~30 words of body, one feature, one headline.
+-->
+  <section class="audience-section">
+    <div class="container">
+      <span class="section-label reveal">SECTION LABEL</span>
+      <h2 class="section-headline reveal">SECTION HEADLINE.</h2>
+      <p class="section-sub reveal">SECTION INTRO COPY — one or two sentences.</p>
+
+      <div class="audience-benefits-grid">
+        <!-- Repeat 6 times. Vary reveal delay class (d1 / d2) by row. -->
+        <article class="benefit-card reveal d1">
+          <span class="benefit-lens">LENS</span>
+          <span class="benefit-feature">FEATURE NAME</span>
+          <h3 class="benefit-headline">BENEFIT HEADLINE.</h3>
+          <p class="benefit-body">BODY COPY — translate the feature into a tangible outcome.</p>
+        </article>
+        <!-- ... -->
+      </div>
+    </div>
+  </section>
