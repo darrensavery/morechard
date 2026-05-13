@@ -1,0 +1,266 @@
+<!--
+  TITLE: Chore & Pocket Money App for Separated & Co-Parenting Families | Morechard
+  DESCRIPTION: Two households. One source of truth. A tamper-proof shared record of every chore, payment, and milestone — with court-ready PDF exports when families need them.
+  CANONICAL: https://morechard.com/for-separated-families
+  PAGE_CSS: page-audience.css
+  HERO_IMAGE: /Images/split-household_16_9.png
+  HERO_IMAGE_MOBILE: /Images/split-household_3_4.png
+-->
+
+<!-- SCHEMA_START -->
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    { "@type": "Question", "name": "Does Morechard work if we don't speak much?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. Morechard is designed for low-communication co-parenting. Each household can independently log chores, approvals, and payments — the shared ledger is the source of truth without anyone having to coordinate by message." } },
+    { "@type": "Question", "name": "Can both parents see and approve chores?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. Both parents have full visibility into the same child profile. Each parent can set chores, approve completions, and pay out from their own device. Every action is attributed and sealed into the immutable ledger." } },
+    { "@type": "Question", "name": "Is the audit log actually accepted by courts?", "acceptedAnswer": { "@type": "Answer", "text": "Morechard generates a PDF/A audit report with a cryptographic chain-head hash and a public verification URL. Each entry is timestamped and tamper-evident. Whether a specific court accepts it depends on the jurisdiction — but the format is built to meet standard evidence requirements." } },
+    { "@type": "Question", "name": "What happens if one parent withdraws from the app?", "acceptedAnswer": { "@type": "Answer", "text": "The remaining parent and the child retain full access. The withdrawn parent's historical ledger entries are preserved (and remain cryptographically sealed), but they no longer add new entries. The record they leave behind is still verifiable." } },
+    { "@type": "Question", "name": "Can step-parents or grandparents be added?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. Additional household members can be invited as Boost-only contributors — they can send rewards and view activity without becoming a primary approver. This keeps the parental Choice Architect role clean while allowing the wider family to participate." } },
+    { "@type": "Question", "name": "Who owns the data?", "acceptedAnswer": { "@type": "Answer", "text": "Your family. Always. Morechard does not sell, monetise, or use the underlying data. Either parent can export the complete ledger at any time. The cryptographic chain remains verifiable independently, even outside the app." } }
+  ]
+}
+<!-- SCHEMA_END -->
+
+<!-- BODY_START -->
+<main class="audience-page">
+
+  <!-- ── Hero ── -->
+  <section class="audience-hero" id="hero">
+    <picture>
+      <source media="(max-width: 720px)" srcset="/Images/split-household_3_4.png" />
+      <img class="hero-img" src="/Images/split-household_16_9.png" alt="Two homes connected by a calm sky, suggesting one shared record across separated households" loading="eager" />
+    </picture>
+    <div class="hero-scrim"></div>
+    <div class="hero-content">
+      <div class="hero-badge reveal">
+        <span class="hero-badge-dot"></span>
+        For separated families
+      </div>
+      <h1 class="reveal d1">One source of truth for <em>two households.</em></h1>
+      <p class="hero-sub reveal d2">A tamper-proof shared record of every chore, every payment, every milestone. Court-ready PDF exports when families need them. Built to remove the doubt &mdash; so you can focus on the child.</p>
+      <div class="hero-actions reveal d3">
+        <a href="#signup" class="btn-primary btn-hero">
+          Register my interest
+          <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+            <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </a>
+        <span class="hero-note">No spam &mdash; one email at launch.</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Editorial intro ── -->
+  <section class="audience-section audience-intro">
+    <div class="container">
+      <p class="reveal">Consistency is the hardest part of co-parenting. Morechard does the remembering for you.</p>
+      <p class="reveal d1">No more reconstructing who paid what. No more competing memories of who agreed which rate. Just one calm, shared ledger that both households can trust &mdash; and that the child only ever sees as their pocket money.</p>
+    </div>
+  </section>
+
+  <!-- ── Benefits grid ── -->
+  <section class="audience-section">
+    <div class="container">
+      <span class="section-label reveal">Why separated families choose Morechard</span>
+      <h2 class="section-headline reveal">Built for two homes. Honest enough for a courtroom.</h2>
+      <p class="section-sub reveal">Six ways Morechard takes the friction out of co-parenting finance &mdash; without taking sides, and without anyone needing to talk more than they want to.</p>
+
+      <div class="audience-benefits-grid">
+        <article class="benefit-card reveal d1">
+          <span class="benefit-lens">Logical</span>
+          <span class="benefit-feature">SHA-256 hash chain</span>
+          <h3 class="benefit-headline">Every entry locked, forever.</h3>
+          <p class="benefit-body">Every chore, every payment, every approval is cryptographically sealed the moment it&rsquo;s recorded. No edits. No deletions. No disputes.</p>
+        </article>
+        <article class="benefit-card reveal d1">
+          <span class="benefit-lens">Competitive</span>
+          <span class="benefit-feature">Court-ready PDF export</span>
+          <h3 class="benefit-headline">A solicitor would charge hundreds for what this exports in one click.</h3>
+          <p class="benefit-body">One-tap audit log of every contribution, payment, and milestone &mdash; formatted for legal review and stamped with a verification seal.</p>
+        </article>
+        <article class="benefit-card reveal d1">
+          <span class="benefit-lens">Humanistic</span>
+          <span class="benefit-feature">Household-neutral language</span>
+          <h3 class="benefit-headline">Built to keep the focus on your child, not on the conflict.</h3>
+          <p class="benefit-body">Morechard uses business-neutral phrasing throughout &mdash; no &ldquo;primary parent,&rdquo; no scoring, no rankings. Both households see the same view.</p>
+        </article>
+        <article class="benefit-card reveal d2">
+          <span class="benefit-lens">Logical</span>
+          <span class="benefit-feature">Shared expense pool</span>
+          <h3 class="benefit-headline">Split costs without splitting hairs.</h3>
+          <p class="benefit-body">Birthdays, school trips, new shoes &mdash; log shared expenses, agree the split, and let the ledger keep a clean record of who paid what.</p>
+        </article>
+        <article class="benefit-card reveal d2">
+          <span class="benefit-lens">Spontaneous</span>
+          <span class="benefit-feature">Parental Boost</span>
+          <h3 class="benefit-headline">Reward great effort even from the other house.</h3>
+          <p class="benefit-body">See your child smashed it this week? Send a boost to their balance from your phone &mdash; visible to the other parent, recorded forever.</p>
+        </article>
+        <article class="benefit-card reveal d2">
+          <span class="benefit-lens">Humanistic</span>
+          <span class="benefit-feature">The child sees one home</span>
+          <h3 class="benefit-headline">To your child, it&rsquo;s just their pocket money app.</h3>
+          <p class="benefit-body">Children get a single, calm, consistent view across both houses. The integrity layer runs underneath &mdash; they never see the friction.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Signature: Split-Screen Ledger ── -->
+  <section class="audience-section" style="background:#f3eee0;">
+    <div class="container">
+      <span class="section-label reveal">The Truth Engine</span>
+      <h2 class="section-headline reveal">One child. Two houses. One ledger.</h2>
+      <p class="section-sub reveal">Every entry both parents make flows into a single, cryptographically sealed record. Either parent can export the chain at any time.</p>
+
+      <div class="signature-ledger">
+        <div class="ledger-col parent-a reveal d1">
+          <div class="ledger-label">Parent A</div>
+          <div class="ledger-entry"><span>Tue &middot; Tidy room</span><span>&pound;1.50 &check;</span></div>
+          <div class="ledger-entry"><span>Sat &middot; Dishes</span><span>&pound;3.00 &check;</span></div>
+          <div class="ledger-entry"><span>Boost &middot; well done week</span><span>&pound;5.00 &check;</span></div>
+          <div class="ledger-total">Total contributed<strong>&pound;9.50</strong></div>
+        </div>
+        <div class="ledger-col shared reveal d2">
+          <div class="ledger-label">Shared ledger</div>
+          <div class="ledger-entry"><span><span class="ledger-hash">#4f9e</span> &middot; Tidy room</span><span>&pound;1.50 &check;</span></div>
+          <div class="ledger-entry"><span><span class="ledger-hash">#3a01</span> &middot; Dishes</span><span>&pound;3.00 &check;</span></div>
+          <div class="ledger-entry"><span><span class="ledger-hash">#b7c2</span> &middot; Dog walk</span><span>&pound;2.00 &check;</span></div>
+          <div class="ledger-entry"><span><span class="ledger-hash">#d8f4</span> &middot; Boost</span><span>&pound;5.00 &check;</span></div>
+          <div class="ledger-entry"><span><span class="ledger-hash">#1ea6</span> &middot; Homework</span><span>&pound;4.50 &check;</span></div>
+          <div class="ledger-total">Total this month<strong>&pound;16.00</strong></div>
+        </div>
+        <div class="ledger-col parent-b reveal d3">
+          <div class="ledger-label">Parent B</div>
+          <div class="ledger-entry"><span>Wed &middot; Dog walk</span><span>&pound;2.00 &check;</span></div>
+          <div class="ledger-entry"><span>Thu &middot; Homework</span><span>&pound;4.50 &check;</span></div>
+          <div class="ledger-entry"><span>Birthday gift</span><span>&mdash;</span></div>
+          <div class="ledger-total">Total contributed<strong>&pound;6.50</strong></div>
+        </div>
+      </div>
+      <p class="signature-ledger-caption reveal">Each ledger entry carries a unique cryptographic fingerprint &mdash; proving when it happened, who recorded it, and that it has never been altered.</p>
+    </div>
+  </section>
+
+  <!-- ── Case cards ── -->
+  <section class="audience-section">
+    <div class="container">
+      <span class="section-label reveal">How separated families use Morechard</span>
+      <h2 class="section-headline reveal">Real moments. Real solutions.</h2>
+
+      <div class="audience-cases">
+        <div class="case-card reveal d1">
+          <div class="case-step">Scenario one</div>
+          <h3>The weekend swap</h3>
+          <p>Child arrives at Parent B&rsquo;s on Friday with two chores already approved at Parent A&rsquo;s. Parent B sees the streak and the balance &mdash; and adds Saturday&rsquo;s chores without any awkward handover conversation.</p>
+        </div>
+        <div class="case-card reveal d2">
+          <div class="case-step">Scenario two</div>
+          <h3>A birthday boost from a distance</h3>
+          <p>Parent A travels for work but doesn&rsquo;t want to miss the birthday. A &pound;20 Parental Boost lands instantly in the child&rsquo;s balance &mdash; recorded forever, visible to both households, no awkward message threads.</p>
+        </div>
+        <div class="case-card reveal d3">
+          <div class="case-step">Scenario three</div>
+          <h3>The court-ready audit</h3>
+          <p>A mediator asks for a record of contributions over the last twelve months. One tap exports a PDF/A audit with a chain-head hash and a public verification URL. Drop it straight into the bundle.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Wide image placeholder ── -->
+  <section class="audience-section" style="padding:0 0 56px;">
+    <div class="container">
+      <!-- TODO: replace placeholder. Generate at 1600x900 (16/9) for desktop and 900x1200 (3/4) for mobile. Alt: "A parent at a dining table reviewing a Morechard audit PDF on a tablet, calm and considered, soft daylight." -->
+      <div class="audience-image-wide reveal">
+        <picture>
+          <source media="(max-width: 720px)" srcset="/Images/separated-tablet-audit_3_4.png" />
+          <img src="/Images/separated-tablet-audit_16_9.png" alt="A parent at a dining table reviewing a Morechard audit PDF on a tablet, calm and considered, soft daylight" loading="lazy" />
+        </picture>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Shield AI callout ── -->
+  <section class="audience-section">
+    <div class="container">
+      <div class="audience-callout reveal">
+        <div>
+          <div class="callout-eyebrow">Legal Integrity Bundle &middot; Shield AI</div>
+          <h3>For families who need the full forensic toolkit.</h3>
+          <p>Court-ready PDF audit export, cryptographic ledger seal, co-parent verification, and the full AI Mentor briefing &mdash; bundled as a one-time purchase. No monthly fee. No subscription trap.</p>
+        </div>
+        <div class="callout-price">
+          &pound;{{data:pricing.shield_ai.price_whole}}{{data:pricing.shield_ai.price_dec}}
+          <small>One-time payment</small>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Why Morechard strip ── -->
+  <section class="audience-section" style="background:#f3eee0;">
+    <div class="container">
+      <span class="section-label reveal">Why Morechard</span>
+      <h2 class="section-headline reveal">Built to remove the doubt.</h2>
+      <div class="audience-why">
+        <div class="why-tile reveal d1">
+          <div class="why-title">SHA-256 hash chain</div>
+          <p class="why-body">Every entry sealed with maths, not policy. A single altered byte breaks the whole chain.</p>
+        </div>
+        <div class="why-tile reveal d2">
+          <div class="why-title">Court-admissible exports</div>
+          <p class="why-body">PDF/A format with chain-head hash and public verification URL. One tap to produce.</p>
+        </div>
+        <div class="why-tile reveal d3">
+          <div class="why-title">Both parents owned</div>
+          <p class="why-body">No &ldquo;primary&rdquo; account. Both households have equal visibility, equal control, equal voice.</p>
+        </div>
+        <div class="why-tile reveal d4">
+          <div class="why-title">Tamper-proof timeline</div>
+          <p class="why-body">Append-only ledger. Once a chore is approved or a payment is made, it cannot be edited or deleted.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── FAQ ── -->
+  <section class="audience-section">
+    <div class="container">
+      <span class="section-label reveal">Common questions</span>
+      <h2 class="section-headline reveal">Everything separated parents ask first.</h2>
+
+      <div class="audience-faq">
+        <details class="reveal">
+          <summary>Does Morechard work if we don&rsquo;t speak much?</summary>
+          <div class="faq-answer">Yes. Morechard is designed for low-communication co-parenting. Each household can independently log chores, approvals, and payments &mdash; the shared ledger is the source of truth without anyone having to coordinate by message.</div>
+        </details>
+        <details class="reveal">
+          <summary>Can both parents see and approve chores?</summary>
+          <div class="faq-answer">Yes. Both parents have full visibility into the same child profile. Each parent can set chores, approve completions, and pay out from their own device. Every action is attributed and sealed into the immutable ledger.</div>
+        </details>
+        <details class="reveal">
+          <summary>Is the audit log actually accepted by courts?</summary>
+          <div class="faq-answer">Morechard generates a PDF/A audit report with a cryptographic chain-head hash and a public verification URL. Each entry is timestamped and tamper-evident. Whether a specific court accepts it depends on the jurisdiction &mdash; but the format is built to meet standard evidence requirements.</div>
+        </details>
+        <details class="reveal">
+          <summary>What happens if one parent withdraws from the app?</summary>
+          <div class="faq-answer">The remaining parent and the child retain full access. The withdrawn parent&rsquo;s historical ledger entries are preserved (and remain cryptographically sealed), but they no longer add new entries. The record they leave behind is still verifiable.</div>
+        </details>
+        <details class="reveal">
+          <summary>Can step-parents or grandparents be added?</summary>
+          <div class="faq-answer">Yes. Additional household members can be invited as Boost-only contributors &mdash; they can send rewards and view activity without becoming a primary approver. This keeps the parental Choice Architect role clean while allowing the wider family to participate.</div>
+        </details>
+        <details class="reveal">
+          <summary>Who owns the data?</summary>
+          <div class="faq-answer">Your family. Always. Morechard does not sell, monetise, or use the underlying data. Either parent can export the complete ledger at any time. The cryptographic chain remains verifiable independently, even outside the app.</div>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  {{component:register-interest}}
+
+</main>
+<!-- BODY_END -->
