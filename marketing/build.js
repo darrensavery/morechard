@@ -228,11 +228,28 @@ function build() {
   // 5. Pre-generate data-driven HTML
   const pricingCards = generatePricingCards(pricing);
 
-  // 6. Process each src/*.html
+  // 6. Process each src/**/*.html (flat + one subdir level)
   const srcDir = path.join(ROOT, 'src');
-  for (const file of fs.readdirSync(srcDir)) {
-    if (!file.endsWith('.html')) continue;
-    const srcFile = path.join(srcDir, file);
+
+  function collectSrcFiles(dir) {
+    const results = [];
+    for (const entry of fs.readdirSync(dir)) {
+      const full = path.join(dir, entry);
+      if (fs.statSync(full).isDirectory()) {
+        // one level deep only
+        for (const sub of fs.readdirSync(full)) {
+          if (sub.endsWith('.html')) {
+            results.push({ file: sub, subdir: entry, full: path.join(full, sub), rel: entry + '/' + sub });
+          }
+        }
+      } else if (entry.endsWith('.html')) {
+        results.push({ file: entry, subdir: null, full, rel: entry });
+      }
+    }
+    return results;
+  }
+
+  for (const { file, subdir, full: srcFile, rel } of collectSrcFiles(srcDir)) {
     const src = read(srcFile);
 
     // Parse metadata from header comment
@@ -244,18 +261,18 @@ function build() {
         if (m) meta[m[1]] = m[2];
       }
     }
-    if (!meta.TITLE) die(`Missing TITLE token in ${file}`);
-    if (!meta.DESCRIPTION) die(`Missing DESCRIPTION token in ${file}`);
+    if (!meta.TITLE) die(`Missing TITLE token in ${rel}`);
+    if (!meta.DESCRIPTION) die(`Missing DESCRIPTION token in ${rel}`);
 
     // Extract body
     const bodyMatch = src.match(/<!-- BODY_START -->([\s\S]*?)<!-- BODY_END -->/);
-    if (!bodyMatch) die(`Missing BODY_START/BODY_END in ${file}`);
+    if (!bodyMatch) die(`Missing BODY_START/BODY_END in ${rel}`);
     let body = bodyMatch[1];
 
     // Resolve {{component:name}} tokens
     body = body.replace(/\{\{component:([^}]+)\}\}/g, (_, name) => {
       name = name.trim();
-      if (!components[name]) die(`Component "{{component:${name}}}" not found (referenced in ${file})`);
+      if (!components[name]) die(`Component "{{component:${name}}}" not found (referenced in ${rel})`);
       return components[name];
     });
 
@@ -263,11 +280,11 @@ function build() {
     body = body.replace(/\{\{data:([^}]+)\}\}/g, (_, dotPath) => {
       dotPath = dotPath.trim();
       if (dotPath === 'pricing_cards') return pricingCards;
-      return resolveDataPath({ pricing }, dotPath, file);
+      return resolveDataPath({ pricing }, dotPath, rel);
     });
 
     // Substitute placeholder SVGs for any image src that does not exist on disk
-    body = substituteMissingImages(body, file);
+    body = substituteMissingImages(body, rel);
 
     // Extract optional scripts block
     let scripts = '';
@@ -297,7 +314,7 @@ function build() {
     } else if (meta.CANONICAL) {
       extraHead = `\n  <link rel="canonical" href="${meta.CANONICAL}" />`;
     }
-    extraHead += buildHeroPreloads(meta, file);
+    extraHead += buildHeroPreloads(meta, rel);
     extraHead += schemaTag;
 
     // Assemble full page
@@ -317,8 +334,9 @@ ${scripts}
 </body>
 </html>`;
 
-    write(path.join(DIST, file), page);
-    console.log(`[build] ✓ ${file}`);
+    const outPath = subdir ? path.join(DIST, subdir, file) : path.join(DIST, file);
+    write(outPath, page);
+    console.log(`[build] ✓ ${rel}`);
   }
 
   // 7. Copy static assets
