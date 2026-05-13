@@ -1,0 +1,296 @@
+<!--
+  TITLE: Financial Literacy | Morechard
+  DESCRIPTION: An AI-powered financial education built from your child's real earning and spending. 20 modules, 6 pillars, triggered by behaviour — not a timetable.
+  CANONICAL: https://morechard.com/features/financial-literacy
+  PAGE_CSS: page-features.css
+-->
+
+<!-- BODY_START -->
+<main class="feature-page">
+
+  <!-- ── Hero ── -->
+  <section class="fp-hero">
+    <div class="fp-hero-inner">
+      <div class="fp-chip reveal">Financial Literacy</div>
+      <h1 class="reveal d1">A financial education built from your child's real life.</h1>
+      <p class="fp-sub reveal d2">Not generic slides. Every lesson is triggered by what your child actually earns, saves, and spends — so it lands at exactly the right moment.</p>
+      <div class="fp-hero-cta reveal d3">
+        <a href="/#signup" class="btn-primary">
+          Start free trial
+          <svg width="13" height="13" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+            <path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </a>
+      </div>
+
+      <!-- Hero mockup: Learning Lab module card -->
+      <div class="fp-mockup-frame reveal d4" id="hero-mockup">
+        <div class="app-mockup" style="padding:28px 32px;">
+          <div class="app-mockup-header">
+            <div class="app-mockup-title">Learning Lab</div>
+            <span class="app-badge app-badge--verified">Level 2 · Sapling</span>
+          </div>
+          <div class="app-card" style="border-left:3px solid var(--teal);">
+            <div style="display:flex;align-items:center;gap:12px;">
+              <div style="width:44px;height:44px;border-radius:10px;background:rgba(0,149,156,0.10);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                <svg width="22" height="22" fill="none" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" stroke="var(--teal)" stroke-width="1.5"/><path d="M9 22V12h6v10" stroke="var(--teal)" stroke-width="1.5"/></svg>
+              </div>
+              <div>
+                <div class="app-card-label">Banking 101</div>
+                <div class="app-card-sub">Pillar 3 · Saving &amp; Growth</div>
+              </div>
+            </div>
+            <div style="margin-top:12px;">
+              <div style="height:4px;background:var(--border-light);border-radius:2px;overflow:hidden;">
+                <div style="width:35%;height:100%;background:var(--teal);border-radius:2px;"></div>
+              </div>
+              <div style="display:flex;justify-content:space-between;margin-top:4px;">
+                <span style="font-size:11px;color:var(--text-sub);">Act 2 of 4</span>
+                <span style="font-size:11px;color:var(--teal);">35%</span>
+              </div>
+            </div>
+            <div class="app-btn-row">
+              <div class="app-btn app-btn--primary">Continue</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Pitch strip ── -->
+  <section class="fp-pitch">
+    <div class="fp-pitch-inner reveal">
+      <p>Most financial education is a worksheet. Morechard's is a mirror. When your child spends their whole balance in a day, the Mentor doesn't lecture — it asks a question about needs and wants, using the exact numbers they just lived through.</p>
+      <p>Twenty modules. Six pillars. Four age tiers. All triggered by behaviour, never by a parent manually scheduling a lesson. The curriculum grows with the child from age 10 through to 16 and beyond.</p>
+    </div>
+  </section>
+
+  <!-- ── Feature pairs ── -->
+  <div class="fp-pairs">
+
+    <!-- Pair 1: AI Mentor (video placeholder) -->
+    <div class="fp-pair">
+      <div class="fp-pair-text reveal">
+        <span class="fp-pair-label">Coaching that shows up</span>
+        <h3>The right lesson, exactly when it matters.</h3>
+        <p>Eight behavioural triggers watch for real moments — the child who spends everything at once, the one who stops doing chores for a fortnight, the one who asks about crypto. Each trigger surfaces the lesson that fits.</p>
+        <ul class="fp-pair-bullets">
+          <li>8 data-signal triggers</li>
+          <li>Orchard (warm) and Clean (data-driven) personas</li>
+          <li>Never lectures — always asks</li>
+        </ul>
+      </div>
+      <div class="fp-pair-visual reveal-right reveal d1">
+        <div class="fp-showcase-frame" style="aspect-ratio:4/3;border-radius:var(--r-card);">
+          <div class="fp-video-placeholder">
+            <svg width="40" height="40" fill="none" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" stroke="currentColor" stroke-width="1.5"/></svg>
+            <p>Animation: AI chat bubble typewriter — "You spent £18 in two hours. Is that what you planned?" — then a module card slides up<br><em>File: marketing/video/ai-mentor-nudge.mp4</em></p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pair 2: Learning Lab curriculum (CSS module grid) -->
+    <div class="fp-pair">
+      <div class="fp-pair-visual reveal-left reveal d1">
+        <div class="app-mockup">
+          <div class="app-mockup-header">
+            <div class="app-mockup-title">Your modules</div>
+            <div class="app-mockup-sub">6 pillars · 20 modules</div>
+          </div>
+          <div class="app-module-grid" id="module-grid">
+            <!-- populated by JS below -->
+          </div>
+        </div>
+      </div>
+      <div class="fp-pair-text reveal d1">
+        <span class="fp-pair-label">20 modules · 6 pillars</span>
+        <h3>Real financial literacy, from pocket money to compound interest.</h3>
+        <p>The curriculum spans six pillars — earning, spending, saving, debt, investing, and wellbeing — across four age tiers. Modules unlock based on what the child does in the app, not a timetable.</p>
+        <ul class="fp-pair-bullets">
+          <li>Aligned with UK MaPS financial education standards</li>
+          <li>Age-adaptive: Sapling / Oak / Canopy</li>
+          <li>Unlocks from real behaviour, not a schedule</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Pair 3: Parent Insights (CSS mockup) -->
+    <div class="fp-pair">
+      <div class="fp-pair-text reveal">
+        <span class="fp-pair-label">For parents</span>
+        <h3>A weekly briefing on how your child is growing.</h3>
+        <p>Every week the AI produces a Scouting Report — consistency score, responsibility trend, planning horizon — with a plain-English summary. One tap generates copy you can share with your child.</p>
+        <ul class="fp-pair-bullets">
+          <li>Trend indicators vs prior week</li>
+          <li>"Copy for Child" — Seedling or Professional tone</li>
+          <li>Cached — loads instantly, runs once per week</li>
+        </ul>
+      </div>
+      <div class="fp-pair-visual reveal-right reveal d1">
+        <div class="app-mockup">
+          <div class="app-mockup-header">
+            <div class="app-mockup-title">Ellie's Scouting Report</div>
+            <div class="app-mockup-sub">Week of 12 May</div>
+          </div>
+          <div class="app-kpi-row">
+            <div class="app-kpi">
+              <div class="app-kpi-val">84</div>
+              <div class="app-kpi-label">Consistency</div>
+              <div class="app-kpi-trend app-kpi-trend--up">↑ +6</div>
+            </div>
+            <div class="app-kpi">
+              <div class="app-kpi-val">71</div>
+              <div class="app-kpi-label">Responsibility</div>
+              <div class="app-kpi-trend app-kpi-trend--flat">→ flat</div>
+            </div>
+            <div class="app-kpi">
+              <div class="app-kpi-val">63</div>
+              <div class="app-kpi-label">Planning</div>
+              <div class="app-kpi-trend app-kpi-trend--up">↑ +12</div>
+            </div>
+          </div>
+          <div class="app-card" style="font-size:13px;line-height:1.6;color:var(--text-dark);">
+            <span id="briefing-text"></span><span class="app-cursor" id="briefing-cursor"></span>
+          </div>
+          <div class="app-btn-row" style="margin-top:12px;">
+            <div class="app-btn app-btn--ghost" style="font-size:13px;">Copy for Ellie</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /fp-pairs -->
+
+  <!-- ── Showcase (phone frame, live footage slot) ── -->
+  <section class="fp-showcase reveal">
+    <div class="fp-showcase-inner">
+      <h2>See a module in action.</h2>
+      <p class="fp-showcase-sub">Banking 101 — four acts, real questions, real data.</p>
+      <div class="fp-phone-shell" style="max-width:320px;">
+        <div class="fp-phone-screen">
+          <div class="fp-video-placeholder" style="aspect-ratio:9/19.5;">
+            <svg width="40" height="40" fill="none" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.5"/><path d="M10 8.5l5 3.5-5 3.5V8.5z" fill="currentColor"/></svg>
+            <p>Screen recording: Learning Lab → Banking 101 → Act 1 → Act 2 → quiz → celebration<br><em>File: marketing/video/learning-lab-demo.mp4</em></p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Checklist ── -->
+  <section class="fp-checklist">
+    <div class="fp-checklist-inner">
+      <h2 class="reveal">Everything in Financial Literacy.</h2>
+      <p class="fp-checklist-sub reveal d1">Every feature in this pillar — active during your 14-day trial.</p>
+      <div class="fp-checklist-grid"></div>
+    </div>
+  </section>
+
+  <!-- ── CTA strip ── -->
+  <section class="fp-cta">
+    <h2 class="reveal">Start your 14-day free trial.</h2>
+    <p class="reveal d1">Full access to every feature. No card required.</p>
+    <a href="/#signup" class="btn-primary reveal d2">
+      Get started free
+      <svg width="13" height="13" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+        <path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </a>
+    <p class="fp-cta-note reveal d3">14-day free trial &middot; No card required</p>
+  </section>
+
+</main>
+<!-- BODY_END -->
+
+<!-- SCRIPTS_START -->
+<script>
+(function () {
+  var frame = document.getElementById('hero-mockup');
+  if (frame) requestAnimationFrame(function () { frame.classList.add('loaded'); });
+
+  var io = new IntersectionObserver(function (entries) {
+    entries.forEach(function (e) {
+      if (e.isIntersecting) { e.target.classList.add('visible'); io.unobserve(e.target); }
+    });
+  }, { threshold: 0.12 });
+  document.querySelectorAll('.reveal, .reveal-left, .reveal-right').forEach(function (el) { io.observe(el); });
+
+  // Module grid — deal cards in on scroll
+  var modules = [
+    { name: 'Taxes & Net Pay', pillar: 'Earning', color: '#00959c', tier: 'Sapling' },
+    { name: 'Scams & Safety', pillar: 'Spending', color: '#e6b222', tier: 'Sapling' },
+    { name: 'Banking 101', pillar: 'Saving', color: '#5a7475', tier: 'Sapling' },
+    { name: 'The Snowball', pillar: 'Saving', color: '#5a7475', tier: 'Sapling' },
+    { name: 'The Interest Trap', pillar: 'Debt', color: '#c0392b', tier: 'Sapling' },
+    { name: 'Inflation', pillar: 'Investing', color: '#8e44ad', tier: 'Sapling' },
+  ];
+  var grid = document.getElementById('module-grid');
+  if (grid) {
+    grid.innerHTML = modules.map(function (m, i) {
+      return '<div class="app-module-card reveal ' + (['','d1','d2','d3','d1','d2'])[i] + '" style="--delay:' + (i * 0.06) + 's">'
+        + '<span class="app-module-pill" style="background:' + m.color + '22;color:' + m.color + '">' + m.pillar + '</span>'
+        + '<div class="app-module-name">' + m.name + '</div>'
+        + '<div style="font-size:10px;color:var(--text-sub);margin-top:4px;">' + m.tier + '</div>'
+        + '</div>';
+    }).join('');
+    grid.querySelectorAll('.reveal').forEach(function (el) { io.observe(el); });
+  }
+
+  // Typewriter for scouting report briefing
+  var briefingEl = document.getElementById('briefing-text');
+  var cursorEl   = document.getElementById('briefing-cursor');
+  var text = 'Ellie completed 4 of 5 chores this week — her best streak in a month. Planning horizon is up: she extended her headphones goal by 2 weeks to avoid spending her buffer.';
+  var i = 0;
+  function tick() {
+    if (!briefingEl) return;
+    if (i < text.length) {
+      briefingEl.textContent += text[i++];
+      setTimeout(tick, 28);
+    } else if (cursorEl) {
+      cursorEl.style.display = 'none';
+    }
+  }
+  // Start typewriter when the card scrolls into view
+  var briefingCard = briefingEl && briefingEl.closest('.app-card');
+  if (briefingCard) {
+    var started = false;
+    var tio = new IntersectionObserver(function (entries) {
+      if (entries[0].isIntersecting && !started) { started = true; tick(); }
+    }, { threshold: 0.5 });
+    tio.observe(briefingCard);
+  }
+
+  // Checklist data
+  var items = [
+    { name: '8 behavioural data-signal triggers', desc: 'The Burner, Stagnant Earner, Inflation Nudge, and 5 more' },
+    { name: 'EXIF integrity trigger', desc: 'Low-confidence proof uploads → Hard Work vs Shortcuts lesson' },
+    { name: 'EXIF batching trigger', desc: 'Cramming chores → Power of Small Steps lesson' },
+    { name: 'Two AI personas', desc: 'Orchard (warm/metaphorical) and Clean (data-driven)' },
+    { name: 'Independence score', desc: 'Tracks child-initiated vs parent-initiated actions' },
+    { name: '20-module curriculum across 6 pillars', desc: '' },
+    { name: 'Four age tiers', desc: 'Sapling (10–12), Oak (13–15), Canopy (16+)' },
+    { name: 'Module unlocks from real behaviour', desc: 'Not a fixed timetable' },
+    { name: 'UK MaPS curriculum alignment', desc: '' },
+    { name: 'Weekly parent Scouting Report', desc: '' },
+    { name: 'KPI gauges', desc: 'Consistency, Responsibility, Planning Horizon' },
+    { name: 'Trend indicators vs prior week', desc: 'Up / down / flat' },
+    { name: '"Copy for Child" modal', desc: 'Seedling (orchard) or Professional tone' },
+    { name: 'Pillar 5 surplus trigger', desc: 'Fires when balance exceeds £100 or all goals are funded' },
+    { name: 'D1 briefing cache', desc: 'Runs once per week — instant on subsequent loads' },
+  ];
+  var CHECK = '<svg class="fp-check-icon" width="16" height="16" fill="none" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8l3.5 3.5 6.5-7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  var cg = document.querySelector('.fp-checklist-grid');
+  if (cg) {
+    cg.innerHTML = items.map(function (it, i) {
+      return '<div class="fp-check-item reveal ' + (['','d1','d2','d3'])[i % 4] + '">'
+        + CHECK + '<div><div class="fp-check-name">' + it.name + '</div>'
+        + (it.desc ? '<div class="fp-check-desc">' + it.desc + '</div>' : '')
+        + '</div></div>';
+    }).join('');
+    cg.querySelectorAll('.reveal').forEach(function (el) { io.observe(el); });
+  }
+})();
+</script>
+<!-- SCRIPTS_END -->
