@@ -25,6 +25,47 @@ function escapeAttr(s) {
   return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;');
 }
 
+function buildHeroPreloads(meta, srcFile) {
+  if (!meta.HERO_IMAGE && !meta.HERO_IMAGE_MOBILE) return '';
+  const tags = [];
+
+  const isWebp = (p) => /\.webp(\?.*)?$/i.test(p);
+  const preloadAttrs = (href, mediaQuery) => {
+    const typeAttr = isWebp(href) ? ' type="image/webp"' : '';
+    const mediaAttr = mediaQuery ? ` media="${mediaQuery}"` : '';
+    return `<link rel="preload" as="image" href="${escapeAttr(href)}"${typeAttr}${mediaAttr} />`;
+  };
+
+  if (meta.HERO_IMAGE_MOBILE) {
+    tags.push('  ' + preloadAttrs(meta.HERO_IMAGE_MOBILE, '(max-width: 720px)'));
+  }
+  if (meta.HERO_IMAGE) {
+    const desktopMedia = meta.HERO_IMAGE_MOBILE ? '(min-width: 721px)' : '';
+    tags.push('  ' + preloadAttrs(meta.HERO_IMAGE, desktopMedia));
+  }
+
+  return '\n  <!-- Hero preload -->\n' + tags.join('\n');
+}
+
+const PLACEHOLDER_SVG_16_9 = `data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1600 900'%3E%3Crect width='1600' height='900' fill='%23e8e3d6'/%3E%3Ctext x='800' y='460' text-anchor='middle' font-family='DM Sans,sans-serif' font-size='28' fill='%23788'%3EImage placeholder%3C/text%3E%3C/svg%3E`;
+const PLACEHOLDER_SVG_3_4  = `data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 900 1200'%3E%3Crect width='900' height='1200' fill='%23e8e3d6'/%3E%3Ctext x='450' y='620' text-anchor='middle' font-family='DM Sans,sans-serif' font-size='32' fill='%23788'%3EImage placeholder%3C/text%3E%3C/svg%3E`;
+
+function substituteMissingImages(html, srcFile) {
+  // Match img src="/Images/..." or src="/foo.webp" — anything starting with /
+  return html.replace(/(src|srcset)="(\/[^"]+\.(?:png|jpg|jpeg|webp|svg))"/g, (full, attr, href) => {
+    // Strip query string if any
+    const cleanHref = href.split('?')[0];
+    // Resolve against marketing/ root
+    const fsPath = path.join(ROOT, cleanHref.replace(/^\//, ''));
+    if (fs.existsSync(fsPath)) return full;
+    // Pick aspect by filename hint
+    const isPortrait = /_3_4|portrait|_3x4/i.test(cleanHref);
+    const sub = isPortrait ? PLACEHOLDER_SVG_3_4 : PLACEHOLDER_SVG_16_9;
+    console.log(`[build] ! placeholder for missing image: ${cleanHref} (in ${srcFile})`);
+    return `${attr}="${sub}"`;
+  });
+}
+
 function resolveDataPath(data, dotPath, context) {
   const parts = dotPath.split('.');
   let cur = data;
@@ -220,6 +261,9 @@ function build() {
       return resolveDataPath({ pricing }, dotPath, file);
     });
 
+    // Substitute placeholder SVGs for any image src that does not exist on disk
+    body = substituteMissingImages(body, file);
+
     // Extract optional scripts block
     let scripts = '';
     const scriptsMatch = src.match(/<!-- SCRIPTS_START -->([\s\S]*?)<!-- SCRIPTS_END -->/);
@@ -248,6 +292,7 @@ function build() {
     } else if (meta.CANONICAL) {
       extraHead = `\n  <link rel="canonical" href="${meta.CANONICAL}" />`;
     }
+    extraHead += buildHeroPreloads(meta, file);
     extraHead += schemaTag;
 
     // Assemble full page
