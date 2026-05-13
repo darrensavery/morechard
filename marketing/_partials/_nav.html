@@ -78,10 +78,26 @@
       const drawer = nav.querySelector('#nav-drawer');
       const groups = nav.querySelectorAll('.nav-group');
 
+      let lastFocused = null;
+
+      function getFocusable() {
+        return Array.from(nav.querySelectorAll('a, button')).filter(function (el) {
+          return !el.hasAttribute('hidden') && !el.closest('[hidden]') && el.offsetParent !== null;
+        });
+      }
+
       function setOpen(open) {
         nav.classList.toggle('is-open', open);
         toggle.setAttribute('aria-expanded', String(open));
         document.body.style.overflow = open ? 'hidden' : '';
+        if (open) {
+          lastFocused = document.activeElement;
+          const focusables = getFocusable();
+          if (focusables[0]) focusables[0].focus();
+        } else if (lastFocused && typeof lastFocused.focus === 'function') {
+          lastFocused.focus();
+          lastFocused = null;
+        }
       }
 
       toggle.addEventListener('click', function () {
@@ -119,6 +135,19 @@
       });
 
       document.addEventListener('keydown', function (e) {
+        if (e.key === 'Tab' && nav.classList.contains('is-open')) {
+          const focusables = getFocusable();
+          if (focusables.length === 0) { e.preventDefault(); return; }
+          const first = focusables[0];
+          const last = focusables[focusables.length - 1];
+          if (e.shiftKey && document.activeElement === first) {
+            e.preventDefault();
+            last.focus();
+          } else if (!e.shiftKey && document.activeElement === last) {
+            e.preventDefault();
+            first.focus();
+          }
+        }
         if (e.key === 'Escape') {
           if (nav.classList.contains('is-open')) setOpen(false);
           groups.forEach(function (g) {
@@ -130,7 +159,7 @@
       });
 
       drawer.addEventListener('click', function (e) {
-        if (e.target.tagName === 'A' && nav.classList.contains('is-open')) setOpen(false);
+        if (e.target.closest('a') && nav.classList.contains('is-open')) setOpen(false);
       });
 
       // Mark current page link
@@ -138,7 +167,7 @@
       drawer.querySelectorAll('a').forEach(function (a) {
         const href = a.getAttribute('href') || '';
         const target = href.replace(/\/$/, '') || '/';
-        if (target === path || (target === '/for-single-households.html' && path.endsWith('for-single-households.html'))) {
+        if (target === path) {
           a.setAttribute('aria-current', 'page');
         }
       });

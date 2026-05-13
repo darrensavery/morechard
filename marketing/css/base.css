@@ -347,20 +347,22 @@ nav.is-open .nav-toggle span:nth-child(3) { transform: translateY(-7px) rotate(-
   }
   nav.is-open .nav-list { transform: translateX(0); }
   .nav-toggle { display: inline-flex; }
-  .nav-cta { display: none; }
-  nav.is-open .nav-list::after {
-    content: 'Register interest';
-    display: block;
-    margin-top: auto;
-    padding: 14px 22px;
-    background: var(--teal);
-    color: #fff;
-    border-radius: var(--r-pill);
-    font-weight: 500;
-    text-align: center;
+  .nav-cta {
+    position: fixed;
+    bottom: 24px;
+    left: var(--pad-x);
+    right: var(--pad-x);
+    transform: translateX(100%);
+    transition: transform 0.28s cubic-bezier(0.16,1,0.3,1);
+    justify-content: center;
+    pointer-events: none;
+    opacity: 0;
   }
-  /* Hide nav-cta on mobile, but provide a real link instead */
-  nav.is-open .nav-list { padding-bottom: 80px; }
+  nav.is-open .nav-cta {
+    transform: translateX(0);
+    pointer-events: auto;
+    opacity: 1;
+  }
   .nav-trigger, .nav-item > a {
     width: 100%;
     justify-content: space-between;
@@ -374,7 +376,6 @@ nav.is-open .nav-toggle span:nth-child(3) { transform: translateY(-7px) rotate(-
     opacity: 1;
     visibility: visible;
     transform: none;
-    transition: none;
     box-shadow: none;
     border: 0;
     background: transparent;
