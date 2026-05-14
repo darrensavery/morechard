@@ -609,6 +609,22 @@
 
     var timer = prefRed ? null : setInterval(advance, INTERVAL);
   }());
+
+  // Reading progress bar
+  (function () {
+    var bar = document.createElement('div');
+    bar.id = 'reading-progress';
+    document.body.appendChild(bar);
+    var ticking = false;
+    function update() {
+      ticking = false;
+      var docH = document.documentElement.scrollHeight - window.innerHeight;
+      bar.style.width = (docH > 0 ? Math.min(window.scrollY / docH, 1) : 0) * 100 + '%';
+    }
+    window.addEventListener('scroll', function () {
+      if (!ticking) { requestAnimationFrame(update); ticking = true; }
+    }, { passive: true });
+  }());
 })();
 </script>
 <!-- SCRIPTS_END -->

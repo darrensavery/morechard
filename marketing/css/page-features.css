@@ -1268,3 +1268,17 @@
 @media (max-width: 860px) {
   .fp-loop-cards-grid { grid-template-columns: 1fr; }
 }
+
+/* ── Reading progress bar ── */
+#reading-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 0%;
+  height: 3px;
+  background: var(--teal);
+  z-index: 9999;
+  transition: width 80ms linear;
+  border-radius: 0 2px 2px 0;
+  pointer-events: none;
+}
