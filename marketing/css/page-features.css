@@ -1114,7 +1114,7 @@
 /* Triggered when the pair scrolls into view (.visible added by IntersectionObserver) */
 .fp-ring-wrap.ring-active .fp-ring-fill {
   opacity: 1;
-  animation: ring-fill 1.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  animation: ring-fill 4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
   animation-delay: 0.4s;
 }
 
@@ -1151,17 +1151,18 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 16px;
   margin-top: 20px;
 }
 
 .fp-carousel-dot {
-  width: 8px;
-  height: 8px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
   border: 1.5px solid var(--teal);
   background: transparent;
-  padding: 0;
+  padding: 6px;
+  box-sizing: content-box;
   cursor: pointer;
   transition: background 200ms;
 }
@@ -1212,7 +1213,7 @@
   font-family: var(--font-body);
   font-size: 17px;
   line-height: 1.7;
-  color: var(--text-sub);
+  color: var(--text-dark);
   max-width: 600px;
   margin: 0 auto 48px;
 }
@@ -1230,6 +1231,15 @@
   border-top: 3px solid var(--teal);
   border-radius: var(--r-card);
   padding: 28px;
+  transition: box-shadow 0.3s cubic-bezier(0,0,0.2,1), transform 0.3s cubic-bezier(0,0,0.2,1);
+}
+.fp-loop-card:hover {
+  box-shadow: 0 14px 32px rgba(0,0,0,0.1);
+  transform: translateY(-2px);
+}
+@media (prefers-reduced-motion: reduce) {
+  .fp-loop-card { transition: none; }
+  .fp-loop-card:hover { transform: none; }
 }
 
 .fp-loop-card-icon {
