@@ -23,39 +23,163 @@
         </a>
       </div>
 
-      <!-- Hero mockup: parent approval card -->
+      <!-- Hero carousel: 4 slides, crossfade, 4s interval -->
       <div class="fp-mockup-frame reveal d4" id="hero-mockup">
-        <div class="app-mockup" style="padding:28px 32px;">
-          <div class="app-mockup-header">
-            <div>
-              <div class="app-mockup-title">Pending Approvals</div>
-              <div class="app-mockup-sub">1 chore awaiting your review</div>
-            </div>
-            <span class="app-badge app-badge--pending">1 pending</span>
-          </div>
-          <div class="app-card">
-            <div class="app-card-row">
-              <div>
-                <div class="app-card-label">Take out the bins</div>
-                <div class="app-card-sub">Ellie · Due today</div>
+        <div class="fp-carousel" id="hero-carousel" style="padding: 28px 32px 20px;">
+
+          <div class="fp-carousel-slides" id="carousel-slides">
+
+            <!-- Slide 1: Chore list -->
+            <div class="fp-carousel-slide active" data-caption="Stop starting from scratch – choose from over 30 pre-defined chores, ready to assign.">
+              <div class="app-mockup-header">
+                <div>
+                  <div class="app-mockup-title">Ellie's chores</div>
+                  <div class="app-mockup-sub">3 chores today</div>
+                </div>
+                <span class="app-badge app-badge--done">2 done this week</span>
               </div>
-              <div class="app-card-amount">£2.00</div>
-            </div>
-            <div class="app-btn-row">
-              <div class="app-btn app-btn--primary">Approve</div>
-              <div class="app-btn app-btn--ghost">Review</div>
-            </div>
-          </div>
-          <div class="app-card" style="opacity:0.45;">
-            <div class="app-card-row">
-              <div>
-                <div class="app-card-label">Tidy bedroom</div>
-                <div class="app-card-sub">Ellie · Due tomorrow</div>
+              <div class="app-card">
+                <div class="app-card-row">
+                  <div>
+                    <div class="app-card-label">Take out the bins</div>
+                    <div class="app-card-sub">Due today</div>
+                  </div>
+                  <div class="app-card-amount">£2.00</div>
+                </div>
               </div>
-              <div class="app-card-amount">£3.00</div>
+              <div class="app-card">
+                <div class="app-card-row">
+                  <div>
+                    <div class="app-card-label">Tidy bedroom</div>
+                    <div class="app-card-sub">Due tomorrow</div>
+                  </div>
+                  <div class="app-card-amount">£3.00</div>
+                </div>
+              </div>
+              <div class="app-card" style="opacity:0.45;">
+                <div class="app-card-row">
+                  <div>
+                    <div class="app-card-label">Load dishwasher</div>
+                    <div class="app-card-sub">Due Friday</div>
+                  </div>
+                  <div class="app-card-amount">£1.00</div>
+                </div>
+              </div>
             </div>
+
+            <!-- Slide 2: Rate Guide -->
+            <div class="fp-carousel-slide" data-caption="Stop guessing what a chore is worth – the community-powered rate guide tells you exactly what other families pay.">
+              <div class="app-mockup-header">
+                <div>
+                  <div class="app-mockup-title">Rate Guide</div>
+                  <div class="app-mockup-sub">Community benchmarks</div>
+                </div>
+              </div>
+              <div class="app-card" style="margin-bottom:10px;">
+                <div style="display:flex;align-items:center;gap:8px;padding:2px 0;">
+                  <svg width="14" height="14" fill="none" viewBox="0 0 14 14" aria-hidden="true"><circle cx="6" cy="6" r="5" stroke="var(--text-sub)" stroke-width="1.2"/><path d="M10 10l3 3" stroke="var(--text-sub)" stroke-width="1.2" stroke-linecap="round"/></svg>
+                  <span style="font-size:13px;color:var(--text-sub);">bins</span>
+                </div>
+              </div>
+              <div class="app-card">
+                <div class="app-card-row">
+                  <div>
+                    <div class="app-card-label">Take out the bins</div>
+                    <div class="app-card-sub">Avg: £2.00 · 847 families</div>
+                  </div>
+                  <div class="app-card-amount" style="color:var(--teal);">£2.00</div>
+                </div>
+              </div>
+              <div class="app-card">
+                <div class="app-card-row">
+                  <div>
+                    <div class="app-card-label">Recycling bins</div>
+                    <div class="app-card-sub">Avg: £1.50 · 412 families</div>
+                  </div>
+                  <div class="app-card-amount" style="color:var(--teal);">£1.50</div>
+                </div>
+              </div>
+              <div class="app-card" style="opacity:0.5;">
+                <div class="app-card-row">
+                  <div>
+                    <div class="app-card-label">Empty kitchen bin</div>
+                    <div class="app-card-sub">Avg: £1.00 · 203 families</div>
+                  </div>
+                  <div class="app-card-amount" style="color:var(--teal);">£1.00</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Slide 3: Savings goal -->
+            <div class="fp-carousel-slide" data-caption="Stop saving for nothing – give every pound a destination your child chose themselves.">
+              <div class="app-mockup-header">
+                <div>
+                  <div class="app-mockup-title">Ellie's goal</div>
+                  <div class="app-mockup-sub">Nintendo Switch</div>
+                </div>
+                <span class="app-badge app-badge--pending">In progress</span>
+              </div>
+              <div class="app-card" style="text-align:center;padding:20px 16px;">
+                <div style="font-size:28px;font-weight:700;color:var(--teal);font-variant-numeric:tabular-nums;">£18.50</div>
+                <div style="font-size:13px;color:var(--text-sub);margin:4px 0 14px;">saved of £279.99</div>
+                <div style="background:var(--border-light);border-radius:999px;height:8px;overflow:hidden;">
+                  <div style="width:7%;height:100%;background:var(--teal);border-radius:999px;"></div>
+                </div>
+                <div style="font-size:12px;color:var(--text-sub);margin-top:10px;">About 131 more chores to go</div>
+              </div>
+              <div class="app-card" style="opacity:0.6;margin-top:8px;">
+                <div class="app-card-row">
+                  <div class="app-card-label">Mum boosted your goal</div>
+                  <div class="app-card-amount" style="color:var(--teal);">+£5.00</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Slide 4: Pending approvals -->
+            <div class="fp-carousel-slide" data-caption="Stop chasing for updates – approve completions in one tap and the balance updates instantly.">
+              <div class="app-mockup-header">
+                <div>
+                  <div class="app-mockup-title">Pending Approvals</div>
+                  <div class="app-mockup-sub">1 chore awaiting your review</div>
+                </div>
+                <span class="app-badge app-badge--pending">1 pending</span>
+              </div>
+              <div class="app-card">
+                <div class="app-card-row">
+                  <div>
+                    <div class="app-card-label">Take out the bins</div>
+                    <div class="app-card-sub">Ellie · Due today</div>
+                  </div>
+                  <div class="app-card-amount">£2.00</div>
+                </div>
+                <div class="app-btn-row">
+                  <div class="app-btn app-btn--primary">Approve</div>
+                  <div class="app-btn app-btn--ghost">Reject</div>
+                </div>
+              </div>
+              <div class="app-card" style="opacity:0.45;">
+                <div class="app-card-row">
+                  <div>
+                    <div class="app-card-label">Tidy bedroom</div>
+                    <div class="app-card-sub">Ellie · Due tomorrow</div>
+                  </div>
+                  <div class="app-card-amount">£3.00</div>
+                </div>
+              </div>
+            </div>
+
+          </div><!-- /carousel-slides -->
+
+          <div class="fp-carousel-dots" id="carousel-dots">
+            <button class="fp-carousel-dot active" aria-label="Slide 1"></button>
+            <button class="fp-carousel-dot" aria-label="Slide 2"></button>
+            <button class="fp-carousel-dot" aria-label="Slide 3"></button>
+            <button class="fp-carousel-dot" aria-label="Slide 4"></button>
           </div>
-        </div>
+
+          <p class="fp-carousel-caption" id="carousel-caption">Stop starting from scratch – choose from over 30 pre-defined chores, ready to assign.</p>
+
+        </div><!-- /fp-carousel -->
       </div>
     </div>
   </section>
@@ -455,6 +579,35 @@
     // re-observe new elements
     grid.querySelectorAll('.reveal').forEach(function (el) { io.observe(el); });
   }
+
+  // Hero carousel — 4-slide crossfade, 4s interval
+  (function () {
+    var slides   = Array.from(document.querySelectorAll('.fp-carousel-slide'));
+    var dots     = Array.from(document.querySelectorAll('.fp-carousel-dot'));
+    var caption  = document.getElementById('carousel-caption');
+    if (!slides.length) return;
+
+    var current  = 0;
+    var INTERVAL = 4000;
+    var prefRed  = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    function goTo(index) {
+      slides[current].classList.remove('active');
+      dots[current].classList.remove('active');
+      current = (index + slides.length) % slides.length;
+      slides[current].classList.add('active');
+      dots[current].classList.add('active');
+      if (caption) caption.textContent = slides[current].dataset.caption || '';
+    }
+
+    dots.forEach(function (dot, i) {
+      dot.addEventListener('click', function () { goTo(i); clearInterval(timer); timer = setInterval(advance, INTERVAL); });
+    });
+
+    function advance() { goTo(current + 1); }
+
+    var timer = prefRed ? null : setInterval(advance, INTERVAL);
+  }());
 })();
 </script>
 <!-- SCRIPTS_END -->
