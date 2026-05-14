@@ -194,12 +194,95 @@
     <div class="fp-showcase-inner">
       <h2>The whole loop in one moment.</h2>
       <p class="fp-showcase-sub">Chore done. Parent approves. Money moves. No spreadsheet. No argument.</p>
-      <div class="fp-showcase-frame" style="aspect-ratio:16/9;">
-        <div class="fp-video-placeholder">
-          <svg width="48" height="48" fill="none" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.5"/><path d="M10 8.5l5 3.5-5 3.5V8.5z" fill="currentColor"/></svg>
-          <p>Lifestyle video: two phones on a kitchen table — parent approves, child's balance ticks up, Monzo notification appears<br><em>File: marketing/video/earn-save-spend-showcase.mp4</em></p>
+      <!-- Two-phone CSS animation: child marks done → parent approves → balance updates -->
+      <div class="fp-loop-stage">
+
+        <!-- Ellie's phone -->
+        <div class="fp-loop-phone">
+          <div class="fp-loop-label">Ellie</div>
+          <div class="fp-phone-shell">
+            <div class="fp-phone-screen fp-loop-screen--child">
+
+              <!-- Balance header -->
+              <div class="fp-ls-header">
+                <div class="fp-ls-greeting">Good morning, Ellie</div>
+                <div class="fp-ls-balance">
+                  £<span class="fp-ls-balance-val">12.00</span>
+                </div>
+              </div>
+
+              <!-- Chore card — cycles through: pending → done -->
+              <div class="fp-ls-card fp-ls-chore">
+                <div class="fp-ls-chore-row">
+                  <div>
+                    <div class="fp-ls-chore-name">Take out the bins</div>
+                    <div class="fp-ls-chore-rate">£2.00</div>
+                  </div>
+                  <div class="fp-ls-tick" aria-hidden="true">
+                    <svg width="20" height="20" fill="none" viewBox="0 0 20 20"><circle cx="10" cy="10" r="9" stroke="var(--teal)" stroke-width="1.5"/><path class="fp-ls-tick-path" d="M6 10l3 3 5-5" stroke="var(--teal)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  </div>
+                </div>
+                <div class="fp-ls-chore-status">
+                  <span class="fp-ls-status-pending">Tap to mark done</span>
+                  <span class="fp-ls-status-done">Done · Sent for approval</span>
+                </div>
+              </div>
+
+              <!-- Notification: paid -->
+              <div class="fp-ls-notification">
+                <div class="fp-ls-notif-icon" aria-hidden="true">✦</div>
+                <div>
+                  <div class="fp-ls-notif-title">Mum approved!</div>
+                  <div class="fp-ls-notif-body">+£2.00 added to your balance</div>
+                </div>
+              </div>
+
+            </div>
+          </div>
         </div>
-      </div>
+
+        <!-- Arrow -->
+        <div class="fp-loop-arrow" aria-hidden="true">
+          <svg width="32" height="32" fill="none" viewBox="0 0 32 32"><path d="M6 16h20M20 10l6 6-6 6" stroke="var(--teal)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+
+        <!-- Mum's phone -->
+        <div class="fp-loop-phone">
+          <div class="fp-loop-label">Mum</div>
+          <div class="fp-phone-shell">
+            <div class="fp-phone-screen fp-loop-screen--parent">
+
+              <!-- Approval card — slides in, button taps -->
+              <div class="fp-ls-header">
+                <div class="fp-ls-greeting">Pending approvals</div>
+                <span class="app-badge app-badge--pending" style="font-size:11px;">1 new</span>
+              </div>
+
+              <div class="fp-ls-card fp-ls-approval">
+                <div class="fp-ls-chore-row">
+                  <div>
+                    <div class="fp-ls-chore-name">Take out the bins</div>
+                    <div class="fp-ls-chore-rate">Ellie · £2.00</div>
+                  </div>
+                  <span class="app-badge app-badge--pending" style="font-size:10px;">New</span>
+                </div>
+                <div class="fp-ls-btn-row">
+                  <div class="fp-ls-btn fp-ls-btn--approve">Approve</div>
+                  <div class="fp-ls-btn fp-ls-btn--ghost">Review</div>
+                </div>
+              </div>
+
+              <!-- Confirmed state -->
+              <div class="fp-ls-confirmed">
+                <svg width="28" height="28" fill="none" viewBox="0 0 28 28" aria-hidden="true"><circle cx="14" cy="14" r="13" fill="var(--teal)" opacity="0.12"/><path d="M8 14l4 4 8-8" stroke="var(--teal)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                <div class="fp-ls-confirmed-text">Approved &amp; logged</div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /fp-loop-stage -->
     </div>
   </section>
 
@@ -246,6 +329,41 @@
   document.querySelectorAll('.reveal, .reveal-left, .reveal-right').forEach(function (el) {
     io.observe(el);
   });
+
+  // Balance counter — ticks from £12.00 to £14.00 in sync with the 7.2s CSS animation loop
+  // Tick fires at 58% of cycle = ~4.2s, over ~0.6s
+  var balanceEl = document.querySelector('.fp-ls-balance-val');
+  if (balanceEl) {
+    var CYCLE   = 7200;  // ms — must match CSS animation duration
+    var TICK_AT = 0.58;  // fraction of cycle when balance updates
+    var START   = 1200;  // pence
+    var END     = 1400;  // pence
+    function formatPence(p) { return (p / 100).toFixed(2); }
+    function runCycle(offset) {
+      var tickDelay = CYCLE * TICK_AT - offset;
+      setTimeout(function () {
+        // Animate from START to END over 600ms
+        var t0 = performance.now();
+        var dur = 600;
+        function step() {
+          var progress = Math.min((performance.now() - t0) / dur, 1);
+          var val = Math.round(START + (END - START) * progress);
+          balanceEl.textContent = formatPence(val);
+          if (progress < 1) requestAnimationFrame(step);
+          else {
+            // Reset to START at end of cycle
+            setTimeout(function () {
+              balanceEl.textContent = formatPence(START);
+              runCycle(0);
+            }, CYCLE * (1 - TICK_AT) - dur);
+          }
+        }
+        requestAnimationFrame(step);
+      }, tickDelay);
+    }
+    balanceEl.textContent = formatPence(START);
+    runCycle(0);
+  }
 
   // Lazy-load video + progress ring — fires once when the goals pair scrolls into view
   var ringWrap = document.querySelector('.fp-ring-wrap');
