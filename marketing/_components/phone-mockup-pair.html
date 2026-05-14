@@ -1,0 +1,146 @@
+<!--
+  COMPONENT: Phone Mockup Pair
+  Two side-by-side iPhone-style phone frames with animated CSS UI content inside.
+  Uses /Images/phone-mockup.svg as the frame (mix-blend-mode: multiply makes the
+  white screen area transparent so CSS content shows through).
+
+  USAGE:
+  - Drop .fp-device-wrap blocks inside .fp-loop-stage
+  - Add your screen content inside .fp-device-screen
+  - Apply animation classes to inner elements (see earn-save-spend.html for full example)
+  - Requires page-features.css (or copy the CSS block below into your page CSS)
+
+  CSS lives in: marketing/css/page-features.css
+  Search for: "Device wrap" and "two-phone loop animation"
+
+  CALIBRATED VALUES (do not change without re-testing):
+    top: 2%  left/right: 3%  bottom: 0.5%
+    border-radius: 13% / 9%
+    padding-top: 10%  (clears dynamic island)
+    width: 290px
+-->
+
+<!-- ── Two-phone mockup stage ── -->
+<div class="fp-loop-stage">
+
+  <!-- Phone 1 -->
+  <div class="fp-loop-phone">
+    <div class="fp-loop-label">Label</div>
+    <div class="fp-device-wrap">
+      <div class="fp-device-screen">
+
+        <!-- Your screen content here -->
+        <div class="fp-ls-header">
+          <div class="fp-ls-greeting">Screen title</div>
+        </div>
+
+      </div>
+      <img class="fp-device-frame" src="/Images/phone-mockup.svg" alt="" aria-hidden="true">
+    </div>
+  </div>
+
+  <!-- Arrow between phones -->
+  <div class="fp-loop-arrow" aria-hidden="true">
+    <svg width="32" height="32" fill="none" viewBox="0 0 32 32">
+      <path d="M6 16h20M20 10l6 6-6 6" stroke="var(--teal)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  </div>
+
+  <!-- Phone 2 -->
+  <div class="fp-loop-phone">
+    <div class="fp-loop-label">Label</div>
+    <div class="fp-device-wrap">
+      <div class="fp-device-screen">
+
+        <!-- Your screen content here -->
+        <div class="fp-ls-header">
+          <div class="fp-ls-greeting">Screen title</div>
+        </div>
+
+      </div>
+      <img class="fp-device-frame" src="/Images/phone-mockup.svg" alt="" aria-hidden="true">
+    </div>
+  </div>
+
+</div><!-- /fp-loop-stage -->
+
+
+<!-- ══════════════════════════════════════════════
+     LOCKED CSS — copy into your page stylesheet
+     (already present in page-features.css)
+     ══════════════════════════════════════════════ -->
+<style>
+/* Stage layout */
+.fp-loop-stage {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 24px;
+  padding: 40px 0 8px;
+}
+
+.fp-loop-phone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.fp-loop-label {
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-sub);
+}
+
+.fp-loop-arrow {
+  padding-bottom: 48px;
+  opacity: 0.5;
+}
+
+/* Device wrap — calibrated to phone-mockup.svg (viewBox 523.4 × 1099) */
+.fp-device-wrap {
+  position: relative;
+  width: 290px;
+  aspect-ratio: 523.4 / 1099;
+  filter: drop-shadow(0 24px 48px rgba(27,45,46,0.22));
+}
+
+/* Screen content — sits inside the SVG frame's white screen area */
+.fp-device-screen {
+  position: absolute;
+  top: 2%;
+  left: 3%;
+  right: 3%;
+  bottom: 0.5%;
+  background: var(--bg-cream);
+  border-radius: 13% / 9%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  z-index: 1;
+  padding-top: 10%; /* clears dynamic island */
+}
+
+/* SVG frame on top — multiply makes white screen transparent */
+.fp-device-frame {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 2;
+  mix-blend-mode: multiply;
+  pointer-events: none;
+  display: block;
+}
+
+/* Responsive */
+@media (max-width: 580px) {
+  .fp-loop-stage { flex-direction: column; align-items: center; gap: 16px; }
+  .fp-loop-arrow { padding-bottom: 0; transform: rotate(90deg); }
+  .fp-device-wrap { width: 200px; }
+}
+</style>

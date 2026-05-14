@@ -65,6 +65,11 @@
   opacity: var(--hero-scrim-opacity, 1);
   transition: opacity 60ms linear;
 }
+@media (max-width: 960px) {
+  .audience-hero img.hero-img {
+    object-position: center 20%;
+  }
+}
 @media (prefers-reduced-motion: reduce) {
   .audience-hero img.hero-img { transform: none !important; transition: none !important; }
   .audience-hero .hero-scrim { opacity: 1 !important; transition: none !important; }
@@ -837,39 +842,30 @@ body.dark .audience-faq summary:hover { color: var(--teal); }
     linear-gradient(var(--teal), var(--teal)) center / 1.5px 14px no-repeat;
   transition: transform 0.45s cubic-bezier(0.16,1,0.3,1);
 }
-.audience-faq details[open] summary::after {
+.audience-faq details.is-open summary::after {
   transform: rotate(135deg);
 }
 
-/* Smoothly animate the answer panel by wrapping it in a 0fr → 1fr grid row.
-   .audience-faq details is the grid container; the .faq-answer is the
-   collapsible row. The inner wrapper handles overflow + spacing. */
-.audience-faq details {
-  display: grid;
-  grid-template-rows: auto 0fr;
-  transition: grid-template-rows 0.45s cubic-bezier(0.16,1,0.3,1);
-}
-.audience-faq details[open] {
-  grid-template-rows: auto 1fr;
-}
+/* [open] is always present — height is JS-controlled, collapse is via height:0 not UA hiding */
+.audience-faq details { overflow: hidden; }
 .audience-faq .faq-answer {
   overflow: hidden;
+  height: 0;
   opacity: 0;
   transform: translateY(-4px);
   font-size: 15px;
   line-height: 1.6;
   color: var(--text-sub);
   transition:
-    opacity 0.35s cubic-bezier(0.16,1,0.3,1) 0.05s,
-    transform 0.45s cubic-bezier(0.16,1,0.3,1) 0.05s,
-    padding-top 0.45s cubic-bezier(0.16,1,0.3,1);
-  padding-top: 0;
+    height 0.38s cubic-bezier(0.16,1,0.3,1),
+    opacity 0.3s cubic-bezier(0.16,1,0.3,1) 0.05s,
+    transform 0.38s cubic-bezier(0.16,1,0.3,1) 0.05s;
 }
-.audience-faq details[open] .faq-answer {
+.audience-faq .faq-answer.is-open {
   opacity: 1;
   transform: translateY(0);
-  padding-top: 12px;
 }
+.audience-faq .faq-inner { padding: 12px 0 4px; }
 
 /* ── Why-Morechard strip (page-audience variant — distinct from homepage) ── */
 .audience-why {
@@ -1205,11 +1201,10 @@ body, body.dark { transition: background-color 0.55s cubic-bezier(0,0,0.6,1), co
 .case-card:hover,
 .step-card:hover,
 .recommend-card:hover { transition-duration: 0.25s; }
-.audience-faq details { transition: grid-template-rows 0.45s cubic-bezier(0.16,1,0.3,1); }
 .audience-faq .faq-answer {
   transition:
-    opacity 0.35s cubic-bezier(0.16,1,0.3,1) 0.05s,
-    transform 0.45s cubic-bezier(0.16,1,0.3,1) 0.05s,
-    padding-top 0.45s cubic-bezier(0.16,1,0.3,1),
+    height 0.38s cubic-bezier(0.16,1,0.3,1),
+    opacity 0.3s cubic-bezier(0.16,1,0.3,1) 0.05s,
+    transform 0.38s cubic-bezier(0.16,1,0.3,1) 0.05s,
     color 0.55s cubic-bezier(0,0,0.6,1);
 }

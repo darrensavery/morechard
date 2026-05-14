@@ -194,41 +194,73 @@
     <div class="fp-showcase-inner">
       <h2>The whole loop in one moment.</h2>
       <p class="fp-showcase-sub">Chore done. Parent approves. Money moves. No spreadsheet. No argument.</p>
-      <!-- Two-phone CSS animation: child marks done → parent approves → balance updates -->
+      <!-- Two-phone CSS animation — 16s loop:
+           0-15%  chore list
+           15-25% tap bins → detail view
+           25-40% detail: tap camera → photo appears
+           40-52% tap Submit → sent for approval
+           52-65% Mum: approval card in → tap Approve
+           65-80% confirmed + notification + balance
+           80-92% hold
+           92-100% reset
+      -->
       <div class="fp-loop-stage">
 
         <!-- Ellie's phone -->
         <div class="fp-loop-phone">
           <div class="fp-loop-label">Ellie</div>
-          <div class="fp-phone-shell">
-            <div class="fp-phone-screen fp-loop-screen--child">
+          <div class="fp-device-wrap">
+            <div class="fp-loop-screen--child fp-device-screen">
 
-              <!-- Balance header -->
-              <div class="fp-ls-header">
-                <div class="fp-ls-greeting">Good morning, Ellie</div>
-                <div class="fp-ls-balance">
-                  £<span class="fp-ls-balance-val">12.00</span>
+              <!-- VIEW 1: Chore list -->
+              <div class="fp-ls-view fp-ls-view--list">
+                <div class="fp-ls-header">
+                  <div class="fp-ls-greeting">Good morning, Ellie</div>
+                  <div class="fp-ls-balance">£<span class="fp-ls-balance-val">12.00</span></div>
+                </div>
+                <div class="fp-ls-section-label">Today's chores</div>
+                <div class="fp-ls-chore-item fp-ls-chore-item--target">
+                  <div class="fp-ls-chore-item-name">Take out the bins</div>
+                  <div class="fp-ls-chore-item-rate">£2.00</div>
+                  <div class="fp-tap-ripple fp-tap-ripple--list" aria-hidden="true"></div>
+                </div>
+                <div class="fp-ls-chore-item">
+                  <div class="fp-ls-chore-item-name">Tidy your room</div>
+                  <div class="fp-ls-chore-item-rate">£1.50</div>
+                </div>
+                <div class="fp-ls-chore-item">
+                  <div class="fp-ls-chore-item-name">Load dishwasher</div>
+                  <div class="fp-ls-chore-item-rate">£1.00</div>
                 </div>
               </div>
 
-              <!-- Chore card — cycles through: pending → done -->
-              <div class="fp-ls-card fp-ls-chore">
-                <div class="fp-ls-chore-row">
-                  <div>
-                    <div class="fp-ls-chore-name">Take out the bins</div>
-                    <div class="fp-ls-chore-rate">£2.00</div>
-                  </div>
-                  <div class="fp-ls-tick" aria-hidden="true">
-                    <svg width="20" height="20" fill="none" viewBox="0 0 20 20"><circle cx="10" cy="10" r="9" stroke="var(--teal)" stroke-width="1.5"/><path class="fp-ls-tick-path" d="M6 10l3 3 5-5" stroke="var(--teal)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                  </div>
+              <!-- VIEW 2: Chore detail -->
+              <div class="fp-ls-view fp-ls-view--detail">
+                <div class="fp-ls-header">
+                  <div class="fp-ls-greeting">Take out the bins</div>
+                  <div class="fp-ls-chore-item-rate" style="font-size:14px;font-weight:600;">£2.00</div>
                 </div>
-                <div class="fp-ls-chore-status">
-                  <span class="fp-ls-status-pending">Tap to mark done</span>
-                  <span class="fp-ls-status-done">Done · Sent for approval</span>
+                <div class="fp-ls-detail-body">
+                  <div class="fp-ls-photo-zone">
+                    <div class="fp-ls-photo-placeholder">
+                      <svg width="24" height="24" fill="none" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16a4 4 0 100-8 4 4 0 000 8z" stroke="currentColor" stroke-width="1.4"/><path d="M3 9a2 2 0 012-2h1l2-3h8l2 3h1a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" stroke="currentColor" stroke-width="1.4"/></svg>
+                      <span>Add photo</span>
+                      <div class="fp-tap-ripple fp-tap-ripple--camera" aria-hidden="true"></div>
+                    </div>
+                    <img class="fp-ls-photo-evidence" src="/Images/chore-bins.webp" alt="" aria-hidden="true">
+                  </div>
+                  <div class="fp-ls-submit-wrap">
+                    <div class="fp-ls-btn fp-ls-btn--submit">Submit for approval</div>
+                    <div class="fp-tap-ripple fp-tap-ripple--submit" aria-hidden="true"></div>
+                  </div>
+                  <div class="fp-ls-sent-state">
+                    <svg width="20" height="20" fill="none" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="9" stroke="var(--teal)" stroke-width="1.4"/><path d="M6 10l3 3 5-5" stroke="var(--teal)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    Sent for approval
+                  </div>
                 </div>
               </div>
 
-              <!-- Notification: paid -->
+              <!-- Notification: approved -->
               <div class="fp-ls-notification">
                 <div class="fp-ls-notif-icon" aria-hidden="true">✦</div>
                 <div>
@@ -238,10 +270,11 @@
               </div>
 
             </div>
+            <img class="fp-device-frame" src="/Images/phone-mockup.svg" alt="" aria-hidden="true">
           </div>
         </div>
 
-        <!-- Arrow -->
+        <!-- Arrow — vertically centred -->
         <div class="fp-loop-arrow" aria-hidden="true">
           <svg width="32" height="32" fill="none" viewBox="0 0 32 32"><path d="M6 16h20M20 10l6 6-6 6" stroke="var(--teal)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </div>
@@ -249,10 +282,9 @@
         <!-- Mum's phone -->
         <div class="fp-loop-phone">
           <div class="fp-loop-label">Mum</div>
-          <div class="fp-phone-shell">
-            <div class="fp-phone-screen fp-loop-screen--parent">
+          <div class="fp-device-wrap">
+            <div class="fp-loop-screen--parent fp-device-screen">
 
-              <!-- Approval card — slides in, button taps -->
               <div class="fp-ls-header">
                 <div class="fp-ls-greeting">Pending approvals</div>
                 <span class="app-badge app-badge--pending" style="font-size:11px;">1 new</span>
@@ -266,19 +298,22 @@
                   </div>
                   <span class="app-badge app-badge--pending" style="font-size:10px;">New</span>
                 </div>
-                <div class="fp-ls-btn-row">
+                <!-- Photo evidence on parent side -->
+                <img class="fp-ls-approval-photo" src="/Images/chore-bins.webp" alt="" aria-hidden="true">
+                <div class="fp-ls-btn-row" style="position:relative;">
                   <div class="fp-ls-btn fp-ls-btn--approve">Approve</div>
-                  <div class="fp-ls-btn fp-ls-btn--ghost">Review</div>
+                  <div class="fp-ls-btn fp-ls-btn--ghost">Reject</div>
+                  <div class="fp-tap-ripple fp-tap-ripple--approve" aria-hidden="true"></div>
                 </div>
               </div>
 
-              <!-- Confirmed state -->
               <div class="fp-ls-confirmed">
                 <svg width="28" height="28" fill="none" viewBox="0 0 28 28" aria-hidden="true"><circle cx="14" cy="14" r="13" fill="var(--teal)" opacity="0.12"/><path d="M8 14l4 4 8-8" stroke="var(--teal)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
                 <div class="fp-ls-confirmed-text">Approved &amp; logged</div>
               </div>
 
             </div>
+            <img class="fp-device-frame" src="/Images/phone-mockup.svg" alt="" aria-hidden="true">
           </div>
         </div>
 
@@ -330,12 +365,12 @@
     io.observe(el);
   });
 
-  // Balance counter — ticks from £12.00 to £14.00 in sync with the 7.2s CSS animation loop
-  // Tick fires at 58% of cycle = ~4.2s, over ~0.6s
+  // Balance counter — ticks from £12.00 to £14.00 in sync with the 16s CSS animation loop
+  // Tick fires at 65% of cycle = ~10.4s, over ~0.6s
   var balanceEl = document.querySelector('.fp-ls-balance-val');
   if (balanceEl) {
-    var CYCLE   = 7200;  // ms — must match CSS animation duration
-    var TICK_AT = 0.58;  // fraction of cycle when balance updates
+    var CYCLE   = 16000; // ms — must match CSS animation duration
+    var TICK_AT = 0.65;  // fraction of cycle when balance updates
     var START   = 1200;  // pence
     var END     = 1400;  // pence
     function formatPence(p) { return (p / 100).toFixed(2); }
