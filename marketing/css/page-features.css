@@ -1180,3 +1180,91 @@
   margin: 12px auto 0;
   min-height: 2.8em;
 }
+
+/* ── Daily loop — three-card section ── */
+.fp-loop-cards-section {
+  padding: 80px var(--pad-x);
+  border-top: 1px solid var(--border-light);
+}
+
+.fp-loop-cards-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.fp-loop-cards-inner .fp-pair-label {
+  display: block;
+  margin-bottom: 14px;
+}
+
+.fp-loop-cards-inner h2 {
+  font-family: var(--font-display);
+  font-size: clamp(24px, 3.5vw, 36px);
+  font-weight: 500;
+  color: var(--text-dark);
+  margin-bottom: 12px;
+  letter-spacing: -0.01em;
+  line-height: 1.15;
+}
+
+.fp-loop-cards-sub {
+  font-family: var(--font-body);
+  font-size: 17px;
+  line-height: 1.7;
+  color: var(--text-sub);
+  max-width: 600px;
+  margin: 0 auto 48px;
+}
+
+.fp-loop-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  text-align: left;
+}
+
+.fp-loop-card {
+  background: var(--card-light);
+  border: 1px solid var(--border-light);
+  border-top: 3px solid var(--teal);
+  border-radius: var(--r-card);
+  padding: 28px;
+}
+
+.fp-loop-card-icon {
+  width: 36px;
+  height: 36px;
+  color: var(--teal);
+  margin-bottom: 16px;
+}
+
+.fp-loop-card-benefit {
+  font-family: var(--font-body);
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--text-dark);
+  margin-bottom: 8px;
+  line-height: 1.3;
+}
+
+.fp-loop-card-copy {
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.65;
+  color: var(--text-sub);
+  margin-bottom: 16px;
+}
+
+.fp-loop-card-feature {
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--teal);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+@media (max-width: 860px) {
+  .fp-loop-cards-grid { grid-template-columns: 1fr; }
+}
