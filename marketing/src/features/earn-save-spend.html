@@ -124,9 +124,7 @@
     <div class="fp-pair">
       <div class="fp-pair-visual reveal-left reveal d1">
         <div class="fp-showcase-frame fp-ring-wrap" style="aspect-ratio:4/3;border-radius:var(--r-card);">
-          <video class="fp-pair-video" autoplay muted loop playsinline>
-            <source src="/video/goals-grow.webm" type="video/webm">
-            <source src="/video/goals-grow.mp4" type="video/mp4">
+          <video class="fp-pair-video" muted loop playsinline preload="none" data-src-webm="/video/goals-grow.webm" data-src-mp4="/video/goals-grow.mp4">
           </video>
           <svg class="fp-ring" viewBox="0 0 200 200" aria-hidden="true">
             <circle class="fp-ring-track" cx="100" cy="100" r="80"/>
@@ -249,12 +247,21 @@
     io.observe(el);
   });
 
-  // Progress ring — fires once when the goals video pair scrolls into view
+  // Lazy-load video + progress ring — fires once when the goals pair scrolls into view
   var ringWrap = document.querySelector('.fp-ring-wrap');
   if (ringWrap) {
     var ringIo = new IntersectionObserver(function (entries) {
       if (entries[0].isIntersecting) {
         ringWrap.classList.add('ring-active');
+        var vid = ringWrap.querySelector('video');
+        if (vid && !vid.src) {
+          var webm = vid.dataset.srcWebm;
+          var mp4  = vid.dataset.srcMp4;
+          if (webm) { var s1 = document.createElement('source'); s1.src = webm; s1.type = 'video/webm'; vid.appendChild(s1); }
+          if (mp4)  { var s2 = document.createElement('source'); s2.src = mp4;  s2.type = 'video/mp4';  vid.appendChild(s2); }
+          vid.load();
+          vid.play();
+        }
         ringIo.unobserve(ringWrap);
       }
     }, { threshold: 0.4 });
