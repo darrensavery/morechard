@@ -384,6 +384,20 @@ ${scripts}
     console.log('[build] ✓ Images/ (copied)');
   }
 
+  // Copy video/ → dist/video/
+  const srcVideoDir  = path.join(ROOT, 'video');
+  const distVideoDir = path.join(DIST, 'video');
+  const VIDEO_EXTS   = ['.mp4', '.webm', '.mov', '.ogg'];
+  if (fs.existsSync(srcVideoDir)) {
+    fs.mkdirSync(distVideoDir, { recursive: true });
+    for (const f of fs.readdirSync(srcVideoDir)) {
+      if (VIDEO_EXTS.includes(path.extname(f).toLowerCase())) {
+        fs.copyFileSync(path.join(srcVideoDir, f), path.join(distVideoDir, f));
+      }
+    }
+    console.log('[build] ✓ video/ (copied)');
+  }
+
   // Copy favicon.svg — prefer marketing/favicon.svg, fall back to project root
   const localFavicon = path.join(ROOT, 'favicon.svg');
   const rootFavicon  = path.join(ROOT, '..', 'favicon.svg');
