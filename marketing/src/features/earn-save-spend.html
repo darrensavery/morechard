@@ -1,6 +1,6 @@
 <!--
   TITLE: Earn, Save & Spend | Morechard
-  DESCRIPTION: Assign chores, approve completions, set savings goals, and pay out instantly. The chore tracker that actually pays off — works for any family on day one.
+  DESCRIPTION: Assign chores, approve completions, set savings goals, and pay out instantly. The chore tracker that actually pays off – works for any family on day one.
   CANONICAL: https://morechard.com/features/earn-save-spend
   PAGE_CSS: page-features.css
 -->
@@ -13,7 +13,7 @@
     <div class="fp-hero-inner">
       <div class="fp-chip reveal">Earn / Save / Spend</div>
       <h1 class="reveal d1">The chore tracker that actually pays off.</h1>
-      <p class="fp-sub reveal d2">Assign chores, approve completions, and pay out — with a savings goal waiting at the end. Works for any family on day one.</p>
+      <p class="fp-sub reveal d2">Assign chores, approve completions, and pay out – with a savings goal waiting at the end. Works for any family on day one.</p>
       <div class="fp-hero-cta reveal d3">
         <a href="/#signup" class="btn-primary">
           Start free trial
@@ -63,7 +63,7 @@
   <!-- ── Pitch strip ── -->
   <section class="fp-pitch">
     <div class="fp-pitch-inner reveal">
-      <p>Every family has a version of this: the chore was done, the money was promised, and somehow neither happened cleanly. Morechard closes that loop. Assign, approve, done — with a pocket money balance that updates the moment you tap approve.</p>
+      <p>Every family has a version of this: the chore was done, the money was promised, and somehow neither happened cleanly. Morechard closes that loop. Assign, approve, done – with a pocket money balance that updates the moment you tap approve.</p>
       <p>Goals give children something to save toward. Payment Bridge means the money moves with two taps, straight from your banking app. No cash hunts, no IOUs.</p>
     </div>
   </section>
@@ -76,7 +76,7 @@
       <div class="fp-pair-text reveal">
         <span class="fp-pair-label">The daily loop</span>
         <h3>Assign, complete, approve. Balance updates automatically.</h3>
-        <p>Parents create chores with a rate and a due date. Children mark them done — optionally with a photo. One tap approves and the ledger records it instantly.</p>
+        <p>Parents create chores with a rate and a due date. Children mark them done – optionally with a photo. One tap approves and the ledger records it instantly.</p>
         <ul class="fp-pair-bullets">
           <li>Rate Guide with market benchmarks</li>
           <li>Photo proof upload</li>
@@ -135,7 +135,7 @@
       <div class="fp-pair-text reveal d1">
         <span class="fp-pair-label">Something to save for</span>
         <h3>Give every pound a destination before it's earned.</h3>
-        <p>Children set savings goals — a name, a target amount, a picture. The Mentor shows them how many chores stand between now and getting there. Parents can boost a goal any time.</p>
+        <p>Children set savings goals – a name, a target amount, a picture. The Mentor shows them how many chores stand between now and getting there. Parents can boost a goal any time.</p>
         <ul class="fp-pair-bullets">
           <li>Effort-to-earn calculator</li>
           <li>Parent boosts</li>
@@ -149,7 +149,7 @@
       <div class="fp-pair-text reveal">
         <span class="fp-pair-label">Pay in seconds</span>
         <h3>Open Monzo. Paste. Done.</h3>
-        <p>When you approve, Morechard hands you the exact amount and opens your banking app. Monzo, Revolut, PayPal — or Smart Copy for traditional bank transfers. No card numbers stored, ever.</p>
+        <p>When you approve, Morechard hands you the exact amount and opens your banking app. Monzo, Revolut, PayPal – or Smart Copy for traditional bank transfers. No card numbers stored, ever.</p>
         <ul class="fp-pair-bullets">
           <li>Deep-links to Monzo, Revolut, PayPal</li>
           <li>Smart Copy for bank transfers</li>
@@ -194,7 +194,7 @@
     <div class="fp-showcase-inner">
       <h2>The whole loop in one moment.</h2>
       <p class="fp-showcase-sub">Chore done. Parent approves. Money moves. No spreadsheet. No argument.</p>
-      <!-- Two-phone CSS animation — 16s loop:
+      <!-- Two-phone CSS animation – 16s loop:
            0-15%  chore list
            15-25% tap bins → detail view
            25-40% detail: tap camera → photo appears
@@ -274,7 +274,7 @@
           </div>
         </div>
 
-        <!-- Arrow — vertically centred -->
+        <!-- Arrow – vertically centred -->
         <div class="fp-loop-arrow" aria-hidden="true">
           <svg width="32" height="32" fill="none" viewBox="0 0 32 32"><path d="M6 16h20M20 10l6 6-6 6" stroke="var(--teal)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </div>
@@ -325,7 +325,7 @@
   <section class="fp-checklist">
     <div class="fp-checklist-inner">
       <h2 class="reveal">Everything in Earn / Save / Spend.</h2>
-      <p class="fp-checklist-sub reveal d1">Every feature included in this pillar — across all plans.</p>
+      <p class="fp-checklist-sub reveal d1">Every feature included in this pillar – across all plans.</p>
       <div class="fp-checklist-grid">
         <!-- items injected by JS below for stagger; or static for no-JS -->
       </div>
@@ -365,11 +365,11 @@
     io.observe(el);
   });
 
-  // Balance counter — ticks from £12.00 to £14.00 in sync with the 16s CSS animation loop
+  // Balance counter – ticks from £12.00 to £14.00 in sync with the 16s CSS animation loop
   // Tick fires at 65% of cycle = ~10.4s, over ~0.6s
   var balanceEl = document.querySelector('.fp-ls-balance-val');
   if (balanceEl) {
-    var CYCLE   = 16000; // ms — must match CSS animation duration
+    var CYCLE   = 16000; // ms – must match CSS animation duration
     var TICK_AT = 0.65;  // fraction of cycle when balance updates
     var START   = 1200;  // pence
     var END     = 1400;  // pence
@@ -400,7 +400,7 @@
     runCycle(0);
   }
 
-  // Lazy-load video + progress ring — fires once when the goals pair scrolls into view
+  // Lazy-load video + progress ring – fires once when the goals pair scrolls into view
   var ringWrap = document.querySelector('.fp-ring-wrap');
   if (ringWrap) {
     var ringIo = new IntersectionObserver(function (entries) {
@@ -426,7 +426,7 @@
     { name: 'Chore assignment with rate and due date', desc: '' },
     { name: 'Child completion marking with optional photo proof', desc: '' },
     { name: 'One-tap parent approval', desc: '' },
-    { name: 'Rate Guide — market rate benchmarks', desc: 'Fuzzy search across 30+ common chores' },
+    { name: 'Rate Guide – market rate benchmarks', desc: 'Fuzzy search across 30+ common chores' },
     { name: 'Sibling leaderboard', desc: '' },
     { name: 'Recurring chore schedules', desc: '' },
     { name: 'Savings goal creation', desc: 'Target, name, progress ring' },
