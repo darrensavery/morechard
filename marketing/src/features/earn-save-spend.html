@@ -123,11 +123,15 @@
     <!-- Pair 2: Goals & Savings (video placeholder) -->
     <div class="fp-pair">
       <div class="fp-pair-visual reveal-left reveal d1">
-        <div class="fp-showcase-frame" style="aspect-ratio:4/3;border-radius:var(--r-card);">
-          <div class="fp-video-placeholder">
-            <svg width="40" height="40" fill="none" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3C8 3 5 6 5 10c0 5 7 11 7 11s7-6 7-11c0-4-3-7-7-7z" stroke="currentColor" stroke-width="1.5"/><circle cx="12" cy="10" r="2.5" stroke="currentColor" stroke-width="1.5"/></svg>
-            <p>Animation: savings goal seed sprouting as progress ring fills — teal &amp; gold on parchment<br><em>File: marketing/video/goals-grow.mp4</em></p>
-          </div>
+        <div class="fp-showcase-frame fp-ring-wrap" style="aspect-ratio:4/3;border-radius:var(--r-card);">
+          <video class="fp-pair-video" autoplay muted loop playsinline>
+            <source src="/video/goals-grow.webm" type="video/webm">
+            <source src="/video/goals-grow.mp4" type="video/mp4">
+          </video>
+          <svg class="fp-ring" viewBox="0 0 200 200" aria-hidden="true">
+            <circle class="fp-ring-track" cx="100" cy="100" r="80"/>
+            <circle class="fp-ring-fill" cx="100" cy="100" r="80"/>
+          </svg>
         </div>
       </div>
       <div class="fp-pair-text reveal d1">
@@ -244,6 +248,18 @@
   document.querySelectorAll('.reveal, .reveal-left, .reveal-right').forEach(function (el) {
     io.observe(el);
   });
+
+  // Progress ring — fires once when the goals video pair scrolls into view
+  var ringWrap = document.querySelector('.fp-ring-wrap');
+  if (ringWrap) {
+    var ringIo = new IntersectionObserver(function (entries) {
+      if (entries[0].isIntersecting) {
+        ringWrap.classList.add('ring-active');
+        ringIo.unobserve(ringWrap);
+      }
+    }, { threshold: 0.4 });
+    ringIo.observe(ringWrap);
+  }
 
   // Checklist data
   var items = [

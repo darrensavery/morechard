@@ -603,3 +603,57 @@
   .app-module-grid { grid-template-columns: 1fr; }
   .app-kpi-row { gap: 8px; }
 }
+
+/* ── Goals video + progress ring overlay ── */
+.fp-ring-wrap {
+  position: relative;
+  overflow: hidden;
+}
+
+.fp-pair-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* SVG ring — centred over the video */
+.fp-ring {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+@keyframes ring-fill {
+  from { stroke-dashoffset: 503; }
+  to   { stroke-dashoffset: 0; }
+}
+
+/* circumference of r=80 circle = 2π×80 ≈ 503 */
+.fp-ring-track {
+  fill: none;
+  stroke: rgba(255,255,255,0.15);
+  stroke-width: 6;
+}
+
+.fp-ring-fill {
+  fill: none;
+  stroke: var(--teal);
+  stroke-width: 6;
+  stroke-linecap: round;
+  stroke-dasharray: 503;
+  stroke-dashoffset: 503;
+  transform-origin: center;
+  transform: rotate(-90deg);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+/* Triggered when the pair scrolls into view (.visible added by IntersectionObserver) */
+.fp-ring-wrap.ring-active .fp-ring-fill {
+  opacity: 1;
+  animation: ring-fill 1.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  animation-delay: 0.4s;
+}
