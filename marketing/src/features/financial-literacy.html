@@ -16,7 +16,7 @@
       <p class="fp-sub reveal d2">Not generic slides. Every lesson is triggered by what your child actually earns, saves, and spends — so it lands at exactly the right moment.</p>
       <div class="fp-hero-cta reveal d3">
         <a href="/#signup" class="btn-primary">
-          Start free trial
+          Register interest
           <svg width="13" height="13" viewBox="0 0 14 14" fill="none" aria-hidden="true">
             <path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
@@ -82,39 +82,373 @@
         </ul>
       </div>
       <div class="fp-pair-visual reveal-right reveal d1">
-        <div class="fp-showcase-frame" style="aspect-ratio:4/3;border-radius:var(--r-card);">
-          <div class="fp-video-placeholder">
-            <svg width="40" height="40" fill="none" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" stroke="currentColor" stroke-width="1.5"/></svg>
-            <p>Animation: AI chat bubble typewriter — "You spent £18 in two hours. Is that what you planned?" — then a module card slides up<br><em>File: marketing/video/ai-mentor-nudge.mp4</em></p>
-          </div>
+        <div class="mentor-demo" id="mentor-demo" aria-label="Animated AI mentor coaching card demo">
+
+          <!-- Phone shell -->
+          <div class="mentor-phone">
+            <div class="mentor-screen">
+
+              <!-- Step 1: nudge bubble -->
+              <div class="mentor-scene mentor-scene--nudge" id="scene-nudge">
+                <div class="mentor-top-bar">
+                  <div class="mentor-orb">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10z"/>
+                      <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/>
+                    </svg>
+                  </div>
+                  <div class="mentor-top-bar-text">
+                    <div class="mentor-label">Orchard Mentor</div>
+                    <div class="mentor-name-row">
+                      <div class="mentor-name">Coaching Note</div>
+                      <div class="mentor-persona">COACH</div>
+                    </div>
+                  </div>
+                  <div class="mentor-pro-badge">✦ PRO</div>
+                </div>
+
+                <div class="mentor-bubble mentor-bubble--left">
+                  <span class="mentor-tw" id="mentor-line1"></span><span class="mentor-cursor" id="cursor1">▋</span>
+                </div>
+
+                <div class="mentor-bubble mentor-bubble--left mentor-bubble--stagger" id="bubble2">
+                  <span class="mentor-tw" id="mentor-line2"></span><span class="mentor-cursor" id="cursor2">▋</span>
+                </div>
+
+                <div class="mentor-cta-row" id="mentor-cta-row">
+                  <button class="mentor-pill-btn mentor-pill-btn--ghost">Not really</button>
+                  <button class="mentor-pill-btn mentor-pill-btn--primary">Tell me more</button>
+                </div>
+              </div>
+
+              <!-- Step 2: module card slides up -->
+              <div class="mentor-scene mentor-scene--module" id="scene-module">
+                <div class="mentor-top-bar">
+                  <div class="mentor-orb">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10z"/>
+                      <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/>
+                    </svg>
+                  </div>
+                  <div class="mentor-top-bar-text">
+                    <div class="mentor-label">Orchard Mentor</div>
+                    <div class="mentor-name-row">
+                      <div class="mentor-name">Coaching Note</div>
+                      <div class="mentor-persona">COACH</div>
+                    </div>
+                  </div>
+                  <div class="mentor-pro-badge">✦ PRO</div>
+                </div>
+
+                <div class="mentor-module-card">
+                  <div class="mentor-module-eyebrow">LESSON UNLOCKED</div>
+                  <div class="mentor-module-row">
+                    <div class="mentor-module-icon">
+                      <svg width="20" height="20" fill="none" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="#00959c" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </div>
+                    <div>
+                      <div class="mentor-module-title">Needs vs Wants</div>
+                      <div class="mentor-module-sub">Pillar 2 · Spending Wisely</div>
+                    </div>
+                    <div class="mentor-module-tier">Sapling</div>
+                  </div>
+                  <div class="mentor-module-progress-wrap">
+                    <div class="mentor-module-progress-bar" id="progress-bar"></div>
+                  </div>
+                  <div class="mentor-module-progress-labels">
+                    <span>Act 1 of 4</span><span class="mentor-teal">0%</span>
+                  </div>
+                  <button class="mentor-start-btn">Start lesson →</button>
+                </div>
+
+                <div class="mentor-coaching-note">
+                  <div class="mentor-coaching-note-label">TRIGGERED NOW · SPENDING PATTERN</div>
+                  <div class="mentor-coaching-note-body">You spent £18 in two hours. Understanding needs vs wants will help you plan better next time.</div>
+                </div>
+              </div>
+
+            </div><!-- /mentor-screen -->
+          </div><!-- /mentor-phone -->
+
+          <!-- Ring timer / replay -->
+          <button class="mentor-replay" id="mentor-replay" aria-label="Replay animation">
+            <svg width="36" height="36" viewBox="0 0 36 36">
+              <circle class="mentor-ring-bg" cx="18" cy="18" r="14"/>
+              <circle class="mentor-ring-progress" id="mentor-ring-progress" cx="18" cy="18" r="14"/>
+              <!-- replay arrow icon -->
+              <g transform="translate(18,18)">
+                <path class="mentor-ring-icon" d="M-4.5-3.5A5.5 5.5 0 1 1-5.5 1.5" stroke-width="1.8"/>
+                <polyline class="mentor-ring-icon" points="-7,-4.5 -4.5,-3.5 -3.5,-6" stroke-width="1.8"/>
+              </g>
+            </svg>
+          </button>
+
         </div>
       </div>
     </div>
 
-    <!-- Pair 2: Learning Lab curriculum (CSS module grid) -->
-    <div class="fp-pair">
-      <div class="fp-pair-visual reveal-left reveal d1">
-        <div class="app-mockup">
-          <div class="app-mockup-header">
-            <div class="app-mockup-title">Your modules</div>
-            <div class="app-mockup-sub">6 pillars · 20 modules</div>
+  </div><!-- /fp-pairs -->
+
+  <!-- ── Curriculum deep-dive (Learning Lab style) ── -->
+  <section class="fp-curriculum-section">
+    <div class="fp-curriculum-inner">
+      <div class="fp-curriculum-header reveal">
+        <div class="fp-chip" style="margin-bottom:20px;">The Curriculum</div>
+        <h2>20 modules. 6 pillars. A complete financial education.</h2>
+        <p class="fp-curriculum-sub">GCSEs cover quadratic equations — not credit scores, compound interest, or the difference between good debt and bad debt. Every module here covers something school never will, triggered at the exact moment your child is ready to absorb it.</p>
+      </div>
+
+      <div class="ll-tabs reveal" id="fl-tabs" role="tablist" aria-label="Curriculum perspectives">
+        <button class="ll-tab active" role="tab" aria-selected="true"  aria-controls="fl-panel-0" id="fl-tab-0">The Six Pillars</button>
+        <button class="ll-tab"        role="tab" aria-selected="false" aria-controls="fl-panel-1" id="fl-tab-1">How Modules Unlock</button>
+        <button class="ll-tab"        role="tab" aria-selected="false" aria-controls="fl-panel-2" id="fl-tab-2">Age Tiers</button>
+        <button class="ll-tab"        role="tab" aria-selected="false" aria-controls="fl-panel-3" id="fl-tab-3">What School Misses</button>
+        <div class="ll-tab-indicator" id="fl-tab-indicator"></div>
+      </div>
+
+      <div class="ll-panel-wrap">
+
+        <!-- Panel 0: The Six Pillars — full module list per pillar -->
+        <div class="ll-panel active" id="fl-panel-0" role="tabpanel" aria-labelledby="fl-tab-0">
+          <div class="ll-panel-copy">
+            <div class="ll-panel-eyebrow">Structured from first chore to long-term investing</div>
+            <h3 class="ll-panel-headline">A deliberate sequence — each pillar only opens after the one before it is lived, not just read.</h3>
+            <p class="ll-panel-body">The six pillars are ordered intentionally. A child who hasn't yet earned a pound won't benefit from a lesson on compound interest. Morechard watches real behaviour and surfaces the right pillar at the right time — so every lesson lands on fertile ground.</p>
           </div>
-          <div class="app-module-grid" id="module-grid">
-            <!-- populated by JS below -->
+          <div class="fl-pillar-carousel-wrap" id="fl-pillar-carousel-wrap">
+            <div class="fl-pillar-grid" id="fl-pillar-grid">
+              <!-- populated by JS -->
+            </div>
+            <div class="fl-scroll-dots" id="fl-scroll-dots"></div>
           </div>
         </div>
+
+        <!-- Panel 1: How Modules Unlock -->
+        <div class="ll-panel" id="fl-panel-1" role="tabpanel" aria-labelledby="fl-tab-1">
+          <div class="ll-panel-copy">
+            <div class="ll-panel-eyebrow">Behaviour-driven, not schedule-driven</div>
+            <h3 class="ll-panel-headline">Eight data signals. Each one fires a lesson at exactly the right moment.</h3>
+            <p class="ll-panel-body">There is no weekly homework. No parent manually scheduling a module. Instead, eight behavioural triggers watch your child's real data — and when a pattern matches, the lesson that fits that pattern appears. The timing is the pedagogy.</p>
+          </div>
+          <div class="fl-trigger-list">
+            <div class="fl-trigger-card">
+              <div class="fl-trigger-dot fl-dot-teal"></div>
+              <div>
+                <div class="fl-trigger-name">The Burner</div>
+                <div class="fl-trigger-desc">Child spends their full balance within 48 hours of receiving it. Fires: <strong>Needs vs. Wants</strong> — a Socratic question using the exact amount spent.</div>
+              </div>
+            </div>
+            <div class="fl-trigger-card">
+              <div class="fl-trigger-dot fl-dot-teal"></div>
+              <div>
+                <div class="fl-trigger-name">The Stagnant Earner</div>
+                <div class="fl-trigger-desc">No chores completed in 14+ days. Fires: <strong>The Value of Work</strong> — connecting effort to outcome using the child's own earnings history.</div>
+              </div>
+            </div>
+            <div class="fl-trigger-card">
+              <div class="fl-trigger-dot fl-dot-teal"></div>
+              <div>
+                <div class="fl-trigger-name">The Consistent Saver</div>
+                <div class="fl-trigger-desc">Balance grows for four consecutive weeks without a spend. Fires: <strong>The Snowball</strong> — compound growth explained using their actual trajectory.</div>
+              </div>
+            </div>
+            <div class="fl-trigger-card">
+              <div class="fl-trigger-dot fl-dot-teal"></div>
+              <div>
+                <div class="fl-trigger-name">The Goal Creator</div>
+                <div class="fl-trigger-desc">Child creates their first savings goal. Fires: <strong>Delayed Gratification</strong> — the psychology of why waiting feels hard, and why it pays.</div>
+              </div>
+            </div>
+            <div class="fl-trigger-card">
+              <div class="fl-trigger-dot fl-dot-gold"></div>
+              <div>
+                <div class="fl-trigger-name">Inflation Nudge</div>
+                <div class="fl-trigger-desc">Balance has sat idle for 30+ days. Fires: <strong>Inflation &amp; Purchasing Power</strong> — money that doesn't grow actually shrinks over time.</div>
+              </div>
+            </div>
+            <div class="fl-trigger-card">
+              <div class="fl-trigger-dot fl-dot-gold"></div>
+              <div>
+                <div class="fl-trigger-name">The Digital Spender</div>
+                <div class="fl-trigger-desc">Goal created for a game or digital item. Fires: <strong>Digital vs. Physical Currency</strong> — what V-Bucks actually are, and why they disappear.</div>
+              </div>
+            </div>
+            <div class="fl-trigger-card">
+              <div class="fl-trigger-dot fl-dot-gold"></div>
+              <div>
+                <div class="fl-trigger-name">Pillar 5 Surplus</div>
+                <div class="fl-trigger-desc">Balance exceeds £100 or all goals are funded. Fires: <strong>Investing &amp; Future</strong> — what to do when you have more than you need right now.</div>
+              </div>
+            </div>
+            <div class="fl-trigger-card">
+              <div class="fl-trigger-dot fl-dot-gold"></div>
+              <div>
+                <div class="fl-trigger-name">EXIF Batching</div>
+                <div class="fl-trigger-desc">Three or more chore proofs submitted within a single hour. Fires: <strong>Power of Small Steps</strong> — why cramming rarely beats consistency.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Panel 2: Age Tiers -->
+        <div class="ll-panel" id="fl-panel-2" role="tabpanel" aria-labelledby="fl-tab-2">
+          <div class="ll-panel-copy">
+            <div class="ll-panel-eyebrow">One curriculum — four levels of depth</div>
+            <h3 class="ll-panel-headline">The same concept. Four different conversations — matched to where your child actually is.</h3>
+            <p class="ll-panel-body">A 10-year-old and a 15-year-old can both benefit from a lesson on compound interest — but the conversation needs to be completely different. Morechard delivers each module at the right depth for the child's age tier, using language and examples that fit. The tier advances automatically as the child grows.</p>
+          </div>
+          <div class="fl-tier-grid">
+            <div class="fl-tier-card">
+              <div class="fl-tier-header">
+                <div class="fl-tier-badge fl-tier-badge--sapling">Seed</div>
+                <div class="fl-tier-age">Ages 6–9</div>
+              </div>
+              <div class="fl-tier-name">First Foundations</div>
+              <p class="fl-tier-body">Money is earned — not given. Effort connects directly to reward. Every completed chore is a tangible lesson in value. Modules focus on the physical reality of money: what a pound is, where it comes from, and what it can do.</p>
+              <ul class="fl-tier-bullets">
+                <li>Earning &amp; Value (simplified)</li>
+                <li>Effort &amp; Reward (core loop)</li>
+                <li>Saving for one goal at a time</li>
+              </ul>
+            </div>
+            <div class="fl-tier-card">
+              <div class="fl-tier-header">
+                <div class="fl-tier-badge fl-tier-badge--sapling">Sapling</div>
+                <div class="fl-tier-age">Ages 10–12</div>
+              </div>
+              <div class="fl-tier-name">Building Instincts</div>
+              <p class="fl-tier-body">The full curriculum becomes available. Lessons introduce trade-offs — needs vs. wants, impulse vs. plan, spending now vs. saving later. The Mentor asks questions rather than giving answers, building a habit of thinking before spending.</p>
+              <ul class="fl-tier-bullets">
+                <li>All 20 modules accessible</li>
+                <li>Socratic questioning style</li>
+                <li>Behaviour-triggered timing</li>
+              </ul>
+            </div>
+            <div class="fl-tier-card">
+              <div class="fl-tier-header">
+                <div class="fl-tier-badge fl-tier-badge--oak">Oak</div>
+                <div class="fl-tier-age">Ages 13–15</div>
+              </div>
+              <div class="fl-tier-name">System Thinking</div>
+              <p class="fl-tier-body">Concepts deepen into systems: how debt compounds, why credit scores matter, what an index fund actually is and why most investors lose to them. Modules reference real-world examples — inflation figures, interest rates, the cost of a student loan.</p>
+              <ul class="fl-tier-bullets">
+                <li>Compound interest with real figures</li>
+                <li>Credit &amp; debt mechanics</li>
+                <li>Introduction to investing</li>
+              </ul>
+            </div>
+            <div class="fl-tier-card">
+              <div class="fl-tier-header">
+                <div class="fl-tier-badge fl-tier-badge--canopy">Canopy</div>
+                <div class="fl-tier-age">Ages 16+</div>
+              </div>
+              <div class="fl-tier-name">Adult-Ready Finance</div>
+              <p class="fl-tier-body">The final tier bridges pocket money to adult financial life. Tax basics, pension contributions, ethical spending, charitable giving, and long-term financial wellbeing. These are the conversations most young adults have too late — Morechard starts them early.</p>
+              <ul class="fl-tier-bullets">
+                <li>Tax &amp; National Insurance basics</li>
+                <li>Pension &amp; long-term planning</li>
+                <li>Ethical &amp; societal spending</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <!-- Panel 3: What School Misses -->
+        <div class="ll-panel" id="fl-panel-3" role="tabpanel" aria-labelledby="fl-tab-3">
+          <div class="ll-panel-copy ll-panel-copy--wide">
+            <div class="ll-panel-eyebrow">The gap schools leave behind</div>
+            <h3 class="ll-panel-headline">The 20 concepts that determine long-term financial outcomes. Zero are on the GCSE syllabus.</h3>
+            <p class="ll-panel-body">The UK Money and Pensions Service reports that 39% of UK adults have less than £1,000 in savings. Financial anxiety is now the leading cause of mental health referrals for adults under 35. None of this is inevitable — it is the predictable outcome of a generation that was never taught.</p>
+          </div>
+          <div class="fl-gap-grid">
+            <div class="fl-gap-block fl-gap-block--miss">
+              <div class="fl-gap-label">What school covers</div>
+              <ul class="fl-gap-list fl-gap-list--grey">
+                <li>Simple interest (theoretical)</li>
+                <li>Basic budgeting (briefly)</li>
+                <li>VAT in maths problems</li>
+                <li>Currency conversion</li>
+              </ul>
+            </div>
+            <div class="fl-gap-divider">
+              <svg width="24" height="24" fill="none" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7" stroke="var(--teal)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </div>
+            <div class="fl-gap-block fl-gap-block--morechard">
+              <div class="fl-gap-label">What Morechard teaches</div>
+              <ul class="fl-gap-list fl-gap-list--teal">
+                <li>Compound interest on real savings</li>
+                <li>Credit scores &amp; how to build one</li>
+                <li>Good debt vs. bad debt</li>
+                <li>What an index fund actually is</li>
+                <li>Inflation &amp; purchasing power</li>
+                <li>The psychology of impulse spending</li>
+                <li>Tax basics &amp; National Insurance</li>
+                <li>Pension contributions explained simply</li>
+                <li>Needs vs. wants with real trade-offs</li>
+                <li>Emergency funds &amp; financial resilience</li>
+                <li>Ethical &amp; charitable spending</li>
+                <li>Delayed gratification — the science</li>
+              </ul>
+            </div>
+          </div>
+          <div class="ll-stat-row" style="margin-top:40px;">
+            <div class="ll-stat">
+              <div class="ll-stat-number">39%</div>
+              <div class="ll-stat-label">UK adults with under £1,000 in savings</div>
+            </div>
+            <div class="ll-stat-divider"></div>
+            <div class="ll-stat">
+              <div class="ll-stat-number">#1</div>
+              <div class="ll-stat-label">Cause of mental health referrals under 35 is financial anxiety</div>
+            </div>
+            <div class="ll-stat-divider"></div>
+            <div class="ll-stat">
+              <div class="ll-stat-number">0</div>
+              <div class="ll-stat-label">GCSE modules covering compound interest, credit, or investing</div>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /ll-panel-wrap -->
+    </div>
+  </section>
+
+  <!-- ── Research carousel ── -->
+  <section class="fp-research">
+    <div class="fp-research-inner reveal">
+      <div class="fp-research-track" id="fp-research-track">
+
+        <blockquote class="research-callout fp-research-slide">
+          <span class="research-callout-label">The evidence base</span>
+          <p class="research-callout-quote">&ldquo;Financial socialisation in childhood and adolescence has a significant and lasting effect on adult financial behaviour. Children who receive financial education before age 12 demonstrate measurably better saving habits, lower debt levels, and greater financial resilience in adulthood.&rdquo;</p>
+          <footer class="research-callout-source">Lusardi, A. &amp; Mitchell, O.S. (2014). <em>The Economic Importance of Financial Literacy: Theory and Evidence.</em> Journal of Economic Literature, 52(1), 5–44. American Economic Association.</footer>
+        </blockquote>
+
+        <blockquote class="research-callout fp-research-slide">
+          <span class="research-callout-label">When habits form</span>
+          <p class="research-callout-quote">&ldquo;Money habits are set by age seven. By that point, children have already developed the core attitudes toward saving, spending, and delayed gratification that they will carry into adulthood. Early, experience-based financial education is not supplementary — it is foundational.&rdquo;</p>
+          <footer class="research-callout-source">Whitebread, D. &amp; Bingham, S. (2013). <em>Habit Formation and Learning in Young Children.</em> Money Advice Service / University of Cambridge. Commissioned research for the UK Money and Pensions Service.</footer>
+        </blockquote>
+
+        <blockquote class="research-callout fp-research-slide">
+          <span class="research-callout-label">Context is everything</span>
+          <p class="research-callout-quote">&ldquo;Financial education delivered in isolation from real financial decisions has little lasting impact. Interventions are most effective when they are tied to a financial decision the individual is actively facing — the closer in time and context, the stronger the retention and behaviour change.&rdquo;</p>
+          <footer class="research-callout-source">Fernandes, D., Lynch Jr, J.G. &amp; Netemeyer, R.G. (2014). <em>Financial Literacy, Financial Education, and Downstream Financial Behaviors.</em> Management Science, 60(8), 1861–1883. INFORMS.</footer>
+        </blockquote>
+
       </div>
-      <div class="fp-pair-text reveal d1">
-        <span class="fp-pair-label">20 modules · 6 pillars</span>
-        <h3>Real financial literacy, from pocket money to compound interest.</h3>
-        <p>The curriculum spans six pillars — earning, spending, saving, debt, investing, and wellbeing — across four age tiers. Modules unlock based on what the child does in the app, not a timetable.</p>
-        <ul class="fp-pair-bullets">
-          <li>Aligned with UK MaPS financial education standards</li>
-          <li>Age-adaptive: Sapling / Oak / Canopy</li>
-          <li>Unlocks from real behaviour, not a schedule</li>
-        </ul>
+
+      <!-- Progress bar + dots -->
+      <div class="fp-research-footer">
+        <div class="fp-research-dots" id="fp-research-dots"></div>
+        <div class="fp-research-progress-wrap">
+          <div class="fp-research-progress-bar" id="fp-research-progress-bar"></div>
+        </div>
       </div>
     </div>
+  </section>
+
+  <div class="fp-pairs" style="padding-top:0;">
 
     <!-- Pair 3: Parent Insights (CSS mockup) -->
     <div class="fp-pair">
@@ -163,42 +497,364 @@
 
   </div><!-- /fp-pairs -->
 
-  <!-- ── Showcase (phone frame, live footage slot) ── -->
-  <section class="fp-showcase reveal">
+  <!-- ── Showcase: module walkthrough ── -->
+  <section class="fp-showcase fp-showcase--lab reveal">
     <div class="fp-showcase-inner">
       <h2>See a module in action.</h2>
-      <p class="fp-showcase-sub">Banking 101 — four acts, real questions, real data.</p>
-      <div class="fp-phone-shell" style="max-width:320px;">
-        <div class="fp-phone-screen">
-          <div class="fp-video-placeholder" style="aspect-ratio:9/19.5;">
-            <svg width="40" height="40" fill="none" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.5"/><path d="M10 8.5l5 3.5-5 3.5V8.5z" fill="currentColor"/></svg>
-            <p>Screen recording: Learning Lab → Banking 101 → Act 1 → Act 2 → quiz → celebration<br><em>File: marketing/video/learning-lab-demo.mp4</em></p>
+      <p class="fp-showcase-sub">Banking 101, Act 1 of 4 — triggered automatically when Ellie's balance grows four weeks straight. Each act teaches first, then tests. Bite-sized, but genuinely educational.</p>
+
+      <!-- Persona toggle -->
+      <div class="fp-persona-toggle-row">
+        <div class="fp-persona-explainer">
+          <span class="fp-persona-explainer-benefit">Every child learns differently.</span>
+          <span class="fp-persona-explainer-feature">Parents set this once in Settings.</span>
+        </div>
+        <div class="fp-persona-toggle-wrap">
+          <div class="fp-persona-toggle" id="fp-persona-toggle" aria-label="Switch teaching persona">
+            <button class="fp-persona-btn fp-persona-btn--orchard active" id="fp-persona-orchard" aria-pressed="true">
+              <span class="fp-persona-icon" aria-hidden="true">
+                <svg width="16" height="16" fill="none" viewBox="0 0 24 24">
+                  <path d="M12 2C8 2 5 5.5 5 9c0 2.5 1.2 4.7 3 6v2h8v-2c1.8-1.3 3-3.5 3-6 0-3.5-3-7-7-7z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+                  <path d="M9 21h6M12 15v6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                </svg>
+              </span>
+              Orchard
+            </button>
+            <div class="fp-persona-divider" aria-hidden="true"></div>
+            <button class="fp-persona-btn fp-persona-btn--clean" id="fp-persona-clean" aria-pressed="false">
+              <span class="fp-persona-icon" aria-hidden="true">
+                <svg width="16" height="16" fill="none" viewBox="0 0 24 24">
+                  <rect x="3" y="3" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.5"/>
+                  <rect x="14" y="3" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.5"/>
+                  <rect x="3" y="14" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.5"/>
+                  <path d="M14 17.5h7M17.5 14v7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                </svg>
+              </span>
+              Clean
+            </button>
+          </div><!-- /fp-persona-toggle -->
+          <div class="fp-persona-subtitle" id="fp-persona-subtitle">Younger children · stories &amp; metaphors</div>
+        </div><!-- /fp-persona-toggle-wrap -->
+      </div><!-- /fp-persona-toggle-row -->
+
+      <div class="fp-lab-stage">
+
+        <!-- Phone -->
+        <div class="fp-device-wrap fp-lab-phone" id="fp-lab-phone">
+          <div class="fp-device-screen fp-lab-screen">
+
+            <!-- Persistent nav -->
+            <div class="fp-lab-nav">
+              <div class="fp-lab-nav-back" id="fp-lab-nav-back">
+                <svg width="16" height="16" fill="none" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+              <div class="fp-lab-nav-title" id="fp-lab-nav-title">Learning Lab</div>
+              <div class="fp-lab-nav-right"></div>
+            </div>
+
+            <!-- Persistent act progress bar (hidden on v0) -->
+            <div class="fp-lab-act-progress" id="fp-lab-act-progress">
+              <div class="fp-lab-act-progress-fill" id="fp-lab-act-fill"></div>
+            </div>
+
+            <!-- VIEW 0: Module unlock card -->
+            <div class="fp-lab-view" id="fp-lab-v0">
+              <div class="fp-lab-module-card">
+                <div class="fp-lab-module-eyebrow">LESSON UNLOCKED · PILLAR 3</div>
+                <div class="fp-lab-module-icon-row">
+                  <div class="fp-lab-module-icon">
+                    <svg width="22" height="22" fill="none" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" stroke="var(--teal)" stroke-width="1.5"/><path d="M9 22V12h6v10" stroke="var(--teal)" stroke-width="1.5"/></svg>
+                  </div>
+                  <div>
+                    <div class="fp-lab-module-name">Banking 101</div>
+                    <div class="fp-lab-module-pillar">Saving &amp; Growth</div>
+                  </div>
+                  <div class="fp-lab-tier-badge">Sapling</div>
+                </div>
+                <div class="fp-lab-trigger-note">
+                  <svg width="13" height="13" fill="none" viewBox="0 0 16 16"><circle cx="8" cy="8" r="7" stroke="var(--teal)" stroke-width="1.3"/><path d="M8 5v3.5L10 10" stroke="var(--teal)" stroke-width="1.3" stroke-linecap="round"/></svg>
+                  Triggered: balance passed £30 for the first time
+                </div>
+                <div class="fp-lab-module-desc fp-persona-text"
+                  data-orchard="Your savings are growing 🌱 Time to find out where smart savers keep their money — and why a jar under the bed isn't it."
+                  data-clean="Balance milestone reached. This act covers how banks work, the debit/credit distinction, and deposit protection.">"Your savings are growing. Time to find out where smart savers keep their money — and why a jar under the bed isn't it."</div>
+                <div class="fp-lab-act-overview">
+                  <div class="fp-lab-act-overview-label">ACT 1 COVERS</div>
+                  <div class="fp-lab-act-overview-item fp-persona-text"
+                    data-orchard="What banks do with your money while you sleep"
+                    data-clean="What banks actually do with your money">What banks actually do with your money</div>
+                  <div class="fp-lab-act-overview-item fp-persona-text"
+                    data-orchard="Debit cards vs. credit cards — and why it matters"
+                    data-clean="Debit vs. credit — the key distinction">Debit cards vs. credit cards</div>
+                  <div class="fp-lab-act-overview-item fp-persona-text"
+                    data-orchard="How the government makes sure your money is safe"
+                    data-clean="FSCS deposit protection — scope and limits">How the government keeps your money safe</div>
+                </div>
+              </div>
+              <button class="fp-lab-cta-btn fp-lab-cta-btn--pulse" id="fp-lab-start">Start Act 1 →</button>
+            </div>
+
+            <!-- VIEW 1: Concept 1 — How banks actually work -->
+            <div class="fp-lab-view fp-lab-view--hidden" id="fp-lab-v1">
+              <div class="fp-lab-concept-eyebrow">CONCEPT 1 OF 3</div>
+              <div class="fp-lab-concept-heading fp-persona-text"
+                data-orchard="Your money goes to work while you sleep."
+                data-clean="Banks aren't storage boxes.">Banks aren't storage boxes.</div>
+              <div class="fp-lab-concept-body fp-persona-text"
+                data-orchard="Imagine a box in the middle of your street. Everyone puts their spare money in it. The person looking after the box lends some of that money to people nearby who need it right now — like a neighbour who needs cash today and will pay it back next month.<br><br>Those people pay back a little <em>extra</em> for borrowing. The box keeper shares some of that extra with you, just for letting them use your money.<br><br>That's called <strong>interest</strong>. Your money earns more money — without you doing a single extra chore."
+                data-clean="When you deposit money, the bank doesn't lock it in a drawer with your name on it. It <em>pools</em> everyone's deposits and lends most of that pool out — to mortgages, car loans, and businesses.<br><br>The bank charges borrowers <em>more</em> interest than it pays depositors. That gap is how it makes money.<br><br>In return for using your money, it pays you interest. Your savings are working while you sleep.">When you deposit money, the bank doesn't lock it in a drawer with your name on it. It <em>pools</em> everyone's deposits and lends most of that pool out — to mortgages, car loans, and businesses.<br><br>The bank charges borrowers <em>more</em> interest than it pays depositors. That gap is how it makes money.<br><br>In return for using your money, it pays you interest. Your savings are working while you sleep.</div>
+              <div class="fp-lab-concept-stat">
+                <div class="fp-lab-concept-stat-num">4.5%</div>
+                <div class="fp-lab-concept-stat-label fp-persona-text"
+                  data-orchard="That's how much extra your money could earn in a bank account each year (UK, 2025)"
+                  data-clean="Typical easy-access savings rate (UK, 2025)">Typical easy-access savings rate (UK, 2025)</div>
+              </div>
+              <button class="fp-lab-cta-btn fp-lab-cta-btn--next" data-next="2">Test yourself →</button>
+            </div>
+
+            <!-- VIEW 2: Question 1 -->
+            <div class="fp-lab-view fp-lab-view--hidden" id="fp-lab-v2">
+              <div class="fp-lab-act-eyebrow">QUESTION 1 OF 3 · ACT 1</div>
+              <div class="fp-lab-act-question">You tap your debit card to pay for something and it doesn't work. What's the most likely reason?</div>
+              <div class="fp-lab-choices">
+                <button class="fp-lab-choice" data-correct="false">You've gone over your spending limit</button>
+                <button class="fp-lab-choice" data-correct="true">You don't have enough money in your account — a debit card can only spend money that's already there</button>
+                <button class="fp-lab-choice" data-correct="false">The bank's app is down</button>
+              </div>
+            </div>
+
+            <!-- VIEW 3: Q1 explain -->
+            <div class="fp-lab-view fp-lab-view--hidden" id="fp-lab-v3">
+              <div class="fp-lab-result" id="fp-lab-r1"><!-- populated by JS --></div>
+              <div class="fp-lab-explain">A debit card can only spend money you <em>already have</em> in your account. The moment you pay, the money leaves straight away. If there's not enough — it's declined. Simple as that. Credit cards work differently: they let you pay now and owe the money later.</div>
+              <div class="fp-lab-ellie-link">Ellie has £12.50 in her account and tries to spend £15. Her card is declined. She doesn't owe anything — there's just not enough money there yet.</div>
+              <button class="fp-lab-cta-btn fp-lab-cta-btn--next" data-next="4">Next concept →</button>
+            </div>
+
+            <!-- VIEW 4: Concept 2 — Deposit insurance -->
+            <div class="fp-lab-view fp-lab-view--hidden" id="fp-lab-v4">
+              <div class="fp-lab-concept-eyebrow">CONCEPT 2 OF 3</div>
+              <div class="fp-lab-concept-heading fp-persona-text"
+                data-orchard="The orchard always keeps your money safe."
+                data-clean="Your money is protected — up to a limit.">Your money is protected — up to a limit.</div>
+              <div class="fp-lab-concept-body fp-persona-text"
+                data-orchard="What if the box keeper ran away with everyone's money? The government thought of that. They made a rule called the <strong>FSCS</strong> — think of it as a backup guarantee.<br><br>It says: if a bank ever goes wrong or closes down, the government will give you back up to <strong>£85,000</strong>. That's way more than most people ever have in one bank account.<br><br>So your money in a bank is safe. Much safer than keeping cash at home!"
+                data-clean="Banks lend out most of your deposit. What if a bank fails? In the UK, the <strong>Financial Services Compensation Scheme (FSCS)</strong> protects up to <strong>£85,000 per person per bank</strong>.<br><br>This is called deposit insurance. If the bank collapses, the government guarantees you get that money back. This is what makes the trade-off of depositing your money acceptable.">Banks lend out most of your deposit. What if a bank fails? In the UK, the <strong>Financial Services Compensation Scheme (FSCS)</strong> protects up to <strong>£85,000 per person per bank</strong>.<br><br>This is called deposit insurance. If the bank collapses, the government guarantees you get that money back. This is what makes the trade-off of depositing your money acceptable.</div>
+              <div class="fp-lab-concept-callout">
+                <span class="fp-lab-concept-callout-icon" aria-hidden="true">
+                  <svg width="15" height="15" fill="none" viewBox="0 0 24 24"><path d="M12 2l7 3v6c0 4.4-3 8.5-7 10C8 19.5 5 15.4 5 11V5l7-3z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+                </span>
+                <span class="fp-persona-text"
+                  data-orchard="Money under your bed? No protection, earns nothing, and you can't use it to pay online."
+                  data-clean="A jar under the floorboards has no protection, earns no interest, and can't pay online.">A jar under the floorboards has no protection, earns no interest, and can't pay online.</span>
+              </div>
+              <button class="fp-lab-cta-btn fp-lab-cta-btn--next" data-next="5">Test yourself →</button>
+            </div>
+
+            <!-- VIEW 5: Question 2 -->
+            <div class="fp-lab-view fp-lab-view--hidden" id="fp-lab-v5">
+              <div class="fp-lab-act-eyebrow">QUESTION 2 OF 3 · ACT 1</div>
+              <div class="fp-lab-act-question">What does the FSCS promise to do if your bank closes down?</div>
+              <div class="fp-lab-choices">
+                <button class="fp-lab-choice" data-correct="false">Give back all your money, no matter how much it is</button>
+                <button class="fp-lab-choice" data-correct="true">Give back up to £85,000 per person per bank — your money is guaranteed up to that amount</button>
+                <button class="fp-lab-choice" data-correct="false">Only protect money kept in a special savings account</button>
+              </div>
+            </div>
+
+            <!-- VIEW 6: Q2 explain -->
+            <div class="fp-lab-view fp-lab-view--hidden" id="fp-lab-v6">
+              <div class="fp-lab-result" id="fp-lab-r2"><!-- populated by JS --></div>
+              <div class="fp-lab-explain">The FSCS covers up to <strong>£85,000 per person, per bank</strong>. That means if your bank ever went bust, you'd get your money back — as long as it's under £85,000. Above that amount, there's no guarantee. Most bank accounts also count, not just special ones.</div>
+              <div class="fp-lab-ellie-link">Ellie has £47 in her bank account. That's way below £85,000, so every penny is covered. For most people their whole lives, £85,000 is more than enough protection.</div>
+              <button class="fp-lab-cta-btn fp-lab-cta-btn--next" data-next="7">Next concept →</button>
+            </div>
+
+            <!-- VIEW 7: Concept 3 — Credit -->
+            <div class="fp-lab-view fp-lab-view--hidden" id="fp-lab-v7">
+              <div class="fp-lab-concept-eyebrow">CONCEPT 3 OF 3</div>
+              <div class="fp-lab-concept-heading fp-persona-text"
+                data-orchard="Spending money you haven't earned yet."
+                data-clean="Credit: borrowed money with a deadline.">Credit: borrowed money with a deadline.</div>
+              <div class="fp-lab-concept-body fp-persona-text"
+                data-orchard="Imagine you want a new game today, but your pocket money doesn't come until Friday. Someone says: <em>"I'll buy it for you now — but you pay me back next week, plus a little bit extra."</em><br><br>That little bit extra is called <strong>interest</strong>. A credit card does exactly this — but if you forget to pay back on time, the extra keeps growing every month.<br><br>A <strong>debit card</strong> is different. It only lets you spend money you already have in your bank account. No surprises, no debt."
+                data-clean="A <strong>credit card</strong> borrows money you don't yet have. The card company pays the merchant; you repay the card company later.<br><br>If you repay <em>in full</em> at the end of the month — before interest applies — it's essentially free. If you carry a balance, interest charges apply. Often at <strong>20–40% per year</strong>.<br><br>Most financial harm from credit cards comes from treating them like debit cards — spending without tracking, and then facing interest on a balance that quietly grows.">A <strong>credit card</strong> borrows money you don't yet have. The card company pays the merchant; you repay the card company later.<br><br>If you repay <em>in full</em> at the end of the month — before interest applies — it's essentially free. If you carry a balance, interest charges apply. Often at <strong>20–40% per year</strong>.<br><br>Most financial harm from credit cards comes from treating them like debit cards — spending without tracking, and then facing interest on a balance that quietly grows.</div>
+              <button class="fp-lab-cta-btn fp-lab-cta-btn--next" data-next="8">Test yourself →</button>
+            </div>
+
+            <!-- VIEW 8: Question 3 -->
+            <div class="fp-lab-view fp-lab-view--hidden" id="fp-lab-v8">
+              <div class="fp-lab-act-eyebrow">QUESTION 3 OF 3 · ACT 1</div>
+              <div class="fp-lab-act-question">You spend £200 on a credit card and forget to pay it back. The card charges 30% interest per year. How much do you owe after 12 months?</div>
+              <div class="fp-lab-choices">
+                <button class="fp-lab-choice" data-correct="false">£200 — you only owe what you spent</button>
+                <button class="fp-lab-choice" data-correct="false">£230 — £200 plus a £30 late fee</button>
+                <button class="fp-lab-choice" data-correct="true">£260 — 30% of £200 is £60 extra, so £260 in total</button>
+              </div>
+            </div>
+
+            <!-- VIEW 9: Q3 explain -->
+            <div class="fp-lab-view fp-lab-view--hidden" id="fp-lab-v9">
+              <div class="fp-lab-result" id="fp-lab-r3"><!-- populated by JS --></div>
+              <div class="fp-lab-explain">30% of £200 is £60. So after a year, you owe <strong>£260</strong> — even though you only spent £200. And it can get worse: if you only pay back a little each month, the extra charges keep growing on top of what you already owe.</div>
+              <div class="fp-lab-ellie-link">Ellie doesn't have a credit card yet. But learning this now means she'll know exactly what she's signing up for when she gets one at 18.</div>
+              <button class="fp-lab-cta-btn fp-lab-cta-btn--next" data-next="10">See Act 1 summary →</button>
+            </div>
+
+            <!-- VIEW 10: Act 1 complete -->
+            <div class="fp-lab-view fp-lab-view--hidden" id="fp-lab-v10">
+              <div class="fp-lab-celebrate">
+                <div class="fp-lab-celebrate-icon" aria-hidden="true">🌱</div>
+                <div class="fp-lab-celebrate-title">Act 1 complete!</div>
+                <div class="fp-lab-celebrate-sub">You understand what banks actually do, how deposit protection works, and why credit cards can quietly get expensive.</div>
+                <div class="fp-lab-xp-row">
+                  <span class="fp-lab-xp-badge" id="fp-lab-xp-badge">+30 XP</span>
+                  <span class="fp-lab-xp-label" id="fp-lab-xp-label">3 of 3 correct</span>
+                </div>
+              </div>
+              <div class="fp-lab-act-unlocks">
+                <div class="fp-lab-act-unlocks-label">NEXT UP · ACT 2</div>
+                <div class="fp-lab-act-unlocks-title">Account types &amp; interest rates</div>
+                <div class="fp-lab-act-unlocks-desc">Current vs. savings vs. fixed-term vs. ISA — which account for which purpose, and why the difference between 0.1% and 4.5% matters more than you think.</div>
+              </div>
+              <button class="fp-lab-cta-btn fp-lab-cta-btn--replay" id="fp-lab-replay">← Try Act 1 again</button>
+            </div>
+
+          </div>
+          <img class="fp-device-frame" src="/Images/phone-mockup.svg" alt="" aria-hidden="true">
+        </div><!-- /fp-device-wrap -->
+
+        <!-- Step track beside phone -->
+        <div class="fp-lab-steps" aria-hidden="true">
+          <div class="fp-lab-step">
+            <div class="fp-lab-step-dot"></div>
+            <span>Module unlocks</span>
+          </div>
+          <div class="fp-lab-step">
+            <div class="fp-lab-step-dot"></div>
+            <span>Banks &amp; deposits</span>
+          </div>
+          <div class="fp-lab-step">
+            <div class="fp-lab-step-dot"></div>
+            <span>Deposit protection</span>
+          </div>
+          <div class="fp-lab-step">
+            <div class="fp-lab-step-dot"></div>
+            <span>Debit vs. credit</span>
+          </div>
+          <div class="fp-lab-step">
+            <div class="fp-lab-step-dot"></div>
+            <span>Act 1 complete</span>
           </div>
         </div>
-      </div>
+
+      </div><!-- /fp-lab-stage -->
     </div>
   </section>
 
-  <!-- ── Checklist ── -->
+  <!-- ── Feature checklist ── -->
   <section class="fp-checklist">
     <div class="fp-checklist-inner">
       <h2 class="reveal">Everything in Financial Literacy.</h2>
-      <p class="fp-checklist-sub reveal d1">Every feature in this pillar — active during your 14-day trial.</p>
-      <div class="fp-checklist-grid"></div>
+      <p class="fp-checklist-sub reveal d1">Included in <strong>Core AI</strong> and <strong>Shield AI</strong> plans. Not available on Core.</p>
+
+      <div class="fp-checklist-grid reveal d2">
+
+        <div class="fp-check-item">
+          <svg class="fp-check-icon" width="18" height="18" fill="none" viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="8" stroke="currentColor" stroke-width="1.3"/><path d="M5.5 9l2.5 2.5 4.5-5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <div>
+            <div class="fp-check-name">8 data-signal triggers</div>
+            <div class="fp-check-desc">The Burner, Stagnant Earner, Inflation Nudge, and 5 more — each fires a lesson at exactly the right moment</div>
+          </div>
+        </div>
+
+        <div class="fp-check-item">
+          <svg class="fp-check-icon" width="18" height="18" fill="none" viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="8" stroke="currentColor" stroke-width="1.3"/><path d="M5.5 9l2.5 2.5 4.5-5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <div>
+            <div class="fp-check-name">20-module curriculum across 6 pillars</div>
+            <div class="fp-check-desc">A complete financial education from first chore to long-term investing</div>
+          </div>
+        </div>
+
+        <div class="fp-check-item">
+          <svg class="fp-check-icon" width="18" height="18" fill="none" viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="8" stroke="currentColor" stroke-width="1.3"/><path d="M5.5 9l2.5 2.5 4.5-5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <div>
+            <div class="fp-check-name">Module unlocks from real behaviour</div>
+            <div class="fp-check-desc">Not a fixed timetable — triggered by what your child actually does</div>
+          </div>
+        </div>
+
+        <div class="fp-check-item">
+          <svg class="fp-check-icon" width="18" height="18" fill="none" viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="8" stroke="currentColor" stroke-width="1.3"/><path d="M5.5 9l2.5 2.5 4.5-5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <div>
+            <div class="fp-check-name">Four age tiers</div>
+            <div class="fp-check-desc">Seedling, Sapling, Oak, Canopy — same concept, right depth for their age</div>
+          </div>
+        </div>
+
+        <div class="fp-check-item">
+          <svg class="fp-check-icon" width="18" height="18" fill="none" viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="8" stroke="currentColor" stroke-width="1.3"/><path d="M5.5 9l2.5 2.5 4.5-5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <div>
+            <div class="fp-check-name">AI Mentor coaching</div>
+            <div class="fp-check-desc">Conversational nudges that ask questions rather than lecture</div>
+          </div>
+        </div>
+
+        <div class="fp-check-item">
+          <svg class="fp-check-icon" width="18" height="18" fill="none" viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="8" stroke="currentColor" stroke-width="1.3"/><path d="M5.5 9l2.5 2.5 4.5-5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <div>
+            <div class="fp-check-name">Pillar 5 surplus trigger</div>
+            <div class="fp-check-desc">Fires when balance exceeds £100 or all goals are funded</div>
+          </div>
+        </div>
+
+        <div class="fp-check-item">
+          <svg class="fp-check-icon" width="18" height="18" fill="none" viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="8" stroke="currentColor" stroke-width="1.3"/><path d="M5.5 9l2.5 2.5 4.5-5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <div>
+            <div class="fp-check-name">Weekly Scouting Report</div>
+            <div class="fp-check-desc">Consistency, responsibility, and planning horizon vs the prior week</div>
+          </div>
+        </div>
+
+        <div class="fp-check-item">
+          <svg class="fp-check-icon" width="18" height="18" fill="none" viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="8" stroke="currentColor" stroke-width="1.3"/><path d="M5.5 9l2.5 2.5 4.5-5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <div>
+            <div class="fp-check-name">UK MaPS curriculum alignment</div>
+            <div class="fp-check-desc">Every module mapped to the Money and Pensions Service framework</div>
+          </div>
+        </div>
+
+        <div class="fp-check-item">
+          <svg class="fp-check-icon" width="18" height="18" fill="none" viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="8" stroke="currentColor" stroke-width="1.3"/><path d="M5.5 9l2.5 2.5 4.5-5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <div>
+            <div class="fp-check-name">"Copy for Child" summary</div>
+            <div class="fp-check-desc">One-tap copy in Orchard or Professional tone, drafted by the AI Mentor</div>
+          </div>
+        </div>
+
+        <div class="fp-check-item">
+          <svg class="fp-check-icon" width="18" height="18" fill="none" viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="8" stroke="currentColor" stroke-width="1.3"/><path d="M5.5 9l2.5 2.5 4.5-5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <div>
+            <div class="fp-check-name">KPI gauges with trend indicators</div>
+            <div class="fp-check-desc">Visual deltas so you can see at a glance whether your child is improving</div>
+          </div>
+        </div>
+
+      </div><!-- /fp-checklist-grid -->
     </div>
   </section>
 
   <!-- ── CTA strip ── -->
   <section class="fp-cta">
-    <h2 class="reveal">Start your 14-day free trial.</h2>
-    <p class="reveal d1">Full access to every feature. No card required.</p>
+    <h2 class="reveal">Interested? Register below.</h2>
+    <p class="reveal d1">Be first to know when Morechard launches.</p>
     <a href="/#signup" class="btn-primary reveal d2">
-      Get started free
+      Register interest
       <svg width="13" height="13" viewBox="0 0 14 14" fill="none" aria-hidden="true">
         <path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
     </a>
-    <p class="fp-cta-note reveal d3">14-day free trial &middot; No card required</p>
+    <p class="fp-cta-note reveal d3">No commitment &middot; No card required</p>
   </section>
 
 </main>
@@ -217,26 +873,460 @@
   }, { threshold: 0.12 });
   document.querySelectorAll('.reveal, .reveal-left, .reveal-right').forEach(function (el) { io.observe(el); });
 
-  // Module grid — deal cards in on scroll
-  var modules = [
-    { name: 'Taxes & Net Pay', pillar: 'Earning', color: '#00959c', tier: 'Sapling' },
-    { name: 'Scams & Safety', pillar: 'Spending', color: '#e6b222', tier: 'Sapling' },
-    { name: 'Banking 101', pillar: 'Saving', color: '#5a7475', tier: 'Sapling' },
-    { name: 'The Snowball', pillar: 'Saving', color: '#5a7475', tier: 'Sapling' },
-    { name: 'The Interest Trap', pillar: 'Debt', color: '#c0392b', tier: 'Sapling' },
-    { name: 'Inflation', pillar: 'Investing', color: '#8e44ad', tier: 'Sapling' },
-  ];
-  var grid = document.getElementById('module-grid');
-  if (grid) {
-    grid.innerHTML = modules.map(function (m, i) {
-      return '<div class="app-module-card reveal ' + (['','d1','d2','d3','d1','d2'])[i] + '" style="--delay:' + (i * 0.06) + 's;--pill-color:' + m.color + '">'
-        + '<span class="app-module-pill">' + m.pillar + '</span>'
-        + '<div class="app-module-name">' + m.name + '</div>'
-        + '<div style="font-size:10px;color:var(--text-sub);margin-top:4px;">' + m.tier + '</div>'
+  // ── Learning Lab module showcase ──
+  (function () {
+    var views = [];
+    for (var i = 0; i <= 10; i++) {
+      views.push(document.getElementById('fp-lab-v' + i));
+    }
+    var steps    = Array.from(document.querySelectorAll('.fp-lab-step'));
+    var navBack  = document.getElementById('fp-lab-nav-back');
+    var navTitle = document.getElementById('fp-lab-nav-title');
+    var actBar   = document.getElementById('fp-lab-act-progress');
+    var actFill  = document.getElementById('fp-lab-act-fill');
+
+    if (!views[0]) return;
+
+    // [nav title, step index (0-4), act progress % or null]
+    var viewMeta = [
+      ['Learning Lab', 0, null],  // v0  module unlock
+      ['Banking 101',  1, 0],     // v1  concept 1
+      ['Banking 101',  1, 17],    // v2  Q1
+      ['Banking 101',  1, 33],    // v3  Q1 explain
+      ['Banking 101',  2, 33],    // v4  concept 2
+      ['Banking 101',  2, 50],    // v5  Q2
+      ['Banking 101',  2, 67],    // v6  Q2 explain
+      ['Banking 101',  3, 67],    // v7  concept 3
+      ['Banking 101',  3, 83],    // v8  Q3
+      ['Banking 101',  3, 100],   // v9  Q3 explain
+      ['Banking 101',  4, 100],   // v10 complete
+    ];
+
+    // Result content per explain view: [resultElId, correct header, wrong header]
+    var resultDefs = {
+      3:  ['fp-lab-r1', 'Correct — a debit card only spends money you have.',  'Not quite — a debit card doesn\'t have a spending limit, it just stops when the money runs out.'],
+      6:  ['fp-lab-r2', 'Correct — up to £85,000 per person per bank.',        'Not quite — the FSCS covers up to £85,000, not everything and not in all accounts.'],
+      9:  ['fp-lab-r3', 'Correct — 30% of £200 is £60, so you owe £260.',     'Not quite — 30% of £200 is £60 extra, making the total £260.'],
+    };
+
+    // Track per-question correctness for XP summary
+    var score = 0;
+
+    var current = 0;
+
+    function svgCheck(color) {
+      return '<svg width="20" height="20" fill="none" viewBox="0 0 24 24" style="flex-shrink:0"><circle cx="12" cy="12" r="10" stroke="' + color + '" stroke-width="1.5"/><path d="M7 12l3.5 3.5L17 8" stroke="' + color + '" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+    }
+    function svgX(color) {
+      return '<svg width="20" height="20" fill="none" viewBox="0 0 24 24" style="flex-shrink:0"><circle cx="12" cy="12" r="10" stroke="' + color + '" stroke-width="1.5"/><path d="M8 8l8 8M16 8l-8 8" stroke="' + color + '" stroke-width="2" stroke-linecap="round"/></svg>';
+    }
+
+    function renderResult(explainIdx, wasCorrect) {
+      var def = resultDefs[explainIdx];
+      if (!def) return;
+      var el = document.getElementById(def[0]);
+      if (!el) return;
+      if (wasCorrect) {
+        el.className = 'fp-lab-result fp-lab-result--correct';
+        el.innerHTML = svgCheck('var(--teal)') + def[1];
+      } else {
+        el.className = 'fp-lab-result fp-lab-result--wrong';
+        el.innerHTML = svgX('#c0392b') + def[2];
+      }
+    }
+
+    function goTo(idx) {
+      views[current].classList.add('fp-lab-view--hidden');
+      views[idx].classList.remove('fp-lab-view--hidden');
+      current = idx;
+      var meta = viewMeta[idx];
+      navTitle.textContent = meta[0];
+      navBack.classList.toggle('active', idx > 0);
+      steps.forEach(function (s, i) { s.classList.toggle('active', i === meta[1]); });
+      if (meta[2] === null) {
+        actBar.classList.remove('visible');
+      } else {
+        actBar.classList.add('visible');
+        actFill.style.width = meta[2] + '%';
+      }
+    }
+
+    // Start
+    document.getElementById('fp-lab-start').addEventListener('click', function () {
+      score = 0;
+      goTo(1);
+    });
+
+    // data-next buttons (concepts + explain views)
+    document.querySelectorAll('.fp-lab-cta-btn--next').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var target = parseInt(btn.getAttribute('data-next'), 10);
+        if (!isNaN(target)) goTo(target);
+      });
+    });
+
+    // Question views → explain views: Q1(v2)→v3, Q2(v5)→v6, Q3(v8)→v9
+    var questionExplainMap = { 2: 3, 5: 6, 8: 9 };
+
+    document.querySelectorAll('.fp-lab-choice').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var wasCorrect = btn.dataset.correct === 'true';
+        if (wasCorrect) score++;
+        var parentView = btn.closest('.fp-lab-view');
+        parentView.querySelectorAll('.fp-lab-choice').forEach(function (b) {
+          b.disabled = true;
+          if (b.dataset.correct === 'true') b.classList.add('correct');
+          else if (b === btn && !wasCorrect) b.classList.add('wrong');
+        });
+        var explainIdx = questionExplainMap[current];
+        if (explainIdx !== undefined) {
+          renderResult(explainIdx, wasCorrect);
+          setTimeout(function () { goTo(explainIdx); }, 700);
+        }
+      });
+    });
+
+    // Replay
+    document.getElementById('fp-lab-replay').addEventListener('click', function () {
+      document.querySelectorAll('.fp-lab-choice').forEach(function (b) {
+        b.disabled = false;
+        b.classList.remove('correct', 'wrong');
+      });
+      score = 0;
+      goTo(0);
+    });
+
+    // Nav back → always back to module card, reset state
+    navBack.addEventListener('click', function () {
+      if (current > 0) {
+        document.querySelectorAll('.fp-lab-choice').forEach(function (b) {
+          b.disabled = false;
+          b.classList.remove('correct', 'wrong');
+        });
+        score = 0;
+        goTo(0);
+      }
+    });
+
+    // Update XP badge and score label on reaching v10
+    var origGoTo = goTo;
+    goTo = function (idx) {
+      origGoTo(idx);
+      if (idx === 10) {
+        var xpMap = { 0: 0, 1: 10, 2: 20, 3: 30 };
+        var badge = document.getElementById('fp-lab-xp-badge');
+        var label = document.getElementById('fp-lab-xp-label');
+        if (badge) badge.textContent = '+' + (xpMap[score] || 0) + ' XP';
+        if (label) label.textContent = score + ' of 3 correct';
+      }
+    };
+
+    steps[0].classList.add('active');
+  })();
+
+  // ── Persona toggle ──
+  (function () {
+    var btnOrchard = document.getElementById('fp-persona-orchard');
+    var btnClean   = document.getElementById('fp-persona-clean');
+    var toggle     = document.getElementById('fp-persona-toggle');
+    var subtitle   = document.getElementById('fp-persona-subtitle');
+    if (!btnOrchard || !btnClean || !toggle) return;
+
+    var subtitles = {
+      orchard: 'Younger children · stories &amp; metaphors',
+      clean:   'Older children · data &amp; precision',
+    };
+
+    function slidePill(persona) {
+      var pillX = persona === 'orchard' ? 0 : btnOrchard.offsetWidth;
+      var pillW = persona === 'orchard' ? btnOrchard.offsetWidth : btnClean.offsetWidth;
+      toggle.style.setProperty('--pill-w', pillW + 'px');
+      toggle.style.setProperty('--pill-x', pillX + 'px');
+    }
+
+    function applyPersona(persona) {
+      btnOrchard.classList.toggle('active', persona === 'orchard');
+      btnClean.classList.toggle('active', persona === 'clean');
+      btnOrchard.setAttribute('aria-pressed', persona === 'orchard');
+      btnClean.setAttribute('aria-pressed', persona === 'clean');
+
+      if (subtitle) subtitle.innerHTML = subtitles[persona];
+
+      document.querySelectorAll('.fp-persona-text').forEach(function (el) {
+        var val = el.getAttribute('data-' + persona);
+        if (val !== null) el.innerHTML = val;
+      });
+
+      slidePill(persona);
+    }
+
+    btnOrchard.addEventListener('click', function () { applyPersona('orchard'); });
+    btnClean.addEventListener('click', function () { applyPersona('clean'); });
+
+    requestAnimationFrame(function () { applyPersona('orchard'); });
+  })();
+
+  // ── Research carousel ──
+  (function () {
+    var slides    = Array.from(document.querySelectorAll('.fp-research-slide'));
+    var dotsWrap  = document.getElementById('fp-research-dots');
+    var bar       = document.getElementById('fp-research-progress-bar');
+    var section   = document.getElementById('fp-research-track');
+    if (!slides.length || !dotsWrap || !bar) return;
+
+    var DURATION  = 12000; // ms per slide
+    var current   = 0;
+    var timer     = null;
+    var startedAt = null;
+    var paused    = false;
+
+    // Build dots
+    dotsWrap.innerHTML = slides.map(function (_, i) {
+      return '<div class="fp-research-dot' + (i === 0 ? ' active' : '') + '" data-idx="' + i + '"></div>';
+    }).join('');
+    var dots = Array.from(dotsWrap.querySelectorAll('.fp-research-dot'));
+
+    function showSlide(idx, animate) {
+      var prev = current;
+      current = idx;
+      dots.forEach(function (d, i) { d.classList.toggle('active', i === idx); });
+
+      if (!animate || prev === idx) {
+        slides.forEach(function (s, i) { s.classList.remove('active', 'leaving'); s.classList.toggle('active', i === idx); });
+        return;
+      }
+
+      // Fade out current
+      var outgoing = slides[prev];
+      outgoing.classList.add('leaving');
+      outgoing.classList.remove('active');
+
+      setTimeout(function () {
+        outgoing.classList.remove('leaving');
+        // Fade in next
+        slides[idx].classList.add('active');
+      }, 380); // slightly longer than fade-out duration
+    }
+
+    function startBar() {
+      // fade bar out, wait for slide transition, then grow
+      bar.style.transition = 'opacity 350ms ease';
+      bar.style.opacity = '0';
+      setTimeout(function () {
+        bar.style.transition = 'none';
+        bar.style.width = '0%';
+        bar.offsetWidth; // force reflow
+        bar.style.opacity = '1';
+        bar.style.transition = 'width ' + DURATION + 'ms linear, opacity 250ms ease';
+        bar.style.width = '100%';
+        startedAt = Date.now();
+      }, 400); // waits for slide fade-in to begin
+    }
+
+    function stopBar() {
+      var elapsed = Date.now() - (startedAt || Date.now());
+      var pct = Math.min((elapsed / DURATION) * 100, 100);
+      bar.style.transition = 'none';
+      bar.style.width = pct + '%';
+    }
+
+    function next() {
+      showSlide((current + 1) % slides.length, true);
+      startBar();
+      scheduleNext();
+    }
+
+    function scheduleNext() {
+      clearTimeout(timer);
+      timer = setTimeout(next, DURATION);
+    }
+
+    function goTo(idx) {
+      clearTimeout(timer);
+      showSlide(idx, true);
+      startBar();
+      scheduleNext();
+    }
+
+    dots.forEach(function (dot) {
+      dot.addEventListener('click', function () { goTo(parseInt(dot.dataset.idx, 10)); });
+    });
+
+    // Pause on hover
+    var wrap = document.querySelector('.fp-research-inner');
+    if (wrap) {
+      wrap.addEventListener('mouseenter', function () {
+        paused = true;
+        clearTimeout(timer);
+        stopBar();
+      });
+      wrap.addEventListener('mouseleave', function () {
+        paused = false;
+        var elapsed = Date.now() - (startedAt || 0);
+        var remaining = Math.max(DURATION - elapsed, 400);
+        // resume bar
+        bar.style.transition = 'width ' + remaining + 'ms linear';
+        bar.style.width = '100%';
+        timer = setTimeout(next, remaining);
+      });
+    }
+
+    // Only start when scrolled into view
+    var started = false;
+    var startIo = new IntersectionObserver(function (entries) {
+      if (entries[0].isIntersecting && !started) {
+        started = true;
+        showSlide(0, false);
+        startBar();
+        scheduleNext();
+        startIo.disconnect();
+      }
+    }, { threshold: 0.4 });
+    if (section) startIo.observe(section);
+  })();
+
+  // ── Curriculum section: tab logic ──
+  (function () {
+    var tabs      = Array.from(document.querySelectorAll('#fl-tabs .ll-tab'));
+    var panels    = Array.from(document.querySelectorAll('#fl-panel-0, #fl-panel-1, #fl-panel-2, #fl-panel-3'));
+    var indicator = document.getElementById('fl-tab-indicator');
+    if (!tabs.length || !indicator) return;
+
+    function posIndicator(tab) {
+      var tabsEl = document.getElementById('fl-tabs');
+      var tr = tab.getBoundingClientRect();
+      var pr = tabsEl.getBoundingClientRect();
+      indicator.style.width = tr.width + 'px';
+      indicator.style.left  = (tr.left - pr.left) + 'px';
+    }
+    function activateTab(idx) {
+      tabs.forEach(function (t, i) {
+        t.classList.toggle('active', i === idx);
+        t.setAttribute('aria-selected', i === idx ? 'true' : 'false');
+      });
+      panels.forEach(function (p, i) { p.classList.toggle('active', i === idx); });
+      posIndicator(tabs[idx]);
+    }
+    tabs.forEach(function (tab, i) { tab.addEventListener('click', function () { activateTab(i); }); });
+    requestAnimationFrame(function () { posIndicator(tabs[0]); });
+
+    // Drag-to-scroll on the tab bar
+    var tabBar = document.getElementById('fl-tabs');
+    var tDragging = false, tStartX = 0, tStartLeft = 0, tDidDrag = false;
+    tabBar.addEventListener('mousedown', function (e) {
+      tDragging = true; tDidDrag = false;
+      tStartX = e.clientX; tStartLeft = tabBar.scrollLeft;
+      tabBar.classList.add('is-dragging');
+      tabBar.style.scrollSnapType = 'none';
+      e.preventDefault();
+    });
+    window.addEventListener('mousemove', function (e) {
+      if (!tDragging) return;
+      var dx = e.clientX - tStartX;
+      if (Math.abs(dx) > 2) tDidDrag = true;
+      tabBar.scrollLeft = tStartLeft - dx;
+    });
+    window.addEventListener('mouseup', function () {
+      if (!tDragging) return;
+      tDragging = false;
+      tabBar.classList.remove('is-dragging');
+      tabBar.style.scrollSnapType = '';
+    });
+    tabBar.addEventListener('click', function (e) {
+      if (tDidDrag) e.stopPropagation();
+    }, true);
+  })();
+
+  // ── Curriculum section: pillar carousel ──
+  (function () {
+    var grid     = document.getElementById('fl-pillar-grid');
+    var dotsWrap = document.getElementById('fl-scroll-dots');
+    var wrap     = document.getElementById('fl-pillar-carousel-wrap');
+    if (!grid) return;
+
+    var pillars = [
+      { num: 1, name: 'Earning & Value',     color: 'teal', modules: ['Effort & Reward', 'Fair Pay', 'Value of Work', 'Negotiation Basics'] },
+      { num: 2, name: 'Spending & Choices',  color: 'teal', modules: ['Needs vs. Wants', 'Impulse Control', 'Digital vs. Physical Currency'] },
+      { num: 3, name: 'Saving & Growth',     color: 'teal', modules: ['The Snowball', 'Goal Setting', 'Emergency Funds', 'Delayed Gratification'] },
+      { num: 4, name: 'Borrowing & Debt',    color: 'gold', modules: ['What is Debt?', 'Good Debt vs. Bad Debt', 'Credit Scores'] },
+      { num: 5, name: 'Investing & Future',  color: 'gold', modules: ['Compound Interest', 'Index Funds', 'Long-Term Thinking'] },
+      { num: 6, name: 'Society & Wellbeing', color: 'gold', modules: ['Tax Basics', 'Giving & Charity', 'Ethical Spending', 'Financial Wellbeing'] },
+    ];
+
+    grid.innerHTML = pillars.map(function (p) {
+      return '<div class="fl-pillar-card fl-pillar-card--' + p.color + '">'
+        + '<div class="fl-pillar-card-header">'
+        + '<span class="fl-pillar-number">Pillar ' + p.num + '</span>'
+        + '<span class="fl-pillar-count">' + p.modules.length + ' modules</span>'
+        + '</div>'
+        + '<div class="fl-pillar-card-name">' + p.name + '</div>'
+        + '<ul class="fl-module-list">'
+        + p.modules.map(function (m) {
+            return '<li class="fl-module-item">'
+              + '<span class="fl-module-dot fl-module-dot--' + p.color + '"></span>'
+              + m + '</li>';
+          }).join('')
+        + '</ul>'
         + '</div>';
     }).join('');
-    grid.querySelectorAll('.reveal').forEach(function (el) { io.observe(el); });
-  }
+
+    // Dots
+    if (dotsWrap) {
+      dotsWrap.innerHTML = pillars.map(function (_, i) {
+        return '<div class="fl-scroll-dot' + (i === 0 ? ' active' : '') + '" data-idx="' + i + '"></div>';
+      }).join('');
+
+      var dots = Array.from(dotsWrap.querySelectorAll('.fl-scroll-dot'));
+
+      function updateDots() {
+        if (!grid.children.length) return;
+        var cardW   = grid.children[0].offsetWidth + 14; // gap
+        var idx     = Math.round(grid.scrollLeft / cardW);
+        dots.forEach(function (d, i) { d.classList.toggle('active', i === idx); });
+        if (wrap) wrap.classList.toggle('scrolled-end', grid.scrollLeft + grid.clientWidth >= grid.scrollWidth - 8);
+      }
+
+      grid.addEventListener('scroll', updateDots, { passive: true });
+      dots.forEach(function (dot) {
+        dot.addEventListener('click', function () {
+          var idx = parseInt(dot.dataset.idx, 10);
+          var cardW = grid.children[0] ? grid.children[0].offsetWidth + 14 : 274;
+          grid.scrollTo({ left: idx * cardW, behavior: 'smooth' });
+        });
+      });
+    }
+
+    // Mouse drag-to-scroll
+    var isDragging = false, startX = 0, startLeft = 0, didDrag = false;
+
+    grid.addEventListener('mousedown', function (e) {
+      isDragging = true;
+      didDrag = false;
+      startX = e.clientX;
+      startLeft = grid.scrollLeft;
+      grid.classList.add('is-dragging');
+      grid.style.scrollSnapType = 'none'; // disable snap during drag so scrollLeft moves freely
+      e.preventDefault();
+    });
+
+    window.addEventListener('mousemove', function (e) {
+      if (!isDragging) return;
+      var dx = e.clientX - startX;
+      if (Math.abs(dx) > 2) didDrag = true;
+      grid.scrollLeft = startLeft - dx;
+    });
+
+    window.addEventListener('mouseup', function () {
+      if (!isDragging) return;
+      isDragging = false;
+      grid.classList.remove('is-dragging');
+      grid.style.scrollSnapType = ''; // re-enable snap — browser snaps to nearest card
+    });
+
+    grid.addEventListener('click', function (e) {
+      if (didDrag) e.stopPropagation();
+    }, true);
+  })();
 
   // Typewriter for scouting report briefing
   var briefingEl = document.getElementById('briefing-text');
@@ -262,35 +1352,165 @@
     tio.observe(briefingCard);
   }
 
-  // Checklist data
-  var items = [
-    { name: '8 behavioural data-signal triggers', desc: 'The Burner, Stagnant Earner, Inflation Nudge, and 5 more' },
-    { name: 'EXIF integrity trigger', desc: 'Low-confidence proof uploads → Hard Work vs Shortcuts lesson' },
-    { name: 'EXIF batching trigger', desc: 'Cramming chores → Power of Small Steps lesson' },
-    { name: 'Two AI personas', desc: 'Orchard (warm/metaphorical) and Clean (data-driven)' },
-    { name: 'Independence score', desc: 'Tracks child-initiated vs parent-initiated actions' },
-    { name: '20-module curriculum across 6 pillars', desc: '' },
-    { name: 'Four age tiers', desc: 'Sapling (10–12), Oak (13–15), Canopy (16+)' },
-    { name: 'Module unlocks from real behaviour', desc: 'Not a fixed timetable' },
-    { name: 'UK MaPS curriculum alignment', desc: '' },
-    { name: 'Weekly parent Scouting Report', desc: '' },
-    { name: 'KPI gauges', desc: 'Consistency, Responsibility, Planning Horizon' },
-    { name: 'Trend indicators vs prior week', desc: 'Up / down / flat' },
-    { name: '"Copy for Child" modal', desc: 'Seedling (orchard) or Professional tone' },
-    { name: 'Pillar 5 surplus trigger', desc: 'Fires when balance exceeds £100 or all goals are funded' },
-    { name: 'D1 briefing cache', desc: 'Runs once per week — instant on subsequent loads' },
-  ];
-  var CHECK = '<svg class="fp-check-icon" width="16" height="16" fill="none" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8l3.5 3.5 6.5-7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-  var cg = document.querySelector('.fp-checklist-grid');
-  if (cg) {
-    cg.innerHTML = items.map(function (it, i) {
-      return '<div class="fp-check-item reveal ' + (['','d1','d2','d3'])[i % 4] + '">'
-        + CHECK + '<div><div class="fp-check-name">' + it.name + '</div>'
-        + (it.desc ? '<div class="fp-check-desc">' + it.desc + '</div>' : '')
-        + '</div></div>';
-    }).join('');
-    cg.querySelectorAll('.reveal').forEach(function (el) { io.observe(el); });
+  // Plan comparison table — fill check cells
+  var CHECK_SVG = '<svg class="fp-table-check-icon" width="16" height="16" fill="none" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8l3.5 3.5 6.5-7" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  document.querySelectorAll('.fp-plan-table-col').forEach(function (cell) {
+    if (cell.innerHTML.trim() === '<!--check-->') cell.innerHTML = CHECK_SVG;
+  });
+})();
+
+// ── Mentor demo animation ──────────────────────────────────
+(function () {
+  var demo = document.getElementById('mentor-demo');
+  if (!demo) return;
+
+  var sceneNudge  = document.getElementById('scene-nudge');
+  var sceneModule = document.getElementById('scene-module');
+  var line1El     = document.getElementById('mentor-line1');
+  var cursor1El   = document.getElementById('cursor1');
+  var line2El     = document.getElementById('mentor-line2');
+  var cursor2El   = document.getElementById('cursor2');
+  var bubble2El   = document.getElementById('bubble2');
+  var ctaRow      = document.getElementById('mentor-cta-row');
+  var progressBar = document.getElementById('progress-bar');
+  var replayBtn   = document.getElementById('mentor-replay');
+  var ringEl      = document.getElementById('mentor-ring-progress');
+  var RING_CIRC   = 88;
+  var RING_DELAY  = 2200; // ms before ring starts counting after sequence ends
+  var RING_DUR    = 4000; // ms for full ring countdown before auto-replay
+  var ringTimer   = null;
+
+  var LINE1 = 'You spent £18 in two hours.';
+  var LINE2 = 'Is that what you planned?';
+
+  var timers = [];
+  var started = false;
+
+  function later(fn, ms) {
+    var t = setTimeout(fn, ms);
+    timers.push(t);
+    return t;
   }
+
+  function typewrite(text, el, cursorEl, onDone) {
+    var i = 0;
+    el.textContent = '';
+    cursorEl.classList.remove('hidden');
+    function tick() {
+      if (i < text.length) {
+        el.textContent += text[i++];
+        later(tick, 38 + Math.random() * 22);
+      } else {
+        cursorEl.classList.add('hidden');
+        if (onDone) onDone();
+      }
+    }
+    tick();
+  }
+
+  function reset() {
+    timers.forEach(clearTimeout);
+    timers = [];
+    sceneNudge.classList.remove('active');
+    sceneModule.classList.remove('active');
+    if (line1El) line1El.textContent = '';
+    if (line2El) line2El.textContent = '';
+    if (cursor1El) cursor1El.classList.remove('hidden');
+    if (cursor2El) cursor2El.classList.remove('hidden');
+    if (bubble2El) bubble2El.classList.remove('show');
+    if (ctaRow) ctaRow.classList.remove('show');
+    if (progressBar) progressBar.style.width = '0%';
+    var card = sceneModule.querySelector('.mentor-module-card');
+    var note = sceneModule.querySelector('.mentor-coaching-note');
+    if (card) card.classList.remove('show');
+    if (note) note.classList.remove('show');
+    replayBtn.classList.remove('visible');
+    clearTimeout(ringTimer);
+    if (ringEl) {
+      ringEl.style.transition = 'none';
+      ringEl.style.strokeDashoffset = RING_CIRC;
+    }
+    started = false;
+  }
+
+  function runSequence() {
+    if (started) return;
+    started = true;
+    replayBtn.classList.remove('visible');
+
+    // Scene 1 — nudge
+    sceneNudge.classList.add('active');
+
+    later(function () {
+      typewrite(LINE1, line1El, cursor1El, function () {
+        // pause then show second bubble
+        later(function () {
+          bubble2El.classList.add('show');
+          later(function () {
+            typewrite(LINE2, line2El, cursor2El, function () {
+              // CTA row
+              later(function () {
+                ctaRow.classList.add('show');
+
+                // After 2.2s — transition to scene 2
+                later(function () {
+                  sceneNudge.classList.remove('active');
+                  later(function () {
+                    sceneModule.classList.add('active');
+                    var card = sceneModule.querySelector('.mentor-module-card');
+                    later(function () {
+                      if (card) card.classList.add('show');
+                      // progress bar animate
+                      later(function () {
+                        if (progressBar) progressBar.style.width = '0%';
+                        later(function () {
+                          // note
+                          var note = sceneModule.querySelector('.mentor-coaching-note');
+                          if (note) note.classList.add('show');
+                          // show ring timer after a pause, then auto-replay
+                          later(function () {
+                            replayBtn.classList.add('visible');
+                            // start ring countdown
+                            if (ringEl) {
+                              ringEl.style.transition = 'none';
+                              ringEl.style.strokeDashoffset = RING_CIRC;
+                              ringEl.offsetWidth; // reflow
+                              ringEl.style.transition = 'stroke-dashoffset ' + RING_DUR + 'ms linear';
+                              ringEl.style.strokeDashoffset = '0';
+                            }
+                            ringTimer = later(function () {
+                              reset();
+                              later(runSequence, 200);
+                            }, RING_DUR);
+                          }, 1600);
+                        }, 900);
+                      }, 200);
+                    }, 250);
+                  }, 320);
+                }, 2200);
+              }, 500);
+            });
+          }, 120);
+        }, 480);
+      });
+    }, 600);
+  }
+
+  // Trigger on scroll into view once
+  var observer = new IntersectionObserver(function (entries) {
+    if (entries[0].isIntersecting) {
+      runSequence();
+      observer.disconnect();
+    }
+  }, { threshold: 0.4 });
+  observer.observe(demo);
+
+  // Ring click — cancel countdown and replay immediately
+  replayBtn.addEventListener('click', function () {
+    clearTimeout(ringTimer);
+    reset();
+    later(runSequence, 200);
+  });
 })();
 </script>
 <!-- SCRIPTS_END -->

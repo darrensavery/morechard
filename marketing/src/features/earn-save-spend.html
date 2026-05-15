@@ -16,7 +16,7 @@
       <p class="fp-sub reveal d2">Assign chores, approve completions, and pay out – with a savings goal waiting at the end. Works for any family on day one.</p>
       <div class="fp-hero-cta reveal d3">
         <a href="/#signup" class="btn-primary">
-          Start free trial
+          Register interest
           <svg width="13" height="13" viewBox="0 0 14 14" fill="none" aria-hidden="true">
             <path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
@@ -201,41 +201,85 @@
       <div class="fp-loop-cards-grid">
 
         <div class="fp-loop-card reveal d1">
-          <div class="fp-loop-card-icon">
-            <svg width="36" height="36" fill="none" viewBox="0 0 36 36" aria-hidden="true">
-              <circle cx="18" cy="18" r="15" stroke="currentColor" stroke-width="1.5"/>
-              <path d="M18 10v8l4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-              <path d="M10 26l2-2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          <div class="fp-loop-card-scene">
+            <svg viewBox="0 0 280 140" fill="none" aria-hidden="true" preserveAspectRatio="xMidYMid meet">
+              <rect x="20" y="16" width="240" height="108" rx="10" fill="var(--bg-cream)" stroke="var(--border-light)"/>
+              <!-- Row 1: done -->
+              <circle cx="42" cy="46" r="7" fill="var(--teal)"/>
+              <path d="M39 46l2.5 2.5 4-5" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+              <rect x="56" y="42" width="80" height="7" rx="3.5" fill="var(--text-sub)" opacity="0.45"/>
+              <rect x="198" y="39" width="46" height="14" rx="7" fill="var(--teal-08)" stroke="var(--teal)" stroke-width="1"/>
+              <text x="221" y="49" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="8" fill="var(--teal)">Due today</text>
+              <!-- Row 2: overdue badge -->
+              <circle cx="42" cy="72" r="7" fill="none" stroke="rgba(230,100,60,0.7)" stroke-width="1.8"/>
+              <rect x="56" y="68" width="68" height="7" rx="3.5" fill="var(--text-sub)" opacity="0.4"/>
+              <rect x="198" y="65" width="46" height="14" rx="7" fill="rgba(230,100,60,0.1)" stroke="rgba(230,100,60,0.6)" stroke-width="1"/>
+              <text x="221" y="75" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="8" fill="rgba(220,80,40,0.9)">Overdue</text>
+              <!-- Row 3: upcoming -->
+              <circle cx="42" cy="98" r="7" fill="none" stroke="var(--border-light)" stroke-width="1.8"/>
+              <rect x="56" y="94" width="74" height="7" rx="3.5" fill="var(--text-sub)" opacity="0.3"/>
+              <rect x="198" y="91" width="46" height="14" rx="7" fill="var(--card-light)" stroke="var(--border-light)"/>
+              <text x="221" y="101" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="8" fill="var(--text-sub)" opacity="0.7">Tomorrow</text>
             </svg>
           </div>
+          <div class="fp-loop-card-feature">Chore deadline scheduling · overdue notifications</div>
           <div class="fp-loop-card-benefit">No more nagging.</div>
           <p class="fp-loop-card-copy">Deadline scheduling and overdue notifications keep every chore on track – without you chasing.</p>
-          <div class="fp-loop-card-feature">Chore deadline scheduling · overdue notifications</div>
         </div>
 
         <div class="fp-loop-card reveal d2">
-          <div class="fp-loop-card-icon">
-            <svg width="36" height="36" fill="none" viewBox="0 0 36 36" aria-hidden="true">
-              <rect x="6" y="8" width="24" height="20" rx="3" stroke="currentColor" stroke-width="1.5"/>
-              <path d="M12 18l4 4 8-8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <div class="fp-loop-card-scene">
+            <svg viewBox="0 0 280 140" fill="none" aria-hidden="true" preserveAspectRatio="xMidYMid meet">
+              <!-- Photo thumbnail -->
+              <rect x="20" y="16" width="112" height="108" rx="10" fill="var(--teal-08)" stroke="var(--border-light)"/>
+              <rect x="34" y="28" width="84" height="64" rx="6" fill="var(--teal-10)"/>
+              <!-- Camera icon in photo area -->
+              <rect x="58" y="44" width="36" height="28" rx="5" stroke="var(--teal)" stroke-width="1.6" fill="none"/>
+              <circle cx="76" cy="58" r="7" stroke="var(--teal)" stroke-width="1.6" fill="none"/>
+              <circle cx="76" cy="58" r="3" fill="var(--teal)" opacity="0.5"/>
+              <rect x="34" y="102" width="84" height="14" rx="4" fill="var(--teal-10)"/>
+              <text x="76" y="112" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="8" font-weight="500" fill="var(--teal)">Photo submitted</text>
+              <!-- Approval panel -->
+              <rect x="148" y="16" width="112" height="108" rx="10" fill="var(--bg-cream)" stroke="var(--border-light)"/>
+              <rect x="162" y="28" width="84" height="40" rx="6" fill="var(--card-light)"/>
+              <rect x="170" y="36" width="60" height="7" rx="3.5" fill="var(--text-sub)" opacity="0.4"/>
+              <rect x="170" y="50" width="44" height="7" rx="3.5" fill="var(--text-sub)" opacity="0.3"/>
+              <rect x="162" y="80" width="84" height="28" rx="8" fill="var(--teal)"/>
+              <path d="M195 94l6 6 12-13" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <text x="204" y="99" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="9" font-weight="600" fill="#fff">Approve</text>
             </svg>
           </div>
+          <div class="fp-loop-card-feature">Photo proof upload · one-tap approval</div>
           <div class="fp-loop-card-benefit">Effort recognised instantly.</div>
           <p class="fp-loop-card-copy">Photo proof and one-tap approval means a child's work is seen and rewarded the moment it happens.</p>
-          <div class="fp-loop-card-feature">Photo proof upload · one-tap approval</div>
         </div>
 
         <div class="fp-loop-card reveal d3">
-          <div class="fp-loop-card-icon">
-            <svg width="36" height="36" fill="none" viewBox="0 0 36 36" aria-hidden="true">
-              <path d="M18 6v4M18 26v4M6 18h4M26 18h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-              <circle cx="18" cy="18" r="7" stroke="currentColor" stroke-width="1.5"/>
-              <path d="M15 18l2 2 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <div class="fp-loop-card-scene">
+            <svg viewBox="0 0 280 140" fill="none" aria-hidden="true" preserveAspectRatio="xMidYMid meet">
+              <rect x="20" y="16" width="240" height="108" rx="10" fill="var(--bg-cream)" stroke="var(--border-light)"/>
+              <!-- Header -->
+              <rect x="34" y="28" width="60" height="8" rx="4" fill="var(--teal)" opacity="0.7"/>
+              <rect x="200" y="28" width="46" height="8" rx="4" fill="var(--text-sub)" opacity="0.3"/>
+              <!-- Rate row 1 -->
+              <rect x="34" y="48" width="110" height="7" rx="3.5" fill="var(--text-sub)" opacity="0.45"/>
+              <rect x="34" y="58" width="70" height="5" rx="2.5" fill="var(--text-sub)" opacity="0.25"/>
+              <rect x="210" y="46" width="36" height="20" rx="6" fill="var(--gold-12)"/>
+              <text x="228" y="59" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" font-weight="600" fill="var(--gold-dark)">£2.00</text>
+              <!-- Rate row 2 -->
+              <rect x="34" y="76" width="90" height="7" rx="3.5" fill="var(--text-sub)" opacity="0.4"/>
+              <rect x="34" y="86" width="58" height="5" rx="2.5" fill="var(--text-sub)" opacity="0.2"/>
+              <rect x="210" y="74" width="36" height="20" rx="6" fill="var(--gold-12)"/>
+              <text x="228" y="87" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" font-weight="600" fill="var(--gold-dark)">£1.50</text>
+              <!-- Rate row 3 -->
+              <rect x="34" y="104" width="100" height="7" rx="3.5" fill="var(--text-sub)" opacity="0.35"/>
+              <rect x="210" y="102" width="36" height="20" rx="6" fill="var(--gold-12)"/>
+              <text x="228" y="115" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" font-weight="600" fill="var(--gold-dark)">£1.00</text>
             </svg>
           </div>
+          <div class="fp-loop-card-feature">Community Rate Guide</div>
           <div class="fp-loop-card-benefit">Pay the right amount, every time.</div>
           <p class="fp-loop-card-copy">The community-powered Rate Guide benchmarks 30+ common chores so your rates are fair, consistent, and defensible.</p>
-          <div class="fp-loop-card-feature">Community Rate Guide</div>
         </div>
 
       </div>
@@ -269,7 +313,7 @@
     </div>
 
     <!-- Pair 3: Payment Bridge -->
-    <div class="fp-pair">
+    <div class="fp-pair fp-pair--flip">
       <div class="fp-pair-visual reveal-left reveal d1">
         <div class="app-mockup">
           <div class="app-mockup-header">
@@ -458,15 +502,15 @@
 
   <!-- ── CTA strip ── -->
   <section class="fp-cta">
-    <h2 class="reveal">Start your 14-day free trial.</h2>
-    <p class="reveal d1">Full access to every feature. No card required.</p>
+    <h2 class="reveal">Interested? Register below.</h2>
+    <p class="reveal d1">Be first to know when Morechard launches.</p>
     <a href="/#signup" class="btn-primary reveal d2">
-      Get started free
+      Register interest
       <svg width="13" height="13" viewBox="0 0 14 14" fill="none" aria-hidden="true">
         <path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
     </a>
-    <p class="fp-cta-note reveal d3">14-day free trial &middot; No card required</p>
+    <p class="fp-cta-note reveal d3">No commitment &middot; No card required</p>
   </section>
 
 </main>
@@ -527,9 +571,21 @@
   // Lazy-load video + progress ring – fires once when the goals pair scrolls into view
   var ringWrap = document.querySelector('.fp-ring-wrap');
   if (ringWrap) {
+    var ringFill = ringWrap.querySelector('.fp-ring-fill');
+
+    function restartRing() {
+      if (!ringFill) return;
+      // Force reflow to restart CSS animation
+      ringFill.style.animation = 'none';
+      ringFill.getBoundingClientRect(); // trigger reflow
+      ringFill.style.animation = '';
+      ringWrap.classList.remove('ring-active');
+      void ringWrap.offsetWidth; // trigger reflow
+      ringWrap.classList.add('ring-active');
+    }
+
     var ringIo = new IntersectionObserver(function (entries) {
       if (entries[0].isIntersecting) {
-        ringWrap.classList.add('ring-active');
         var vid = ringWrap.querySelector('video');
         if (vid && !vid.src) {
           var webm = vid.dataset.srcWebm;
@@ -538,7 +594,13 @@
           if (mp4)  { var s2 = document.createElement('source'); s2.src = mp4;  s2.type = 'video/mp4';  vid.appendChild(s2); }
           vid.load();
           vid.play();
+          // Restart ring each time the video loops
+          vid.addEventListener('seeked', function () {
+            if (vid.currentTime < 0.5) restartRing();
+          });
+          vid.addEventListener('play', restartRing);
         }
+        restartRing();
         ringIo.unobserve(ringWrap);
       }
     }, { threshold: 0.4 });
