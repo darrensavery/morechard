@@ -448,6 +448,8 @@ body.dark .research-callout-source {
 }
 .nav-trigger:hover,
 .nav-item > a:hover { color: var(--teal); background-color: rgba(0,149,156,0.06); }
+nav:not(.scrolled):not(:has(.nav-group.is-expanded)) .nav-trigger:hover,
+nav:not(.scrolled):not(:has(.nav-group.is-expanded)) .nav-item > a:hover { color: #fff; background-color: rgba(255,255,255,0.12); }
 .nav-trigger svg { transition: transform 0.2s ease; }
 .nav-group.is-expanded .nav-trigger svg { transform: rotate(180deg); }
 .nav-list [aria-current="page"] { color: var(--teal); }
