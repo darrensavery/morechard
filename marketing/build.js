@@ -340,7 +340,7 @@ ${scripts}
   }
 
   // 7. Copy static assets
-  const COPY_FILES = ['_headers', 'sitemap.xml', 'robots.txt'];
+  const COPY_FILES = ['_headers', '_redirects', 'sitemap.xml', 'robots.txt'];
   for (const f of COPY_FILES) {
     const src = path.join(ROOT, f);
     if (fs.existsSync(src)) {
