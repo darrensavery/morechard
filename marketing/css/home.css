@@ -1,3 +1,19 @@
+/* ── Nav: white text over hero image (homepage only, unscrolled) ── */
+nav:not(.scrolled):not(:has(.nav-group.is-expanded)) .nav-logo-wordmark,
+nav:not(.scrolled):not(:has(.nav-group.is-expanded)) .nav-logo-wordmark span {
+  color: #fff;
+}
+nav:not(.scrolled):not(:has(.nav-group.is-expanded)) .nav-trigger,
+nav:not(.scrolled):not(:has(.nav-group.is-expanded)) .nav-item > a {
+  color: #fff;
+}
+nav:not(.scrolled):not(:has(.nav-group.is-expanded)) .nav-trigger svg {
+  stroke: #fff;
+}
+nav:not(.scrolled):not(:has(.nav-group.is-expanded)) .nav-toggle span {
+  background: #fff;
+}
+
 /* ── Hero ── */
 #hero {
   padding: 0;
