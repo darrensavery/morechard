@@ -1574,6 +1574,10 @@ body.dark .ll-stat-row { background: var(--card-dark); border-color: var(--borde
 }
 .ll-stat-label { font-size: 12px; font-weight: 400; color: var(--text-sub); line-height: 1.4; }
 body.dark .ll-stat-label { color: var(--text-light-sub); }
+.ll-stat-cite { font-size: 10px; font-weight: 500; color: var(--teal); text-decoration: none; opacity: 0.75; white-space: nowrap; }
+.ll-stat-cite:hover { opacity: 1; text-decoration: underline; }
+.ll-citation { font-size: 0.85em; font-weight: 500; color: var(--teal); text-decoration: none; opacity: 0.8; }
+.ll-citation:hover { opacity: 1; text-decoration: underline; }
 .ll-stat-divider { width: 1px; background: var(--border-light); flex-shrink: 0; }
 body.dark .ll-stat-divider { background: var(--border-dark); }
 

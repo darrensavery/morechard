@@ -56,6 +56,7 @@
  *   GET    /api/market-rates/cron       CRON health check — reports market_rates row count
  *   POST   /api/referrals/click         Record a referral link click
  *   POST   /api/public/interest         Register pre-launch interest → Brevo list 4
+ *   GET    /api/verify/:hash            Public chain-head hash verification (no PII returned)
  *
  * Public — invite redemption:
  *   POST   /auth/invite/peek            Validate code without redeeming → { role }
@@ -106,6 +107,7 @@ import {
   handleChildRename, handleChildLoginHistory,
 } from './routes/settings.js';
 import { handleLedgerPost, handleLedgerGet, handleLedgerDispute } from './routes/ledger.js';
+import { handlePublicLedgerVerify } from './routes/ledger-verify-public.js';
 import { handleLedgerVerify } from './routes/verify.js';
 import { handleRaiseDispute } from './routes/raise-dispute.js';
 import { handleExportJson, handleExportPdf, handleExportPrune, handleExportPruneCheck } from './routes/export.js';
@@ -393,6 +395,10 @@ async function route(request: Request, env: Env, method: string, path: string): 
 
   // Pre-launch interest registration — public, no auth
   if (path === '/api/public/interest' && method === 'POST') return handlePublicInterest(request, env);
+
+  // Public ledger chain verification — no auth, no PII returned
+  const verifyHashMatch = path.match(/^\/api\/verify\/([a-f0-9]{64})$/);
+  if (verifyHashMatch && method === 'GET') return handlePublicLedgerVerify(request, env, verifyHashMatch[1]);
 
   // ── All authenticated routes require a valid JWT ─────────────
   const auth = await requireAuth(request, env);

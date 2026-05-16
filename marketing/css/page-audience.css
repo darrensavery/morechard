@@ -582,6 +582,17 @@ body.dark .signature-day-caption { color: var(--text-light-sub); }
   color: rgba(237,237,240,0.6);
 }
 
+/* ── Legal disclaimer note (separated families page) ── */
+.audience-legal-note {
+  margin-top: 32px;
+  font-size: 12px;
+  font-style: italic;
+  color: var(--text-sub);
+  line-height: 1.6;
+  max-width: 680px;
+}
+body.dark .audience-legal-note { color: var(--text-light-sub); }
+
 /* ── Is / Isn't spec table (Page 3) ── */
 .audience-spec-cols {
   display: grid;
