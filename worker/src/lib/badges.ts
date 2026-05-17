@@ -89,10 +89,10 @@ export async function getBadgeStats(db: D1Database, childId: string): Promise<Ba
       `SELECT COUNT(*) AS total FROM completions WHERE child_id = ? AND status = 'completed'`
     ).bind(childId).first<{ total: number }>(),
     db.prepare(
-      `SELECT COUNT(*) AS total FROM grove_plans WHERE child_id = ? AND status = 'completed'`
+      `SELECT COUNT(*) AS total FROM goals WHERE child_id = ? AND status = 'completed'`
     ).bind(childId).first<{ total: number }>(),
     db.prepare(
-      `SELECT COALESCE(SUM(target_amount), 0) AS total FROM grove_plans WHERE child_id = ? AND status = 'completed'`
+      `SELECT COALESCE(SUM(target_amount), 0) AS total FROM goals WHERE child_id = ? AND status = 'completed'`
     ).bind(childId).first<{ total: number }>(),
     db.prepare(
       `SELECT COUNT(*) AS total FROM lesson_completions WHERE child_id = ?`
