@@ -20,6 +20,9 @@ import { Env } from '../types.js';
 import { json, error, clientIp } from '../lib/response.js';
 import { computeRecordHash, GENESIS_HASH } from '../lib/hash.js';
 import { JwtPayload } from '../lib/jwt.js';
+import { getStreakState, buildStreakEvent, saveStreakEvent, allScheduledChoresDone } from '../lib/streaks.js';
+import { getBadgeStats, badgesToAward, insertBadges } from '../lib/badges.js';
+import { nanoid } from '../lib/nanoid.js';
 
 type AuthedRequest = Request & { auth: JwtPayload };
 
@@ -153,7 +156,7 @@ export async function handleCompletionApprove(
   const ip = clientIp(request);
 
   const comp = await env.DB.prepare(`
-    SELECT comp.*, ch.title, ch.reward_amount, ch.currency
+    SELECT comp.*, ch.title, ch.reward_amount, ch.currency, ch.due_date
     FROM completions comp
     JOIN chores ch ON ch.id = comp.chore_id
     WHERE comp.id = ?
@@ -161,6 +164,7 @@ export async function handleCompletionApprove(
     .first<{
       id: string; family_id: string; chore_id: string; child_id: string;
       status: string; title: string; reward_amount: number; currency: string;
+      due_date: string | null;
     }>();
 
   if (!comp) return error('Completion not found', 404);
@@ -230,13 +234,69 @@ export async function handleCompletionApprove(
     VALUES (?,?,?,?,?)
   `).bind(newLedgerId, 'pending', verificationStatus, auth.sub, ip).run();
 
+  // ── Gamification hook ──────────────────────────────────────────────
+  const pendingCelebrations: string[] = []
+
+  if (comp.due_date) {
+    const childId = comp.child_id
+    const date    = comp.due_date
+
+    const [allDone, streakState] = await Promise.all([
+      allScheduledChoresDone(env.DB, childId, date),
+      getStreakState(env.DB, childId),
+    ])
+
+    const streakEvent = buildStreakEvent({ allChoresDone: allDone, date, state: streakState })
+    if (streakEvent) {
+      await saveStreakEvent(env.DB, childId, streakEvent, date)
+
+      const { previousStreak, newStreak } = streakEvent
+      if      (newStreak === 3)  pendingCelebrations.push(`STREAK_3:${previousStreak}:${newStreak}`)
+      else if (newStreak === 7)  pendingCelebrations.push(`STREAK_7:${previousStreak}:${newStreak}`)
+      else if (newStreak === 14) pendingCelebrations.push(`STREAK_14:${previousStreak}:${newStreak}`)
+      else if (newStreak === 30) pendingCelebrations.push(`STREAK_30:${previousStreak}:${newStreak}`)
+    }
+  }
+
+  // Badge evaluation runs on every approval
+  {
+    const childId = comp.child_id
+    const [stats, streakState] = await Promise.all([
+      getBadgeStats(env.DB, childId),
+      getStreakState(env.DB, childId),
+    ])
+    const totalApprovedChores = stats.totalApprovedChores + 1 // include this approval
+    const isFirstChore = totalApprovedChores === 1
+
+    const newBadges = badgesToAward({
+      earnedBadgeKeys:       stats.earnedBadgeKeys,
+      currentStreak:         streakState.current_streak,
+      longestStreak:         Math.max(streakState.longest_streak, streakState.current_streak),
+      totalApprovedChores,
+      totalGoalsCompleted:   stats.totalGoalsCompleted,
+      totalSavedPence:       stats.totalSavedPence,
+      totalLessonsCompleted: stats.totalLessonsCompleted,
+      isFirstPayday:         false,
+      isFirstChore,
+    })
+
+    if (newBadges.length > 0) {
+      await insertBadges(env.DB, childId, newBadges, nanoid)
+      for (const key of newBadges) {
+        pendingCelebrations.push(`BADGE_${key}`)
+      }
+    }
+  }
+  // ── End gamification hook ──────────────────────────────────────────
+
   return json({
     ok: true,
-    ledger_id: newLedgerId,
-    record_hash: recordHash,
-    verification_status: verificationStatus,
-    amount: comp.reward_amount,
-    currency: comp.currency,
+    ledger_id:            newLedgerId,
+    record_hash:          recordHash,
+    verification_status:  verificationStatus,
+    amount:               comp.reward_amount,
+    currency:             comp.currency,
+    pending_celebrations: pendingCelebrations,
   });
 }
 
