@@ -164,7 +164,7 @@ export async function handleCompletionApprove(
     .first<{
       id: string; family_id: string; chore_id: string; child_id: string;
       status: string; title: string; reward_amount: number; currency: string;
-      due_date: string | null;
+      due_date: string | null; submitted_at: number;
     }>();
 
   if (!comp) return error('Completion not found', 404);
@@ -235,11 +235,10 @@ export async function handleCompletionApprove(
   `).bind(newLedgerId, 'pending', verificationStatus, auth.sub, ip).run();
 
   // ── Gamification hook ──────────────────────────────────────────────
-  const pendingCelebrations: string[] = []
-
-  if (comp.due_date) {
+  try {
+    const pendingCelebrations: string[] = []
     const childId = comp.child_id
-    const date    = comp.due_date
+    const date = new Date(comp.submitted_at * 1000).toISOString().slice(0, 10)
 
     const [allDone, streakState] = await Promise.all([
       allScheduledChoresDone(env.DB, childId, date),
@@ -249,29 +248,25 @@ export async function handleCompletionApprove(
     const streakEvent = buildStreakEvent({ allChoresDone: allDone, date, state: streakState })
     if (streakEvent) {
       await saveStreakEvent(env.DB, childId, streakEvent, date)
-
       const { previousStreak, newStreak } = streakEvent
       if      (newStreak === 3)  pendingCelebrations.push(`STREAK_3:${previousStreak}:${newStreak}`)
       else if (newStreak === 7)  pendingCelebrations.push(`STREAK_7:${previousStreak}:${newStreak}`)
       else if (newStreak === 14) pendingCelebrations.push(`STREAK_14:${previousStreak}:${newStreak}`)
       else if (newStreak === 30) pendingCelebrations.push(`STREAK_30:${previousStreak}:${newStreak}`)
     }
-  }
 
-  // Badge evaluation runs on every approval
-  {
-    const childId = comp.child_id
-    const [stats, streakState] = await Promise.all([
+    // Badge evaluation runs on every approval
+    const [stats, latestStreak] = await Promise.all([
       getBadgeStats(env.DB, childId),
       getStreakState(env.DB, childId),
     ])
-    const totalApprovedChores = stats.totalApprovedChores + 1 // include this approval
+    const totalApprovedChores = stats.totalApprovedChores + 1
     const isFirstChore = totalApprovedChores === 1
 
     const newBadges = badgesToAward({
       earnedBadgeKeys:       stats.earnedBadgeKeys,
-      currentStreak:         streakState.current_streak,
-      longestStreak:         Math.max(streakState.longest_streak, streakState.current_streak),
+      currentStreak:         latestStreak.current_streak,
+      longestStreak:         Math.max(latestStreak.longest_streak, latestStreak.current_streak),
       totalApprovedChores,
       totalGoalsCompleted:   stats.totalGoalsCompleted,
       totalSavedPence:       stats.totalSavedPence,
@@ -282,22 +277,31 @@ export async function handleCompletionApprove(
 
     if (newBadges.length > 0) {
       await insertBadges(env.DB, childId, newBadges, nanoid)
-      for (const key of newBadges) {
-        pendingCelebrations.push(`BADGE_${key}`)
-      }
+      for (const key of newBadges) pendingCelebrations.push(`BADGE_${key}`)
     }
+
+    return json({
+      ok: true,
+      ledger_id:            newLedgerId,
+      record_hash:          recordHash,
+      verification_status:  verificationStatus,
+      amount:               comp.reward_amount,
+      currency:             comp.currency,
+      pending_celebrations: pendingCelebrations,
+    })
+  } catch {
+    // Gamification is non-critical — return success even if it fails
+    return json({
+      ok: true,
+      ledger_id:            newLedgerId,
+      record_hash:          recordHash,
+      verification_status:  verificationStatus,
+      amount:               comp.reward_amount,
+      currency:             comp.currency,
+      pending_celebrations: [],
+    })
   }
   // ── End gamification hook ──────────────────────────────────────────
-
-  return json({
-    ok: true,
-    ledger_id:            newLedgerId,
-    record_hash:          recordHash,
-    verification_status:  verificationStatus,
-    amount:               comp.reward_amount,
-    currency:             comp.currency,
-    pending_celebrations: pendingCelebrations,
-  });
 }
 
 // ----------------------------------------------------------------
@@ -388,6 +392,7 @@ export async function handleApproveAll(request: Request, env: Env): Promise<Resp
 
   const { results: pending } = await env.DB.prepare(`
     SELECT comp.id AS comp_id, comp.chore_id, comp.child_id,
+           comp.submitted_at,
            ch.title, ch.reward_amount, ch.currency
     FROM completions comp
     JOIN chores ch ON ch.id = comp.chore_id
@@ -395,7 +400,7 @@ export async function handleApproveAll(request: Request, env: Env): Promise<Resp
     ORDER BY comp.submitted_at ASC
   `).bind(family_id, child_id).all<{
     comp_id: string; chore_id: string; child_id: string;
-    title: string; reward_amount: number; currency: string;
+    submitted_at: number; title: string; reward_amount: number; currency: string;
   }>();
 
   if (pending.length === 0) return json({ approved: 0 });
@@ -447,7 +452,60 @@ export async function handleApproveAll(request: Request, env: Env): Promise<Resp
     ]);
   }
 
-  return json({ approved: pending.length });
+  // ── Gamification hook (approve-all) ───────────────────────────────
+  try {
+    const pendingCelebrations: string[] = []
+
+    // Streak eval: check each unique submission date
+    const uniqueDates = [...new Set(pending.map(c =>
+      new Date(c.submitted_at * 1000).toISOString().slice(0, 10)
+    ))]
+
+    for (const date of uniqueDates) {
+      const [allDone, streakState] = await Promise.all([
+        allScheduledChoresDone(env.DB, child_id, date),
+        getStreakState(env.DB, child_id),
+      ])
+      const streakEvent = buildStreakEvent({ allChoresDone: allDone, date, state: streakState })
+      if (streakEvent) {
+        await saveStreakEvent(env.DB, child_id, streakEvent, date)
+        const { previousStreak, newStreak } = streakEvent
+        if      (newStreak === 3)  pendingCelebrations.push(`STREAK_3:${previousStreak}:${newStreak}`)
+        else if (newStreak === 7)  pendingCelebrations.push(`STREAK_7:${previousStreak}:${newStreak}`)
+        else if (newStreak === 14) pendingCelebrations.push(`STREAK_14:${previousStreak}:${newStreak}`)
+        else if (newStreak === 30) pendingCelebrations.push(`STREAK_30:${previousStreak}:${newStreak}`)
+      }
+    }
+
+    // Badge eval for the whole batch
+    const [stats, finalStreak] = await Promise.all([
+      getBadgeStats(env.DB, child_id),
+      getStreakState(env.DB, child_id),
+    ])
+    const totalApprovedChores = stats.totalApprovedChores + pending.length
+    const isFirstChore = stats.totalApprovedChores === 0 && pending.length >= 1
+
+    const newBadges = badgesToAward({
+      earnedBadgeKeys:       stats.earnedBadgeKeys,
+      currentStreak:         finalStreak.current_streak,
+      longestStreak:         Math.max(finalStreak.longest_streak, finalStreak.current_streak),
+      totalApprovedChores,
+      totalGoalsCompleted:   stats.totalGoalsCompleted,
+      totalSavedPence:       stats.totalSavedPence,
+      totalLessonsCompleted: stats.totalLessonsCompleted,
+      isFirstPayday:         false,
+      isFirstChore,
+    })
+    if (newBadges.length > 0) {
+      await insertBadges(env.DB, child_id, newBadges, nanoid)
+      for (const key of newBadges) pendingCelebrations.push(`BADGE_${key}`)
+    }
+
+    return json({ approved: pending.length, pending_celebrations: pendingCelebrations })
+  } catch {
+    return json({ approved: pending.length, pending_celebrations: [] })
+  }
+  // ── End gamification hook (approve-all) ───────────────────────────
 }
 
 async function parseBody(request: Request): Promise<Record<string, unknown> | null> {

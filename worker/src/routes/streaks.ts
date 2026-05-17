@@ -32,11 +32,14 @@ export async function handleGetStreaks(
   ])
 
   return json({
-    current_streak:       state.current_streak,
-    longest_streak:       state.longest_streak,
-    grace_days_remaining: state.grace_days_remaining,
-    last_kept_date:       state.last_kept_date,
-    consistency_score:    score,
-    earned_badge_keys:    stats.earnedBadgeKeys,
+    current_streak:         state.current_streak,
+    longest_streak:         state.longest_streak,
+    grace_days_remaining:   state.grace_days_remaining,
+    last_kept_date:         state.last_kept_date,
+    consistency_score:      score,
+    earned_badge_keys:      stats.earnedBadgeKeys,
+    total_approved_chores:  stats.totalApprovedChores,
+    total_goals_completed:  stats.totalGoalsCompleted,
+    total_saved_pence:      stats.totalSavedPence,
   })
 }

@@ -153,12 +153,12 @@ export async function saveStreakEvent(
 
 export async function allScheduledChoresDone(db: D1Database, childId: string, date: string): Promise<boolean> {
   const result = await db.prepare(`
-    SELECT COUNT(c.id) AS total,
-           SUM(CASE WHEN comp.status = 'completed' THEN 1 ELSE 0 END) AS done
-    FROM chores c
-    LEFT JOIN completions comp ON comp.chore_id = c.id AND comp.child_id = ?
-    WHERE c.assigned_to = ? AND c.due_date = ? AND c.archived = 0
-  `).bind(childId, childId, date).first<{ total: number; done: number }>()
+    SELECT COUNT(DISTINCT chore_id) AS total,
+           COUNT(DISTINCT CASE WHEN status = 'completed' THEN chore_id END) AS done
+    FROM completions
+    WHERE child_id = ?
+      AND date(submitted_at, 'unixepoch') = ?
+  `).bind(childId, date).first<{ total: number; done: number }>()
 
   if (!result || result.total === 0) return false
   return result.done >= result.total
@@ -166,32 +166,30 @@ export async function allScheduledChoresDone(db: D1Database, childId: string, da
 
 export async function hadScheduledChores(db: D1Database, childId: string, date: string): Promise<boolean> {
   const result = await db.prepare(
-    `SELECT COUNT(*) AS total FROM chores WHERE assigned_to = ? AND due_date = ? AND archived = 0`
+    `SELECT COUNT(*) AS total FROM completions WHERE child_id = ? AND date(submitted_at, 'unixepoch') = ?`
   ).bind(childId, date).first<{ total: number }>()
   return (result?.total ?? 0) > 0
 }
 
 export async function getConsistencyScore(db: D1Database, childId: string): Promise<number> {
-  const cutoff = (() => {
-    const d = new Date(); d.setUTCDate(d.getUTCDate() - 30); return d.toISOString().slice(0, 10)
-  })()
+  const cutoffEpoch = Math.floor(Date.now() / 1000) - 30 * 86400
 
   const [scheduledResult, keptResult] = await Promise.all([
     db.prepare(
-      `SELECT COUNT(DISTINCT c.due_date) AS total FROM chores c WHERE c.assigned_to = ? AND c.due_date >= ? AND c.archived = 0`
-    ).bind(childId, cutoff).first<{ total: number }>(),
+      `SELECT COUNT(DISTINCT date(submitted_at, 'unixepoch')) AS total
+       FROM completions
+       WHERE child_id = ? AND submitted_at >= ?`
+    ).bind(childId, cutoffEpoch).first<{ total: number }>(),
     db.prepare(`
-      SELECT COUNT(DISTINCT due_date) AS total FROM (
-        SELECT c.due_date,
-               COUNT(c.id) AS t,
-               SUM(CASE WHEN comp.status = 'completed' THEN 1 ELSE 0 END) AS d
-        FROM chores c
-        LEFT JOIN completions comp ON comp.chore_id = c.id AND comp.child_id = ?
-        WHERE c.assigned_to = ? AND c.due_date >= ? AND c.archived = 0
-        GROUP BY c.due_date
-        HAVING t = d AND d > 0
+      SELECT COUNT(*) AS total FROM (
+        SELECT date(submitted_at, 'unixepoch') AS sub_date
+        FROM completions
+        WHERE child_id = ? AND submitted_at >= ?
+        GROUP BY sub_date
+        HAVING COUNT(*) = SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END)
+          AND COUNT(*) > 0
       )
-    `).bind(childId, childId, cutoff).first<{ total: number }>(),
+    `).bind(childId, cutoffEpoch).first<{ total: number }>(),
   ])
 
   return consistencyScore(keptResult?.total ?? 0, scheduledResult?.total ?? 0)

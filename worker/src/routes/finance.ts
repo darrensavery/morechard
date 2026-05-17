@@ -20,6 +20,7 @@ import { nanoid } from '../lib/nanoid.js';
 import { computeRecordHash, GENESIS_HASH } from '../lib/hash.js';
 import { JwtPayload } from '../lib/jwt.js';
 import { getStreakState, buildMissEvent, saveStreakEvent, hadScheduledChores, todayUTC, previousDay } from '../lib/streaks.js';
+import { getBadgeStats, badgesToAward, insertBadges } from '../lib/badges.js';
 
 type AuthedRequest = Request & { auth: JwtPayload };
 
@@ -96,6 +97,38 @@ export async function handlePayoutCreate(request: Request, env: Env): Promise<Re
      VALUES (?,?,?,?,?,?,?,?)`
   ).bind(id, family_id as string, child_id as string, auth.sub, amount, currency,
     note ? String(note).trim() : null, now).run();
+
+  // ── First-payday badge ─────────────────────────────────────────────
+  try {
+    const payoutCount = await env.DB.prepare(
+      `SELECT COUNT(*) AS total FROM payouts WHERE child_id = ?`
+    ).bind(child_id as string).first<{ total: number }>()
+
+    if (payoutCount?.total === 1) {
+      // This was the first payout — check for LANDMARK_SAPLING badge
+      const [stats, streakState] = await Promise.all([
+        getBadgeStats(env.DB, child_id as string),
+        getStreakState(env.DB, child_id as string),
+      ])
+      const newBadges = badgesToAward({
+        earnedBadgeKeys:       stats.earnedBadgeKeys,
+        currentStreak:         streakState.current_streak,
+        longestStreak:         Math.max(streakState.longest_streak, streakState.current_streak),
+        totalApprovedChores:   stats.totalApprovedChores,
+        totalGoalsCompleted:   stats.totalGoalsCompleted,
+        totalSavedPence:       stats.totalSavedPence,
+        totalLessonsCompleted: stats.totalLessonsCompleted,
+        isFirstPayday:         true,
+        isFirstChore:          false,
+      })
+      if (newBadges.length > 0) {
+        await insertBadges(env.DB, child_id as string, newBadges, nanoid)
+      }
+    }
+  } catch {
+    // Badge eval is non-critical
+  }
+  // ── End first-payday badge ─────────────────────────────────────────
 
   return json({ id, paid_at: now }, 201);
 }
@@ -308,7 +341,7 @@ export async function handleBalance(request: Request, env: Env): Promise<Respons
     env.DB.prepare(
       `SELECT COALESCE(SUM(ch.reward_amount), 0) AS total
        FROM completions comp JOIN chores ch ON ch.id = comp.chore_id
-       WHERE comp.family_id = ? AND comp.child_id = ? AND comp.status = 'pending'`
+       WHERE comp.family_id = ? AND comp.child_id = ? AND comp.status = 'awaiting_review'`
     ).bind(family_id, child_id).first<{ total: number }>(),
 
     env.DB.prepare(
@@ -337,7 +370,7 @@ export async function handleBalance(request: Request, env: Env): Promise<Respons
   const available = earnedTotal - reversalsTotal - payoutsTotal - spentTotal;
 
   // ── Gamification: lazy miss detection ──────────────────────────────
-  const pendingCelebrations: string[] = []
+  let pendingCelebrations: string[] = []
   const today = todayUTC()
   const yesterday = previousDay(today)
 
@@ -348,41 +381,56 @@ export async function handleBalance(request: Request, env: Env): Promise<Respons
 
   let currentStreakData = streakState
 
-  const missEvent = buildMissEvent({
-    hadScheduledChores: yesterdayHadChores,
-    today,
-    state: streakState,
-  })
-
-  if (missEvent) {
-    await saveStreakEvent(env.DB, child_id, missEvent, today)
-    currentStreakData = {
-      ...streakState,
-      current_streak:       missEvent.newStreak,
-      grace_days_remaining: missEvent.newGrace,
-      last_checked_date:    today,
-    }
-    if (missEvent.type === 'MISSED') {
-      pendingCelebrations.push(`STREAK_LOST:${missEvent.previousStreak}:0`)
-    } else if (missEvent.type === 'GRACE_USED') {
-      pendingCelebrations.push(`STREAK_REVIVED:${missEvent.previousStreak}:${missEvent.newStreak}`)
-    }
-  } else if (streakState.last_checked_date !== today) {
-    // Advance check date without changing streak
-    await env.DB.prepare(
-      `INSERT INTO child_streaks (child_id, current_streak, longest_streak, grace_days_remaining, last_kept_date, last_checked_date, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?)
-       ON CONFLICT(child_id) DO UPDATE SET last_checked_date = excluded.last_checked_date, updated_at = excluded.updated_at`
-    ).bind(
-      child_id,
-      streakState.current_streak,
-      streakState.longest_streak,
-      streakState.grace_days_remaining,
-      streakState.last_kept_date,
+  try {
+    const missEvent = buildMissEvent({
+      hadScheduledChores: yesterdayHadChores,
       today,
-      new Date().toISOString()
-    ).run()
-    currentStreakData = { ...streakState, last_checked_date: today }
+      state: streakState,
+    })
+
+    if (missEvent) {
+      await saveStreakEvent(env.DB, child_id, missEvent, today)
+      currentStreakData = {
+        ...streakState,
+        current_streak:       missEvent.newStreak,
+        grace_days_remaining: missEvent.newGrace,
+        last_checked_date:    today,
+      }
+      if (missEvent.type === 'MISSED') {
+        pendingCelebrations.push(`STREAK_LOST:${missEvent.previousStreak}:0`)
+      } else if (missEvent.type === 'GRACE_USED') {
+        pendingCelebrations.push(`STREAK_REVIVED:${missEvent.previousStreak}:${missEvent.newStreak}`)
+      }
+    } else if (streakState.last_checked_date !== today) {
+      // Advance check date without changing streak
+      await env.DB.prepare(
+        `INSERT INTO child_streaks (child_id, current_streak, longest_streak, grace_days_remaining, last_kept_date, last_checked_date, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?)
+         ON CONFLICT(child_id) DO UPDATE SET last_checked_date = excluded.last_checked_date, updated_at = excluded.updated_at`
+      ).bind(
+        child_id,
+        streakState.current_streak,
+        streakState.longest_streak,
+        streakState.grace_days_remaining,
+        streakState.last_kept_date,
+        today,
+        new Date().toISOString()
+      ).run()
+      currentStreakData = { ...streakState, last_checked_date: today }
+    }
+
+    // Surface newly earned badges on first balance load of each day
+    if (streakState.last_checked_date !== today) {
+      const newBadgeRows = await env.DB.prepare(
+        `SELECT badge_key FROM child_badges WHERE child_id = ? AND date(earned_at) > COALESCE(?, '1970-01-01')`
+      ).bind(child_id, streakState.last_checked_date).all<{ badge_key: string }>()
+
+      for (const { badge_key } of newBadgeRows.results ?? []) {
+        pendingCelebrations.push(`BADGE_${badge_key}`)
+      }
+    }
+  } catch {
+    pendingCelebrations = []
   }
   // ── End gamification ────────────────────────────────────────────────
 
