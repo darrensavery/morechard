@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { todayUTC, consistencyScore, buildStreakEvent } from './streaks'
+import { todayUTC, consistencyScore, buildStreakEvent, buildMissEvent } from './streaks'
 
 describe('todayUTC', () => {
   it('returns a YYYY-MM-DD string', () => {
@@ -75,5 +75,55 @@ describe('buildStreakEvent', () => {
       state: { current_streak: 6, longest_streak: 6, grace_days_remaining: 2, last_kept_date: '2026-05-16', last_checked_date: '2026-05-16' },
     })
     expect(event?.newGrace).toBe(2) // capped
+  })
+})
+
+describe('buildMissEvent', () => {
+  it('returns null when already checked today', () => {
+    const event = buildMissEvent({
+      hadScheduledChores: true,
+      today: '2026-05-17',
+      state: { current_streak: 5, longest_streak: 5, grace_days_remaining: 0, last_kept_date: '2026-05-14', last_checked_date: '2026-05-17' },
+    })
+    expect(event).toBeNull()
+  })
+
+  it('returns null when no scheduled chores yesterday', () => {
+    const event = buildMissEvent({
+      hadScheduledChores: false,
+      today: '2026-05-17',
+      state: { current_streak: 5, longest_streak: 5, grace_days_remaining: 0, last_kept_date: '2026-05-14', last_checked_date: '2026-05-16' },
+    })
+    expect(event).toBeNull()
+  })
+
+  it('returns null when last_kept_date is yesterday (no miss)', () => {
+    const event = buildMissEvent({
+      hadScheduledChores: true,
+      today: '2026-05-17',
+      state: { current_streak: 5, longest_streak: 5, grace_days_remaining: 0, last_kept_date: '2026-05-16', last_checked_date: '2026-05-16' },
+    })
+    expect(event).toBeNull()
+  })
+
+  it('returns GRACE_USED and decrements grace when grace > 0', () => {
+    const event = buildMissEvent({
+      hadScheduledChores: true,
+      today: '2026-05-17',
+      state: { current_streak: 5, longest_streak: 5, grace_days_remaining: 1, last_kept_date: '2026-05-14', last_checked_date: '2026-05-16' },
+    })
+    expect(event?.type).toBe('GRACE_USED')
+    expect(event?.newStreak).toBe(5) // preserved
+    expect(event?.newGrace).toBe(0) // decremented
+  })
+
+  it('returns MISSED with newStreak 0 when no grace', () => {
+    const event = buildMissEvent({
+      hadScheduledChores: true,
+      today: '2026-05-17',
+      state: { current_streak: 5, longest_streak: 5, grace_days_remaining: 0, last_kept_date: '2026-05-14', last_checked_date: '2026-05-16' },
+    })
+    expect(event?.type).toBe('MISSED')
+    expect(event?.newStreak).toBe(0)
   })
 })
