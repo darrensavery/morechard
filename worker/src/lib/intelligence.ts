@@ -655,7 +655,7 @@ async function queryDistinctIps7d(
     .prepare(`
       SELECT COUNT(DISTINCT ip_address) AS n
       FROM child_logins
-      WHERE child_id = ? AND logged_in_at >= ?
+      WHERE child_id = ? AND logged_at >= ?
     `)
     .bind(childId, week_ago)
     .first<{ n: number }>()

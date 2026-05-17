@@ -56,13 +56,19 @@ export function ParentDashboard() {
     localStorage.setItem('mc_parent_tab', t)
   }
 
+  function handleSetActiveChild(child: ChildRecord) {
+    setActiveChild(child)
+    localStorage.setItem('mc_active_child_id', child.id)
+  }
+
   const tabBarRef = useRef<HTMLDivElement>(null)
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([])
   const [indicator, setIndicator] = useState({ left: 0, width: 0 })
   const [children,   setChildren]   = useState<ChildRecord[]>([])
   const [activeChild, setActiveChild] = useState<ChildRecord | null>(null)
   const [childrenLoaded, setChildrenLoaded] = useState(false)
-  const [pendingCount, setPendingCount] = useState(0)
+  const [pendingByChild, setPendingByChild] = useState<Record<string, number>>({})
+  const pendingCount = activeChild ? (pendingByChild[activeChild.id] ?? 0) : 0
   const [online,       setOnline]       = useState(navigator.onLine)
   const [parentingMode, setParentingMode] = useState<'single' | 'co-parenting'>('single')
   const [trialStatus,  setTrialStatus]  = useState<TrialStatus | null>(null)
@@ -133,7 +139,11 @@ export function ParentDashboard() {
     if (!familyId) { navigate('/'); return }
     getChildren().then(r => {
       setChildren(r.children)
-      if (r.children.length > 0 && !activeChild) setActiveChild(r.children[0])
+      if (r.children.length > 0) {
+        const savedId = localStorage.getItem('mc_active_child_id')
+        const saved = savedId ? r.children.find(c => c.id === savedId) : null
+        setActiveChild(saved ?? r.children[0])
+      }
       setChildrenLoaded(true)
     }).catch((err: unknown) => {
       setChildrenLoaded(true)
@@ -176,22 +186,30 @@ export function ParentDashboard() {
     return () => { window.removeEventListener('online', on); window.removeEventListener('offline', off) }
   }, [])
 
-  // Poll pending count — pauses when the tab is hidden to avoid wasteful background requests
+  // Poll pending counts for all children — pauses when the tab is hidden
   useEffect(() => {
-    if (!familyId || !activeChild) return
+    if (!familyId || children.length === 0) return
     const load = () => {
       if (document.hidden) return
-      getCompletions({ family_id: familyId, child_id: activeChild.id, status: 'awaiting_review' })
-        .then(r => setPendingCount(r.completions.length))
-        .catch(() => {})
+      Promise.allSettled(
+        children.map(child =>
+          getCompletions({ family_id: familyId, child_id: child.id, status: 'awaiting_review' })
+            .then(r => ({ id: child.id, count: r.completions.length }))
+        )
+      ).then(results => {
+        const map: Record<string, number> = {}
+        for (const result of results) {
+          if (result.status === 'fulfilled') map[result.value.id] = result.value.count
+        }
+        setPendingByChild(map)
+      })
     }
     load()
     const t = setInterval(load, 30_000)
-    // Also fire immediately when the tab becomes visible again after being hidden
     const onVisible = () => { if (!document.hidden) load() }
     document.addEventListener('visibilitychange', onVisible)
     return () => { clearInterval(t); document.removeEventListener('visibilitychange', onVisible) }
-  }, [familyId, activeChild])
+  }, [familyId, children])
 
   const poolLabel = 'Expenses'
   const TABS: { id: Tab; label: string; badge?: number }[] = [
@@ -272,22 +290,31 @@ export function ParentDashboard() {
         {/* Child selector */}
         {children.length > 1 && (
           <div className="max-w-[560px] mx-auto px-3.5 pb-2.5 flex gap-2 overflow-x-auto scrollbar-hide">
-            {children.map(child => (
-              <button
-                key={child.id}
-                onClick={() => setActiveChild(child)}
-                className={`
-                  shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[13px] font-semibold
-                  transition-colors duration-100 cursor-pointer
-                  ${activeChild?.id === child.id
-                    ? 'bg-[var(--brand-primary)] text-white'
-                    : 'bg-[var(--color-surface-alt)] text-[var(--color-text-muted)] hover:opacity-80'}
-                `}
-              >
-                <AvatarSVG id={child.avatar_id ?? 'bottts:spark'} size={20} />
-                {child.display_name}
-              </button>
-            ))}
+            {children.map(child => {
+              const childPending = pendingByChild[child.id] ?? 0
+              const showNavBadge = childPending > 0 && (child.id !== activeChild?.id || tab !== 'activity')
+              return (
+                <button
+                  key={child.id}
+                  onClick={() => handleSetActiveChild(child)}
+                  className={`
+                    shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[13px] font-semibold
+                    transition-colors duration-100 cursor-pointer relative
+                    ${activeChild?.id === child.id
+                      ? 'bg-[var(--brand-primary)] text-white'
+                      : 'bg-[var(--color-surface-alt)] text-[var(--color-text-muted)] hover:opacity-80'}
+                  `}
+                >
+                  <AvatarSVG id={child.avatar_id ?? 'bottts:spark'} size={20} />
+                  {child.display_name}
+                  {showNavBadge && (
+                    <span className="bg-red-500 text-white text-[9px] font-bold rounded-full w-[16px] h-[16px] flex items-center justify-center leading-none shrink-0">
+                      {childPending}
+                    </span>
+                  )}
+                </button>
+              )
+            })}
           </div>
         )}
         {/* Active child streak chip */}
@@ -390,7 +417,7 @@ export function ParentDashboard() {
         {!childrenLoaded ? null : activeChild ? (
           <>
             <div className={tab === 'chores'   ? 'tab-panel' : 'tab-panel hidden'}><ChoresTab       familyId={familyId} child={activeChild} children={children} /></div>
-            <div className={tab === 'activity' ? 'tab-panel' : 'tab-panel hidden'}><ActivityTab     familyId={familyId} child={activeChild} childCount={children.length} onCountChange={setPendingCount} unpaidRow={unpaid.find(u => u.child_id === activeChild.id) ?? null} onOpenBridge={() => { const row = unpaid.find(u => u.child_id === activeChild.id); if (row) openBridgeForChild(activeChild, row) }} /></div>
+            <div className={tab === 'activity' ? 'tab-panel' : 'tab-panel hidden'}><ActivityTab     familyId={familyId} child={activeChild} childCount={children.length} onCountChange={count => setPendingByChild(prev => ({ ...prev, [activeChild.id]: count }))} unpaidRow={unpaid.find(u => u.child_id === activeChild.id) ?? null} onOpenBridge={() => { const row = unpaid.find(u => u.child_id === activeChild.id); if (row) openBridgeForChild(activeChild, row) }} onAfterPayout={refreshUnpaid} /></div>
             <div className={tab === 'pool'     ? 'tab-panel' : 'tab-panel hidden'}>
               <PoolTab
                 familyId={familyId}

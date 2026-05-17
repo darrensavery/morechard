@@ -89,6 +89,13 @@ export function EarnTab({ familyId, childId, currency }: Props) {
 
   useEffect(() => { load() }, [load])
 
+  useEffect(() => {
+    const t = setInterval(load, 30_000)
+    const onVisible = () => { if (!document.hidden) load() }
+    document.addEventListener('visibilitychange', onVisible)
+    return () => { clearInterval(t); document.removeEventListener('visibilitychange', onVisible) }
+  }, [load])
+
   // Map chore_id → Chore for quick lookup
   const choreMap = new Map(chores.map(c => [c.id, c]))
 
@@ -313,6 +320,7 @@ export function EarnTab({ familyId, childId, currency }: Props) {
       <ChoreGuideSheet
         open={choreGuideOpen}
         onClose={() => setChoreGuideOpen(false)}
+        familyId={familyId}
         context={null}
         currency={currency}
       />

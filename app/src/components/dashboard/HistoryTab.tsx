@@ -3,6 +3,7 @@ import type { Completion, PayoutRecord, ChildRecord, UnpaidSummaryRow } from '..
 import {
   getHistory, getPayouts, createPayout, createBonus, formatCurrency,
   getCompletions, approveCompletion, reviseCompletion, approveAll, getProofUrl, getChores,
+  markPaidBatch,
 } from '../../lib/api'
 import { useGatekeeper } from '../../hooks/useGatekeeper'
 import { useAndroidBack } from '../../hooks/useAndroidBack'
@@ -16,6 +17,7 @@ interface Props {
   onCountChange: (n: number) => void
   unpaidRow?: UnpaidSummaryRow | null
   onOpenBridge?: () => void
+  onAfterPayout?: () => void
   /** Reserved for next iteration — real goal progress data */
   goalProgress?: { goalName: string; choresRemaining: number } | null
 }
@@ -47,7 +49,7 @@ function MiniSheet({ onClose, children }: { onClose: () => void; children: React
   )
 }
 
-export function ActivityTab({ familyId, child, childCount, onCountChange, unpaidRow, goalProgress }: Props) {
+export function ActivityTab({ familyId, child, childCount, onCountChange, unpaidRow, onAfterPayout, goalProgress }: Props) {
   // ── Pending completions (absorbed from PendingTab) ───────────────────────────
   const { challenge, GatekeeperModal } = useGatekeeper()
   const [completions,         setCompletions]         = useState<Completion[]>([])
@@ -108,6 +110,13 @@ export function ActivityTab({ familyId, child, childCount, onCountChange, unpaid
 
   useEffect(() => { loadPending() }, [loadPending])
 
+  useEffect(() => {
+    const t = setInterval(loadPending, 30_000)
+    const onVisible = () => { if (!document.hidden) loadPending() }
+    document.addEventListener('visibilitychange', onVisible)
+    return () => { clearInterval(t); document.removeEventListener('visibilitychange', onVisible) }
+  }, [loadPending])
+
   async function handleApprove(id: string) {
     setApproveBusy(id)
     try { await approveCompletion(id); await loadPending() }
@@ -160,9 +169,14 @@ export function ActivityTab({ familyId, child, childCount, onCountChange, unpaid
         currency: 'GBP', // TODO: thread actual family currency once currency is wired to history API
         note: payoutNote || undefined,
       })
+      // Stamp paid_out_at on all unpaid completions so the banner clears
+      const r = await getCompletions({ family_id: familyId, child_id: child.id, status: 'completed' })
+      const unpaidIds = r.completions.filter(c => c.paid_out_at == null).map(c => c.id)
+      if (unpaidIds.length > 0) await markPaidBatch(familyId, unpaidIds)
       setShowPayout(false)
       setPayoutAmount('')
       setPayoutNote('')
+      onAfterPayout?.()
       await load()
     } catch (err: unknown) {
       setPayoutError((err as Error).message)
@@ -581,7 +595,7 @@ export function ActivityTab({ familyId, child, childCount, onCountChange, unpaid
 
 // ── Chore Detail Sheet ────────────────────────────────────────────────────────
 
-function ChoreDetailSheet({ completion: c, onClose }: { completion: Completion; onClose: () => void }) {
+export function ChoreDetailSheet({ completion: c, onClose }: { completion: Completion; onClose: () => void }) {
   const [proofUrl, setProofUrl] = useState<string | null>(null)
   const [proofState, setProofState] = useState<'idle' | 'loading' | 'loaded' | 'error'>('idle')
   const { sheetRef, handleProps } = useDragToClose(onClose)

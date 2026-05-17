@@ -1,20 +1,25 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
-  getChores, submitChore, getBalance, getGoals,
-  getCompletions, getSettings, getFamilyId, getUserId,
+  getChores, submitChore, uploadProof, getBalance, getGoals,
+  getCompletions, getSettings, updateSettings, getFamilyId, getUserId,
   formatCurrency, purchaseGoal, effectiveTarget,
   apiUrl, authHeaders,
 } from '../lib/api'
 import type { Chore, BalanceSummary, Goal, Completion } from '../lib/api'
 import { useAppView } from '../lib/useTone'
 import { ThemePicker } from '../lib/theme'
+import { AvatarSVG, AVATAR_CATEGORIES, avatarsForCategory } from '../lib/avatars'
+import type { AvatarCategory } from '../lib/avatars'
 import { SavingsGrove } from '../components/dashboard/SavingsGrove'
 import { BadgeAlmanac } from '../components/dashboard/BadgeAlmanac'
 import { FullLogo } from '../components/ui/Logo'
 import { GrowingTree } from '../components/ui/GrowingTree'
 import { EarnTab } from '../components/dashboard/EarnTab'
 import { LabTab } from '../components/dashboard/LabTab'
+import { ChildHistoryTab } from '../components/dashboard/ChildHistoryTab'
+import { ChildMoneyTab } from '../components/dashboard/ChildMoneyTab'
+import { ChildGoalsTab } from '../components/dashboard/ChildGoalsTab'
 import { MilestoneOverlay, consumeMilestonePending, queueCelebration, consumeNextCelebration } from '../components/celebration'
 import type { MilestoneEvent, MilestoneEventType } from '../components/celebration'
 import { MicroToast } from '../components/celebration/MicroToast'
@@ -114,8 +119,11 @@ export function ChildDashboard() {
       : null
   )
   const [activeCelebration, setActiveCelebration] = useState<MilestoneEvent | null>(null)
-  const [showSettings, setShowSettings] = useState(false)
-  const [showGrove,    setShowGrove]    = useState(false)
+  const [showSettings,     setShowSettings]     = useState(false)
+  const [showAvatarPicker, setShowAvatarPicker] = useState(false)
+  const [avatarId,         setAvatarId]         = useState<string>('bottts:spark')
+  const [savingAvatar,     setSavingAvatar]      = useState(false)
+  const [showGrove,        setShowGrove]         = useState(false)
   const [weeklyAllowancePence, setWeeklyAllowancePence] = useState(0)
   const [currency, setCurrency] = useState('GBP')
   const [purchasing,   setPurchasing]   = useState<string | null>(null)
@@ -132,12 +140,14 @@ export function ChildDashboard() {
   } | null>(null)
 
   // Per-chore submission state
-  const [childTab,   setChildTab]   = useState<'home' | 'earn' | 'lab'>('home')
-  const [submitting, setSubmitting] = useState<string | null>(null)
-  const [submitted,  setSubmitted]  = useState<Set<string>>(new Set())
-  const [noteChore,  setNoteChore]  = useState<string | null>(null)
-  const [noteText,   setNoteText]   = useState('')
-  const [submitErr,  setSubmitErr]  = useState<string | null>(null)
+  const [childTab,      setChildTab]      = useState<'home' | 'chores' | 'money' | 'goals' | 'lab'>('home')
+  const [submitting,    setSubmitting]    = useState<string | null>(null)
+  const [submitted,     setSubmitted]     = useState<Set<string>>(new Set())
+  const [noteChore,     setNoteChore]     = useState<string | null>(null)
+  const [noteText,      setNoteText]      = useState('')
+  const [submitErr,     setSubmitErr]     = useState<string | null>(null)
+  const [proofChoreId,  setProofChoreId]  = useState<string | null>(null)
+  const proofFileRef = useRef<HTMLInputElement>(null)
 
   const load = useCallback(async () => {
     if (!familyId || !userId) { navigate('/lock'); return }
@@ -157,6 +167,7 @@ export function ChildDashboard() {
       setPending(p)
       const av = (s.app_view ?? 'ORCHARD') as 'ORCHARD' | 'CLEAN'
       setAppView(av)
+      if (s.avatar_id) setAvatarId(s.avatar_id)
       // Estimate weekly allowance as sum of all weekly/daily chore rewards
       const weekly = c.reduce((sum, chore) => {
         if (chore.frequency === 'weekly') return sum + chore.reward_amount
@@ -188,6 +199,15 @@ export function ChildDashboard() {
   }, [familyId, userId, navigate])
 
   useEffect(() => { load() }, [load])
+
+  // Refresh chores + balance when app regains visibility or every 30s
+  // so newly assigned chores appear without requiring a re-login
+  useEffect(() => {
+    const t = setInterval(load, 30_000)
+    const onVisible = () => { if (!document.hidden) load() }
+    document.addEventListener('visibilitychange', onVisible)
+    return () => { clearInterval(t); document.removeEventListener('visibilitychange', onVisible) }
+  }, [load])
 
   // Fetch streak + badge data on mount
   useEffect(() => {
@@ -243,11 +263,12 @@ export function ChildDashboard() {
 
   // ── Submission ─────────────────────────────────────────────────────────────
 
-  async function handleDone(choreId: string, note?: string) {
+  async function handleDone(choreId: string, note?: string, file?: File) {
     setSubmitting(choreId)
     setSubmitErr(null)
     try {
-      await submitChore(choreId, note)
+      const result = await submitChore(choreId, note)
+      if (file) await uploadProof(result.id, file)
       setSubmitted(prev => new Set(prev).add(choreId))
       setNoteChore(null)
       setNoteText('')
@@ -257,6 +278,20 @@ export function ChildDashboard() {
     } finally {
       setSubmitting(null)
     }
+  }
+
+  async function handleProofFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file || !proofChoreId) return
+    e.target.value = ''
+    const id = proofChoreId
+    setProofChoreId(null)
+    await handleDone(id, undefined, file)
+  }
+
+  function startProofCapture(choreId: string) {
+    setProofChoreId(choreId)
+    setTimeout(() => proofFileRef.current?.click(), 50)
   }
 
   // ── Goal purchase ──────────────────────────────────────────────────────────
@@ -335,7 +370,7 @@ export function ChildDashboard() {
 
         {/* Tab bar */}
         <div className="max-w-[560px] mx-auto border-t border-[var(--color-border)] flex">
-          {([['home', 'Home'], ['earn', 'Tasks'], ['lab', 'Lab']] as const).map(([id, label]) => (
+          {([['home', 'Home'], ['chores', 'Chores'], ['money', 'Money'], ['goals', 'Goals'], ['lab', 'Lab']] as const).map(([id, label]) => (
             <button
               key={id}
               onClick={() => setChildTab(id)}
@@ -360,8 +395,13 @@ export function ChildDashboard() {
             onClick={() => setShowSettings(false)}
           />
           {/* Sheet */}
-          <div className="relative bg-[var(--color-surface)] rounded-t-2xl shadow-xl max-w-[560px] w-full mx-auto px-4 pt-4 pb-8 space-y-4">
-            <div className="flex items-center justify-between mb-1">
+          <div className="relative bg-[var(--color-surface)] rounded-t-2xl shadow-xl max-w-[560px] w-full mx-auto px-4 pt-4 pb-10 space-y-5">
+            {/* Drag handle */}
+            <div className="flex justify-center pt-1 pb-0">
+              <div className="w-10 h-1 rounded-full bg-[var(--color-border)]" />
+            </div>
+
+            <div className="flex items-center justify-between">
               <p className="text-[16px] font-extrabold text-[var(--color-text)]">Settings</p>
               <button
                 onClick={() => setShowSettings(false)}
@@ -370,15 +410,109 @@ export function ChildDashboard() {
                 ×
               </button>
             </div>
-            <ThemePicker />
+
+            {/* Avatar */}
+            <div>
+              <p className="text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-2">Avatar</p>
+              <div className="flex items-center gap-3">
+                <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-[var(--color-border)] shrink-0">
+                  <AvatarSVG id={avatarId} size={56} />
+                </div>
+                <button
+                  onClick={() => setShowAvatarPicker(v => !v)}
+                  className="text-[13px] font-semibold text-[var(--brand-primary)] hover:underline cursor-pointer"
+                >
+                  {showAvatarPicker ? 'Close' : 'Change avatar'}
+                </button>
+              </div>
+
+              {showAvatarPicker && (
+                <div className="mt-3 max-h-56 overflow-y-auto rounded-xl border border-[var(--color-border)] p-2.5">
+                  {AVATAR_CATEGORIES.map(cat => (
+                    <div key={cat.id} className="mb-3 last:mb-0">
+                      <p className="text-[10px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-1.5 px-0.5">{cat.label}</p>
+                      <div className="grid grid-cols-6 gap-1.5">
+                        {avatarsForCategory(cat.id as AvatarCategory).map(avId => (
+                          <button
+                            key={avId}
+                            disabled={savingAvatar}
+                            onClick={async () => {
+                              setSavingAvatar(true)
+                              try {
+                                await updateSettings({ avatar_id: avId })
+                                setAvatarId(avId)
+                                setShowAvatarPicker(false)
+                              } finally {
+                                setSavingAvatar(false)
+                              }
+                            }}
+                            className={`p-0.5 rounded-xl border-2 transition-colors cursor-pointer disabled:opacity-50 ${
+                              avId === avatarId
+                                ? 'border-[var(--brand-primary)]'
+                                : 'border-transparent hover:border-[var(--color-border)]'
+                            }`}
+                          >
+                            <AvatarSVG id={avId} size={36} />
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Appearance */}
+            <div>
+              <p className="text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-2">Appearance</p>
+              <ThemePicker />
+            </div>
+
+            {/* Experience mode — read-only, parent controls */}
+            <div>
+              <p className="text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-2">Experience</p>
+              <div className="flex items-center justify-between rounded-xl border border-[var(--color-border)] px-3.5 py-3 bg-[var(--color-surface-alt)]">
+                <div>
+                  <p className="text-[14px] font-semibold text-[var(--color-text)]">
+                    {appView === 'CLEAN' ? 'Professional mode' : 'Orchard mode'}
+                  </p>
+                  <p className="text-[11px] text-[var(--color-text-muted)] mt-0.5">Set by your parent</p>
+                </div>
+                <span className="text-[22px] select-none">{appView === 'CLEAN' ? '📊' : '🌱'}</span>
+              </div>
+            </div>
+
+            {/* Account */}
+            <div>
+              <p className="text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-2">Account</p>
+              <button
+                onClick={() => { setShowSettings(false); navigate('/lock') }}
+                className="w-full flex items-center justify-between rounded-xl border border-[var(--color-border)] px-3.5 py-3 text-left hover:bg-[var(--color-surface-alt)] transition-colors cursor-pointer"
+              >
+                <div>
+                  <p className="text-[14px] font-semibold text-[var(--color-text)]">Lock screen</p>
+                  <p className="text-[11px] text-[var(--color-text-muted)] mt-0.5">Switch to a different user</p>
+                </div>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--color-text-muted)] shrink-0">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                </svg>
+              </button>
+            </div>
           </div>
         </div>
       )}
 
       <main className="flex-1 max-w-[560px] mx-auto w-full px-3.5 py-4 flex flex-col gap-4">
-        <div className={childTab === 'earn' ? 'tab-panel' : 'tab-panel hidden'}><EarnTab familyId={familyId} childId={userId} currency={chores[0]?.currency ?? 'GBP'} /></div>
-        <div className={childTab === 'lab'  ? 'tab-panel' : 'tab-panel hidden'}><LabTab childId={userId} appView={appView} /></div>
-        {childTab !== 'earn' && childTab !== 'lab' && (<>
+        <div className={childTab === 'chores' ? 'tab-panel' : 'tab-panel hidden'}>
+          <div className="space-y-4">
+            <EarnTab familyId={familyId} childId={userId} currency={chores[0]?.currency ?? 'GBP'} />
+            <ChildHistoryTab familyId={familyId} childId={userId} currency={currency} variant="chore" />
+          </div>
+        </div>
+        <div className={childTab === 'money' ? 'tab-panel' : 'tab-panel hidden'}><ChildMoneyTab familyId={familyId} childId={userId} currency={currency} /></div>
+        <div className={childTab === 'goals' ? 'tab-panel' : 'tab-panel hidden'}><ChildGoalsTab familyId={familyId} childId={userId} currency={currency} appView={appView} /></div>
+        <div className={childTab === 'lab'   ? 'tab-panel' : 'tab-panel hidden'}><LabTab childId={userId} appView={appView} /></div>
+        {childTab === 'home' && (<>
           {loading ? (
             <div className="py-16 text-center text-[14px] text-[var(--color-text-muted)]">Loading…</div>
           ) : tone.isChild ? (
@@ -415,6 +549,7 @@ export function ChildDashboard() {
               setNoteChore={setNoteChore}
               setNoteText={setNoteText}
               onPlantGoal={() => setShowGrove(true)}
+              onDoneWithProof={startProofCapture}
             />
           ) : (
             /* ═══════════════════════════════════════════════════════════
@@ -437,6 +572,7 @@ export function ChildDashboard() {
               handleDone={handleDone}
               setNoteChore={setNoteChore}
               setNoteText={setNoteText}
+              onDoneWithProof={startProofCapture}
             />
           )}
           {!loading && streakData && (
@@ -455,6 +591,16 @@ export function ChildDashboard() {
         </>)}
 
       </main>
+
+      {/* Hidden camera input for proof-required chores */}
+      <input
+        ref={proofFileRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        className="hidden"
+        onChange={handleProofFileChange}
+      />
 
       {/* Savings Grove — goal creation sheet */}
       {showGrove && (
@@ -518,6 +664,11 @@ function ChoreRow({
           <p className="text-[12px] text-[var(--color-text-muted)] mt-0.5 tabular-nums">
             {formatCurrency(chore.reward_amount, chore.currency)}
           </p>
+          {chore.proof_required ? (
+            <p className="text-[11px] text-[var(--color-text-muted)] mt-1 flex items-center gap-1">
+              <CameraIconSmall /> Photo required to submit
+            </p>
+          ) : null}
         </div>
 
         {/* Schedule button — plant icon for children, calendar icon for teens */}
@@ -545,9 +696,9 @@ function ChoreRow({
           <button
             onClick={onDone}
             disabled={submitting}
-            className={`shrink-0 h-9 px-3.5 bg-[var(--brand-primary)] text-white text-[13px] font-bold ${tone.isChild ? 'rounded-xl' : 'rounded-lg'} hover:opacity-90 disabled:opacity-50 transition-all cursor-pointer active:scale-95`}
+            className={`shrink-0 h-9 bg-[var(--brand-primary)] text-white text-[13px] font-bold ${tone.isChild ? 'rounded-xl' : 'rounded-lg'} hover:opacity-90 disabled:opacity-50 transition-all cursor-pointer active:scale-95 flex items-center gap-1.5 ${chore.proof_required ? 'px-3' : 'px-3.5'}`}
           >
-            {submitting ? '…' : tone.doneButton}
+            {submitting ? '…' : chore.proof_required ? <><CameraIconSmall />{tone.doneButton}</> : tone.doneButton}
           </button>
         )}
       </div>
@@ -640,6 +791,15 @@ function RecurringIcon() {
   )
 }
 
+function CameraIconSmall() {
+  return (
+    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+      <circle cx="12" cy="13" r="4"/>
+    </svg>
+  )
+}
+
 // ─── OrchardView ─────────────────────────────────────────────────────────────
 // Card-based, metaphorical layout for younger children.
 // ─────────────────────────────────────────────────────────────────────────────
@@ -669,11 +829,12 @@ interface OrchardViewProps {
   weeklyAllowancePence: number
   isPlanted: (c: Chore) => boolean
   togglePlant: (c: Chore, day: number) => void
-  handleDone: (id: string, note?: string) => Promise<void>
+  handleDone: (id: string, note?: string, file?: File) => Promise<void>
   handlePurchase: (id: string) => Promise<void>
   setNoteChore: (id: string | null) => void
   setNoteText: (t: string) => void
   onPlantGoal: () => void
+  onDoneWithProof: (choreId: string) => void
 }
 
 function OrchardView({
@@ -682,7 +843,7 @@ function OrchardView({
   activeTopGoal, goalBarPct, submitted, submitting, purchasing,
   noteChore, noteText, submitErr, cardClass, currency, weeklyAllowancePence,
   isPlanted, togglePlant, handleDone, handlePurchase,
-  setNoteChore, setNoteText, onPlantGoal,
+  setNoteChore, setNoteText, onPlantGoal, onDoneWithProof,
 }: OrchardViewProps) {
   // Best chore for effort calc
   const bestChore = useMemo(() => {
@@ -791,7 +952,7 @@ function OrchardView({
                 noteOpen={noteChore === chore.id}
                 noteText={noteChore === chore.id ? noteText : ''}
                 submitErr={submitErr}
-                onDone={() => chore.description ? setNoteChore(chore.id) : handleDone(chore.id)}
+                onDone={() => chore.proof_required ? onDoneWithProof(chore.id) : chore.description ? setNoteChore(chore.id) : handleDone(chore.id)}
                 onNoteChange={setNoteText}
                 onNoteSubmit={() => handleDone(chore.id, noteText || undefined)}
                 onNoteCancel={() => { setNoteChore(null); setNoteText('') }}
@@ -820,7 +981,7 @@ function OrchardView({
                 noteOpen={noteChore === chore.id}
                 noteText={noteChore === chore.id ? noteText : ''}
                 submitErr={submitErr}
-                onDone={() => { setNoteChore(chore.id); setNoteText('') }}
+                onDone={() => chore.proof_required ? onDoneWithProof(chore.id) : (setNoteChore(chore.id), setNoteText(''))}
                 onNoteChange={setNoteText}
                 onNoteSubmit={() => handleDone(chore.id, noteText || undefined)}
                 onNoteCancel={() => { setNoteChore(null); setNoteText('') }}
@@ -989,16 +1150,17 @@ interface ProfessionalViewProps {
   noteChore: string | null
   noteText: string
   submitErr: string | null
-  handleDone: (id: string, note?: string) => Promise<void>
+  handleDone: (id: string, note?: string, file?: File) => Promise<void>
   setNoteChore: (id: string | null) => void
   setNoteText: (t: string) => void
+  onDoneWithProof: (choreId: string) => void
 }
 
 function ProfessionalView({
   balance, appView, chores, pending, goals,
   tone, currency, submitted, submitting,
   noteChore, noteText, submitErr,
-  handleDone, setNoteChore, setNoteText,
+  handleDone, setNoteChore, setNoteText, onDoneWithProof,
 }: ProfessionalViewProps) {
   return (
     <>
@@ -1113,11 +1275,11 @@ function ProfessionalView({
                         <span className="text-[11px] font-bold text-amber-700 bg-amber-50 border border-amber-200 rounded px-1.5 py-0.5">{tone.waitingBadge}</span>
                       ) : (
                         <button
-                          onClick={() => { setNoteChore(chore.id); setNoteText('') }}
+                          onClick={() => chore.proof_required ? onDoneWithProof(chore.id) : (setNoteChore(chore.id), setNoteText(''))}
                           disabled={isSubmitting}
-                          className="text-[12px] font-bold text-[var(--brand-primary)] hover:underline disabled:opacity-50 cursor-pointer whitespace-nowrap"
+                          className="text-[12px] font-bold text-[var(--brand-primary)] hover:underline disabled:opacity-50 cursor-pointer whitespace-nowrap flex items-center gap-1"
                         >
-                          {isSubmitting ? '…' : tone.doneButton}
+                          {isSubmitting ? '…' : chore.proof_required ? <><CameraIconSmall />{tone.doneButton}</> : tone.doneButton}
                         </button>
                       )}
                     </td>

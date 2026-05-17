@@ -64,6 +64,13 @@ export function ChoresTab({ familyId, child, children }: Props) {
 
   useEffect(() => { load() }, [load])
 
+  useEffect(() => {
+    const t = setInterval(load, 30_000)
+    const onVisible = () => { if (!document.hidden) load() }
+    document.addEventListener('visibilitychange', onVisible)
+    return () => { clearInterval(t); document.removeEventListener('visibilitychange', onVisible) }
+  }, [load])
+
   async function handleArchive(id: string) {
     const chore = chores.find(c => c.id === id)
     if (!chore) return

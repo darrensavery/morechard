@@ -3,7 +3,7 @@ import { useState, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useMarketRates } from '../../hooks/useMarketRates';
 import { useAndroidBack } from '../../hooks/useAndroidBack';
-import { suggestChore } from '../../lib/api';
+import { createSuggestion, suggestChore } from '../../lib/api';
 import type { MarketRate } from '../../lib/api';
 import { currencySymbol } from '../../lib/locale';
 
@@ -23,22 +23,32 @@ function formatAmount(amount: number | null, symbol: string): string {
 interface Props {
   open: boolean;
   onClose: () => void;
+  /** Pass when used in child context — enables suggest-to-parent flow */
+  familyId?: string;
   /** Optional: module slug passed when navigating from a Learning Lab module */
   context?: string | null;
   currency?: string;
 }
 
-export function ChoreGuideSheet({ open, onClose, context = null, currency = 'GBP' }: Props) {
+export function ChoreGuideSheet({ open, onClose, familyId, context = null, currency = 'GBP' }: Props) {
   const { rates, loading, error } = useMarketRates(currency);
 
   const symbol      = currencySymbol(currency);
   const regionLabel = currency === 'PLN' ? 'Poland' : currency === 'USD' ? 'the US' : 'your area';
 
-  const [suggested, setSuggested] = useState<string | null>(null); // id of just-suggested
-  const [sending,   setSending]   = useState<string | null>(null);  // id currently sending
+  // List-level state
+  const [suggested, setSuggested] = useState<string | null>(null);
   const [success,   setSuccess]   = useState(false);
 
-  useAndroidBack(open, onClose);
+  // Amount-edit sheet state
+  const [editRate,   setEditRate]   = useState<MarketRate | null>(null);
+  const [editAmount, setEditAmount] = useState('');
+  const [editReason, setEditReason] = useState('');
+  const [editBusy,   setEditBusy]   = useState(false);
+  const [editError,  setEditError]  = useState<string | null>(null);
+
+  useAndroidBack(open && !editRate, onClose);
+  useAndroidBack(!!editRate, () => { setEditRate(null); setEditError(null); });
 
   const grouped = useMemo(() => {
     const map: Record<string, MarketRate[]> = {};
@@ -47,22 +57,47 @@ export function ChoreGuideSheet({ open, onClose, context = null, currency = 'GBP
     return map;
   }, [rates]);
 
-  async function handleSuggest(rate: MarketRate) {
-    if (sending || suggested === rate.id) return;
-    setSending(rate.id);
+  function openEdit(rate: MarketRate) {
+    setEditRate(rate);
+    setEditAmount(rate.median_amount != null ? (rate.median_amount / 100).toFixed(2) : '');
+    setEditReason('');
+    setEditError(null);
+  }
+
+  async function handleConfirmSuggest() {
+    if (!editRate) return;
+    const pence = Math.round(parseFloat(editAmount) * 100);
+    if (!editAmount || isNaN(pence) || pence <= 0) {
+      setEditError('Please enter a valid amount.');
+      return;
+    }
+    setEditBusy(true);
+    setEditError(null);
     try {
-      await suggestChore({
-        canonical_name: rate.canonical_name,
-        median_amount:  rate.median_amount ?? 0,
-        currency,
-        context,
-      });
-      setSuggested(rate.id);
+      if (familyId) {
+        // Child-to-parent suggestion flow
+        await createSuggestion({
+          family_id:       familyId,
+          title:           editRate.canonical_name,
+          proposed_amount: pence,
+          reason:          editReason.trim() || undefined,
+        });
+      } else {
+        // Fallback: market-rate feedback only (parent context / no familyId)
+        await suggestChore({
+          canonical_name: editRate.canonical_name,
+          median_amount:  pence,
+          currency,
+          context,
+        });
+      }
+      setSuggested(editRate.id);
+      setEditRate(null);
       setSuccess(true);
     } catch {
-      // fail silently — user can retry
+      setEditError('Something went wrong — please try again.');
     } finally {
-      setSending(null);
+      setEditBusy(false);
     }
   }
 
@@ -127,11 +162,11 @@ export function ChoreGuideSheet({ open, onClose, context = null, currency = 'GBP
                       {formatAmount(rate.median_amount, symbol)}
                     </span>
                     <button
-                      disabled={sending === rate.id || suggested === rate.id}
-                      onClick={() => handleSuggest(rate)}
-                      className="rounded-lg bg-[--brand-primary] text-[--color-text-on-brand] px-3 py-1.5 text-xs font-semibold disabled:opacity-50 transition-opacity"
+                      disabled={suggested === rate.id}
+                      onClick={() => openEdit(rate)}
+                      className="rounded-lg bg-[--brand-primary] text-[--color-text-on-brand] px-3 py-1.5 text-xs font-semibold disabled:opacity-50 transition-opacity cursor-pointer"
                     >
-                      {sending === rate.id ? '…' : suggested === rate.id ? '✓' : 'Suggest'}
+                      {suggested === rate.id ? '✓' : 'Suggest'}
                     </button>
                   </div>
                 </div>
@@ -140,6 +175,80 @@ export function ChoreGuideSheet({ open, onClose, context = null, currency = 'GBP
           );
         })}
       </div>
+
+      {/* Amount-edit bottom sheet */}
+      {editRate && (
+        <div className="absolute inset-0 z-10 flex flex-col justify-end">
+          <div className="absolute inset-0 bg-black/40" onClick={() => { setEditRate(null); setEditError(null); }} />
+          <div className="relative bg-[var(--color-surface)] rounded-t-2xl px-5 pt-2 pb-8 space-y-4">
+            {/* Drag handle */}
+            <div className="flex justify-center pt-2 pb-1">
+              <div className="w-10 h-1 rounded-full bg-[var(--color-border)]" />
+            </div>
+
+            <div>
+              <p className="text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-0.5">Suggest this chore</p>
+              <p className="text-[16px] font-bold text-[var(--color-text)]">{editRate.canonical_name}</p>
+              <p className="text-[12px] text-[var(--color-text-muted)] mt-0.5">
+                Market rate: {formatAmount(editRate.median_amount, symbol)} — change the amount if you think it's worth more or less.
+              </p>
+            </div>
+
+            {editError && <p className="text-[13px] text-red-600">{editError}</p>}
+
+            {/* Amount input */}
+            <div>
+              <label className="text-[12px] font-semibold text-[var(--color-text-muted)] block mb-1.5">
+                How much should it pay?
+              </label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[14px] text-[var(--color-text-muted)]">
+                  {symbol}
+                </span>
+                <input
+                  type="number"
+                  min="0.01"
+                  step="0.01"
+                  autoFocus
+                  value={editAmount}
+                  onChange={e => setEditAmount(e.target.value)}
+                  className="w-full border border-[var(--color-border)] rounded-xl pl-7 pr-3 py-3 text-[15px] font-semibold bg-[var(--color-surface)] text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]"
+                />
+              </div>
+            </div>
+
+            {/* Optional reason */}
+            <div>
+              <label className="text-[12px] font-semibold text-[var(--color-text-muted)] block mb-1.5">
+                Why should this be a chore? <span className="font-normal">(optional)</span>
+              </label>
+              <textarea
+                rows={2}
+                placeholder="e.g. I could do this every week after school"
+                value={editReason}
+                onChange={e => setEditReason(e.target.value)}
+                className="w-full border border-[var(--color-border)] rounded-xl px-3.5 py-2.5 text-[13px] resize-none bg-[var(--color-surface)] text-[var(--color-text)] placeholder:text-[var(--color-text-muted)]/60 focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]"
+              />
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => { setEditRate(null); setEditError(null); }}
+                className="flex-1 border border-[var(--color-border)] rounded-xl py-3 text-[14px] font-semibold text-[var(--color-text-muted)] hover:bg-[var(--color-surface-alt)] cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmSuggest}
+                disabled={editBusy}
+                className="flex-1 bg-[var(--brand-primary)] text-white rounded-xl py-3 text-[14px] font-bold hover:opacity-90 disabled:opacity-50 cursor-pointer active:scale-[0.98] transition-all"
+              >
+                {editBusy ? 'Sending…' : 'Send to parent →'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>,
     document.body,
   );

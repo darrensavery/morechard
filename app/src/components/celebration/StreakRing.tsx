@@ -29,7 +29,7 @@ export function StreakRing({ previousValue, newValue, onComplete }: Props) {
     // Reset arc to empty
     prog.style.transition = 'none'
     prog.style.strokeDashoffset = String(CIRCUMFERENCE)
-    void prog.offsetWidth // force reflow
+    void (prog as unknown as HTMLElement).offsetWidth // force reflow
 
     // Sweep arc 0°→360°
     const tSweep = setTimeout(() => {

@@ -1,0 +1,229 @@
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
+import type { BalanceSummary, Goal, Chore } from '../../lib/api'
+import { getBalance, getGoals, getChores, purchaseGoal, formatCurrency, effectiveTarget } from '../../lib/api'
+import { GrowingTree } from '../ui/GrowingTree'
+import { SavingsGrove } from './SavingsGrove'
+
+interface Props {
+  familyId: string
+  childId:  string
+  currency: string
+  appView:  'ORCHARD' | 'CLEAN'
+}
+
+export function ChildGoalsTab({ familyId, childId, currency, appView }: Props) {
+  const [balance,  setBalance]  = useState<BalanceSummary | null>(null)
+  const [goals,    setGoals]    = useState<Goal[]>([])
+  const [chores,   setChores]   = useState<Chore[]>([])
+  const [loading,  setLoading]  = useState(true)
+  const [showGrove, setShowGrove] = useState(false)
+  const [purchasing, setPurchasing] = useState<string | null>(null)
+  const [goalBarPct, setGoalBarPct] = useState(0)
+  const barTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const load = useCallback(async () => {
+    setLoading(true)
+    try {
+      const [b, g, c] = await Promise.all([
+        getBalance(familyId, childId),
+        getGoals(familyId, childId).then(r => r.goals).catch(() => [] as Goal[]),
+        getChores({ family_id: familyId, child_id: childId }).then(r => r.chores).catch(() => [] as Chore[]),
+      ])
+      setBalance(b)
+      setGoals(g)
+      setChores(c)
+      const top = g.filter(x => x.status === 'ACTIVE' || !x.status)[0]
+      if (top) {
+        const eff = effectiveTarget(top)
+        if (barTimer.current) clearTimeout(barTimer.current)
+        setGoalBarPct(0)
+        barTimer.current = setTimeout(() => {
+          setGoalBarPct(Math.min(100, Math.round(((b.available ?? 0) / eff) * 100)))
+        }, 80)
+      }
+    } catch { /* silently degrade */ }
+    finally { setLoading(false) }
+  }, [familyId, childId])
+
+  useEffect(() => { load() }, [load])
+
+  useEffect(() => {
+    const t = setInterval(load, 30_000)
+    const onVisible = () => { if (!document.hidden) load() }
+    document.addEventListener('visibilitychange', onVisible)
+    return () => { clearInterval(t); document.removeEventListener('visibilitychange', onVisible) }
+  }, [load])
+
+  const weeklyAllowancePence = useMemo(() => chores.reduce((sum, c) => {
+    if (c.frequency === 'weekly') return sum + c.reward_amount
+    if (c.frequency === 'daily' || c.frequency === 'school_days') return sum + c.reward_amount * 5
+    return sum
+  }, 0), [chores])
+
+  const bestChore = useMemo(() => {
+    const active = chores.filter(c => !c.archived)
+    if (!active.length) return null
+    return active.reduce((a, b) => a.reward_amount >= b.reward_amount ? a : b)
+  }, [chores])
+
+  function effortLabel(targetPence: number): string {
+    if (bestChore && bestChore.reward_amount > 0) {
+      const n = Math.ceil(targetPence / bestChore.reward_amount)
+      return `${n} × ${bestChore.title}`
+    }
+    if (weeklyAllowancePence > 0) {
+      const weeks = Math.ceil(targetPence / weeklyAllowancePence)
+      return `${weeks} week${weeks !== 1 ? 's' : ''} of chores`
+    }
+    return formatCurrency(targetPence, currency)
+  }
+
+  async function handlePurchase(goalId: string) {
+    setPurchasing(goalId)
+    try {
+      await purchaseGoal(goalId)
+      await load()
+    } finally {
+      setPurchasing(null)
+    }
+  }
+
+  const activeGoals   = goals.filter(g => g.status === 'ACTIVE' || !g.status)
+  const activeTopGoal = activeGoals[0] ?? null
+  const cur = currency
+
+  if (loading && goals.length === 0) return (
+    <div className="py-16 text-center text-[14px] text-[var(--color-text-muted)]">Loading…</div>
+  )
+
+  return (
+    <div className="space-y-4">
+      <div className="bg-[var(--color-surface)] rounded-2xl shadow-sm border border-[var(--color-border)] overflow-hidden">
+        <div className="px-4 pt-4 pb-3 flex items-center justify-between">
+          <h2 className="text-[15px] font-bold text-[var(--color-text)]">🌳 Savings Grove</h2>
+          <button
+            onClick={() => setShowGrove(true)}
+            className="flex items-center gap-1.5 text-[12px] font-bold text-[var(--brand-primary)] border border-[var(--brand-primary)] rounded-lg px-2.5 py-1 hover:bg-[color-mix(in_srgb,var(--brand-primary)_8%,transparent)] transition-colors cursor-pointer"
+          >
+            <span>+</span> Plant Goal
+          </button>
+        </div>
+
+        {activeGoals.length === 0 ? (
+          <div className="px-4 pb-5 text-center flex flex-col items-center">
+            <GrowingTree pct={0} size={64} showLabel className="mb-1" />
+            <p className="text-[13px] font-semibold text-[var(--color-text)]">No goals yet</p>
+            <p className="text-[12px] text-[var(--color-text-muted)] mt-0.5">Tap "Plant Goal" to start saving for something exciting!</p>
+          </div>
+        ) : (
+          <div className="divide-y divide-[var(--color-border)]">
+            {activeTopGoal && (() => {
+              const avail = balance?.available ?? 0
+              const effTarget = effectiveTarget(activeTopGoal)
+              const pct = Math.min(100, Math.round((avail / effTarget) * 100))
+              const remaining = Math.max(0, effTarget - avail)
+              const isReady = avail >= effTarget
+
+              const weeklyIncome = weeklyAllowancePence || (bestChore ? bestChore.reward_amount * 4 : 0)
+              const weeksLeft = weeklyIncome > 0 && remaining > 0
+                ? Math.ceil(remaining / weeklyIncome)
+                : null
+              const arrivalDate = weeksLeft
+                ? new Date(Date.now() + weeksLeft * 7 * 86_400_000).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
+                : null
+
+              return (
+                <div className="px-4 py-4 space-y-3">
+                  <div className="flex items-center gap-4">
+                    <GrowingTree pct={pct} size={72} showLabel />
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[14px] font-semibold text-[var(--color-text)] truncate">{activeTopGoal.title}</div>
+                      {activeTopGoal.parent_match_pct > 0 && (
+                        <div className="text-[11px] text-emerald-600 font-semibold mt-0.5">
+                          🤝 Parent matches {activeTopGoal.parent_match_pct}% — you only need {formatCurrency(effTarget, cur)}!
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <div className="w-full h-4 bg-[var(--color-surface-alt)] rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-[var(--brand-primary)] rounded-full"
+                        style={{ width: `${goalBarPct}%`, transition: 'width 1.1s cubic-bezier(0.25, 1, 0.5, 1)' }}
+                      />
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-[11px] text-[var(--color-text-muted)] tabular-nums">{formatCurrency(avail, cur)} saved</span>
+                      <span className="text-[11px] text-[var(--color-text-muted)] tabular-nums">{pct}% • {formatCurrency(effTarget, cur)}</span>
+                    </div>
+                  </div>
+
+                  <div className="rounded-xl bg-[var(--color-surface-alt)] border border-[var(--color-border)] px-3.5 py-2.5 space-y-1.5">
+                    <div className="flex items-center gap-2 text-[12px]">
+                      <span>💪</span>
+                      <span className="text-[var(--color-text-muted)]">Total cost:</span>
+                      <span className="font-semibold text-[var(--color-text)]">{effortLabel(activeTopGoal.target_amount)}</span>
+                    </div>
+                    {remaining > 0 && (
+                      <div className="flex items-center gap-2 text-[12px]">
+                        <span>🌿</span>
+                        <span className="text-[var(--color-text-muted)]">Still need:</span>
+                        <span className="font-semibold text-[var(--color-text)]">{effortLabel(remaining)}</span>
+                      </div>
+                    )}
+                    {arrivalDate && (
+                      <div className="flex items-center gap-2 text-[12px]">
+                        <span>📅</span>
+                        <span className="text-[var(--color-text-muted)]">Estimated arrival:</span>
+                        <span className="font-semibold text-emerald-600">{arrivalDate}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {isReady && (
+                    <button
+                      onClick={() => handlePurchase(activeTopGoal.id)}
+                      disabled={purchasing === activeTopGoal.id}
+                      className="w-full rounded-xl bg-emerald-500 text-white font-bold py-2.5 text-[13px] hover:bg-emerald-600 disabled:opacity-60 transition-colors cursor-pointer"
+                    >
+                      {purchasing === activeTopGoal.id ? '🌸 Blossoming…' : '🌸 Mark as Purchased!'}
+                    </button>
+                  )}
+                </div>
+              )
+            })()}
+
+            {activeGoals.length > 1 && (
+              <div className="px-4 py-3 space-y-2">
+                <p className="text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wide">All goals — effort comparison</p>
+                <div className="grid grid-cols-1 gap-2">
+                  {activeGoals.map((g, i) => (
+                    <div key={g.id} className={`flex items-center gap-2 rounded-lg px-3 py-2 border ${i === 0 ? 'border-[var(--brand-primary)] bg-[color-mix(in_srgb,var(--brand-primary)_6%,transparent)]' : 'border-[var(--color-border)] bg-[var(--color-bg)]'}`}>
+                      <span className="text-base">{i === 0 ? '🎯' : '🌱'}</span>
+                      <span className="flex-1 text-[12px] font-semibold text-[var(--color-text)] truncate">{g.title}</span>
+                      <span className="text-[11px] text-[var(--color-text-muted)] shrink-0">{effortLabel(g.target_amount)}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {showGrove && (
+        <SavingsGrove
+          familyId={familyId}
+          childId={childId}
+          currency={cur}
+          chores={chores}
+          appView={appView}
+          weeklyAllowancePence={weeklyAllowancePence}
+          onCreated={() => { setShowGrove(false); load() }}
+          onClose={() => setShowGrove(false)}
+        />
+      )}
+    </div>
+  )
+}

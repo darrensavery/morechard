@@ -1,6 +1,6 @@
 // app/src/components/dashboard/BadgeAlmanac.tsx
 import { cn } from '../../lib/utils'
-import { BADGE_THRESHOLDS, type BadgeKey } from '../../../worker/src/lib/badges'
+import { BADGE_THRESHOLDS, type BadgeKey } from '../../../../shared/badges'
 
 // Badge display metadata — mode-aware labels and unlock hints
 const BADGE_META: Record<BadgeKey, { label: string; orchardLabel: string; pillar: number }> = {
