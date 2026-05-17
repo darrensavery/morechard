@@ -554,9 +554,18 @@ export async function rateCompletion(id: string, rating: 1 | -1): Promise<void> 
 // ----------------------------------------------------------------
 // Balance
 // ----------------------------------------------------------------
+export interface BalanceStreak {
+  current: number
+  longest: number
+  grace_remaining: number
+  last_kept_date: string | null
+}
+
 export interface BalanceSummary {
   earned: number; pending: number; reversals: number;
   paid_out: number; spent: number; available: number;
+  streak?: BalanceStreak
+  pending_celebrations?: string[]
 }
 export async function getBalance(family_id: string, child_id: string): Promise<BalanceSummary> {
   return request(`/api/balance?family_id=${family_id}&child_id=${child_id}`);

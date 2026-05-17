@@ -13,8 +13,10 @@ import { FullLogo } from '../components/ui/Logo'
 import { GrowingTree } from '../components/ui/GrowingTree'
 import { EarnTab } from '../components/dashboard/EarnTab'
 import { LabTab } from '../components/dashboard/LabTab'
-import { MilestoneOverlay, consumeMilestonePending } from '../components/celebration'
-import type { MilestoneEvent } from '../components/celebration'
+import { MilestoneOverlay, consumeMilestonePending, queueCelebration, consumeNextCelebration } from '../components/celebration'
+import type { MilestoneEvent, MilestoneEventType } from '../components/celebration'
+import { MicroToast } from '../components/celebration/MicroToast'
+import { CONFIGS } from '../components/celebration/registry'
 
 // ─── localStorage grove planner ──────────────────────────────────────────────
 // Key: `grove_plans_${userId}`
@@ -64,6 +66,23 @@ function effectiveDays(chore: Chore, grovePlans: Record<string, number[]>): numb
   return grovePlans[chore.id] ?? []
 }
 
+// ─── Celebration queue helpers ────────────────────────────────────────────────
+
+function enqueuePendingCelebrations(pending: string[], av: 'ORCHARD' | 'CLEAN') {
+  for (const raw of pending) {
+    const [type, prevStr, nextStr] = raw.split(':')
+    const event: MilestoneEvent = {
+      type: type as MilestoneEventType,
+      appView: av,
+      meta: {
+        previousStreak: prevStr ? Number(prevStr) : undefined,
+        newStreak:      nextStr ? Number(nextStr) : undefined,
+      },
+    }
+    queueCelebration(event)
+  }
+}
+
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function ChildDashboard() {
@@ -90,6 +109,7 @@ export function ChildDashboard() {
       ? { type: 'GRADUATION', appView: (localStorage.getItem('mc_app_view') ?? 'ORCHARD') as 'ORCHARD' | 'CLEAN' }
       : null
   )
+  const [activeCelebration, setActiveCelebration] = useState<MilestoneEvent | null>(null)
   const [showSettings, setShowSettings] = useState(false)
   const [showGrove,    setShowGrove]    = useState(false)
   const [weeklyAllowancePence, setWeeklyAllowancePence] = useState(0)
@@ -155,6 +175,17 @@ export function ChildDashboard() {
   }, [familyId, userId, navigate])
 
   useEffect(() => { load() }, [load])
+
+  // Drain the celebration queue whenever balance data changes
+  useEffect(() => {
+    if (balance?.pending_celebrations) {
+      enqueuePendingCelebrations(balance.pending_celebrations, appView)
+    }
+    if (!activeCelebration) {
+      const next = consumeNextCelebration()
+      if (next) setActiveCelebration(next)
+    }
+  }, [balance, appView]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Clean up goal bar timer on unmount
   useEffect(() => () => { if (goalBarTimer.current) clearTimeout(goalBarTimer.current) }, [])
@@ -232,6 +263,17 @@ export function ChildDashboard() {
       {milestone && (
         <MilestoneOverlay event={milestone} onComplete={() => setMilestone(null)} />
       )}
+      {activeCelebration && CONFIGS[activeCelebration.type]?.tier === 'micro' ? (
+        <MicroToast
+          event={activeCelebration}
+          onDismiss={() => setActiveCelebration(null)}
+        />
+      ) : activeCelebration ? (
+        <MilestoneOverlay
+          event={activeCelebration}
+          onComplete={() => setActiveCelebration(null)}
+        />
+      ) : null}
       {/* Header */}
       <header className="safe-top sticky top-0 z-10 glass-header">
         <div className="max-w-[560px] mx-auto px-3.5 py-3 flex items-center justify-between">
@@ -313,6 +355,7 @@ export function ChildDashboard() {
              ══════════════════════════════════════════════════════════ */
           <OrchardView
             balance={balance}
+            appView={appView}
             chores={chores}
             pending={pending}
             goals={goals}
@@ -348,6 +391,7 @@ export function ChildDashboard() {
              ══════════════════════════════════════════════════════════ */
           <ProfessionalView
             balance={balance}
+            appView={appView}
             chores={chores}
             pending={pending}
             goals={goals}
@@ -556,6 +600,7 @@ function RecurringIcon() {
 
 interface OrchardViewProps {
   balance: BalanceSummary | null
+  appView: 'ORCHARD' | 'CLEAN'
   chores: Chore[]
   pending: Completion[]
   goals: Goal[]
@@ -586,7 +631,7 @@ interface OrchardViewProps {
 }
 
 function OrchardView({
-  balance, chores, pending, goals, tone,
+  balance, appView, chores, pending, goals, tone,
   activeDay, setActiveDay, grovePlans, dayChores, unplannedChores,
   activeTopGoal, goalBarPct, submitted, submitting, purchasing,
   noteChore, noteText, submitErr, cardClass, currency, weeklyAllowancePence,
@@ -635,6 +680,17 @@ function OrchardView({
             </span>
           )}
         </div>
+        {balance?.streak && balance.streak.current > 0 && (
+          <div className="flex items-center gap-2 mt-2 text-sm text-teal-400 font-semibold tabular-nums">
+            <span>🔥</span>
+            <span>{balance.streak.current} day streak</span>
+            {balance.streak.grace_remaining > 0 && (
+              <span className="text-white/40 text-xs">
+                ({balance.streak.grace_remaining} {appView === 'CLEAN' ? 'grace' : 'rain'}{balance.streak.grace_remaining > 1 ? ' days' : ' day'})
+              </span>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Pending nudge */}
@@ -876,6 +932,7 @@ function OrchardView({
 
 interface ProfessionalViewProps {
   balance: BalanceSummary | null
+  appView: 'ORCHARD' | 'CLEAN'
   chores: Chore[]
   pending: Completion[]
   goals: Goal[]
@@ -892,7 +949,7 @@ interface ProfessionalViewProps {
 }
 
 function ProfessionalView({
-  balance, chores, pending, goals,
+  balance, appView, chores, pending, goals,
   tone, currency, submitted, submitting,
   noteChore, noteText, submitErr,
   handleDone, setNoteChore, setNoteText,
@@ -906,6 +963,17 @@ function ProfessionalView({
           <p className="text-[36px] font-extrabold text-[var(--color-text)] leading-none tabular-nums mt-0.5">
             {balance ? formatCurrency(balance.available, currency) : '£—'}
           </p>
+          {balance?.streak && balance.streak.current > 0 && (
+            <div className="flex items-center gap-2 mt-1.5 text-sm text-teal-400 font-semibold tabular-nums">
+              <span>🔥</span>
+              <span>{balance.streak.current} day streak</span>
+              {balance.streak.grace_remaining > 0 && (
+                <span className="text-[var(--color-text-muted)] text-xs">
+                  ({balance.streak.grace_remaining} {appView === 'CLEAN' ? 'grace' : 'rain'}{balance.streak.grace_remaining > 1 ? ' days' : ' day'})
+                </span>
+              )}
+            </div>
+          )}
         </div>
         <div className="grid grid-cols-3 divide-x divide-[var(--color-border)]">
           {[
