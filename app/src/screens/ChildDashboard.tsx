@@ -4,11 +4,13 @@ import {
   getChores, submitChore, getBalance, getGoals,
   getCompletions, getSettings, getFamilyId, getUserId,
   formatCurrency, purchaseGoal, effectiveTarget,
+  apiUrl, authHeaders,
 } from '../lib/api'
 import type { Chore, BalanceSummary, Goal, Completion } from '../lib/api'
 import { useAppView } from '../lib/useTone'
 import { ThemePicker } from '../lib/theme'
 import { SavingsGrove } from '../components/dashboard/SavingsGrove'
+import { BadgeAlmanac } from '../components/dashboard/BadgeAlmanac'
 import { FullLogo } from '../components/ui/Logo'
 import { GrowingTree } from '../components/ui/GrowingTree'
 import { EarnTab } from '../components/dashboard/EarnTab'
@@ -118,6 +120,11 @@ export function ChildDashboard() {
   const [goalBarPct, setGoalBarPct] = useState(0)   // starts at 0 so the CSS transition has room to grow
   const goalBarTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
+  const [streakData, setStreakData] = useState<{
+    current_streak: number
+    earned_badge_keys: string[]
+  } | null>(null)
+
   // Per-chore submission state
   const [childTab,   setChildTab]   = useState<'home' | 'earn' | 'lab'>('home')
   const [submitting, setSubmitting] = useState<string | null>(null)
@@ -175,6 +182,17 @@ export function ChildDashboard() {
   }, [familyId, userId, navigate])
 
   useEffect(() => { load() }, [load])
+
+  // Fetch streak + badge data on mount
+  useEffect(() => {
+    if (!userId) return
+    fetch(apiUrl(`/api/streaks/${userId}`), { headers: authHeaders() })
+      .then(r => r.ok ? r.json() : null)
+      .then((data: { current_streak: number; earned_badge_keys: string[] } | null) => {
+        if (data) setStreakData(data)
+      })
+      .catch(() => { /* non-critical — badges silently absent */ })
+  }, [userId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Drain the celebration queue whenever balance data changes
   useEffect(() => {
@@ -347,66 +365,81 @@ export function ChildDashboard() {
       <main className="flex-1 max-w-[560px] mx-auto w-full px-3.5 py-4 flex flex-col gap-4">
         <div className={childTab === 'earn' ? 'tab-panel' : 'tab-panel hidden'}><EarnTab familyId={familyId} childId={userId} currency={chores[0]?.currency ?? 'GBP'} /></div>
         <div className={childTab === 'lab'  ? 'tab-panel' : 'tab-panel hidden'}><LabTab childId={userId} appView={appView} /></div>
-        {childTab !== 'earn' && childTab !== 'lab' && (loading ? (
-          <div className="py-16 text-center text-[14px] text-[var(--color-text-muted)]">Loading…</div>
-        ) : tone.isChild ? (
-          /* ═══════════════════════════════════════════════════════════
-             ORCHARD VIEW — card-based, metaphorical, playful
-             ══════════════════════════════════════════════════════════ */
-          <OrchardView
-            balance={balance}
-            appView={appView}
-            chores={chores}
-            pending={pending}
-            goals={goals}
-            tone={tone}
-            activeDay={activeDay}
-            setActiveDay={setActiveDay}
-            grovePlans={grovePlans}
-            dayChores={dayChores}
-            unplannedChores={unplannedChores}
-            activeTopGoal={activeTopGoal}
-            goalBarPct={goalBarPct}
-            submitted={submitted}
-            submitting={submitting}
-            purchasing={purchasing}
-            noteChore={noteChore}
-            noteText={noteText}
-            submitErr={submitErr}
-            cardClass={cardClass}
-            currency={currency}
-            weeklyAllowancePence={weeklyAllowancePence}
-            isPlanted={isPlanted}
-            togglePlant={togglePlant}
-            handleDone={handleDone}
-            handlePurchase={handlePurchase}
-            setNoteChore={setNoteChore}
-            setNoteText={setNoteText}
-            onPlantGoal={() => setShowGrove(true)}
-          />
-        ) : (
-          /* ═══════════════════════════════════════════════════════════
-             PROFESSIONAL VIEW — compact table/list, financial language
-             All colours via CSS variables — inherits Light/Dark theme
-             ══════════════════════════════════════════════════════════ */
-          <ProfessionalView
-            balance={balance}
-            appView={appView}
-            chores={chores}
-            pending={pending}
-            goals={goals}
-            tone={tone}
-            currency={currency}
-            submitted={submitted}
-            submitting={submitting}
-            noteChore={noteChore}
-            noteText={noteText}
-            submitErr={submitErr}
-            handleDone={handleDone}
-            setNoteChore={setNoteChore}
-            setNoteText={setNoteText}
-          />
-        ))}
+        {childTab !== 'earn' && childTab !== 'lab' && (<>
+          {loading ? (
+            <div className="py-16 text-center text-[14px] text-[var(--color-text-muted)]">Loading…</div>
+          ) : tone.isChild ? (
+            /* ═══════════════════════════════════════════════════════════
+               ORCHARD VIEW — card-based, metaphorical, playful
+               ══════════════════════════════════════════════════════════ */
+            <OrchardView
+              balance={balance}
+              appView={appView}
+              chores={chores}
+              pending={pending}
+              goals={goals}
+              tone={tone}
+              activeDay={activeDay}
+              setActiveDay={setActiveDay}
+              grovePlans={grovePlans}
+              dayChores={dayChores}
+              unplannedChores={unplannedChores}
+              activeTopGoal={activeTopGoal}
+              goalBarPct={goalBarPct}
+              submitted={submitted}
+              submitting={submitting}
+              purchasing={purchasing}
+              noteChore={noteChore}
+              noteText={noteText}
+              submitErr={submitErr}
+              cardClass={cardClass}
+              currency={currency}
+              weeklyAllowancePence={weeklyAllowancePence}
+              isPlanted={isPlanted}
+              togglePlant={togglePlant}
+              handleDone={handleDone}
+              handlePurchase={handlePurchase}
+              setNoteChore={setNoteChore}
+              setNoteText={setNoteText}
+              onPlantGoal={() => setShowGrove(true)}
+            />
+          ) : (
+            /* ═══════════════════════════════════════════════════════════
+               PROFESSIONAL VIEW — compact table/list, financial language
+               All colours via CSS variables — inherits Light/Dark theme
+               ══════════════════════════════════════════════════════════ */
+            <ProfessionalView
+              balance={balance}
+              appView={appView}
+              chores={chores}
+              pending={pending}
+              goals={goals}
+              tone={tone}
+              currency={currency}
+              submitted={submitted}
+              submitting={submitting}
+              noteChore={noteChore}
+              noteText={noteText}
+              submitErr={submitErr}
+              handleDone={handleDone}
+              setNoteChore={setNoteChore}
+              setNoteText={setNoteText}
+            />
+          )}
+          {!loading && streakData && (
+            <BadgeAlmanac
+              earnedBadgeKeys={streakData.earned_badge_keys}
+              progress={{
+                currentStreak:         streakData.current_streak,
+                totalApprovedChores:   0,
+                totalGoalsCompleted:   0,
+                totalSavedPence:       0,
+                totalLessonsCompleted: 0,
+              }}
+              appView={appView}
+            />
+          )}
+        </>)}
 
       </main>
 
