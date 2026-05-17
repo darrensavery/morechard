@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import type { Completion, PayoutRecord, ChildRecord, UnpaidSummaryRow } from '../../lib/api'
 import {
   getHistory, getPayouts, createPayout, createBonus, formatCurrency,
@@ -52,6 +52,8 @@ function MiniSheet({ onClose, children }: { onClose: () => void; children: React
 export function ActivityTab({ familyId, child, childCount, onCountChange, unpaidRow, onAfterPayout, goalProgress }: Props) {
   // ── Pending completions (absorbed from PendingTab) ───────────────────────────
   const { challenge, GatekeeperModal } = useGatekeeper()
+  const onCountChangeRef = useRef(onCountChange)
+  useEffect(() => { onCountChangeRef.current = onCountChange }, [onCountChange])
   const [completions,         setCompletions]         = useState<Completion[]>([])
   const [pendingLoading,      setPendingLoading]      = useState(true)
   const [reviseId,            setReviseId]            = useState<string | null>(null)
@@ -94,7 +96,7 @@ export function ActivityTab({ familyId, child, childCount, onCountChange, unpaid
     setPendingLoading(true)
     const r = await getCompletions({ family_id: familyId, child_id: child.id, status: 'awaiting_review' })
     setCompletions(r.completions)
-    onCountChange(r.completions.length)
+    onCountChangeRef.current(r.completions.length)
     setPendingLoading(false)
     if (r.completions.length === 0) {
       try {
@@ -106,7 +108,7 @@ export function ActivityTab({ familyId, child, childCount, onCountChange, unpaid
     } else {
       setOverdueCount(0)
     }
-  }, [familyId, child.id, onCountChange])
+  }, [familyId, child.id])
 
   useEffect(() => { loadPending() }, [loadPending])
 
