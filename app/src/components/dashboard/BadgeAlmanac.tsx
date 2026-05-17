@@ -24,7 +24,7 @@ const BADGE_META: Record<BadgeKey, { label: string; orchardLabel: string; pillar
 const ALL_BADGE_KEYS = Object.keys(BADGE_THRESHOLDS) as BadgeKey[]
 
 interface ProgressInput {
-  currentStreak:         number
+  longestStreak:         number
   totalApprovedChores:   number
   totalGoalsCompleted:   number
   totalSavedPence:       number
@@ -33,7 +33,7 @@ interface ProgressInput {
 
 function getProgress(key: BadgeKey, p: ProgressInput): { value: number; max: number } | null {
   const t = BADGE_THRESHOLDS[key]
-  if ('streak' in t)       return { value: p.currentStreak,          max: t.streak }
+  if ('streak' in t)       return { value: p.longestStreak,          max: t.streak }
   if ('chores' in t)       return { value: p.totalApprovedChores,    max: t.chores }
   if ('goals' in t)        return { value: p.totalGoalsCompleted,    max: t.goals }
   if ('savedPence' in t)   return { value: p.totalSavedPence,        max: t.savedPence }

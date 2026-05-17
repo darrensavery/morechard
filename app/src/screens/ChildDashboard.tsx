@@ -121,7 +121,8 @@ export function ChildDashboard() {
   const goalBarTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const [streakData, setStreakData] = useState<{
-    current_streak: number
+    current_streak:    number
+    longest_streak:    number
     earned_badge_keys: string[]
   } | null>(null)
 
@@ -188,7 +189,7 @@ export function ChildDashboard() {
     if (!userId) return
     fetch(apiUrl(`/api/streaks/${userId}`), { headers: authHeaders() })
       .then(r => r.ok ? r.json() : null)
-      .then((data: { current_streak: number; earned_badge_keys: string[] } | null) => {
+      .then((data: { current_streak: number; longest_streak: number; earned_badge_keys: string[] } | null) => {
         if (data) setStreakData(data)
       })
       .catch(() => { /* non-critical — badges silently absent */ })
@@ -430,7 +431,7 @@ export function ChildDashboard() {
             <BadgeAlmanac
               earnedBadgeKeys={streakData.earned_badge_keys}
               progress={{
-                currentStreak:         streakData.current_streak,
+                longestStreak:         streakData.longest_streak,
                 totalApprovedChores:   0,
                 totalGoalsCompleted:   0,
                 totalSavedPence:       0,
