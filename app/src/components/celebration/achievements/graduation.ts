@@ -1,9 +1,10 @@
 import type { MilestoneConfig } from '../types'
 
 export const GRADUATION: MilestoneConfig = {
-  key:      'graduation',
-  bgColor:  '#0f1a14',
+  key:       'graduation',
+  bgColor:   '#0f1a14',
   transition: 'shimmer',
+  tier:      'landmark',
 
   orchard: [
     {
