@@ -38,7 +38,7 @@ export function MilestoneOverlay({ event, onComplete }: Props) {
   const config    = CONFIGS[event.type] ?? null
   const stages    = config ? (event.appView === 'CLEAN' ? config.clean : config.orchard) : []
   const isShimmer = config?.transition === 'shimmer'
-  const isLandmark = config?.tier === 'landmark' || config?.tier === 'standard'
+  const hasPayoff = config?.tier === 'landmark' || config?.tier === 'standard'
 
   const [stageIdx, setStageIdx] = useState(0)
   const [phase,    setPhase]    = useState<Phase>('stage')
@@ -50,7 +50,7 @@ export function MilestoneOverlay({ event, onComplete }: Props) {
   useEffect(() => { onCompleteRef.current = onComplete })
 
   const triggerPayoff = useCallback(() => {
-    if (!confettiSpawned.current && containerRef.current && isLandmark) {
+    if (!confettiSpawned.current && containerRef.current && hasPayoff) {
       confettiSpawned.current = true
       if (flashRef.current) {
         flashRef.current.style.animation = 'none'
@@ -59,7 +59,7 @@ export function MilestoneOverlay({ event, onComplete }: Props) {
       }
       spawnConfetti(containerRef.current)
     }
-  }, [isLandmark])
+  }, [hasPayoff])
 
   useEffect(() => {
     if (!config || stages.length === 0) { onCompleteRef.current(); return }

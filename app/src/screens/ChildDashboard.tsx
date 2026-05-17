@@ -73,6 +73,8 @@ function effectiveDays(chore: Chore, grovePlans: Record<string, number[]>): numb
 function enqueuePendingCelebrations(pending: string[], av: 'ORCHARD' | 'CLEAN') {
   for (const raw of pending) {
     const [type, prevStr, nextStr] = raw.split(':')
+    // Fix B: skip unknown event types so they don't wedge the queue
+    if (!CONFIGS[type as MilestoneEventType]) continue
     const event: MilestoneEvent = {
       type: type as MilestoneEventType,
       appView: av,
@@ -121,9 +123,12 @@ export function ChildDashboard() {
   const goalBarTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const [streakData, setStreakData] = useState<{
-    current_streak:    number
-    longest_streak:    number
-    earned_badge_keys: string[]
+    current_streak:        number
+    longest_streak:        number
+    earned_badge_keys:     string[]
+    total_approved_chores: number
+    total_goals_completed: number
+    total_saved_pence:     number
   } | null>(null)
 
   // Per-chore submission state
@@ -189,7 +194,7 @@ export function ChildDashboard() {
     if (!userId) return
     fetch(apiUrl(`/api/streaks/${userId}`), { headers: authHeaders() })
       .then(r => r.ok ? r.json() : null)
-      .then((data: { current_streak: number; longest_streak: number; earned_badge_keys: string[] } | null) => {
+      .then((data: { current_streak: number; longest_streak: number; earned_badge_keys: string[]; total_approved_chores: number; total_goals_completed: number; total_saved_pence: number } | null) => {
         if (data) setStreakData(data)
       })
       .catch(() => { /* non-critical — badges silently absent */ })
@@ -205,6 +210,13 @@ export function ChildDashboard() {
       if (next) setActiveCelebration(next)
     }
   }, [balance, appView]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Fix A: drain the next queued celebration when the active one is dismissed
+  useEffect(() => {
+    if (activeCelebration !== null) return
+    const next = consumeNextCelebration()
+    if (next) setActiveCelebration(next)
+  }, [activeCelebration])
 
   // Clean up goal bar timer on unmount
   useEffect(() => () => { if (goalBarTimer.current) clearTimeout(goalBarTimer.current) }, [])
@@ -432,10 +444,10 @@ export function ChildDashboard() {
               earnedBadgeKeys={streakData.earned_badge_keys}
               progress={{
                 longestStreak:         streakData.longest_streak,
-                totalApprovedChores:   0,
-                totalGoalsCompleted:   0,
-                totalSavedPence:       0,
-                totalLessonsCompleted: 0,
+                totalApprovedChores:   streakData.total_approved_chores,
+                totalGoalsCompleted:   streakData.total_goals_completed,
+                totalSavedPence:       streakData.total_saved_pence,
+                totalLessonsCompleted: 0,  // Learning Lab not shipped
               }}
               appView={appView}
             />

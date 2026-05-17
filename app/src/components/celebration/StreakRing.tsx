@@ -16,6 +16,7 @@ export function StreakRing({ previousValue, newValue, onComplete }: Props) {
   const [display, setDisplay] = useState(previousValue)
   const [popped,  setPopped]  = useState(false)
   const onCompleteRef = useRef(onComplete)
+  const rafRef        = useRef<number>(0)
   useEffect(() => { onCompleteRef.current = onComplete })
 
   useEffect(() => {
@@ -46,14 +47,15 @@ export function StreakRing({ previousValue, newValue, onComplete }: Props) {
         const t = Math.min((Date.now() - start) / duration, 1)
         const ease = 1 - Math.pow(1 - t, 3)
         setDisplay(Math.round(previousValue + (newValue - previousValue) * ease))
-        if (t < 1) requestAnimationFrame(tick)
+        if (t < 1) rafRef.current = requestAnimationFrame(tick)
       }
-      requestAnimationFrame(tick)
+      rafRef.current = requestAnimationFrame(tick)
     }, 1450)
 
     return () => {
       clearTimeout(tSweep)
       clearTimeout(tPayoff)
+      cancelAnimationFrame(rafRef.current)
     }
   }, [previousValue, newValue])
 
