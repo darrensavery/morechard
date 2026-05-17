@@ -31,3 +31,5 @@ CREATE TABLE IF NOT EXISTS lesson_completions (
   completed_at TEXT NOT NULL,
   UNIQUE(child_id, lesson_key)
 );
+
+CREATE INDEX IF NOT EXISTS idx_lesson_completions_child ON lesson_completions(child_id);
