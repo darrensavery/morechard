@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import type { ChildRecord } from '../lib/api'
-import { getChildren, getCompletions, clearToken, getUnpaidSummary, getFamily, getTrialStatus, type UnpaidSummaryRow, type TrialStatus } from '../lib/api'
+import { getChildren, getCompletions, clearToken, getUnpaidSummary, getFamily, getTrialStatus, authHeaders, apiUrl, type UnpaidSummaryRow, type TrialStatus } from '../lib/api'
 import { getDeviceIdentity } from '../lib/deviceIdentity'
+import { StreakChip } from '../components/dashboard/StreakChip'
 import { useLocale, isPolish } from '../lib/locale'
 import { AvatarSVG } from '../lib/avatars'
 import { ChoresTab }   from '../components/dashboard/JobsTab'
@@ -69,6 +70,11 @@ export function ParentDashboard() {
   const [bridgeCtx, setBridgeCtx] = useState<null | {
     child: ChildRecord; completionIds: string[]; total: number; currency: string;
   }>(null)
+  const [streaksByChild, setStreaksByChild] = useState<Record<string, {
+    current_streak: number
+    grace_days_remaining: number
+    consistency_score: number
+  }>>({})
 
   async function refreshUnpaid() {
     if (!familyId) return
@@ -139,6 +145,27 @@ export function ParentDashboard() {
       // Non-auth errors (network, server): stay on the page, don't redirect
     })
   }, [familyId])
+
+  // Fetch streak data for all children (non-blocking — degrades gracefully)
+  useEffect(() => {
+    if (children.length === 0) return
+    const headers = authHeaders()
+    Promise.allSettled(
+      children.map(child =>
+        fetch(apiUrl(`/api/streaks/${child.id}`), { headers })
+          .then(r => (r.ok ? r.json() : Promise.reject(r.status)))
+          .then((data: { current_streak: number; grace_days_remaining: number; consistency_score: number }) => ({ id: child.id, data }))
+      )
+    ).then(results => {
+      const map: Record<string, { current_streak: number; grace_days_remaining: number; consistency_score: number }> = {}
+      for (const result of results) {
+        if (result.status === 'fulfilled') {
+          map[result.value.id] = result.value.data
+        }
+      }
+      setStreaksByChild(map)
+    })
+  }, [children])
 
   // Track online status
   useEffect(() => {
@@ -261,6 +288,17 @@ export function ParentDashboard() {
                 {child.display_name}
               </button>
             ))}
+          </div>
+        )}
+        {/* Active child streak chip */}
+        {activeChild && (
+          <div className="max-w-[560px] mx-auto px-3.5 pb-2">
+            <StreakChip
+              currentStreak={streaksByChild[activeChild.id]?.current_streak ?? 0}
+              graceRemaining={streaksByChild[activeChild.id]?.grace_days_remaining ?? 0}
+              consistencyScore={streaksByChild[activeChild.id]?.consistency_score ?? 0}
+              appView="ORCHARD"
+            />
           </div>
         )}
 
