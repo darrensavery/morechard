@@ -421,10 +421,9 @@ export async function handleProofUpload(
 
 // ─────────────────────────────────────────────────────────────────────────────
 // GET /api/completions/:id/proof
-// Returns a presigned URL valid for 60 minutes.
+// Streams the proof photo directly from R2 through the Worker.
 // Both parent and child in the same family can retrieve it.
-// Audit columns (proof_hash, proof_exif, system_verify, verification_confidence)
-// are NOT returned here — they are reserved for the audit export route.
+// Returns the raw image bytes with the original Content-Type.
 // ─────────────────────────────────────────────────────────────────────────────
 export async function handleProofGet(
   request: Request,
@@ -443,8 +442,7 @@ export async function handleProofGet(
 
   if (!comp.proof_url) return json({ proof_url: null, message: 'No evidence uploaded yet' });
 
-  // Check object still exists (may have expired via R2 lifecycle policy)
-  const obj = await env.EVIDENCE.head(comp.proof_url);
+  const obj = await env.EVIDENCE.get(comp.proof_url);
   if (!obj) {
     return json({
       proof_url: null,
@@ -453,12 +451,8 @@ export async function handleProofGet(
     });
   }
 
-  // Generate presigned URL — 3600 seconds (1 hour)
-  // createSignedUrl is a Cloudflare R2 runtime method not yet reflected in workers-types
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const signedUrl = await (env.EVIDENCE as unknown as any).createSignedUrl(comp.proof_url, {
-    expiresIn: 3600,
-  });
-
-  return json({ proof_url: signedUrl, expires_in: 3600 });
+  const headers = new Headers();
+  headers.set('Content-Type', obj.httpMetadata?.contentType ?? 'image/jpeg');
+  headers.set('Cache-Control', 'private, max-age=3600');
+  return new Response(obj.body, { headers });
 }

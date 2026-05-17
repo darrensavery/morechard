@@ -458,9 +458,17 @@ export async function uploadProof(completionId: string, file: Blob): Promise<{ p
   return { proof_url: data.proof_url ?? '' };
 }
 
-/** Get a short-lived presigned URL for a completion's proof photo. */
+/** Fetch proof photo from the Worker and return a local blob URL for use in <img>. */
 export async function getProofUrl(completionId: string): Promise<{ url: string }> {
-  return request(`/api/completions/${completionId}/proof`);
+  const res = await fetch(apiUrl(`/api/completions/${completionId}/proof`), {
+    headers: authHeaders(),
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({})) as { message?: string };
+    throw new Error(data.message ?? `HTTP ${res.status}`);
+  }
+  const blob = await res.blob();
+  return { url: URL.createObjectURL(blob) };
 }
 
 // ----------------------------------------------------------------
