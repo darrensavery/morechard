@@ -386,7 +386,7 @@ export async function handleApproveAll(request: Request, env: Env): Promise<Resp
   if (auth.role !== 'parent') return error('Only parents can approve completions', 403);
 
   const body = await parseBody(request);
-  const { family_id, child_id } = body ?? {};
+  const { family_id, child_id } = (body as { family_id?: string; child_id?: string } | null) ?? {};
   if (!family_id || family_id !== auth.family_id) return error('Forbidden', 403);
   if (!child_id) return error('child_id required');
 

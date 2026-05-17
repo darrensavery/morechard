@@ -44,7 +44,8 @@ export type PaymentType =
   | 'SHIELD_AI'
   | 'AI_UPGRADE'
   | 'LIFETIME'    // legacy
-  | 'AI_ANNUAL';  // legacy
+  | 'AI_ANNUAL'   // legacy
+  | 'SHIELD';     // legacy alias → SHIELD_AI
 
 /** Shape returned by SELECT on the families table for trial/license checks. */
 export interface FamilyLicenseRow {

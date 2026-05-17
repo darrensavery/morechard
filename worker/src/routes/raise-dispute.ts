@@ -15,7 +15,8 @@
  * Body: { dispute_code: DisputeCode }
  */
 
-import { Env, DISPUTE_CODES, JwtPayload } from '../types.js';
+import { Env, DISPUTE_CODES } from '../types.js';
+import type { JwtPayload } from '../lib/jwt.js';
 import { json, error, clientIp } from '../lib/response.js';
 
 type AuthedRequest = Request & { auth: JwtPayload };

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { badgesToAward, BADGE_THRESHOLDS } from './badges'
+import { badgesToAward } from './badges'
 
 describe('badgesToAward', () => {
   it('returns no badges when counts are all zero', () => {

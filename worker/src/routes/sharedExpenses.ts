@@ -289,7 +289,8 @@ export async function handleDeleteSharedExpense(
 // Returns the settlement summary (net balance between parents).
 // ---------------------------------------------------------------------------
 export async function handleReconcileSharedExpenses(req: AuthedRequest, env: Env): Promise<Response> {
-  if (!req.auth) return jsonErr('Unauthorized', 401);
+  const auth = req.auth;
+  if (!auth) return jsonErr('Unauthorized', 401);
 
   const body = await req.json<{ period?: string }>().catch(() => ({} as { period?: string }));
   const period: string = body.period ?? new Date().toISOString().slice(0, 7);
@@ -302,7 +303,7 @@ export async function handleReconcileSharedExpenses(req: AuthedRequest, env: Env
       `SELECT COUNT(*) as cnt FROM shared_expenses
        WHERE family_id = ? AND settlement_period = ? AND reconciled_at IS NOT NULL`,
     )
-    .bind(req.auth.family_id, period)
+    .bind(auth.family_id, period)
     .first<{ cnt: number }>();
 
   if ((alreadyReconciled?.cnt ?? 0) > 0) {
@@ -320,7 +321,7 @@ export async function handleReconcileSharedExpenses(req: AuthedRequest, env: Env
          AND (se.settlement_period IS NULL OR se.settlement_period = ?)
        ORDER BY se.created_at ASC`,
     )
-    .bind(req.auth.family_id, period)
+    .bind(auth.family_id, period)
     .all<{
       id: number; logged_by: string; logged_by_name: string;
       total_amount: number; split_bp: number; currency: string;
@@ -335,7 +336,7 @@ export async function handleReconcileSharedExpenses(req: AuthedRequest, env: Env
   for (const e of expenses.results) {
     const loggedByAmount = Math.round((e.total_amount * e.split_bp) / 10000);
     const otherAmount = e.total_amount - loggedByAmount;
-    if (e.logged_by === req.auth.sub) {
+    if (e.logged_by === auth.sub) {
       netPence -= otherAmount;
     } else {
       netPence += loggedByAmount;
@@ -351,7 +352,7 @@ export async function handleReconcileSharedExpenses(req: AuthedRequest, env: Env
            SET settlement_period = ?, reconciled_at = ?, reconciled_by = ?
            WHERE id = ?`,
         )
-        .bind(period, now, req.auth.sub, e.id),
+        .bind(period, now, auth.sub, e.id),
     ),
   );
 
