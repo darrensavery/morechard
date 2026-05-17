@@ -155,6 +155,7 @@ import {
   handleSaveRegistrationStep,
 } from './routes/invite.js';
 import { handleInsights } from './routes/insights.js';
+import { handleGetStreaks } from './routes/streaks.js';
 import { handleFreshdeskSso } from './routes/freshdesk-sso.js';
 import {
   handleDemoRegister,
@@ -499,6 +500,10 @@ async function route(request: Request, env: Env, method: string, path: string): 
 
   // Insights — parent or child (child sees own data only, enforced in handler)
   if (path === '/api/insights'  && method === 'GET')  return withAuth(request, auth, env, handleInsights);
+
+  // Streaks — child or parent (child restricted to own data, enforced in handler)
+  const streaksMatch = path.match(/^\/api\/streaks\/([^/]+)$/)
+  if (streaksMatch && method === 'GET') return withAuth(request, auth, env, (req, e) => handleGetStreaks(req, e, streaksMatch[1]));
 
   // Freshdesk SSO — parent only
   if (path === '/api/freshdesk-sso' && method === 'GET') return handleFreshdeskSso(request, env);
