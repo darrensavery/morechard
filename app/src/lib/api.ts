@@ -433,11 +433,6 @@ export async function approveCompletion(id: string): Promise<{ ledger_id: number
   return request(`/api/completions/${id}/approve`, { method: 'POST' });
 }
 
-/** @deprecated use reviseCompletion */
-export async function rejectCompletion(id: string, rejection_note?: string): Promise<void> {
-  await request(`/api/completions/${id}/revise`, { method: 'POST', body: JSON.stringify({ parent_notes: rejection_note }) });
-}
-
 export async function reviseCompletion(id: string, parent_notes: string): Promise<void> {
   await request(`/api/completions/${id}/revise`, { method: 'POST', body: JSON.stringify({ parent_notes }) });
 }
