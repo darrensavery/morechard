@@ -19,6 +19,7 @@ import { json, error, clientIp } from '../lib/response.js';
 import { nanoid } from '../lib/nanoid.js';
 import { computeRecordHash, GENESIS_HASH } from '../lib/hash.js';
 import { JwtPayload } from '../lib/jwt.js';
+import { getStreakState, buildMissEvent, saveStreakEvent, hadScheduledChores, todayUTC, previousDay } from '../lib/streaks.js';
 
 type AuthedRequest = Request & { auth: JwtPayload };
 
@@ -335,6 +336,56 @@ export async function handleBalance(request: Request, env: Env): Promise<Respons
 
   const available = earnedTotal - reversalsTotal - payoutsTotal - spentTotal;
 
+  // ── Gamification: lazy miss detection ──────────────────────────────
+  const pendingCelebrations: string[] = []
+  const today = todayUTC()
+  const yesterday = previousDay(today)
+
+  const [streakState, yesterdayHadChores] = await Promise.all([
+    getStreakState(env.DB, child_id),
+    hadScheduledChores(env.DB, child_id, yesterday),
+  ])
+
+  let currentStreakData = streakState
+
+  const missEvent = buildMissEvent({
+    hadScheduledChores: yesterdayHadChores,
+    today,
+    state: streakState,
+  })
+
+  if (missEvent) {
+    await saveStreakEvent(env.DB, child_id, missEvent, today)
+    currentStreakData = {
+      ...streakState,
+      current_streak:       missEvent.newStreak,
+      grace_days_remaining: missEvent.newGrace,
+      last_checked_date:    today,
+    }
+    if (missEvent.type === 'MISSED') {
+      pendingCelebrations.push(`STREAK_LOST:${missEvent.previousStreak}:0`)
+    } else if (missEvent.type === 'GRACE_USED') {
+      pendingCelebrations.push(`STREAK_REVIVED:${missEvent.previousStreak}:${missEvent.newStreak}`)
+    }
+  } else if (streakState.last_checked_date !== today) {
+    // Advance check date without changing streak
+    await env.DB.prepare(
+      `INSERT INTO child_streaks (child_id, current_streak, longest_streak, grace_days_remaining, last_kept_date, last_checked_date, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?)
+       ON CONFLICT(child_id) DO UPDATE SET last_checked_date = excluded.last_checked_date, updated_at = excluded.updated_at`
+    ).bind(
+      child_id,
+      streakState.current_streak,
+      streakState.longest_streak,
+      streakState.grace_days_remaining,
+      streakState.last_kept_date,
+      today,
+      new Date().toISOString()
+    ).run()
+    currentStreakData = { ...streakState, last_checked_date: today }
+  }
+  // ── End gamification ────────────────────────────────────────────────
+
   return json({
     earned:       earnedTotal,
     pending:      pendingTotal,
@@ -342,6 +393,13 @@ export async function handleBalance(request: Request, env: Env): Promise<Respons
     paid_out:     payoutsTotal,
     spent:        spentTotal,
     available:    Math.max(0, available),
+    streak: {
+      current:         currentStreakData.current_streak,
+      longest:         currentStreakData.longest_streak,
+      grace_remaining: currentStreakData.grace_days_remaining,
+      last_kept_date:  currentStreakData.last_kept_date,
+    },
+    pending_celebrations: pendingCelebrations,
   });
 }
 
