@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import type { Completion, PayoutRecord, ChildRecord, UnpaidSummaryRow } from '../../lib/api'
 import {
   getHistory, getPayouts, createPayout, createBonus, formatCurrency,
-  getCompletions, approveCompletion, reviseCompletion, approveAll, getProofUrl, getChores,
+  getCompletions, approveCompletion, reviseCompletion, rejectCompletion, approveAll, getProofUrl, getChores,
   markPaidBatch,
 } from '../../lib/api'
 import { useGatekeeper } from '../../hooks/useGatekeeper'
@@ -58,6 +58,8 @@ export function ActivityTab({ familyId, child, childCount, onCountChange, unpaid
   const [pendingLoading,      setPendingLoading]      = useState(true)
   const [reviseId,            setReviseId]            = useState<string | null>(null)
   const [reviseNote,          setReviseNote]          = useState('')
+  const [rejectId,            setRejectId]            = useState<string | null>(null)
+  const [rejectNote,          setRejectNote]          = useState('')
   const [approveBusy,         setApproveBusy]         = useState<string | null>(null)
   const [approveAllBusy,      setApproveAllBusy]      = useState(false)
   const [showApproveAllModal, setShowApproveAllModal] = useState(false)
@@ -87,6 +89,7 @@ export function ActivityTab({ familyId, child, childCount, onCountChange, unpaid
 
   useAndroidBack(showApproveAllModal, () => setShowApproveAllModal(false))
   useAndroidBack(!!reviseId, () => { setReviseId(null); setReviseNote('') })
+  useAndroidBack(!!rejectId, () => { setRejectId(null); setRejectNote('') })
   useAndroidBack(showPayout, () => { setShowPayout(false); setPayoutError(null) })
   useAndroidBack(showBonus, () => { setShowBonus(false); setBonusError(null) })
 
@@ -132,6 +135,16 @@ export function ActivityTab({ familyId, child, childCount, onCountChange, unpaid
       await reviseCompletion(id, reviseNote.trim())
       setReviseId(null)
       setReviseNote('')
+      await loadPending()
+    } finally { setApproveBusy(null) }
+  }
+
+  async function handleReject(id: string) {
+    setApproveBusy(id)
+    try {
+      await rejectCompletion(id, rejectNote.trim() || undefined)
+      setRejectId(null)
+      setRejectNote('')
       await loadPending()
     } finally { setApproveBusy(null) }
   }
@@ -215,7 +228,7 @@ export function ActivityTab({ familyId, child, childCount, onCountChange, unpaid
       <GatekeeperModal />
 
       {/* ── Sticky action row ────────────────────────────────────────────────── */}
-      <div className="sticky top-0 z-20 bg-[var(--color-bg)] pt-1 pb-2 -mx-3.5 px-3.5 flex gap-2 border-b border-[var(--color-border)]">
+      <div className="flex gap-2 pb-2 border-b border-[var(--color-border)]">
         <button
           onClick={() => setShowPayout(true)}
           className="flex-1 bg-[var(--brand-primary)] text-white font-bold py-3 rounded-xl text-[14px] hover:opacity-90 active:scale-[0.98] transition-all cursor-pointer shadow-sm"
@@ -264,13 +277,19 @@ export function ActivityTab({ familyId, child, childCount, onCountChange, unpaid
               completion={c}
               isRevising={reviseId === c.id}
               reviseNote={reviseNote}
+              isRejecting={rejectId === c.id}
+              rejectNote={rejectNote}
               busy={approveBusy === c.id}
               anyBusy={!!approveBusy || approveAllBusy}
               onApprove={() => challenge(() => handleApprove(c.id))}
-              onStartRevise={() => { setReviseId(c.id); setReviseNote('') }}
+              onStartRevise={() => { setRejectId(null); setReviseId(c.id); setReviseNote('') }}
               onCancelRevise={() => { setReviseId(null); setReviseNote('') }}
               onReviseNoteChange={setReviseNote}
               onConfirmRevise={() => handleRevise(c.id)}
+              onStartReject={() => { setReviseId(null); setRejectId(c.id); setRejectNote('') }}
+              onCancelReject={() => { setRejectId(null); setRejectNote('') }}
+              onRejectNoteChange={setRejectNote}
+              onConfirmReject={() => handleReject(c.id)}
             />
           ))}
         </section>
@@ -804,6 +823,8 @@ interface AuditCardProps {
   completion: Completion
   isRevising: boolean
   reviseNote: string
+  isRejecting: boolean
+  rejectNote: string
   busy: boolean
   anyBusy: boolean
   onApprove: () => void
@@ -811,11 +832,16 @@ interface AuditCardProps {
   onCancelRevise: () => void
   onReviseNoteChange: (v: string) => void
   onConfirmRevise: () => void
+  onStartReject: () => void
+  onCancelReject: () => void
+  onRejectNoteChange: (v: string) => void
+  onConfirmReject: () => void
 }
 
 function AuditCard({
-  completion: c, isRevising, reviseNote, busy, anyBusy,
+  completion: c, isRevising, reviseNote, isRejecting, rejectNote, busy, anyBusy,
   onApprove, onStartRevise, onCancelRevise, onReviseNoteChange, onConfirmRevise,
+  onStartReject, onCancelReject, onRejectNoteChange, onConfirmReject,
 }: AuditCardProps) {
   const [proofUrl, setProofUrl]     = useState<string | null>(null)
   const [loadingProof, setLoadingProof] = useState(false)
@@ -901,7 +927,7 @@ function AuditCard({
       </div>
 
       {/* Revise drawer */}
-      {isRevising ? (
+      {isRevising && (
         <div className="px-4 pb-4 space-y-2.5 border-t border-[var(--color-border)] pt-3">
           <p className="text-[12px] font-bold text-[var(--color-text-muted)] uppercase tracking-wide">
             Feedback for {c.child_name}
@@ -930,13 +956,55 @@ function AuditCard({
             </button>
           </div>
         </div>
-      ) : (
-        /* Action bar */
+      )}
+
+      {/* Reject drawer */}
+      {isRejecting && (
+        <div className="px-4 pb-4 space-y-2.5 border-t border-red-200 dark:border-red-900 pt-3 bg-red-50 dark:bg-red-950/20">
+          <p className="text-[12px] font-bold text-red-700 dark:text-red-400 uppercase tracking-wide">
+            Reject this submission
+          </p>
+          <textarea
+            className="w-full border border-red-200 dark:border-red-800 rounded-xl px-3.5 py-2.5 text-[13px] resize-none bg-white dark:bg-red-950/30 text-[var(--color-text)] placeholder:text-[var(--color-text-muted)]/60 focus:outline-none focus:ring-2 focus:ring-red-400 transition"
+            placeholder="Explain why this is rejected (optional but helpful)"
+            rows={2}
+            value={rejectNote}
+            onChange={e => onRejectNoteChange(e.target.value)}
+            autoFocus
+          />
+          <div className="flex gap-2">
+            <button
+              onClick={onCancelReject}
+              className="flex-1 border border-[var(--color-border)] rounded-xl py-2.5 text-[14px] font-semibold text-[var(--color-text-muted)] hover:bg-[var(--color-surface-alt)] cursor-pointer transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={onConfirmReject}
+              disabled={busy}
+              className="flex-1 bg-red-600 text-white rounded-xl py-2.5 text-[14px] font-bold hover:bg-red-700 disabled:opacity-50 cursor-pointer transition-colors"
+            >
+              {busy ? 'Rejecting…' : 'Reject ✗'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Action bar — hidden when a drawer is open */}
+      {!isRevising && !isRejecting && (
         <div className="flex border-t border-[var(--color-border)]">
+          <button
+            onClick={onStartReject}
+            disabled={anyBusy}
+            className="flex-1 py-3.5 text-[13px] font-bold text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 disabled:opacity-40 cursor-pointer transition-colors"
+          >
+            Reject
+          </button>
+          <div className="w-px bg-[var(--color-border)]" />
           <button
             onClick={onStartRevise}
             disabled={anyBusy}
-            className="flex-1 py-3.5 text-[14px] font-bold text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/20 disabled:opacity-40 cursor-pointer transition-colors"
+            className="flex-1 py-3.5 text-[13px] font-bold text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/20 disabled:opacity-40 cursor-pointer transition-colors"
           >
             Revise
           </button>
@@ -944,7 +1012,7 @@ function AuditCard({
           <button
             onClick={onApprove}
             disabled={anyBusy}
-            className="flex-1 py-3.5 text-[14px] font-bold text-[var(--brand-primary)] hover:bg-[color-mix(in_srgb,var(--brand-primary)_8%,transparent)] disabled:opacity-40 cursor-pointer transition-colors"
+            className="flex-1 py-3.5 text-[13px] font-bold text-[var(--brand-primary)] hover:bg-[color-mix(in_srgb,var(--brand-primary)_8%,transparent)] disabled:opacity-40 cursor-pointer transition-colors"
           >
             {busy ? (
               <span className="flex items-center justify-center gap-1.5">

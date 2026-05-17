@@ -30,6 +30,8 @@ interface Props {
   familyId: string
   childId: string
   currency: string
+  grovePlans?: Record<string, number[]>
+  onTogglePlant?: (chore: Chore, day: number) => void
 }
 
 interface SubmitState {
@@ -42,7 +44,7 @@ interface SubmitState {
   startedAt: number            // epoch ms — for velocity tracking
 }
 
-export function EarnTab({ familyId, childId, currency }: Props) {
+export function EarnTab({ familyId, childId, currency, grovePlans = {}, onTogglePlant }: Props) {
   const [chores,    setChores]    = useState<Chore[]>([])
   const [openChores, setOpenChores] = useState<Chore[]>([])  // assigned_to='anyone', unclaimed
   const [available, setAvailable] = useState<Completion[]>([])  // status=available
@@ -145,7 +147,7 @@ export function EarnTab({ familyId, childId, currency }: Props) {
       const velocityMs = Date.now() - submit.startedAt
       track.taskSubmitted({ chore_id: submit.choreId, is_revision: submit.isRevision, velocity_ms: velocityMs, had_proof: true })
       setSubmit(s => s ? { ...s, stage: 'harvesting' } : s)
-      setTimeout(() => { setSubmit(null); load() }, 1800)
+      setTimeout(() => { load().then(() => setSubmit(null)) }, 1800)
     } catch (err: unknown) {
       setSubmit(s => s ? { ...s, stage: 'note', error: (err as Error).message } : s)
     }
@@ -232,6 +234,8 @@ export function EarnTab({ familyId, childId, currency }: Props) {
                   stage={submit?.choreId === chore.id ? submit.stage : null}
                   note={submit?.choreId === chore.id ? submit.note : ''}
                   error={submit?.choreId === chore.id ? submit.error : null}
+                  plannedDays={grovePlans[chore.id] ?? []}
+                  onTogglePlant={onTogglePlant ? (day) => onTogglePlant(chore, day) : undefined}
                   onStart={() => startSubmit(comp, false)}
                   onNoteChange={v => setSubmit(s => s ? { ...s, note: v } : s)}
                   onNoteSubmit={handleNoteSubmit}
@@ -447,30 +451,45 @@ interface OpenChoreCardProps {
   stage: SubmitState['stage'] | null
   note: string
   error: string | null
+  plannedDays: number[]
+  onTogglePlant?: (day: number) => void
   onStart: () => void
   onNoteChange: (v: string) => void
   onNoteSubmit: () => void
   onCancel: () => void
 }
 
+const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+
 function OpenChoreCard({
   chore, currency, isActive, stage, note, error,
+  plannedDays, onTogglePlant,
   onStart, onNoteChange, onNoteSubmit, onCancel,
 }: OpenChoreCardProps) {
+  const [expanded, setExpanded] = useState(false)
+
   if (stage === 'harvesting') return <HarvestPulse label="Submitted!" />
 
   return (
     <div className={`bg-[var(--color-surface)] border rounded-xl overflow-hidden transition-all
       ${isActive ? 'border-[var(--brand-primary)] shadow-[0_0_0_3px_color-mix(in_srgb,var(--brand-primary)_15%,transparent)]' : 'border-[var(--color-border)]'}
-      ${chore.is_flash ? 'border-l-4 border-l-red-500' : chore.is_priority ? 'border-l-4 border-l-amber-500' : ''}
+      ${!!chore.is_flash ? 'border-l-4 border-l-red-500' : !!chore.is_priority ? 'border-l-4 border-l-amber-500' : ''}
     `}>
-      <div className="px-4 py-3 flex items-center gap-3">
+      {/* Tappable card body — expands day picker */}
+      <button
+        type="button"
+        onClick={() => !isActive && onTogglePlant && setExpanded(e => !e)}
+        className="w-full px-4 py-3 flex items-center gap-3 text-left cursor-pointer"
+      >
+        <div className="w-9 h-9 rounded-full bg-[var(--color-surface-alt)] flex items-center justify-center shrink-0 text-[var(--color-text-muted)]">
+          <ChoreIcon title={chore.title} size={18} />
+        </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5 flex-wrap">
-            {chore.is_flash && (
+            {!!chore.is_flash && (
               <span className="text-[10px] font-bold text-red-600 bg-red-100 rounded px-1.5 py-0.5">FLASH</span>
             )}
-            {chore.is_priority && !chore.is_flash && (
+            {!!chore.is_priority && !chore.is_flash && (
               <span className="text-[10px] font-bold text-amber-600 bg-amber-100 rounded px-1.5 py-0.5">PRIORITY</span>
             )}
             <p className="text-[15px] font-semibold text-[var(--color-text)]">{chore.title}</p>
@@ -486,6 +505,11 @@ function OpenChoreCard({
               <CameraIcon small /> Photo required to submit
             </p>
           )}
+          {plannedDays.length > 0 && !expanded && (
+            <p className="text-[11px] text-[var(--brand-primary)] mt-1">
+              Planned: {plannedDays.map(d => DAY_LABELS[d]).join(', ')}
+            </p>
+          )}
         </div>
 
         {stage === 'uploading' || stage === 'submitting' ? (
@@ -495,7 +519,8 @@ function OpenChoreCard({
           </span>
         ) : (
           <button
-            onClick={onStart}
+            type="button"
+            onClick={e => { e.stopPropagation(); onStart() }}
             className={`shrink-0 h-10 rounded-xl font-bold text-[13px] transition-all active:scale-95 cursor-pointer
               ${chore.proof_required
                 ? 'px-3 bg-[var(--brand-primary)] text-white hover:opacity-90 flex items-center gap-1.5'
@@ -505,7 +530,35 @@ function OpenChoreCard({
             {chore.proof_required ? <><CameraIcon /> Done</> : 'Done'}
           </button>
         )}
-      </div>
+      </button>
+
+      {/* Day picker — shown when expanded */}
+      {expanded && !isActive && onTogglePlant && (
+        <div className="px-4 pb-3 border-t border-[var(--color-border)] pt-2.5">
+          <p className="text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wide mb-2">
+            {chore.frequency === 'one-off' ? 'Pick a day to do this' : 'Plan which days'}
+          </p>
+          <div className="flex gap-1.5">
+            {DAY_LABELS.map((label, i) => {
+              const active = plannedDays.includes(i)
+              return (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() => onTogglePlant(i)}
+                  className={`flex-1 py-2 rounded-lg text-[11px] font-bold transition-colors cursor-pointer
+                    ${active
+                      ? 'bg-[var(--brand-primary)] text-white'
+                      : 'bg-[var(--color-surface-alt)] text-[var(--color-text-muted)] hover:bg-[color-mix(in_srgb,var(--brand-primary)_15%,transparent)]'
+                    }`}
+                >
+                  {label.slice(0, 1)}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Note drawer */}
       {isActive && stage === 'note' && (
@@ -561,4 +614,32 @@ function CameraIcon({ small = false }: { small?: boolean }) {
       <circle cx="12" cy="13" r="4"/>
     </svg>
   )
+}
+
+function ChoreIcon({ title, size = 20 }: { title: string; size?: number }) {
+  const s = `${size}px`
+  const t = title.toLowerCase()
+  if (t.includes('tidy') || t.includes('room') || t.includes('clean room'))
+    return <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+  if (t.includes('dish') || t.includes('wash up'))
+    return <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a10 10 0 0 1 0 20"/><path d="M12 2a10 10 0 0 0 0 20"/><path d="M2 12h20"/></svg>
+  if (t.includes('vacuum') || t.includes('hoover'))
+    return <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 9V3"/><path d="M6.6 6.6 4.5 4.5"/><path d="M9 12H3"/><path d="M6.6 17.4l-2.1 2.1"/><path d="M12 15v6"/><path d="M17.4 17.4l2.1 2.1"/><path d="M15 12h6"/><path d="M17.4 6.6l2.1-2.1"/></svg>
+  if (t.includes('bin') || t.includes('rubbish') || t.includes('trash'))
+    return <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+  if (t.includes('dog') || t.includes('walk') || t.includes('pet'))
+    return <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M10 5.172C10 3.782 8.423 2.679 6.5 3c-2.823.47-4.113 6.006-4 7 .08.703 1.725 1.722 3.656 2.115"/><path d="M14.267 5.172c0-1.39 1.577-2.493 3.5-2.172 2.823.47 4.113 6.006 4 7-.08.703-1.725 1.722-3.656 2.115"/><path d="M8 14v.5"/><path d="M16 14v.5"/><path d="M11.25 16.25h1.5L12 17l-.75-.75z"/><path d="M4.42 11.247A13.152 13.152 0 0 0 4 14.556C4 18.728 7.582 21 12 21s8-2.272 8-6.444c0-1.084-.22-2.2-.682-3.31"/></svg>
+  if (t.includes('car') || t.includes('wash car'))
+    return <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M5 17H3a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h1l2-3h10l2 3h1a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2h-2"/><circle cx="7" cy="17" r="2"/><circle cx="17" cy="17" r="2"/></svg>
+  if (t.includes('homework') || t.includes('reading') || t.includes('study') || t.includes('book'))
+    return <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+  if (t.includes('bed') || t.includes('bedroom'))
+    return <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M2 4v16"/><path d="M22 4v16"/><path d="M2 8h20"/><path d="M2 20h20"/><path d="M2 12h6a2 2 0 0 1 2 2v4H2v-6z"/><path d="M16 12h6v8h-8v-4a2 2 0 0 1 2-2z"/></svg>
+  if (t.includes('lawn') || t.includes('garden') || t.includes('grass') || t.includes('mow'))
+    return <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M3 21h18"/><path d="M9 8c0-2.5-2-4-2-4s-2 1.5-2 4 2 4 2 4 2-1.5 2-4z"/><path d="M15 8c0-2.5-2-4-2-4s-2 1.5-2 4 2 4 2 4 2-1.5 2-4z"/><path d="M7 21v-9"/><path d="M13 21v-9"/><path d="M17 21v-6c0-2-1-3-3-3"/></svg>
+  if (t.includes('cook') || t.includes('dinner') || t.includes('lunch') || t.includes('meal'))
+    return <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M15 11v6"/><path d="M9 11v2a3 3 0 0 0 6 0v-2"/><path d="M3 11h18"/><path d="M12 2v3"/><path d="M8 2c0 2.5 4 2.5 4 5"/><path d="M16 2c0 2.5-4 2.5-4 5"/></svg>
+  if (t.includes('laundry') || t.includes('washing') || t.includes('clothes'))
+    return <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="3"/><circle cx="12" cy="13" r="4"/><circle cx="8" cy="7" r="1"/></svg>
+  return <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="9 12 11 14 15 10"/></svg>
 }

@@ -27,7 +27,7 @@ export interface Env {
 // 'awaiting_review' — child submitted, parent to review
 // 'completed'       — approved, ledger written
 // 'needs_revision'  — parent sent back with notes
-export type CompletionStatus = 'available' | 'awaiting_review' | 'completed' | 'needs_revision';
+export type CompletionStatus = 'available' | 'awaiting_review' | 'completed' | 'needs_revision' | 'rejected';
 
 // Active SKUs (all one-time payments, UK Phase 1):
 //   COMPLETE     — £44.99  Morechard Core: base tracker; AI Mentor / Learning Lab locked after trial

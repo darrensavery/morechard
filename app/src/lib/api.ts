@@ -405,7 +405,7 @@ export interface Completion {
   proof_exif: Record<string, unknown> | null;  // EXIF metadata; null when pruned or not captured
   system_verify: Record<string, unknown> | null; // GPS/device verification data; null when pruned
   attempt_count: number;         // > 1 means resubmission
-  status: 'awaiting_review' | 'completed' | 'needs_revision' | 'pending';
+  status: 'awaiting_review' | 'completed' | 'needs_revision' | 'rejected' | 'pending';
   rating: number; submitted_at: number; resolved_at: number | null;
   paid_out_at: number | null;
   pruned_at?: number | null;     // set by migration 0039 when evidence is archived (2+ years old)
@@ -440,6 +440,10 @@ export async function rejectCompletion(id: string, rejection_note?: string): Pro
 
 export async function reviseCompletion(id: string, parent_notes: string): Promise<void> {
   await request(`/api/completions/${id}/revise`, { method: 'POST', body: JSON.stringify({ parent_notes }) });
+}
+
+export async function rejectCompletion(id: string, parent_notes?: string): Promise<void> {
+  await request(`/api/completions/${id}/reject`, { method: 'POST', body: JSON.stringify({ parent_notes: parent_notes ?? '' }) });
 }
 
 /** Upload photo evidence for a completion. Returns the R2 object key. */

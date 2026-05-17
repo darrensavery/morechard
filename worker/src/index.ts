@@ -71,7 +71,7 @@ import {
 } from './routes/chores.js';
 import {
   handleCompletionList, handleCompletionCount, handleCompletionHistory,
-  handleCompletionApprove, handleCompletionRevise,
+  handleCompletionApprove, handleCompletionRevise, handleCompletionReject,
   handleCompletionRate, handleApproveAll,
 } from './routes/completions.js';
 import {
@@ -329,37 +329,37 @@ async function runPaydaySweep(env: Env, nowEpoch: number): Promise<void> {
       .first<{ id: number; record_hash: string }>();
 
     const previousHash = prevRow?.record_hash ?? GENESIS_HASH;
-    const predictedId = (prevRow?.id ?? 0) + 1;
+    const newLedgerId = (prevRow?.id ?? 0) + 1;
 
     const verificationStatus = child.verify_mode === 'amicable' ? 'verified_auto' : 'verified_manual';
 
     const recordHash = await computeRecordHash(
-      predictedId, child.family_id, child.child_id,
+      newLedgerId, child.family_id, child.child_id,
       child.allowance_amount, child.currency, 'credit', previousHash,
     );
 
-    // Atomic batch: ledger row (id omitted — AUTOINCREMENT) + payday_log idempotency row.
-    // last_row_id from the INSERT meta gives us the real ledger id for payday_log.
-    const [ledgerResult] = await env.DB.batch([
+    // Atomic batch: ledger row with explicit id (so the hash — which includes the id —
+    // is always consistent with the row that lands in the DB) + payday_log idempotency row.
+    // Using AUTOINCREMENT without a fixed id would let a concurrent Worker insert slip in
+    // and push the auto-assigned id past newLedgerId, corrupting the hash chain silently.
+    await env.DB.batch([
       env.DB.prepare(`
         INSERT INTO ledger
-          (family_id, child_id, entry_type, amount, currency,
+          (id, family_id, child_id, entry_type, amount, currency,
            description, verification_status, previous_hash, record_hash, ip_address)
-        VALUES (?,?,'credit',?,?,?,?,?,?,'cron')
+        VALUES (?,?,?,'credit',?,?,?,?,?,?,'cron')
       `).bind(
+        newLedgerId,
         child.family_id, child.child_id,
         child.allowance_amount, child.currency,
         `Weekly allowance — w/c ${weekStart}`,
         verificationStatus, previousHash, recordHash,
       ),
+      env.DB.prepare(`
+        INSERT OR IGNORE INTO payday_log (family_id, child_id, week_start, ledger_id, paid_at)
+        VALUES (?,?,?,?,?)
+      `).bind(child.family_id, child.child_id, weekStart, newLedgerId, nowEpoch),
     ]);
-
-    const ledgerId = ledgerResult.meta.last_row_id as number;
-
-    await env.DB.prepare(`
-      INSERT OR IGNORE INTO payday_log (family_id, child_id, week_start, ledger_id, paid_at)
-      VALUES (?,?,?,?,?)
-    `).bind(child.family_id, child.child_id, weekStart, ledgerId, nowEpoch).run();
   }
 }
 
@@ -592,6 +592,8 @@ async function route(request: Request, env: Env, method: string, path: string): 
   if (compApproveMatch && method === 'POST') return withAuth(request, auth, env, (req, e) => handleCompletionApprove(req, e, compApproveMatch[1]));
   const compReviseMatch = path.match(/^\/api\/completions\/([^/]+)\/revise$/);
   if (compReviseMatch && method === 'POST') return withAuth(request, auth, env, (req, e) => handleCompletionRevise(req, e, compReviseMatch[1]));
+  const compRejectMatch = path.match(/^\/api\/completions\/([^/]+)\/reject$/);
+  if (compRejectMatch && method === 'POST') return withAuth(request, auth, env, (req, e) => handleCompletionReject(req, e, compRejectMatch[1]));
   if (path === '/api/completions/approve-all' && method === 'POST') return withAuth(request, auth, env, handleApproveAll);
 
   // Goals write (parent only)

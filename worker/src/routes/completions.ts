@@ -343,6 +343,43 @@ export async function handleCompletionRevise(
 }
 
 // ----------------------------------------------------------------
+// POST /api/completions/:id/reject
+// Parent permanently rejects a submission — no payment, no resubmission.
+// Body: { parent_notes? }
+// ----------------------------------------------------------------
+export async function handleCompletionReject(
+  request: Request,
+  env: Env,
+  completionId: string,
+): Promise<Response> {
+  const auth = (request as AuthedRequest).auth;
+  if (auth.role !== 'parent') return error('Only parents can reject completions', 403);
+
+  const body = await parseBody(request);
+  const parent_notes = body?.parent_notes ? String(body.parent_notes).trim() : null;
+
+  const comp = await env.DB
+    .prepare('SELECT id, family_id, status FROM completions WHERE id = ?')
+    .bind(completionId)
+    .first<{ id: string; family_id: string; status: string }>();
+
+  if (!comp) return error('Completion not found', 404);
+  if (comp.family_id !== auth.family_id) return error('Forbidden', 403);
+  if (comp.status !== 'awaiting_review')
+    return error(`Cannot reject — completion is '${comp.status}'`, 409);
+
+  const now = Math.floor(Date.now() / 1000);
+  await env.DB
+    .prepare(`UPDATE completions
+              SET status = 'rejected', parent_notes = ?, resolved_at = ?, resolved_by = ?
+              WHERE id = ?`)
+    .bind(parent_notes, now, auth.sub, completionId)
+    .run();
+
+  return json({ ok: true, parent_notes });
+}
+
+// ----------------------------------------------------------------
 // POST /api/completions/:id/rate
 // Child rates a completed completion. Body: { rating: 1 | -1 }
 // ----------------------------------------------------------------
@@ -415,15 +452,17 @@ export async function handleApproveAll(request: Request, env: Env): Promise<Resp
   const ip = clientIp(request);
   const now = Math.floor(Date.now() / 1000);
 
-  // Sequential to maintain hash chain integrity
-  for (const comp of pending) {
-    const prevRow = await env.DB
-      .prepare('SELECT id, record_hash FROM ledger WHERE family_id = ? ORDER BY id DESC LIMIT 1')
-      .bind(family_id)
-      .first<{ id: number; record_hash: string }>();
+  // Read the chain tip once, then thread it through the loop in memory.
+  // Re-querying inside the loop would cause N round-trips to D1 and would still be
+  // vulnerable to a concurrent Worker inserting between iterations.
+  let chainTip = await env.DB
+    .prepare('SELECT id, record_hash FROM ledger WHERE family_id = ? ORDER BY id DESC LIMIT 1')
+    .bind(family_id)
+    .first<{ id: number; record_hash: string }>();
 
-    const previousHash = prevRow?.record_hash ?? GENESIS_HASH;
-    const newLedgerId = (prevRow?.id ?? 0) + 1;
+  for (const comp of pending) {
+    const previousHash = chainTip?.record_hash ?? GENESIS_HASH;
+    const newLedgerId = (chainTip?.id ?? 0) + 1;
     const disputeBefore = verificationStatus === 'verified_auto' ? now + 172800 : null;
 
     const recordHash = await computeRecordHash(
@@ -450,6 +489,8 @@ export async function handleApproveAll(request: Request, env: Env): Promise<Resp
         WHERE id = ?
       `).bind(now, auth.sub, newLedgerId, comp.comp_id),
     ]);
+
+    chainTip = { id: newLedgerId, record_hash: recordHash };
   }
 
   // ── Gamification hook (approve-all) ───────────────────────────────

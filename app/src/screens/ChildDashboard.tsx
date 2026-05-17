@@ -248,10 +248,15 @@ export function ChildDashboard() {
     if (weeklyDayFromChore(chore) !== null) return  // fixed by parent
     const updated = { ...grovePlans }
     const days = updated[chore.id] ? [...updated[chore.id]] : []
-    const idx = days.indexOf(day)
-    if (idx === -1) days.push(day)
-    else days.splice(idx, 1)
-    updated[chore.id] = days
+    if (chore.frequency === 'one-off') {
+      // Radio: selecting the same day deselects; otherwise replace with the new day
+      updated[chore.id] = days[0] === day ? [] : [day]
+    } else {
+      const idx = days.indexOf(day)
+      if (idx === -1) days.push(day)
+      else days.splice(idx, 1)
+      updated[chore.id] = days
+    }
     setGrovePlans(updated)
     saveGrovePlans(userId, updated)
   }
@@ -441,7 +446,6 @@ export function ChildDashboard() {
                               try {
                                 await updateSettings({ avatar_id: avId })
                                 setAvatarId(avId)
-                                setShowAvatarPicker(false)
                               } finally {
                                 setSavingAvatar(false)
                               }
@@ -505,7 +509,7 @@ export function ChildDashboard() {
       <main className="flex-1 max-w-[560px] mx-auto w-full px-3.5 py-4 flex flex-col gap-4">
         <div className={childTab === 'chores' ? 'tab-panel' : 'tab-panel hidden'}>
           <div className="space-y-4">
-            <EarnTab familyId={familyId} childId={userId} currency={chores[0]?.currency ?? 'GBP'} />
+            <EarnTab familyId={familyId} childId={userId} currency={chores[0]?.currency ?? 'GBP'} grovePlans={grovePlans} onTogglePlant={togglePlant} />
             <ChildHistoryTab familyId={familyId} childId={userId} currency={currency} variant="chore" />
           </div>
         </div>
