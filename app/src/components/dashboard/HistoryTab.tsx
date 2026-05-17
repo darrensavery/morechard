@@ -92,8 +92,8 @@ export function ActivityTab({ familyId, child, childCount, onCountChange, unpaid
 
   useEffect(() => { injectPremiumStyles() }, [])
 
-  const loadPending = useCallback(async () => {
-    setPendingLoading(true)
+  const loadPending = useCallback(async (silent = false) => {
+    if (!silent) setPendingLoading(true)
     const r = await getCompletions({ family_id: familyId, child_id: child.id, status: 'awaiting_review' })
     setCompletions(r.completions)
     onCountChangeRef.current(r.completions.length)
@@ -113,8 +113,8 @@ export function ActivityTab({ familyId, child, childCount, onCountChange, unpaid
   useEffect(() => { loadPending() }, [loadPending])
 
   useEffect(() => {
-    const t = setInterval(loadPending, 30_000)
-    const onVisible = () => { if (!document.hidden) loadPending() }
+    const t = setInterval(() => loadPending(true), 30_000)
+    const onVisible = () => { if (!document.hidden) loadPending(true) }
     document.addEventListener('visibilitychange', onVisible)
     return () => { clearInterval(t); document.removeEventListener('visibilitychange', onVisible) }
   }, [loadPending])

@@ -55,8 +55,8 @@ export function EarnTab({ familyId, childId, currency }: Props) {
   const [choreGuideOpen, setChoreGuideOpen] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
 
-  const load = useCallback(async () => {
-    setLoading(true)
+  const load = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true)
     try {
       // GET /api/chores triggers lazy generation server-side for recurring chores
       const [c, open, av, aw, rev] = await Promise.all([
@@ -90,8 +90,8 @@ export function EarnTab({ familyId, childId, currency }: Props) {
   useEffect(() => { load() }, [load])
 
   useEffect(() => {
-    const t = setInterval(load, 30_000)
-    const onVisible = () => { if (!document.hidden) load() }
+    const t = setInterval(() => load(true), 30_000)
+    const onVisible = () => { if (!document.hidden) load(true) }
     document.addEventListener('visibilitychange', onVisible)
     return () => { clearInterval(t); document.removeEventListener('visibilitychange', onVisible) }
   }, [load])

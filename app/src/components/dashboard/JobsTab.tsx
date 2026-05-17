@@ -47,8 +47,8 @@ export function ChoresTab({ familyId, child, children }: Props) {
 
   useEffect(() => { injectPremiumStyles() }, [])
 
-  const load = useCallback(async () => {
-    setLoading(true)
+  const load = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true)
     const [c, a, s, p] = await Promise.all([
       getChores({ family_id: familyId, child_id: child.id }).then(r => r.chores),
       getChores({ family_id: familyId, child_id: child.id, archived: true }).then(r => r.chores),
@@ -65,8 +65,8 @@ export function ChoresTab({ familyId, child, children }: Props) {
   useEffect(() => { load() }, [load])
 
   useEffect(() => {
-    const t = setInterval(load, 30_000)
-    const onVisible = () => { if (!document.hidden) load() }
+    const t = setInterval(() => load(true), 30_000)
+    const onVisible = () => { if (!document.hidden) load(true) }
     document.addEventListener('visibilitychange', onVisible)
     return () => { clearInterval(t); document.removeEventListener('visibilitychange', onVisible) }
   }, [load])
@@ -456,8 +456,8 @@ function ChoreCard({ chore, plans, expanded, onToggle, onArchive, onEdit, onTogg
   onTogglePlan: (dayIndex: number) => void
 }) {
   const [hovered, setHovered] = useState(false)
-  const dueDateObj = chore.due_date && /^\d{4}-\d{2}-\d{2}$/.test(chore.due_date) ? new Date(chore.due_date) : null
-  const isOverdue = dueDateObj && dueDateObj < new Date()
+  const dueDateObj = chore.due_date && /^\d{4}-\d{2}-\d{2}$/.test(chore.due_date) ? new Date(chore.due_date + 'T00:00:00') : null
+  const isOverdue = !!dueDateObj && chore.due_date! < new Date().toLocaleDateString('sv')
   const plannedDays = plans.map(p => p.day_of_week - 1)
 
   const accentBorderClass = chore.is_flash

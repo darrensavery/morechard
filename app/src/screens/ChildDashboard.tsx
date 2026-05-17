@@ -149,9 +149,9 @@ export function ChildDashboard() {
   const [proofChoreId,  setProofChoreId]  = useState<string | null>(null)
   const proofFileRef = useRef<HTMLInputElement>(null)
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (silent = false) => {
     if (!familyId || !userId) { navigate('/lock'); return }
-    setLoading(true)
+    if (!silent) setLoading(true)
     try {
       const [c, b, g, p, s] = await Promise.all([
         getChores({ family_id: familyId, child_id: userId }).then(r => r.chores),
@@ -203,8 +203,8 @@ export function ChildDashboard() {
   // Refresh chores + balance when app regains visibility or every 30s
   // so newly assigned chores appear without requiring a re-login
   useEffect(() => {
-    const t = setInterval(load, 30_000)
-    const onVisible = () => { if (!document.hidden) load() }
+    const t = setInterval(() => load(true), 30_000)
+    const onVisible = () => { if (!document.hidden) load(true) }
     document.addEventListener('visibilitychange', onVisible)
     return () => { clearInterval(t); document.removeEventListener('visibilitychange', onVisible) }
   }, [load])
