@@ -197,6 +197,294 @@ ${offers}
   <\/script>`;
 }
 
+// ── Blog helpers ─────────────────────────────────────────────────────────────
+
+function formatDate(dateStr) {
+  const d = new Date(dateStr + 'T00:00:00Z');
+  return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
+}
+
+function parseFrontMatter(raw, filename) {
+  const m = raw.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n([\s\S]*)$/);
+  if (!m) die('Blog file missing --- front-matter delimiters: ' + filename);
+  const meta = {};
+  let currentListKey = null;
+  let currentItem = null;
+  for (const line of m[1].split(/\r?\n/)) {
+    if (currentListKey && /^\s{2}-\s+q:\s+/.test(line)) {
+      currentItem = { q: line.replace(/^\s{2}-\s+q:\s+/, '').replace(/^"|"$/g, '') };
+      meta[currentListKey].push(currentItem);
+      continue;
+    }
+    if (currentListKey && currentItem && /^\s{4}a:\s+/.test(line)) {
+      currentItem.a = line.replace(/^\s{4}a:\s+/, '').replace(/^"|"$/g, '');
+      continue;
+    }
+    if (/^\w+:\s*$/.test(line)) {
+      currentListKey = line.replace(/:.*$/, '').trim();
+      meta[currentListKey] = [];
+      currentItem = null;
+      continue;
+    }
+    const kv = line.match(/^(\w+):\s*"?(.*?)"?\s*$/);
+    if (kv && kv[1]) {
+      meta[kv[1]] = kv[2];
+      currentListKey = null;
+      continue;
+    }
+  }
+  return { meta, body: m[2] };
+}
+
+function buildBreadcrumbJsonLd(items) {
+  return JSON.stringify({
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: items.map((item, i) => ({
+      '@type': 'ListItem',
+      position: i + 1,
+      name: item.name,
+      item: item.url
+    }))
+  });
+}
+
+function buildFaqJsonLd(faq) {
+  return JSON.stringify({
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: faq.map(function(f) {
+      return { '@type': 'Question', name: f.q, acceptedAnswer: { '@type': 'Answer', text: f.a } };
+    })
+  });
+}
+
+function buildBlog(headCommon, navHtml, footerHtml, hash) {
+  const md = require('markdown-it')({ html: false, typographer: true });
+  const blogDir = path.join(ROOT, 'blog');
+  if (!fs.existsSync(blogDir)) return;
+
+  // Parse all .md files
+  const posts = [];
+  for (const file of fs.readdirSync(blogDir).sort()) {
+    if (!file.endsWith('.md')) continue;
+    const raw = read(path.join(blogDir, file));
+    const { meta, body } = parseFrontMatter(raw, file);
+    if (!meta.slug) die('Blog file missing slug: ' + file);
+    if (!meta.title) die('Blog file missing title: ' + file);
+    posts.push(Object.assign({}, meta, { bodyHtml: md.render(body) }));
+  }
+
+  const pillars = posts.filter(function(p) { return p.type === 'pillar'; });
+  const spokes  = posts.filter(function(p) { return p.type !== 'pillar'; });
+
+  function pageCss() {
+    return '  <link rel="stylesheet" href="/css/blog.css?v=' + hash + '" />';
+  }
+
+  function fullPage(title, description, canonical, extraHead, bodyHtml) {
+    return '<!DOCTYPE html>\n<html lang="en">\n<head>\n' +
+      headCommon + '\n' +
+      '  <title>' + escapeAttr(title) + ' | Morechard Blog</title>\n' +
+      '  <meta name="description" content="' + escapeAttr(description) + '" />\n' +
+      '  <link rel="canonical" href="' + escapeAttr(canonical) + '" />\n' +
+      extraHead + '\n' +
+      pageCss() + '\n' +
+      '</head>\n<body>\n' +
+      navHtml + '\n' +
+      bodyHtml + '\n' +
+      footerHtml + '\n' +
+      '</body>\n</html>';
+  }
+
+  // ── Hub: /blog/ ──
+  var pillarCards = pillars.map(function(p) {
+    return '<a class="blog-pillar-card" href="/blog/' + p.slug + '/">' +
+      '<div class="blog-pillar-card__title">' + escapeAttr(p.title) + '</div>' +
+      '<div class="blog-pillar-card__desc">' + escapeAttr(p.description) + '</div>' +
+      '<div class="blog-pillar-card__cta">Read the guide →</div>' +
+      '</a>';
+  }).join('\n    ');
+
+  var hubBody = '<main class="blog-index">\n' +
+    '  <div class="blog-index-hero">\n' +
+    '    <h1>Morechard Blog</h1>\n' +
+    '    <p>Practical guides on pocket money, chores, and raising financially confident children.</p>\n' +
+    '  </div>\n' +
+    '  <div class="blog-pillars-grid">\n    ' + pillarCards + '\n  </div>\n' +
+    '</main>';
+
+  var hubSchema = JSON.stringify({
+    '@context': 'https://schema.org',
+    '@type': 'WebPage',
+    name: 'Morechard Blog',
+    description: 'Practical guides on pocket money, chores, and raising financially confident children.',
+    url: 'https://morechard.com/blog/'
+  });
+  var hubHead = '  <script type="application/ld+json">' + hubSchema + '<\/script>';
+  write(path.join(DIST, 'blog', 'index.html'),
+    fullPage('Blog', 'Practical guides on pocket money, chores, and raising financially confident children.',
+      'https://morechard.com/blog/', hubHead, hubBody));
+  console.log('[build] ✓ blog/index.html');
+
+  // ── Pillar pages ──
+  for (var i = 0; i < pillars.length; i++) {
+    var pillar = pillars[i];
+    var pillarSpokes = spokes.filter(function(s) { return s.pillar === pillar.slug; });
+    var canonical = 'https://morechard.com/blog/' + pillar.slug + '/';
+
+    var spokesList = pillarSpokes.length ? (
+      '<section class="blog-pillar-spokes">\n' +
+      '  <h2>Articles in this guide</h2>\n  <ul>\n' +
+      pillarSpokes.map(function(s) {
+        return '    <li><a href="/blog/' + s.slug + '/">' + escapeAttr(s.title) + '</a></li>';
+      }).join('\n') +
+      '\n  </ul>\n</section>'
+    ) : '';
+
+    var pillarBreadcrumb = buildBreadcrumbJsonLd([
+      { name: 'Home', url: 'https://morechard.com/' },
+      { name: 'Blog', url: 'https://morechard.com/blog/' },
+      { name: pillar.title, url: canonical }
+    ]);
+    var pillarSchema = JSON.stringify({
+      '@context': 'https://schema.org',
+      '@type': 'WebPage',
+      name: pillar.title,
+      description: pillar.description,
+      url: canonical,
+      datePublished: pillar.datePublished,
+      dateModified: pillar.dateModified || pillar.datePublished
+    });
+    var pillarHead = '  <script type="application/ld+json">' + pillarSchema + '<\/script>\n' +
+      '  <script type="application/ld+json">' + pillarBreadcrumb + '<\/script>';
+
+    var pillarBody = '<nav class="blog-breadcrumb" aria-label="Breadcrumb"><ol>' +
+      '<li><a href="/">Home</a></li>' +
+      '<li><a href="/blog/">Blog</a></li>' +
+      '<li aria-current="page">' + escapeAttr(pillar.title) + '</li>' +
+      '</ol></nav>\n' +
+      '<main class="blog-pillar">\n' +
+      '  <header class="blog-header">\n' +
+      '    <h1 class="blog-h1">' + escapeAttr(pillar.title) + '</h1>\n' +
+      '    <div class="blog-meta">' +
+      '<time datetime="' + escapeAttr(pillar.datePublished) + '">' + formatDate(pillar.datePublished) + '</time>' +
+      ' <span>by ' + escapeAttr(pillar.author || 'Darren Savery') + '</span>' +
+      '</div>\n  </header>\n' +
+      '  <div class="blog-body">' + pillar.bodyHtml + '</div>\n' +
+      spokesList +
+      '</main>';
+
+    write(path.join(DIST, 'blog', pillar.slug, 'index.html'),
+      fullPage(pillar.title, pillar.description, canonical, pillarHead, pillarBody));
+    console.log('[build] ✓ blog/' + pillar.slug + '/');
+  }
+
+  // ── Spoke pages ──
+  for (var j = 0; j < spokes.length; j++) {
+    var spoke = spokes[j];
+    var parent = pillars.find(function(p) { return p.slug === spoke.pillar; });
+    var siblings = spokes.filter(function(s) { return s.pillar === spoke.pillar && s.slug !== spoke.slug; }).slice(0, 3);
+    var spokeCanonical = 'https://morechard.com/blog/' + spoke.slug + '/';
+
+    var spokeBcItems = [
+      { name: 'Home', url: 'https://morechard.com/' },
+      { name: 'Blog', url: 'https://morechard.com/blog/' }
+    ];
+    if (parent) spokeBcItems.push({ name: parent.title, url: 'https://morechard.com/blog/' + parent.slug + '/' });
+    spokeBcItems.push({ name: spoke.title, url: spokeCanonical });
+
+    var spokeBreadcrumb = buildBreadcrumbJsonLd(spokeBcItems);
+    var spokeArticle = JSON.stringify({
+      '@context': 'https://schema.org',
+      '@type': spoke.schemaType || 'BlogPosting',
+      headline: spoke.title,
+      description: spoke.description,
+      author: { '@type': 'Person', name: spoke.author || 'Darren Savery' },
+      publisher: { '@type': 'Organization', name: 'Morechard', logo: { '@type': 'ImageObject', url: 'https://morechard.com/favicon.svg' } },
+      datePublished: spoke.datePublished,
+      dateModified: spoke.dateModified || spoke.datePublished,
+      url: spokeCanonical,
+      mainEntityOfPage: { '@type': 'WebPage', '@id': spokeCanonical }
+    });
+
+    var spokeHead = '  <script type="application/ld+json">' + spokeArticle + '<\/script>\n' +
+      '  <script type="application/ld+json">' + spokeBreadcrumb + '<\/script>';
+
+    if (spoke.faq && spoke.faq.length) {
+      spokeHead += '\n  <script type="application/ld+json">' + buildFaqJsonLd(spoke.faq) + '<\/script>';
+    }
+
+    var breadcrumbHtml = spokeBcItems.map(function(item, idx) {
+      return idx === spokeBcItems.length - 1
+        ? '<li aria-current="page">' + escapeAttr(item.name) + '</li>'
+        : '<li><a href="' + item.url + '">' + escapeAttr(item.name) + '</a></li>';
+    }).join('');
+
+    var clusterNav = '';
+    if (siblings.length || parent) {
+      clusterNav = '<aside class="blog-cluster-nav">\n' +
+        '  <div class="blog-cluster-nav__heading">More in this topic</div>\n  <ul>\n' +
+        siblings.map(function(s) {
+          return '    <li><a href="/blog/' + s.slug + '/">' + escapeAttr(s.title) + '</a></li>';
+        }).join('\n') +
+        (parent ? '\n    <li><a href="/blog/' + parent.slug + '/">All articles: ' + escapeAttr(parent.title) + ' →</a></li>' : '') +
+        '\n  </ul>\n</aside>';
+    }
+
+    var faqSection = '';
+    if (spoke.faq && spoke.faq.length) {
+      faqSection = '<section class="blog-faq">\n  <h2>Frequently asked questions</h2>\n  <dl>\n' +
+        spoke.faq.map(function(f) {
+          return '    <dt>' + escapeAttr(f.q) + '</dt>\n    <dd>' + escapeAttr(f.a) + '</dd>';
+        }).join('\n') +
+        '\n  </dl>\n</section>';
+    }
+
+    var spokeBody = '<nav class="blog-breadcrumb" aria-label="Breadcrumb"><ol>' + breadcrumbHtml + '</ol></nav>\n' +
+      '<main class="blog-post">\n' +
+      '  <article class="blog-article">\n' +
+      '    <header class="blog-header">\n' +
+      '      <h1 class="blog-h1">' + escapeAttr(spoke.title) + '</h1>\n' +
+      '      <div class="blog-meta">' +
+      '<time datetime="' + escapeAttr(spoke.datePublished) + '">' + formatDate(spoke.datePublished) + '</time>' +
+      ' <span>by ' + escapeAttr(spoke.author || 'Darren Savery') + '</span>' +
+      '</div>\n    </header>\n' +
+      '    <div class="blog-body">' + spoke.bodyHtml + '</div>\n' +
+      '  </article>\n' +
+      clusterNav + '\n' +
+      faqSection + '\n' +
+      '</main>';
+
+    write(path.join(DIST, 'blog', spoke.slug, 'index.html'),
+      fullPage(spoke.title, spoke.description, spokeCanonical, spokeHead, spokeBody));
+    console.log('[build] ✓ blog/' + spoke.slug + '/');
+  }
+
+  // ── Sitemap: append blog entries to existing dist/sitemap.xml ──
+  var sitemapPath = path.join(DIST, 'sitemap.xml');
+  var sitemapBase = fs.existsSync(sitemapPath) ? read(sitemapPath) : '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n</urlset>';
+  var blogEntries = posts.map(function(p) {
+    var loc = 'https://morechard.com/blog/' + p.slug + '/';
+    return '  <url>\n' +
+      '    <loc>' + loc + '</loc>\n' +
+      '    <lastmod>' + (p.dateModified || p.datePublished) + '</lastmod>\n' +
+      '    <changefreq>monthly</changefreq>\n' +
+      '    <priority>' + (p.type === 'pillar' ? '0.8' : '0.7') + '</priority>\n' +
+      '  </url>';
+  }).join('\n');
+
+  var hubEntry = '  <url>\n    <loc>https://morechard.com/blog/</loc>\n    <lastmod>' +
+    new Date().toISOString().slice(0, 10) + '</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>0.9</priority>\n  </url>';
+
+  var updatedSitemap = sitemapBase.replace('</urlset>',
+    hubEntry + '\n' + blogEntries + '\n</urlset>');
+  write(sitemapPath, updatedSitemap);
+  console.log('[build] ✓ sitemap.xml (blog entries appended)');
+
+  console.log('[build] ✓ blog (' + posts.length + ' pages)');
+}
+
 // ── Main build ────────────────────────────────────────────────────────────────
 
 function build() {
@@ -407,6 +695,8 @@ ${scripts}
     console.log('[build] ✓ favicon.svg (copied)');
   }
 
+  // 8. Build blog
+  buildBlog(headCommon, navHtml, footerHtml, hash);
   console.log(`\n[build] Done — ${Object.keys(components).length} components, hash=${hash}\n`);
 }
 
