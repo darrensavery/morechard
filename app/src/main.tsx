@@ -15,6 +15,8 @@ import App from './App.tsx'
 
 initAnalytics()
 
+const SENSITIVE_FIELDS = new Set(['password', 'pin', 'token', 'secret', 'authorization', 'jwt', 'api_key', 'apikey']);
+
 Sentry.init({
   // Replace with your real DSN from sentry.io — safe to leave empty in dev
   dsn: import.meta.env.VITE_SENTRY_DSN ?? '',
@@ -27,6 +29,14 @@ Sentry.init({
     Sentry.browserTracingIntegration(),
     Sentry.replayIntegration({ maskAllText: true, blockAllMedia: true }),
   ],
+  beforeSend(event) {
+    if (event.extra) {
+      for (const key of Object.keys(event.extra)) {
+        if (SENSITIVE_FIELDS.has(key.toLowerCase())) delete event.extra[key];
+      }
+    }
+    return event;
+  },
 })
 
 createRoot(document.getElementById('root')!).render(

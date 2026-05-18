@@ -157,6 +157,9 @@ const LOGIN_MAX_ATTEMPTS  = 10;
 const LOGIN_WINDOW_SEC    = 600;   // 10-minute rolling window
 const LOGIN_LOCKOUT_SEC   = 900;   // 15-minute lockout after exceeding limit
 
+const MAGIC_LINK_MAX     = 3;
+const MAGIC_LINK_WINDOW  = 600;   // 10-minute rolling window
+
 export async function handleLogin(request: Request, env: Env): Promise<Response> {
   const body = await parseBody(request);
   if (!body) return error('Invalid JSON body');
@@ -250,6 +253,31 @@ export async function handleMagicLinkRequest(request: Request, env: Env): Promis
   const { email } = body;
   if (!email || typeof email !== 'string') return error('email required');
   const normEmail = (email as string).toLowerCase().trim();
+
+  // Rate-limit by email — prevents inbox flooding on known addresses.
+  // Always returns 200 so the rate limit doesn't reveal email registration status.
+  const nowSec = Math.floor(Date.now() / 1000);
+  const mla = await env.DB
+    .prepare('SELECT attempts, window_start FROM magic_link_attempts WHERE email = ?')
+    .bind(normEmail)
+    .first<{ attempts: number; window_start: number }>()
+    .catch(() => null);
+
+  if (mla && nowSec - mla.window_start < MAGIC_LINK_WINDOW && mla.attempts >= MAGIC_LINK_MAX) {
+    return json({ sent: true }); // silent — don't reveal the limit
+  }
+
+  if (!mla || nowSec - mla.window_start >= MAGIC_LINK_WINDOW) {
+    await env.DB
+      .prepare(`INSERT INTO magic_link_attempts (email, attempts, window_start)
+                VALUES (?, 1, ?)
+                ON CONFLICT(email) DO UPDATE SET attempts = 1, window_start = excluded.window_start`)
+      .bind(normEmail, nowSec).run().catch(() => null);
+  } else {
+    await env.DB
+      .prepare('UPDATE magic_link_attempts SET attempts = attempts + 1 WHERE email = ?')
+      .bind(normEmail).run().catch(() => null);
+  }
 
   const user = await env.DB
     .prepare('SELECT id, family_id, display_name FROM users WHERE email = ?')

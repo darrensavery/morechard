@@ -126,10 +126,7 @@ export function JoinFamilyScreen() {
         triggerShake()
         setCodeError(body.error ?? 'That code didn\'t work. Check it and try again.')
         if ('vibrate' in navigator) navigator.vibrate([50, 30, 50, 30, 50])
-        Sentry.captureMessage('Join: invalid invite code entered', {
-          level: 'info',
-          extra: { code: codeToCheck },
-        })
+        Sentry.captureMessage('Join: invalid invite code entered', { level: 'info' })
       }
     } catch {
       triggerShake()

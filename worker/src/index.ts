@@ -195,10 +195,22 @@ import {
 import { handleUploadReceipt, handleGetReceiptUrl, handleDeleteReceipt } from './routes/sharedExpenseReceipt.js';
 import { handleVoidSharedExpense } from './routes/sharedExpenseVoid.js';
 
+const SENSITIVE_FIELDS = new Set(['password', 'pin', 'token', 'secret', 'authorization', 'jwt', 'api_key', 'apikey']);
+
+function scrubSentryEvent(event: Sentry.Event): Sentry.Event | null {
+  if (event.extra) {
+    for (const key of Object.keys(event.extra)) {
+      if (SENSITIVE_FIELDS.has(key.toLowerCase())) delete event.extra[key];
+    }
+  }
+  return event;
+}
+
 export default Sentry.withSentry(
   (env: Env) => ({
     dsn: 'https://5c98bed7630910cc4fd178677dda8b33@o4511158328295424.ingest.de.sentry.io/4511158333997136',
-    tracesSampleRate: 1.0,
+    tracesSampleRate: 0.1,
+    beforeSend: scrubSentryEvent,
   }),
   {
   async fetch(request: Request, env: Env): Promise<Response> {
@@ -785,8 +797,8 @@ async function checkFamilyFromBody(
 
 function corsHeaders(): Record<string, string> {
   return {
-    'Access-Control-Allow-Origin':  '*',
-    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Origin':  'https://app.morechard.com',
+    'Access-Control-Allow-Methods': 'GET, POST, PATCH, DELETE, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization',
   };
 }
