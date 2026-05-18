@@ -25,6 +25,13 @@ function escapeAttr(s) {
   return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;');
 }
 
+function escapeHtml(s) {
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
 function buildHeroPreloads(meta, srcFile) {
   if (!meta.HERO_IMAGE && !meta.HERO_IMAGE_MOBILE) return '';
   const tags = [];
@@ -226,9 +233,15 @@ function parseFrontMatter(raw, filename) {
       currentItem = null;
       continue;
     }
-    const kv = line.match(/^(\w+):\s*"?(.*?)"?\s*$/);
-    if (kv && kv[1]) {
-      meta[kv[1]] = kv[2];
+    const kvQuoted = line.match(/^(\w+):\s+"([^"]*)"\s*$/);
+    if (kvQuoted && kvQuoted[1]) {
+      meta[kvQuoted[1]] = kvQuoted[2];
+      currentListKey = null;
+      continue;
+    }
+    const kvPlain = line.match(/^(\w+):\s+(.+?)\s*$/);
+    if (kvPlain && kvPlain[1]) {
+      meta[kvPlain[1]] = kvPlain[2];
       currentListKey = null;
       continue;
     }
@@ -260,6 +273,7 @@ function buildFaqJsonLd(faq) {
 }
 
 function buildBlog(headCommon, navHtml, footerHtml, hash) {
+  // html: false suppresses raw HTML in Markdown — only safe because blog files are author-controlled.
   const md = require('markdown-it')({ html: false, typographer: true });
   const blogDir = path.join(ROOT, 'blog');
   if (!fs.existsSync(blogDir)) return;
@@ -272,8 +286,21 @@ function buildBlog(headCommon, navHtml, footerHtml, hash) {
     const { meta, body } = parseFrontMatter(raw, file);
     if (!meta.slug) die('Blog file missing slug: ' + file);
     if (!meta.title) die('Blog file missing title: ' + file);
+    if (!meta.datePublished) die('Blog file missing datePublished: ' + file);
+    if (meta.faq) {
+      meta.faq.forEach(function(f, idx) {
+        if (!f.q) die('Blog file ' + file + ' faq[' + idx + '] missing q:');
+        if (!f.a) die('Blog file ' + file + ' faq[' + idx + '] missing a:');
+      });
+    }
     posts.push(Object.assign({}, meta, { bodyHtml: md.render(body) }));
   }
+
+  var slugsSeen = {};
+  posts.forEach(function(p) {
+    if (slugsSeen[p.slug]) die('Duplicate blog slug: ' + p.slug);
+    slugsSeen[p.slug] = true;
+  });
 
   const pillars = posts.filter(function(p) { return p.type === 'pillar'; });
   const spokes  = posts.filter(function(p) { return p.type !== 'pillar'; });
@@ -300,8 +327,8 @@ function buildBlog(headCommon, navHtml, footerHtml, hash) {
   // ── Hub: /blog/ ──
   var pillarCards = pillars.map(function(p) {
     return '<a class="blog-pillar-card" href="/blog/' + p.slug + '/">' +
-      '<div class="blog-pillar-card__title">' + escapeAttr(p.title) + '</div>' +
-      '<div class="blog-pillar-card__desc">' + escapeAttr(p.description) + '</div>' +
+      '<div class="blog-pillar-card__title">' + escapeHtml(p.title) + '</div>' +
+      '<div class="blog-pillar-card__desc">' + escapeHtml(p.description) + '</div>' +
       '<div class="blog-pillar-card__cta">Read the guide →</div>' +
       '</a>';
   }).join('\n    ');
@@ -337,7 +364,7 @@ function buildBlog(headCommon, navHtml, footerHtml, hash) {
       '<section class="blog-pillar-spokes">\n' +
       '  <h2>Articles in this guide</h2>\n  <ul>\n' +
       pillarSpokes.map(function(s) {
-        return '    <li><a href="/blog/' + s.slug + '/">' + escapeAttr(s.title) + '</a></li>';
+        return '    <li><a href="/blog/' + s.slug + '/">' + escapeHtml(s.title) + '</a></li>';
       }).join('\n') +
       '\n  </ul>\n</section>'
     ) : '';
@@ -362,14 +389,14 @@ function buildBlog(headCommon, navHtml, footerHtml, hash) {
     var pillarBody = '<nav class="blog-breadcrumb" aria-label="Breadcrumb"><ol>' +
       '<li><a href="/">Home</a></li>' +
       '<li><a href="/blog/">Blog</a></li>' +
-      '<li aria-current="page">' + escapeAttr(pillar.title) + '</li>' +
+      '<li aria-current="page">' + escapeHtml(pillar.title) + '</li>' +
       '</ol></nav>\n' +
       '<main class="blog-pillar">\n' +
       '  <header class="blog-header">\n' +
-      '    <h1 class="blog-h1">' + escapeAttr(pillar.title) + '</h1>\n' +
+      '    <h1 class="blog-h1">' + escapeHtml(pillar.title) + '</h1>\n' +
       '    <div class="blog-meta">' +
       '<time datetime="' + escapeAttr(pillar.datePublished) + '">' + formatDate(pillar.datePublished) + '</time>' +
-      ' <span>by ' + escapeAttr(pillar.author || 'Darren Savery') + '</span>' +
+      ' <span>by ' + escapeHtml(pillar.author || 'Darren Savery') + '</span>' +
       '</div>\n  </header>\n' +
       '  <div class="blog-body">' + pillar.bodyHtml + '</div>\n' +
       spokesList +
@@ -417,8 +444,8 @@ function buildBlog(headCommon, navHtml, footerHtml, hash) {
 
     var breadcrumbHtml = spokeBcItems.map(function(item, idx) {
       return idx === spokeBcItems.length - 1
-        ? '<li aria-current="page">' + escapeAttr(item.name) + '</li>'
-        : '<li><a href="' + item.url + '">' + escapeAttr(item.name) + '</a></li>';
+        ? '<li aria-current="page">' + escapeHtml(item.name) + '</li>'
+        : '<li><a href="' + item.url + '">' + escapeHtml(item.name) + '</a></li>';
     }).join('');
 
     var clusterNav = '';
@@ -426,9 +453,9 @@ function buildBlog(headCommon, navHtml, footerHtml, hash) {
       clusterNav = '<aside class="blog-cluster-nav">\n' +
         '  <div class="blog-cluster-nav__heading">More in this topic</div>\n  <ul>\n' +
         siblings.map(function(s) {
-          return '    <li><a href="/blog/' + s.slug + '/">' + escapeAttr(s.title) + '</a></li>';
+          return '    <li><a href="/blog/' + s.slug + '/">' + escapeHtml(s.title) + '</a></li>';
         }).join('\n') +
-        (parent ? '\n    <li><a href="/blog/' + parent.slug + '/">All articles: ' + escapeAttr(parent.title) + ' →</a></li>' : '') +
+        (parent ? '\n    <li><a href="/blog/' + parent.slug + '/">All articles: ' + escapeHtml(parent.title) + ' →</a></li>' : '') +
         '\n  </ul>\n</aside>';
     }
 
@@ -436,7 +463,7 @@ function buildBlog(headCommon, navHtml, footerHtml, hash) {
     if (spoke.faq && spoke.faq.length) {
       faqSection = '<section class="blog-faq">\n  <h2>Frequently asked questions</h2>\n  <dl>\n' +
         spoke.faq.map(function(f) {
-          return '    <dt>' + escapeAttr(f.q) + '</dt>\n    <dd>' + escapeAttr(f.a) + '</dd>';
+          return '    <dt>' + escapeHtml(f.q) + '</dt>\n    <dd>' + escapeHtml(f.a) + '</dd>';
         }).join('\n') +
         '\n  </dl>\n</section>';
     }
@@ -445,10 +472,10 @@ function buildBlog(headCommon, navHtml, footerHtml, hash) {
       '<main class="blog-post">\n' +
       '  <article class="blog-article">\n' +
       '    <header class="blog-header">\n' +
-      '      <h1 class="blog-h1">' + escapeAttr(spoke.title) + '</h1>\n' +
+      '      <h1 class="blog-h1">' + escapeHtml(spoke.title) + '</h1>\n' +
       '      <div class="blog-meta">' +
       '<time datetime="' + escapeAttr(spoke.datePublished) + '">' + formatDate(spoke.datePublished) + '</time>' +
-      ' <span>by ' + escapeAttr(spoke.author || 'Darren Savery') + '</span>' +
+      ' <span>by ' + escapeHtml(spoke.author || 'Darren Savery') + '</span>' +
       '</div>\n    </header>\n' +
       '    <div class="blog-body">' + spoke.bodyHtml + '</div>\n' +
       '  </article>\n' +
