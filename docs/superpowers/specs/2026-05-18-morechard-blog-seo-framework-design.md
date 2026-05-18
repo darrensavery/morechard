@@ -132,12 +132,27 @@ pricing).
 | P3 | **Core AI** (+ optional **AI Mentor** add-on for Core users) | An always-on, friendly money coach guiding your child through real-life money lessons. |
 | P4 | **Shield** | Peace of mind: a fair, tamper-proof record of what each home pays — there if you ever need it. |
 
-Open item — **pricing model unresolved** (flag for reconciliation, does not
-block this framework): the AI Mentor add-on figure and billing model differ
-across sources (`CLAUDE.md`: £29.99 one-time, "all products one-time";
-`04-business-strategy`: £19.99 one-time).
-Because evergreen copy carries no figures, the framework is unaffected; the
-pricing page must settle this before launch.
+**Canonical pricing model (confirmed 2026-05-18 — all one-time, no
+subscription):**
+
+- **Core — £44.99.** Chore tracker, ledger, approvals, goals, export.
+- **Core AI — £64.99.** Everything in Core plus the AI Mentor + Learning Lab.
+  The AI is bundled at a ~£20 premium over Core; "£19.99" exists only as the
+  in-bundle AI value, never as a standalone price.
+- **AI Mentor upgrade (existing Core users) — £29.99 one-time.** Standalone
+  add-on after buying Core. Not £19.99.
+- **Shield AI — £149.99.** Everything in Core AI plus the forensic /
+  court-ready PDF export.
+
+Reference for internal accuracy only; **no figures appear in evergreen blog
+copy** (§10). `CLAUDE.md` already reflects this model.
+
+> ⚠️ Out of scope but flagged: several source-of-truth docs still describe the
+> old "£34.99 lifetime + £14.99–£19.99/year AI subscription" model
+> (`01-requirements`, `03-brand-book`, `04-business-strategy`,
+> `06-developer-bible` incl. its §4a/§10/§15/§18 subscription architecture,
+> `terms-of-use`). Correcting those is a separate, sensitive task — see the
+> handover note, not this framework.
 
 ## 6. Content model & build pipeline
 
@@ -226,8 +241,10 @@ pricing page must settle this before launch.
 - Pricing/feature page changes — not part of this framework. Commercial
   spokes reference plan tiers by value and link to the canonical pricing
   page; no £ figures are embedded in evergreen posts (see §5a).
-- Resolving the AI Mentor price/billing-model discrepancy — flagged in §5a;
-  owned by the pricing page, not this framework.
+- Correcting stale pricing across the source-of-truth corpus (`01-requirements`,
+  `03-brand-book`, `04-business-strategy`, `06-developer-bible`,
+  `terms-of-use`) — the canonical model is recorded in §5a, but rewriting
+  legal and architecture docs is a separate, sensitive task (see handover).
 
 ## 11. Success criteria
 
