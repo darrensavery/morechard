@@ -28,11 +28,11 @@ Storage of exchange rate snapshots at the exact moment of transaction verificati
 Implementation of a 4px Teal border for "Verified" records and Ochre border for "Action Needed" in the UI.
 Use of "Process Language" instead of "Outcome Language" for AI coaching scripts.
 Formal/Informal language shift for Polish users based on age (16+ uses Pan/Pani).
-Pricing set at £34.99 Lifetime License and £14.99–£19.99/year for AI services.
+Pricing: one-time fees only, no subscriptions. Morechard Core £44.99; Core AI £64.99 (Core + AI Mentor + Learning Lab); AI Mentor + Learning Lab upgrade £29.99 for existing Core users; Shield AI £149.99 (Core AI + court-ready PDF export).
 Dependencies & integrations:
 Cloudflare Workers (Backend/Hosting)
 Cloudflare D1 (Database)
-Stripe (Payments/Subscription management)
+Stripe (Payments / one-time checkout, no subscriptions)
 Gemini or GPT-4o-mini (AI Coach/Tone Meter)
 Tailwind CSS and Shadcn UI (Frontend)
 Edge cases & risks:

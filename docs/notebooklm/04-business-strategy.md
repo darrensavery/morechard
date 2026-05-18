@@ -14,8 +14,8 @@ FROM NOTEBOOKLM — BUSINESS STRATEGY EXPORT
 - **Why now:** Existing apps are either too banking-centric (debit card required) or too co-parenting-niche to appeal broadly. Morechard is the first that works simply for nuclear families and scales to separated households without a mode switch.
 
 **3) Monetisation**
-- **Pricing model:** "Solo-SaaS" model featuring a Lifetime License and annual AI subscription.
-- **Subscription tiers:** £34.99 Lifetime License (Core Access) + £14.99 to £19.99/year (AI Service).
+- **Pricing model:** "Solo-SaaS" model. One-time fees only; no subscriptions.
+- **Pricing tiers:** Morechard Core £44.99; Core AI £64.99 (Core + AI Mentor + Learning Lab); AI Mentor + Learning Lab upgrade £29.99 (existing Core users); Shield AI £149.99 (Core AI + court-ready PDF export).
 - **Free vs paid boundaries:** Reverse trial (14 or 31 days) providing full access, followed by a "Hard Lock" allowing only 'Buy' or 'Export Data' actions.
 - **Upsell triggers:** AI utility for tone-checking and wealth coaching.
 

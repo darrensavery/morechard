@@ -6,6 +6,7 @@ FROM NOTEBOOKLM — BRAND BOOK EXPORT
 - **Positioning statement (1–2 sentences):** Morechard is "the only chore tracker that doesn't need a debit card to work — and doubles as a court-ready ledger when families need it."
 - **Separated parents positioning statement:** Your data, your evidence, your life—owned by you, not rented from us.
 - **Refined Intro pitch for separated parents** Be one of the first 1,000 families to secure Lifetime Legal Integrity for £124.99. No monthly fees. No subscription traps. Just a permanent, cryptographic record of your family's history—for less than the cost of a single hour with a solicitor.
+  > ⚠ PRICING FLAG (2026-05-18, unresolved): the £124.99 here is not reconciled with the canonical one-time model (Shield AI = £149.99). Confirm whether this is a deliberate separate intro offer or stale before using this pitch.
 
 - **Brand values (5 bullets max):**
     - Chore-First Simplicity
@@ -69,7 +70,7 @@ For children aged 10–16, Morechard is also a financial literacy mentor. Every 
 
 For separated and co-parenting families, Morechard goes further. Our immutable ledger uses cryptographic SHA-256 hashing to ensure data integrity, and one-click PDF reports are court-ready if you ever need them. Two households, one shared record, zero disputes about who paid what.
 
-With a £34.99 lifetime licence, families avoid subscription fatigue while gaining access to audit-ready PDF reports and an AI coach aligned with UK MaPS and Polish NSFE financial education standards.
+With a one-time £44.99 Morechard Core licence and no subscriptions ever, families get the full chore tracker and audit-ready PDF reports; the AI coach (aligned with UK MaPS and Polish NSFE financial education standards) comes with Core AI or as a one-time upgrade.
 - **Website hero headline + subhead:** The chore tracker for any family. / Assign, approve, and pay — with financial literacy built in and a tamper-proof record underneath.
 - **3 feature blurbs:** 
     - **Chore Tracker:** Assign, complete, approve. Pocket money updates automatically.
