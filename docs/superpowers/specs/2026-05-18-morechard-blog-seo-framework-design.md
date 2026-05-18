@@ -21,7 +21,7 @@ three topic categories:
 | Decision | Choice | Rationale |
 |---|---|---|
 | Professional audience | Family-law & mediation (solicitors, mediators, McKenzie friends, co-parenting coaches) | Aligns with the notebooklm "DIY legal forums" acquisition channel and the court-ready ledger differentiator |
-| Primary goal | Balanced — top-funnel authority + a deliberate commercial/comparison layer that converts | Niche paid product (£34.99 lifetime); raw volume alone does not pay |
+| Primary goal | Balanced — top-funnel authority + a deliberate commercial/comparison layer that converts | Niche paid product (£44.99 lifetime); raw volume alone does not pay |
 | Geo / language | UK-first now; structured so US ("allowance") and Polish (expat corridor) layer in later without rework | Lower maintenance; avoids splitting early authority |
 | Framework | A (hub-and-spoke clusters, whitespace-led) + one B element (flagship data/opinion piece). Programmatic (C) explicitly rejected | Compounding authority, defensible wedge, fits solo-dev minimal-maintenance and trust-led brand |
 | Scale | Lean evergreen foundation: ~4 pillars + ~12–16 spokes (~16–20 URLs) over ~90 days, then 1–2 seasonal/newsjack posts/month | Compounds without becoming a content treadmill; matches the £50k/yr minimal-maintenance model |
@@ -83,6 +83,13 @@ are asserted in this spec.
 - "Delayed gratification & money: the patience that builds wealth" (Module 7, proprietary framing)
 - "Talking to kids about money when money is tight"
 
+*AI Mentor angle (weave through these spokes, never as a hard sell):* frame the
+optional AI Mentor as an always-on, friendly coach that walks a child through
+the 20-module Literacy Matrix at their own pace — an affordable, accessible
+"money coach in your pocket" that turns the child's real pocket-money and
+saving moments into lessons. Sell the warmth and accessibility, not the
+feature list; figures live on the pricing page (see §5a).
+
 ### P4 · Money across two homes ★ the moat
 *Serves both separated parents and family-law/mediation professionals.*
 
@@ -91,10 +98,17 @@ Parent-facing:
 - "Different rules at each home: handling money double standards"
 - "Tracking shared child expenses without arguments"
 
-Professional-facing (formal voice; backlink targets for legal forums / Resolution-type sites):
-- "Keeping child-expense records that hold up"
-- "What family mediators recommend for child-money disputes" (expert-collaboration content)
-- *Commercial:* "A co-parenting money tracker with no shared bank account"
+Professional-facing (warm, plain-English — *not* legal register; backlink targets for legal forums / Resolution-type sites):
+- "Keeping a clear, fair record of what each home pays for"
+- "What family mediators suggest for sorting out children's money between homes" (expert-collaboration content)
+- *Commercial:* "A fair-money setup for two homes — no shared bank account needed"
+
+*Shield angle (weave through P4, never as cold logistics):* the value to
+high-conflict co-parents and the professionals who help them is **peace of
+mind from a tamper-proof, court-ready history** — explained as "a record
+nobody can quietly change later, if it ever comes to that." Convey the
+reassurance, not the cryptography; no "audit", "ledger", "custodian",
+"log-keeper" framing in front-facing copy. This is the Shield tier's story.
 
 ### Flagship (the B element)
 **"The Morechard Family Chores & Money Report"** — small original UK survey
@@ -103,6 +117,27 @@ an expert-led landscape synthesis grounded in the Literacy Matrix. Stable URL,
 downloadable, stat-blocks formatted for AI citation. Refreshed annually. This
 is the deliberate counter-move to RoosterMoney's index and the strongest
 backlink/AEO lever.
+
+## 5a. Commercial content → plan mapping (revenue alignment)
+
+Commercial spokes sell a **tier by name and value proposition**, with a soft
+CTA that links to the canonical pricing page. **No £ figures, "/year", or
+one-time/subscription wording in evergreen posts** — prices change and the
+pricing page is the single source of truth (also avoids stale published
+pricing).
+
+| Cluster | Tier in focus | Value story (front-facing, plain English) |
+|---|---|---|
+| P1, P2 | **Core** | The simple, fair pocket-money & chores setup the whole family can use from day one. |
+| P3 | **Core AI** (+ optional **AI Mentor** add-on for Core users) | An always-on, friendly money coach guiding your child through real-life money lessons. |
+| P4 | **Shield** | Peace of mind: a fair, tamper-proof record of what each home pays — there if you ever need it. |
+
+Open item — **pricing model unresolved** (flag for reconciliation, does not
+block this framework): the AI Mentor add-on figure and billing model differ
+across sources (`CLAUDE.md`: £29.99 one-time, "all products one-time";
+`04-business-strategy`: £19.99 one-time).
+Because evergreen copy carries no figures, the framework is unaffected; the
+pricing page must settle this before launch.
 
 ## 6. Content model & build pipeline
 
@@ -124,7 +159,15 @@ backlink/AEO lever.
 - One `<h1>` = primary query intent; semantic `<h2>/<h3>` shaped as the
   questions people actually ask.
 - **Answer-first block:** a 40–60-word direct answer within the first 100
-  words (lifted verbatim by AI Overviews / Perplexity).
+  words (lifted verbatim by AI Overviews / Perplexity). Use strict
+  **subject–verb–object** sentences and **bold the key terms** the query
+  hinges on. Lead by restating the question.
+  Worked example (P1, "Should pocket money be linked to chores?"):
+  > Should pocket money be linked to chores? Experts recommend **separating
+  > base pocket money from extra chores**. A basic allowance teaches
+  > fundamental **money management**, while tying extra cash to additional
+  > tasks builds a **work ethic** — without making basic family
+  > contributions feel optional.
 - **Key-takeaways list** + at least one **table or definition list**
   (citation-friendly formats).
 - **FAQ section** from front-matter → `FAQPage` JSON-LD.
@@ -142,8 +185,23 @@ backlink/AEO lever.
   where possible — borrowed authority + natural backlink outreach.
 - Sourcing rule: every statistic links to a primary source (MoneyHelper, ONS,
   charities). No unverifiable claims; no fabricated user counts.
-- Voice per brand book ("Mediator & Mentor"): parent posts collaborative;
-  professional posts firm, precise, neutral. En dashes, not em dashes.
+### Voice (front-facing copy — applies to every post, including P4 / professional)
+
+- **"Mediator & Mentor" = a supportive, level-headed friend who happens to be
+  an expert** — never a rigid lecturer, formal accountant, or legal register.
+  This applies *even to the professional-facing P4 posts*: warm and plain,
+  not stiff.
+- **Banished entirely from front-facing copy:** cold institutional / legal
+  jargon and process nouns — e.g. "maker", "custodian", "primary log-keeper",
+  "audit", "ledger", "immutable record", "litigant". (These remain fine in
+  this technical spec; the ban is on what readers see.)
+- **Everyday kitchen-table vocabulary:** allowance, pocket money, setup,
+  tracking, tasks, chores, fairness, record of who paid for what, peace of
+  mind.
+- Collaborative and reassuring throughout; lead with the parent's real
+  situation, not the product.
+- **En dashes, not em dashes**, in all published copy (house rule). Em dashes
+  in this internal spec are fine.
 
 ## 9. Measurement & governance
 
@@ -165,7 +223,11 @@ backlink/AEO lever.
 - Headless CMS / WordPress / Medium / Substack — rejected (maintenance burden,
   speed, or authority leakage).
 - Paid survey for the flagship — optional for v1 (expert-synthesis fallback).
-- Pricing/feature page changes — not part of this framework.
+- Pricing/feature page changes — not part of this framework. Commercial
+  spokes reference plan tiers by value and link to the canonical pricing
+  page; no £ figures are embedded in evergreen posts (see §5a).
+- Resolving the AI Mentor price/billing-model discrepancy — flagged in §5a;
+  owned by the pricing page, not this framework.
 
 ## 11. Success criteria
 
