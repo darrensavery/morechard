@@ -1,0 +1,11 @@
+{
+  "name": "morechard-marketing",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "node build.js"
+  },
+  "dependencies": {
+    "markdown-it": "^14.1.0"
+  }
+}
