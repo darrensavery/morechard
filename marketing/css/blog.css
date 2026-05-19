@@ -219,7 +219,49 @@
 .blog-pillar-card__desc { font-size: 0.9rem; color: var(--text-sub); line-height: 1.5; }
 .blog-pillar-card__cta { font-size: 0.85rem; color: var(--teal); margin-top: auto; }
 
+/* ── Hub section heading ── */
+.blog-section-heading {
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin: 0 0 20px;
+  color: var(--text-dark);
+}
+
+/* ── Hub latest articles ── */
+.blog-latest { margin-top: 48px; }
+.blog-latest h2 {
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin-bottom: 20px;
+  color: var(--text-dark);
+}
+.blog-latest ul { list-style: none; }
+.blog-latest-item a {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border-light);
+  text-decoration: none;
+  gap: 16px;
+}
+.blog-latest-item a:hover .blog-latest-item__title { color: var(--teal); }
+.blog-latest-item__title {
+  color: var(--text-dark);
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+.blog-latest-item__meta {
+  color: var(--text-sub);
+  font-size: 0.8rem;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
 @media (max-width: 600px) {
   .blog-post, .blog-pillar { padding: 16px 16px 64px; }
   .blog-index { padding-top: calc(var(--h-nav) + 32px); }
+  .blog-latest-item__meta { display: none; }
 }

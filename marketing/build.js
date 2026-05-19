@@ -282,8 +282,10 @@ function buildBlog(headCommon, navHtml, footerHtml, hash) {
   const posts = [];
   for (const file of fs.readdirSync(blogDir).sort()) {
     if (!file.endsWith('.md')) continue;
+    if (file.startsWith('_')) continue;
     const raw = read(path.join(blogDir, file));
     const { meta, body } = parseFrontMatter(raw, file);
+    if (meta.draft === 'true') { console.log('[build] ~ skipping draft: ' + file); continue; }
     if (!meta.slug) die('Blog file missing slug: ' + file);
     if (!meta.title) die('Blog file missing title: ' + file);
     if (!meta.datePublished) die('Blog file missing datePublished: ' + file);
@@ -325,6 +327,28 @@ function buildBlog(headCommon, navHtml, footerHtml, hash) {
   }
 
   // ── Hub: /blog/ ──
+  var hubIntroHtml = '';
+  var hubMdPath = path.join(blogDir, '_hub.md');
+  if (fs.existsSync(hubMdPath)) {
+    hubIntroHtml = md.render(read(hubMdPath));
+  }
+
+  var latestSpokes = spokes.slice().sort(function(a, b) {
+    return b.datePublished.localeCompare(a.datePublished);
+  }).slice(0, 6);
+
+  var latestItems = latestSpokes.map(function(s) {
+    return '    <li class="blog-latest-item"><a href="/blog/' + s.slug + '/">' +
+      '<span class="blog-latest-item__title">' + escapeHtml(s.title) + '</span>' +
+      '<span class="blog-latest-item__meta">' + formatDate(s.datePublished) + '</span>' +
+      '</a></li>';
+  }).join('\n');
+
+  var latestSection = latestSpokes.length ? (
+    '<section class="blog-latest">\n  <h2>Latest articles</h2>\n  <ul>\n' +
+    latestItems + '\n  </ul>\n</section>'
+  ) : '';
+
   var pillarCards = pillars.map(function(p) {
     return '<a class="blog-pillar-card" href="/blog/' + p.slug + '/">' +
       '<div class="blog-pillar-card__title">' + escapeHtml(p.title) + '</div>' +
@@ -336,12 +360,15 @@ function buildBlog(headCommon, navHtml, footerHtml, hash) {
   var hubBody = '<main class="blog-index">\n' +
     '  <div class="blog-index-hero">\n' +
     '    <h1>Morechard Blog</h1>\n' +
-    '    <p>Practical guides on pocket money, chores, and raising financially confident children.</p>\n' +
+    (hubIntroHtml
+      ? '  <div class="blog-body">' + hubIntroHtml + '</div>\n'
+      : '    <p>Practical guides on pocket money, chores, and raising financially confident children.</p>\n') +
     '  </div>\n' +
-    '  <div class="blog-pillars-grid">\n    ' + pillarCards + '\n  </div>\n' +
+    (pillars.length ? '  <h2 class="blog-section-heading">Topic guides</h2>\n  <div class="blog-pillars-grid">\n    ' + pillarCards + '\n  </div>\n' : '') +
+    latestSection + '\n' +
     '</main>';
 
-  var hubSchema = JSON.stringify({
+    var hubSchema = JSON.stringify({
     '@context': 'https://schema.org',
     '@type': 'WebPage',
     name: 'Morechard Blog',
