@@ -78,72 +78,185 @@
       <p class="section-sub reveal">Six ways Morechard turns daily responsibility into long-term financial confidence – without a debit card, without a subscription, without the nagging.</p>
 
       <div class="audience-benefits-grid">
+
         <article class="benefit-card reveal d1">
-          <div class="benefit-icon">
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-              <rect x="3" y="4" width="14" height="13" rx="2" stroke="currentColor" stroke-width="1.8"/>
-              <path d="M7 8h6M7 11h6M7 14h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+          <div class="benefit-scene">
+            <svg viewBox="0 0 280 140" fill="none" aria-hidden="true" preserveAspectRatio="xMidYMid meet">
+              <!-- Three chained ledger entries -->
+              <rect x="16" y="18" width="248" height="30" rx="6" fill="var(--bg-cream)" stroke="var(--border-light)"/>
+              <rect x="28" y="27" width="80" height="6" rx="3" fill="var(--text-sub)" opacity="0.35"/>
+              <text x="220" y="35" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="7" fill="var(--teal)" opacity="0.7">#4f9e</text>
+              <circle cx="248" cy="33" r="5" fill="var(--teal)" opacity="0.15" stroke="var(--teal)" stroke-width="1"/>
+              <path d="M246 33l1.5 1.5 3-3" stroke="var(--teal)" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+              <!-- Second entry: gold accent — a payment out -->
+              <rect x="16" y="55" width="248" height="30" rx="6" fill="var(--gold-12)" stroke="var(--gold-30)"/>
+              <rect x="28" y="64" width="64" height="6" rx="3" fill="var(--gold-dark)" opacity="0.4"/>
+              <text x="220" y="72" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="7" fill="var(--gold-dark)" opacity="0.8">#3a01</text>
+              <circle cx="248" cy="70" r="5" fill="var(--gold-12)" stroke="var(--gold)" stroke-width="1"/>
+              <path d="M246 70l1.5 1.5 3-3" stroke="var(--gold-dark)" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+              <line x1="140" y1="48" x2="140" y2="55" stroke="var(--teal)" stroke-width="1.2" stroke-dasharray="3 2"/>
+              <line x1="140" y1="85" x2="140" y2="92" stroke="var(--teal)" stroke-width="1.2" stroke-dasharray="3 2"/>
+              <rect x="16" y="92" width="248" height="30" rx="6" fill="var(--teal-08)" stroke="var(--teal)" stroke-width="1"/>
+              <rect x="28" y="101" width="72" height="6" rx="3" fill="var(--teal)" opacity="0.4"/>
+              <text x="220" y="109" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="7" fill="var(--teal)" opacity="0.85">#b7c2</text>
+              <circle cx="248" cy="107" r="5" fill="var(--teal)" opacity="0.3" stroke="var(--teal)" stroke-width="1"/>
+              <path d="M246 107l1.5 1.5 3-3" stroke="var(--teal)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+              <text x="140" y="134" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="9" fill="var(--teal)" opacity="0.6">Sealed · tamper-evident · permanent</text>
             </svg>
           </div>
           <span class="benefit-feature">Immutable ledger</span>
           <h3 class="benefit-headline">An honest record, every time.</h3>
           <p class="benefit-body">Every approved chore is timestamped and locked into a tamper-proof ledger. No more &ldquo;but I did it yesterday.&rdquo; No more &ldquo;I never agreed to that rate.&rdquo; The record is the rule.</p>
         </article>
+
         <article class="benefit-card reveal d1">
-          <div class="benefit-icon">
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-              <path d="M3 16l4-4 3 3 7-9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-              <path d="M13 6h4v4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          <div class="benefit-scene">
+            <svg viewBox="0 0 280 140" fill="none" aria-hidden="true" preserveAspectRatio="xMidYMid meet">
+              <!-- Weekly bar chart (ascending, narrower range) -->
+              <rect x="24" y="92" width="22" height="24" rx="3" fill="var(--teal)" opacity="0.2"/>
+              <rect x="56" y="76" width="22" height="40" rx="3" fill="var(--teal)" opacity="0.32"/>
+              <rect x="88" y="56" width="22" height="60" rx="3" fill="var(--teal)" opacity="0.48"/>
+              <!-- Week 4 bar in gold — current week, personal best -->
+              <rect x="120" y="34" width="22" height="82" rx="3" fill="var(--gold)" opacity="0.55"/>
+              <!-- Week labels -->
+              <text x="35" y="126" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="7.5" fill="var(--text-sub)" opacity="0.45">Wk 1</text>
+              <text x="67" y="126" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="7.5" fill="var(--text-sub)" opacity="0.45">Wk 2</text>
+              <text x="99" y="126" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="7.5" fill="var(--text-sub)" opacity="0.45">Wk 3</text>
+              <text x="131" y="126" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="7.5" fill="var(--gold-dark)" opacity="0.8">Wk 4</text>
+              <!-- Streak counter -->
+              <rect x="164" y="26" width="100" height="90" rx="10" fill="var(--teal-08)" stroke="var(--teal)" stroke-width="1"/>
+              <text x="214" y="62" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="32" font-weight="700" fill="var(--teal)" opacity="0.85">12</text>
+              <rect x="176" y="70" width="76" height="1" fill="var(--teal)" opacity="0.2"/>
+              <text x="214" y="85" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="8" fill="var(--teal)" opacity="0.65">day streak</text>
+              <text x="214" y="107" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="7" fill="var(--gold-dark)" opacity="0.55">personal best</text>
             </svg>
           </div>
           <span class="benefit-feature">Streaks &amp; velocity</span>
           <h3 class="benefit-headline">Habits that visibly compound.</h3>
           <p class="benefit-body">Your child watches their streak build with every approved task and their balance climb week on week. The same loop that drives lifelong financial discipline – made visible from day one.</p>
         </article>
+
         <article class="benefit-card reveal d1">
-          <div class="benefit-icon">
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-              <circle cx="10" cy="10" r="7" stroke="currentColor" stroke-width="1.8"/>
-              <path d="M10 6v4l3 2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+          <div class="benefit-scene">
+            <svg viewBox="0 0 280 140" fill="none" aria-hidden="true" preserveAspectRatio="xMidYMid meet">
+              <!-- Goal card -->
+              <rect x="20" y="12" width="240" height="90" rx="8" fill="var(--bg-cream)" stroke="var(--border-light)"/>
+              <!-- Goal label + item -->
+              <rect x="32" y="24" width="48" height="6" rx="3" fill="var(--text-sub)" opacity="0.3"/>
+              <rect x="88" y="24" width="72" height="6" rx="3" fill="var(--text-sub)" opacity="0.45"/>
+              <!-- Balance vs goal row -->
+              <text x="32" y="52" font-family="JetBrains Mono,monospace" font-size="13" font-weight="700" fill="var(--teal)">£14.50</text>
+              <text x="32" y="64" font-family="DM Sans,sans-serif" font-size="8" fill="var(--text-sub)" opacity="0.5">of £35.00 goal</text>
+              <!-- Progress bar -->
+              <rect x="32" y="72" width="216" height="10" rx="5" fill="var(--card-light)" stroke="var(--border-light)"/>
+              <rect x="32" y="72" width="90" height="10" rx="5" fill="var(--teal)" opacity="0.75"/>
+              <!-- Chores-to-go label -->
+              <rect x="32" y="90" width="144" height="18" rx="5" fill="var(--teal-08)" stroke="var(--teal)" stroke-width="1"/>
+              <text x="104" y="102" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="8" fill="var(--teal)">4 chores to go · route is clear</text>
+              <!-- Checkmark flag at end -->
+              <circle cx="248" cy="77" r="8" fill="var(--teal)" opacity="0.12" stroke="var(--teal)" stroke-width="1"/>
+              <path d="M244 77l2.5 2.5 5-5" stroke="var(--teal)" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+              <text x="140" y="124" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="9" fill="var(--text-sub)" opacity="0.45">From impulse want to concrete plan</text>
             </svg>
           </div>
           <span class="benefit-feature">Goal planning &middot; Savings Grove</span>
           <h3 class="benefit-headline">Turn &ldquo;I want it now&rdquo; into &ldquo;I earned it.&rdquo;</h3>
           <p class="benefit-body">The Savings Grove turns impulse wants into a concrete plan: today&rsquo;s balance, the goal price, the chores between. Your child sees the route from chore to checkout, every step of the way.</p>
         </article>
+
         <article class="benefit-card reveal d2">
-          <div class="benefit-icon">
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-              <path d="M10 3l2 4 4 .6-3 2.8.8 4.4L10 12.7l-3.8 2.1L7 10.4 4 7.6 8 7l2-4z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          <div class="benefit-scene">
+            <svg viewBox="0 0 280 140" fill="none" aria-hidden="true" preserveAspectRatio="xMidYMid meet">
+              <!-- Briefing card (parchment) -->
+              <rect x="20" y="10" width="240" height="100" rx="8" fill="var(--bg-cream)" stroke="var(--border-light)"/>
+              <!-- Star/sparkle icon -->
+              <path d="M140 22l1.8 3.7 4 .6-2.9 2.7.7 4-3.6-1.9-3.6 1.9.7-4-2.9-2.7 4-.6L140 22z" fill="var(--gold)" opacity="0.85"/>
+              <!-- Label row -->
+              <rect x="112" y="36" width="56" height="6" rx="3" fill="var(--text-sub)" opacity="0.3"/>
+              <!-- Briefing text rows -->
+              <rect x="32" y="52" width="216" height="6" rx="3" fill="var(--text-sub)" opacity="0.3"/>
+              <rect x="32" y="63" width="192" height="6" rx="3" fill="var(--text-sub)" opacity="0.22"/>
+              <rect x="32" y="74" width="176" height="6" rx="3" fill="var(--text-sub)" opacity="0.18"/>
+              <!-- Highlight sentence -->
+              <rect x="32" y="88" width="148" height="14" rx="4" fill="var(--teal-08)" stroke="var(--teal)" stroke-width="0.8"/>
+              <rect x="38" y="93" width="100" height="4" rx="2" fill="var(--teal)" opacity="0.4"/>
+              <!-- "Every Sunday" pill -->
+              <rect x="192" y="86" width="56" height="18" rx="9" fill="var(--teal)"/>
+              <text x="220" y="98" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="8" font-weight="600" fill="#fff">Every Sunday</text>
+              <text x="140" y="124" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="9" fill="var(--text-sub)" opacity="0.45">Drafted by your Orchard Mentor · based on real data</text>
             </svg>
           </div>
           <span class="benefit-feature">AI Mentor briefings</span>
           <h3 class="benefit-headline">A lesson written just for your child, every week.</h3>
           <p class="benefit-body">Every Sunday, the Orchard Lead reviews your child&rsquo;s week and surfaces one teachable moment – rooted in their real earnings and spending, not a generic curriculum slide.</p>
         </article>
+
         <article class="benefit-card reveal d2">
-          <div class="benefit-icon">
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-              <rect x="3" y="6" width="14" height="9" rx="1.6" stroke="currentColor" stroke-width="1.8"/>
-              <path d="M3 9h14" stroke="currentColor" stroke-width="1.8"/>
-              <path d="M6 4l-2 2M14 4l2 2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+          <div class="benefit-scene">
+            <svg viewBox="0 0 280 140" fill="none" aria-hidden="true" preserveAspectRatio="xMidYMid meet">
+              <!-- Debit card, faded -->
+              <rect x="14" y="38" width="96" height="64" rx="8" fill="var(--card-light)" stroke="var(--border-light)"/>
+              <rect x="14" y="54" width="96" height="12" fill="var(--border-light)" opacity="0.45"/>
+              <rect x="24" y="78" width="28" height="6" rx="3" fill="var(--text-sub)" opacity="0.18"/>
+              <rect x="60" y="78" width="36" height="6" rx="3" fill="var(--text-sub)" opacity="0.14"/>
+              <!-- Circle-slash overlay (⊘) — refined, muted -->
+              <circle cx="62" cy="70" r="28" stroke="var(--text-sub)" stroke-width="2" opacity="0.28"/>
+              <line x1="42" y1="90" x2="82" y2="50" stroke="var(--text-sub)" stroke-width="2" stroke-linecap="round" opacity="0.28"/>
+              <!-- Arrow right -->
+              <path d="M120 70h16" stroke="var(--teal)" stroke-width="1.4" stroke-dasharray="4 3"/>
+              <path d="M130 64l6 6-6 6" stroke="var(--teal)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+              <!-- One-time price badge — gold accent -->
+              <rect x="148" y="30" width="116" height="80" rx="10" fill="var(--gold-12)" stroke="var(--gold-30)" stroke-width="1.2"/>
+              <text x="206" y="62" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="20" font-weight="700" fill="var(--gold-dark)">£44.99</text>
+              <text x="206" y="76" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="9" fill="var(--gold-dark)" opacity="0.75">once · forever</text>
+              <rect x="160" y="84" width="92" height="18" rx="5" fill="var(--gold)" opacity="0.12"/>
+              <text x="206" y="96" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="8" fill="var(--gold-dark)">No fees · no monthly drip</text>
+              <text x="140" y="126" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="9" fill="var(--text-sub)" opacity="0.45">Works from the very first chore</text>
             </svg>
           </div>
           <span class="benefit-feature">No debit card. No subscription.</span>
           <h3 class="benefit-headline">Pocket money that just works, day one.</h3>
           <p class="benefit-body">No bank account hoops. No card fees. No monthly drip. One-time payment from &pound;44.99 and you&rsquo;re set up for years. Works for any child, of any age, from the very first chore.</p>
         </article>
+
         <article class="benefit-card reveal d2">
-          <div class="benefit-icon">
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-              <path d="M10 3a4 4 0 014 4v2H6V7a4 4 0 014-4z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
-              <rect x="5" y="9" width="10" height="8" rx="1.6" stroke="currentColor" stroke-width="1.8"/>
+          <div class="benefit-scene">
+            <svg viewBox="0 0 280 140" fill="none" aria-hidden="true" preserveAspectRatio="xMidYMid meet">
+              <!-- Phone screen -->
+              <rect x="84" y="10" width="112" height="120" rx="10" fill="var(--bg-cream)" stroke="var(--border-light)"/>
+              <!-- Header -->
+              <rect x="96" y="22" width="56" height="7" rx="3.5" fill="var(--text-sub)" opacity="0.4"/>
+              <!-- Chore rows with rates -->
+              <rect x="96" y="40" width="70" height="6" rx="3" fill="var(--text-sub)" opacity="0.3"/>
+              <rect x="178" y="40" width="6" height="6" rx="3" fill="var(--teal)" opacity="0.55"/>
+              <rect x="96" y="55" width="56" height="6" rx="3" fill="var(--text-sub)" opacity="0.25"/>
+              <rect x="178" y="55" width="6" height="6" rx="3" fill="var(--teal)" opacity="0.45"/>
+              <rect x="96" y="70" width="64" height="6" rx="3" fill="var(--text-sub)" opacity="0.2"/>
+              <rect x="178" y="70" width="6" height="6" rx="3" fill="var(--teal)" opacity="0.4"/>
+              <!-- Rate labels (right-aligned) — top rate in gold -->
+              <text x="185" y="46" font-family="JetBrains Mono,monospace" font-size="8" font-weight="600" fill="var(--gold-dark)" opacity="0.85">£2.00</text>
+              <text x="185" y="61" font-family="JetBrains Mono,monospace" font-size="8" font-weight="600" fill="var(--teal)" opacity="0.6">£1.50</text>
+              <text x="185" y="76" font-family="JetBrains Mono,monospace" font-size="8" font-weight="600" fill="var(--teal)" opacity="0.55">£1.00</text>
+              <!-- Approve queue badge -->
+              <rect x="96" y="90" width="88" height="28" rx="7" fill="var(--teal)"/>
+              <text x="140" y="107" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="9" font-weight="600" fill="#fff">1 tap to approve</text>
+              <!-- Flanking labels -->
+              <rect x="14" y="52" width="58" height="36" rx="7" fill="var(--card-light)" stroke="var(--border-light)"/>
+              <text x="43" y="68" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="8" fill="var(--text-sub)" opacity="0.6">You set</text>
+              <text x="43" y="80" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="8" fill="var(--text-sub)" opacity="0.6">the rules</text>
+              <rect x="208" y="52" width="58" height="36" rx="7" fill="var(--card-light)" stroke="var(--border-light)"/>
+              <text x="237" y="68" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="8" fill="var(--text-sub)" opacity="0.6">App does</text>
+              <text x="237" y="80" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="8" fill="var(--text-sub)" opacity="0.6">the rest</text>
+              <line x1="72" y1="70" x2="84" y2="70" stroke="var(--teal)" stroke-width="1.2" stroke-dasharray="3 2"/>
+              <line x1="196" y1="70" x2="208" y2="70" stroke="var(--teal)" stroke-width="1.2" stroke-dasharray="3 2"/>
+              <text x="140" y="140" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="9" fill="var(--text-sub)" opacity="0.45">Decide · set · approve · done</text>
             </svg>
           </div>
           <span class="benefit-feature">Parent as Choice Architect</span>
           <h3 class="benefit-headline">You set the rules. The app handles the rest.</h3>
           <p class="benefit-body">Decide the chores, set the rates, approve the work – in seconds. Morechard takes over the nagging and the policing so you get to focus on the conversations that actually matter.</p>
         </article>
+
       </div>
     </div>
   </section>

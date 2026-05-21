@@ -953,20 +953,22 @@ body.dark .sample-pdf .pdf-seal { color: var(--text-light-sub); border-bottom-co
 body.dark .sample-pdf .pdf-seal { border-top-color: var(--border-dark); }
 
 /* ── Hero nav legibility: white text on transparent nav over dark hero ── */
-/* This stylesheet only loads on audience pages, so scope is implicit. */
-#nav:not(.scrolled) .nav-trigger,
-#nav:not(.scrolled) .nav-item > a,
-#nav:not(.scrolled) .nav-logo-wordmark,
-#nav:not(.scrolled) .nav-logo-wordmark span {
+/* This stylesheet only loads on audience pages, so scope is implicit.    */
+/* Exclude the expanded state — base.css gives the nav a cream background  */
+/* when a dropdown is open, so white text would be unreadable.             */
+#nav:not(.scrolled):not(:has(.nav-group.is-expanded)) .nav-trigger,
+#nav:not(.scrolled):not(:has(.nav-group.is-expanded)) .nav-item > a,
+#nav:not(.scrolled):not(:has(.nav-group.is-expanded)) .nav-logo-wordmark,
+#nav:not(.scrolled):not(:has(.nav-group.is-expanded)) .nav-logo-wordmark span {
   color: #fff;
 }
-#nav:not(.scrolled) .nav-toggle span { background: #fff; }
-#nav:not(.scrolled) .nav-trigger:hover,
-#nav:not(.scrolled) .nav-item > a:hover {
+#nav:not(.scrolled):not(:has(.nav-group.is-expanded)) .nav-toggle span { background: #fff; }
+#nav:not(.scrolled):not(:has(.nav-group.is-expanded)) .nav-trigger:hover,
+#nav:not(.scrolled):not(:has(.nav-group.is-expanded)) .nav-item > a:hover {
   color: #fff;
   background: rgba(255,255,255,0.12);
 }
-#nav:not(.scrolled) [aria-current="page"]::after { background: #fff; }
+#nav:not(.scrolled):not(:has(.nav-group.is-expanded)) [aria-current="page"]::after { background: #fff; }
 
 /* Smooth colour swap when nav transitions to scrolled state */
 #nav .nav-trigger,
