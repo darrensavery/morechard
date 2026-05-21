@@ -5,8 +5,8 @@ type: post
 pillar: money-across-two-homes
 description: Practical guidance for separated parents on keeping pocket money fair, consistent, and free from conflict when children split time between two homes.
 author: Darren Savery
-datePublished: 2026-06-01
-dateModified: 2026-06-01
+datePublished: 2026-03-17
+dateModified: 2026-03-17
 targetQuery: pocket money two homes fair
 schemaType: BlogPosting
 faq:

@@ -5,8 +5,8 @@ type: post
 pillar: money-across-two-homes
 description: When children face different financial rules at each parent's home, the challenge is helping them adapt without turning money into a source of conflict or insecurity.
 author: Darren Savery
-datePublished: 2026-06-01
-dateModified: 2026-06-01
+datePublished: 2026-03-31
+dateModified: 2026-03-31
 targetQuery: different money rules two homes children
 schemaType: BlogPosting
 faq:

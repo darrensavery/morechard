@@ -6,8 +6,8 @@ pillar: effort-reward-connection
 heroImage: why-children-dont-understand-what-things-cost
 description: In an era of contactless payments and frictionless spending, children are growing up without any felt sense of what money is or where it comes from. A parent's reflection on what we've quietly lost.
 author: Darren Savery
-datePublished: 2026-06-01
-dateModified: 2026-06-01
+datePublished: 2026-02-17
+dateModified: 2026-02-17
 schemaType: BlogPosting
 faq:
   - q: Why don't children understand the value of money?

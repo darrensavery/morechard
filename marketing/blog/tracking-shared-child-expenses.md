@@ -5,8 +5,8 @@ type: post
 pillar: money-across-two-homes
 description: A practical approach for separated parents to keep a clear, fair record of shared child expenses – school trips, clubs, uniforms, and more – without it becoming a source of conflict.
 author: Darren Savery
-datePublished: 2026-06-01
-dateModified: 2026-06-01
+datePublished: 2026-04-14
+dateModified: 2026-04-14
 targetQuery: tracking shared child expenses separated parents
 schemaType: BlogPosting
 faq:

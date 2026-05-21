@@ -7,8 +7,8 @@ description: Scams have evolved from badly written emails to AI-cloned voices an
 author: Darren Savery
 heroImage: Teaching-kids-to-spot-scams-why-financial-safety-is-part-of-financial-literacy
 draft: false
-datePublished: 2026-06-01
-dateModified: 2026-06-01
+datePublished: 2026-05-12
+dateModified: 2026-05-12
 schemaType: BlogPosting
 faq:
   - q: How do I teach my child to spot scams?

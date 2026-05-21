@@ -4,8 +4,8 @@ slug: money-and-the-modern-world
 type: pillar
 description: The world your children are growing up in looks nothing like the one you learned to navigate. From AI scams to in-game purchases, influencer culture to subscription creep — this is what every parent needs to understand about money in the digital age.
 author: Darren Savery
-datePublished: 2026-06-01
-dateModified: 2026-06-01
+datePublished: 2026-04-28
+dateModified: 2026-04-28
 schemaType: WebPage
 ---
 

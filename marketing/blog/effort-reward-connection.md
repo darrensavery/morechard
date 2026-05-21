@@ -4,8 +4,8 @@ slug: effort-reward-connection
 type: pillar
 description: Why the link between effort and reward is the most important financial lesson children never get — and what parents can do about it.
 author: Darren Savery
-datePublished: 2026-06-01
-dateModified: 2026-06-01
+datePublished: 2026-02-03
+dateModified: 2026-02-03
 schemaType: WebPage
 ---
 

@@ -4,8 +4,8 @@ slug: money-across-two-homes
 type: pillar
 description: How to keep pocket money, chores, and shared child expenses fair and clear when your children split time between two homes – without turning money into a battleground.
 author: Darren Savery
-datePublished: 2026-06-01
-dateModified: 2026-06-01
+datePublished: 2026-03-03
+dateModified: 2026-03-03
 targetQuery: pocket money two homes fair
 schemaType: WebPage
 faq:
