@@ -261,23 +261,29 @@ export async function handleInsights(request: Request, env: Env): Promise<Respon
   // Upsert today's snapshot if none exists for the current ISO week.
   const weekKey = getIsoWeekKey(new Date()); // e.g. '2026-W15'
 
-  // INSERT OR IGNORE: the unique index on (child_id, snapshot_date) means a
-  // concurrent request for the same week will silently no-op rather than
-  // producing a duplicate row.
-  await env.DB.prepare(`
-    INSERT OR IGNORE INTO insight_snapshots
-      (child_id, family_id, snapshot_date, consistency_score, responsibility_score,
-       planning_horizon, total_earned_pence)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
-  `).bind(
-    effectiveChildId,
-    family_id,
-    weekKey,
-    consistencyScore,
-    firstTimePassRate,
-    planningHorizon,
-    lifetimeEarned,
-  ).run();
+  // Only write a snapshot once per ISO week — avoid a D1 write on every read request.
+  // The SELECT is cheap; the INSERT only fires on the first load of the week.
+  const snapshotExists = await env.DB
+    .prepare('SELECT 1 FROM insight_snapshots WHERE child_id = ? AND snapshot_date = ?')
+    .bind(effectiveChildId, weekKey)
+    .first();
+
+  if (!snapshotExists) {
+    await env.DB.prepare(`
+      INSERT OR IGNORE INTO insight_snapshots
+        (child_id, family_id, snapshot_date, consistency_score, responsibility_score,
+         planning_horizon, total_earned_pence)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `).bind(
+      effectiveChildId,
+      family_id,
+      weekKey,
+      consistencyScore,
+      firstTimePassRate,
+      planningHorizon,
+      lifetimeEarned,
+    ).run();
+  }
 
   // Build trends object.
   const trends = buildTrends(

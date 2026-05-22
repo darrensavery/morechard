@@ -18,7 +18,7 @@
 
 import { Env } from '../types.js';
 import { json, error, clientIp } from '../lib/response.js';
-import { computeRecordHash, GENESIS_HASH } from '../lib/hash.js';
+import { computeRecordHash, fetchAndVerifyChainTip } from '../lib/hash.js';
 import { JwtPayload } from '../lib/jwt.js';
 import { getStreakState, buildStreakEvent, saveStreakEvent, allScheduledChoresDone } from '../lib/streaks.js';
 import { getBadgeStats, badgesToAward, insertBadges } from '../lib/badges.js';
@@ -184,14 +184,15 @@ export async function handleCompletionApprove(
   const now = Math.floor(Date.now() / 1000);
   const disputeBefore = verificationStatus === 'verified_auto' ? now + 172800 : null;
 
-  // Hash chain
-  const prevRow = await env.DB
-    .prepare('SELECT id, record_hash FROM ledger WHERE family_id = ? ORDER BY id DESC LIMIT 1')
-    .bind(comp.family_id)
-    .first<{ id: number; record_hash: string }>();
-
-  const previousHash = prevRow?.record_hash ?? GENESIS_HASH;
-  const newLedgerId = (prevRow?.id ?? 0) + 1;
+  // Hash chain — verify the tip before extending it
+  let previousHash: string;
+  let newLedgerId: number;
+  try {
+    ({ previousHash, newId: newLedgerId } = await fetchAndVerifyChainTip(env.DB, comp.family_id));
+  } catch (err) {
+    console.error('[handleCompletionApprove] chain integrity failure:', err);
+    return error('Ledger chain integrity failure — contact support', 500);
+  }
 
   const recordHash = await computeRecordHash(
     newLedgerId,
@@ -452,17 +453,21 @@ export async function handleApproveAll(request: Request, env: Env): Promise<Resp
   const ip = clientIp(request);
   const now = Math.floor(Date.now() / 1000);
 
-  // Read the chain tip once, then thread it through the loop in memory.
-  // Re-querying inside the loop would cause N round-trips to D1 and would still be
-  // vulnerable to a concurrent Worker inserting between iterations.
-  let chainTip = await env.DB
-    .prepare('SELECT id, record_hash FROM ledger WHERE family_id = ? ORDER BY id DESC LIMIT 1')
-    .bind(family_id)
-    .first<{ id: number; record_hash: string }>();
+  // Read and verify the chain tip once, then thread state through the loop in memory.
+  let chainPreviousHash: string;
+  let chainNextId: number;
+  try {
+    const tip = await fetchAndVerifyChainTip(env.DB, family_id);
+    chainPreviousHash = tip.previousHash;
+    chainNextId       = tip.newId;
+  } catch (err) {
+    console.error('[handleApproveAll] chain integrity failure:', err);
+    return error('Ledger chain integrity failure — contact support', 500);
+  }
 
   for (const comp of pending) {
-    const previousHash = chainTip?.record_hash ?? GENESIS_HASH;
-    const newLedgerId = (chainTip?.id ?? 0) + 1;
+    const previousHash = chainPreviousHash;
+    const newLedgerId  = chainNextId;
     const disputeBefore = verificationStatus === 'verified_auto' ? now + 172800 : null;
 
     const recordHash = await computeRecordHash(
@@ -490,7 +495,8 @@ export async function handleApproveAll(request: Request, env: Env): Promise<Resp
       `).bind(now, auth.sub, newLedgerId, comp.comp_id),
     ]);
 
-    chainTip = { id: newLedgerId, record_hash: recordHash };
+    chainPreviousHash = recordHash;
+    chainNextId       = newLedgerId + 1;
   }
 
   // ── Gamification hook (approve-all) ───────────────────────────────

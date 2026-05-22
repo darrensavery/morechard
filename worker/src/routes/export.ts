@@ -40,7 +40,7 @@ export async function handleExportJson(request: Request, env: Env): Promise<Resp
     env.DB.prepare(`SELECT id, name, currency, verify_mode, created_at, base_currency,
                           parenting_mode, deleted_at, fast_track_enabled,
                           shared_expense_threshold, shared_expense_split_bp,
-                          has_shield, home_lat, home_lng
+                          has_shield
                    FROM families WHERE id = ?`).bind(family_id).first(),
     env.DB.prepare('SELECT id, display_name, locale FROM users WHERE family_id = ?').bind(family_id).all(),
     env.DB.prepare('SELECT * FROM ledger WHERE family_id = ? ORDER BY id ASC').bind(family_id).all(),

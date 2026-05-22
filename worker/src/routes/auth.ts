@@ -125,6 +125,12 @@ export async function handleRegister(request: Request, env: Env): Promise<Respon
     .prepare('SELECT id FROM families WHERE id = ?').bind(family_id).first();
   if (!family) return error('Family not found', 404);
 
+  // Block a second lead registering on the same family
+  const existingLead = await env.DB
+    .prepare(`SELECT user_id FROM family_roles WHERE family_id = ? AND role = 'parent' AND parent_role = 'lead' LIMIT 1`)
+    .bind(family_id).first();
+  if (existingLead) return error('A lead parent is already registered for this family', 409);
+
   // Check email not already registered
   const existing = await env.DB
     .prepare('SELECT id FROM users WHERE email = ?').bind(normEmail).first();
@@ -875,14 +881,14 @@ export async function handleDeleteFamily(request: Request & { auth?: JwtPayload 
     return error('Only a Lead parent can delete the family.', 403);
   }
 
-  // Last Lead Guard
-  const leadCount = await env.DB
-    .prepare(`SELECT COUNT(*) AS cnt FROM family_roles WHERE family_id = ? AND role = 'parent' AND parent_role = 'lead'`)
-    .bind(familyId)
+  // Block deletion while any other parent (lead or co-parent) is still in the family
+  const otherParents = await env.DB
+    .prepare(`SELECT COUNT(*) AS cnt FROM family_roles WHERE family_id = ? AND role = 'parent' AND user_id != ?`)
+    .bind(familyId, userId)
     .first<{ cnt: number }>();
 
-  if ((leadCount?.cnt ?? 0) > 1) {
-    return error('An orchard cannot be uprooted while another guardian is present.', 403);
+  if ((otherParents?.cnt ?? 0) > 0) {
+    return error('All co-parents must leave before the orchard can be uprooted.', 403);
   }
 
   await env.DB.batch([
@@ -1079,7 +1085,7 @@ export async function handleRevokeOtherSessions(request: Request, env: Env): Pro
 // ----------------------------------------------------------------
 export async function handleGoogleAuth(_request: Request, env: Env): Promise<Response> {
   const nonce       = nanoid(16);
-  const sig         = await hmacSign(nonce, env.JWT_SECRET);
+  const sig         = await hmacSign(`oauth-state.${nonce}`, env.JWT_SECRET);
   const state       = `${nonce}.${sig}`;
   const redirectUri = `${env.WORKER_URL ?? 'https://api.morechard.com'}/auth/google/callback`;
 
@@ -1135,7 +1141,7 @@ async function _handleGoogleCallback(request: Request, env: Env, appUrl: string)
   }
   const nonce        = stateParam.slice(0, dotIdx);
   const receivedSig  = stateParam.slice(dotIdx + 1);
-  const expectedSig  = await hmacSign(nonce, env.JWT_SECRET);
+  const expectedSig  = await hmacSign(`oauth-state.${nonce}`, env.JWT_SECRET);
   if (receivedSig !== expectedSig) {
     return new Response(null, { status: 302, headers: { 'Location': `${appUrl}/auth/login?error=csrf` } });
   }
@@ -1372,9 +1378,16 @@ async function verifyGoogleIdToken(
   if (payload.iss !== 'https://accounts.google.com' &&
       payload.iss !== 'accounts.google.com')       throw new Error('Wrong issuer');
 
-  // Fetch Google's public JWK set
-  const certsRes = await fetch('https://www.googleapis.com/oauth2/v3/certs');
-  const certs    = await certsRes.json<{ keys: Array<{ kid: string; n: string; e: string; kty: string; alg: string }> }>();
+  // Fetch Google's public JWK set — cached for its Cache-Control max-age (~5 h).
+  // caches.default respects the response's Cache-Control header automatically.
+  const JWKS_URL = 'https://www.googleapis.com/oauth2/v3/certs';
+  const cache    = caches.default;
+  let certsRes   = await cache.match(JWKS_URL);
+  if (!certsRes) {
+    certsRes = await fetch(JWKS_URL);
+    if (certsRes.ok) await cache.put(JWKS_URL, certsRes.clone());
+  }
+  const certs = await certsRes.json<{ keys: Array<{ kid: string; n: string; e: string; kty: string; alg: string }> }>();
   const jwk      = certs.keys.find(k => k.kid === header.kid);
   if (!jwk) throw new Error('JWK not found for kid: ' + header.kid);
 

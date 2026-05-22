@@ -29,6 +29,10 @@ export async function handleSettingsGet(request: Request, env: Env): Promise<Res
   const targetId = await resolveTargetUserId(url, auth, env.DB);
   if (!targetId) return error('user_id required or must be a parent', 403);
 
+  const cacheKey = `user:settings:${targetId}`;
+  const cached = await env.CACHE.get(cacheKey);
+  if (cached) return new Response(cached, { headers: { 'Content-Type': 'application/json' } });
+
   const settings = await env.DB
     .prepare('SELECT user_id, avatar_id, theme, locale, app_view FROM user_settings WHERE user_id = ?')
     .bind(targetId).first();
@@ -41,7 +45,10 @@ export async function handleSettingsGet(request: Request, env: Env): Promise<Res
       .bind(targetId, 'bottts:spark', 'system', 'en', now).run();
     return json({ user_id: targetId, avatar_id: 'bottts:spark', theme: 'system', locale: 'en', app_view: 'ORCHARD' });
   }
-  return json(settings);
+
+  const body = JSON.stringify(settings);
+  await env.CACHE.put(cacheKey, body, { expirationTtl: 3600 });
+  return new Response(body, { headers: { 'Content-Type': 'application/json' } });
 }
 
 // ----------------------------------------------------------------
@@ -121,6 +128,11 @@ export async function handleSettingsUpdate(request: Request, env: Env): Promise<
         .bind(...values).run();
     });
 
+  await Promise.all([
+    env.CACHE.delete(`user:settings:${targetId}`),
+    env.CACHE.delete(`family:children:${auth.family_id}`),
+  ]);
+
   return json({ ok: true });
 }
 
@@ -130,11 +142,18 @@ export async function handleSettingsUpdate(request: Request, env: Env): Promise<
 export async function handleFamilyGet(request: Request, env: Env): Promise<Response> {
   const auth = (request as AuthedRequest).auth;
 
+  const cacheKey = `family:config:${auth.family_id}`;
+  const cached = await env.CACHE.get(cacheKey);
+  if (cached) return new Response(cached, { headers: { 'Content-Type': 'application/json' } });
+
   const family = await env.DB
     .prepare('SELECT * FROM families WHERE id = ?')
     .bind(auth.family_id).first();
   if (!family) return error('Family not found', 404);
-  return json(family);
+
+  const body = JSON.stringify(family);
+  await env.CACHE.put(cacheKey, body, { expirationTtl: 3600 });
+  return new Response(body, { headers: { 'Content-Type': 'application/json' } });
 }
 
 // ----------------------------------------------------------------
@@ -199,6 +218,8 @@ export async function handleFamilyUpdate(request: Request, env: Env): Promise<Re
     .prepare(`UPDATE families SET ${updates.join(', ')} WHERE id = ?`)
     .bind(...values).run();
 
+  await env.CACHE.delete(`family:config:${auth.family_id}`);
+
   return json({ ok: true });
 }
 
@@ -207,6 +228,10 @@ export async function handleFamilyUpdate(request: Request, env: Env): Promise<Re
 // ----------------------------------------------------------------
 export async function handleChildrenList(request: Request, env: Env): Promise<Response> {
   const auth = (request as AuthedRequest).auth;
+
+  const cacheKey = `family:children:${auth.family_id}`;
+  const cached = await env.CACHE.get(cacheKey);
+  if (cached) return new Response(cached, { headers: { 'Content-Type': 'application/json' } });
 
   const { results } = await env.DB.prepare(`
     SELECT u.id, u.display_name, u.created_at,
@@ -220,7 +245,9 @@ export async function handleChildrenList(request: Request, env: Env): Promise<Re
     ORDER BY u.created_at ASC
   `).bind(Math.floor(Date.now() / 1000), auth.family_id).all();
 
-  return json({ children: results });
+  const body = JSON.stringify({ children: results });
+  await env.CACHE.put(cacheKey, body, { expirationTtl: 900 }); // 15 min — shorter due to time-based lock expiry
+  return new Response(body, { headers: { 'Content-Type': 'application/json' } });
 }
 
 // ----------------------------------------------------------------
@@ -258,6 +285,8 @@ export async function handleAccountLock(request: Request, env: Env): Promise<Res
     ON CONFLICT(user_id) DO UPDATE SET locked_by = ?, locked_until = ?, created_at = ?
   `).bind(child_id, auth.sub, now + duration, now, auth.sub, now + duration, now).run();
 
+  await env.CACHE.delete(`family:children:${auth.family_id}`);
+
   return json({ ok: true, locked_until: now + duration });
 }
 
@@ -278,6 +307,7 @@ export async function handleAccountUnlock(
   if (!lock) return error('No lock found', 404);
 
   await env.DB.prepare('DELETE FROM account_locks WHERE user_id = ?').bind(childId).run();
+  await env.CACHE.delete(`family:children:${auth.family_id}`);
   return json({ ok: true });
 }
 
@@ -469,6 +499,8 @@ export async function handleChildRename(
     .prepare('UPDATE users SET display_name = ? WHERE id = ?')
     .bind(display_name, childId)
     .run();
+
+  await env.CACHE.delete(`family:children:${auth.family_id}`);
 
   return json({ ok: true, display_name });
 }

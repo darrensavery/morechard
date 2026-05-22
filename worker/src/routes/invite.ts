@@ -19,11 +19,17 @@ const PARENT_JWT_EXPIRY = 7 * 24 * 3600;
 
 // ── Generates a cryptographically random 6-char uppercase code ──────────────
 function generateCode(): string {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no ambiguous chars (0/O, 1/I)
+  const chars   = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no ambiguous chars (0/O, 1/I)
+  const limit   = 256 - (256 % chars.length); // 224 — reject bytes >= this to eliminate modulo bias
   let code = '';
-  const arr = new Uint8Array(6);
-  crypto.getRandomValues(arr);
-  for (const byte of arr) code += chars[byte % chars.length];
+  while (code.length < 6) {
+    const arr = new Uint8Array(12); // oversample; rejection is rare (~12.5% of bytes discarded)
+    crypto.getRandomValues(arr);
+    for (const byte of arr) {
+      if (byte < limit) code += chars[byte % chars.length];
+      if (code.length === 6) break;
+    }
+  }
   return code;
 }
 
@@ -336,6 +342,8 @@ export async function handleAddChild(request: Request, env: Env): Promise<Respon
       verificationStatus, previousHash, recordHash, ip,
     ).run();
   }
+
+  await env.CACHE.delete(`family:children:${caller.family_id}`);
 
   return json({ child_id: childId, invite_code: code, expires_at: expiresAt }, 201);
 }

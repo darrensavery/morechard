@@ -20,7 +20,7 @@
  */
 
 import { Env } from '../types.js';
-import { computeRecordHash, GENESIS_HASH } from '../lib/hash.js';
+import { computeRecordHash, fetchAndVerifyChainTip } from '../lib/hash.js';
 import { json, error, clientIp } from '../lib/response.js';
 import type { JwtPayload } from '../lib/jwt.js';
 
@@ -40,7 +40,7 @@ export async function handleLedgerPost(request: Request, env: Env): Promise<Resp
   if (!family_id || typeof family_id !== 'string') return error('family_id required');
   if (!child_id  || typeof child_id  !== 'string') return error('child_id required');
   if (!entry_type || !['credit','reversal','payment'].includes(entry_type as string)) return error('Invalid entry_type');
-  if (!currency  || !['GBP','PLN'].includes(currency as string)) return error('Invalid currency');
+  if (!currency  || !['GBP','PLN','USD'].includes(currency as string)) return error('Invalid currency');
   if (!description || typeof description !== 'string') return error('description required');
 
   // --- Enforce integer-only amounts ---
@@ -58,21 +58,26 @@ export async function handleLedgerPost(request: Request, env: Env): Promise<Resp
 
   if (!family) return error('Family not found', 404);
 
+  // --- Verify child belongs to this family ---
+  const childMember = await env.DB
+    .prepare(`SELECT user_id FROM family_roles WHERE user_id = ? AND family_id = ? AND role = 'child'`)
+    .bind(child_id, family_id)
+    .first();
+  if (!childMember) return error('child_id not found in this family', 404);
+
   const verificationStatus = family.verify_mode === 'amicable' ? 'verified_auto' : 'pending';
   const now = Math.floor(Date.now() / 1000);
   const disputeBefore = verificationStatus === 'verified_auto' ? now + 172800 : null; // 48h window
 
-  // --- Get previous row's hash for chain ---
-  const prevRow = await env.DB
-    .prepare('SELECT id, record_hash FROM ledger WHERE family_id = ? ORDER BY id DESC LIMIT 1')
-    .bind(family_id)
-    .first<{ id: number; record_hash: string }>();
-
-  const previousHash = prevRow?.record_hash ?? GENESIS_HASH;
-
-  // We need the new row's id to compute its hash before insert.
-  // prevRow is already family-scoped so (prevRow?.id ?? 0) + 1 is safe.
-  const newId = (prevRow?.id ?? 0) + 1;
+  // --- Verify and extend the hash chain ---
+  let previousHash: string;
+  let newId: number;
+  try {
+    ({ previousHash, newId } = await fetchAndVerifyChainTip(env.DB, family_id));
+  } catch (err) {
+    console.error('[handleLedgerPost] chain integrity failure:', err);
+    return error('Ledger chain integrity failure — contact support', 500);
+  }
 
   const recordHash = await computeRecordHash(
     newId,

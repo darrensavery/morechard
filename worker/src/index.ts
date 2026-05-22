@@ -330,18 +330,17 @@ async function runPaydaySweep(env: Env, nowEpoch: number): Promise<void> {
       .first();
     if (alreadyPaid) continue;
 
-    // Compute chain hash for new ledger row
-    const { computeRecordHash, GENESIS_HASH } = await import('./lib/hash.js');
+    // Verify the chain tip and derive the next row's id and previous hash.
+    const { computeRecordHash, fetchAndVerifyChainTip } = await import('./lib/hash.js');
 
-    // Fetch previous ledger row for this family (hash chain + next-id prediction).
-    // The cron runs single-threaded so max(id)+1 is a safe rowid estimate.
-    const prevRow = await env.DB
-      .prepare('SELECT id, record_hash FROM ledger WHERE family_id = ? ORDER BY id DESC LIMIT 1')
-      .bind(child.family_id)
-      .first<{ id: number; record_hash: string }>();
-
-    const previousHash = prevRow?.record_hash ?? GENESIS_HASH;
-    const newLedgerId = (prevRow?.id ?? 0) + 1;
+    let previousHash: string;
+    let newLedgerId: number;
+    try {
+      ({ previousHash, newId: newLedgerId } = await fetchAndVerifyChainTip(env.DB, child.family_id));
+    } catch (err) {
+      console.error('[runPaydaySweep] chain integrity failure for family', child.family_id, err);
+      continue; // skip this child; do not write a corrupt row
+    }
 
     const verificationStatus = child.verify_mode === 'amicable' ? 'verified_auto' : 'verified_manual';
 
