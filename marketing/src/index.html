@@ -853,6 +853,12 @@
     tabs.forEach((tab, i) => tab.addEventListener('click', () => activateTab(i)));
     requestAnimationFrame(() => positionIndicator(tabs[0]));
 
+    const ro = new ResizeObserver(() => {
+      const active = tabs.find(t => t.classList.contains('active')) || tabs[0];
+      positionIndicator(active);
+    });
+    ro.observe(document.getElementById('ll-tabs'));
+
     /* ── Pillar accordion ── */
     const pillars = Array.from(document.querySelectorAll('.ll-pillar'));
     const drawer  = document.getElementById('ll-pillar-drawer');
