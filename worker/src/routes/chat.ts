@@ -558,28 +558,26 @@ export async function handleChildChat(
     return json({ error: 'Child auth required' }, 403)
   }
 
-  // Rate limit: max 20 AI messages per child per hour
-  const rateLimitKey = `chat_rl:${auth.sub}`
-  const rlRow = await env.DB
-    .prepare('SELECT attempts, window_start FROM chat_rate_limits WHERE child_id = ?')
-    .bind(auth.sub)
-    .first<{ attempts: number; window_start: number }>()
-    .catch(() => null)
-  const nowSec = Math.floor(Date.now() / 1000)
-  const windowSec = 3600
+  // Rate limit: max 20 AI messages per child per hour.
+  // Single atomic upsert: increment within the window, reset on new window.
+  // RETURNING lets us check the resulting count without a separate SELECT,
+  // eliminating the check-then-act race of the previous two-step approach.
+  const nowSec     = Math.floor(Date.now() / 1000)
+  const windowSec  = 3600
   const maxPerHour = 20
-  if (rlRow && nowSec - rlRow.window_start < windowSec) {
-    if (rlRow.attempts >= maxPerHour) {
-      return json({ error: 'Too many messages — please wait a while before sending more.' }, 429)
-    }
-    await env.DB.prepare('UPDATE chat_rate_limits SET attempts = attempts + 1 WHERE child_id = ?')
-      .bind(auth.sub).run().catch(() => null)
-  } else {
-    await env.DB.prepare(
-      'INSERT INTO chat_rate_limits (child_id, attempts, window_start) VALUES (?,1,?) ON CONFLICT(child_id) DO UPDATE SET attempts=1, window_start=excluded.window_start'
-    ).bind(auth.sub, nowSec).run().catch(() => null)
+  const rlRow = await env.DB.prepare(`
+    INSERT INTO chat_rate_limits (child_id, attempts, window_start) VALUES (?, 1, ?)
+    ON CONFLICT(child_id) DO UPDATE SET
+      attempts     = CASE WHEN window_start >= ? THEN attempts + 1 ELSE 1  END,
+      window_start = CASE WHEN window_start >= ? THEN window_start ELSE ?  END
+    RETURNING attempts
+  `).bind(auth.sub, nowSec, nowSec - windowSec, nowSec - windowSec, nowSec)
+    .first<{ attempts: number }>()
+    .catch(() => null)
+
+  if (rlRow && rlRow.attempts > maxPerHour) {
+    return json({ error: 'Too many messages — please wait a while before sending more.' }, 429)
   }
-  void rateLimitKey // suppress unused-var lint
 
   let body: ChatBody
   try {
@@ -588,7 +586,7 @@ export async function handleChildChat(
     return json({ error: 'Invalid JSON body' }, 400)
   }
 
-  if (!body?.message?.trim()) {
+  if (typeof body.message !== 'string' || !body.message.trim()) {
     return json({ error: 'message is required' }, 400)
   }
 

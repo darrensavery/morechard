@@ -1,5 +1,6 @@
 export interface Env {
   DB: D1Database;
+  CACHE: KVNamespace;
   EVIDENCE: R2Bucket;
   RECEIPTS: R2Bucket;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

@@ -34,6 +34,58 @@ export async function computeRecordHash(
   return sha256(payload);
 }
 
+/** Shape of a full ledger row needed to verify and extend the hash chain. */
+export interface ChainTipRow {
+  id: number;
+  family_id: string;
+  child_id: string | null;
+  amount: number;
+  currency: string;
+  entry_type: string;
+  previous_hash: string;
+  record_hash: string;
+}
+
+/**
+ * Fetch the latest ledger row for a family, recompute its hash, and confirm
+ * the stored hash still matches.  Throws if the chain is already corrupted so
+ * the caller's INSERT is rejected rather than silently propagating bad data.
+ *
+ * Returns { previousHash, newId } — the inputs needed to write the next row.
+ */
+export async function fetchAndVerifyChainTip(
+  db: D1Database,
+  familyId: string,
+): Promise<{ previousHash: string; newId: number }> {
+  const tip = await db
+    .prepare(`SELECT id, family_id, child_id, amount, currency, entry_type,
+                     previous_hash, record_hash
+              FROM ledger WHERE family_id = ? ORDER BY id DESC LIMIT 1`)
+    .bind(familyId)
+    .first<ChainTipRow>();
+
+  if (!tip) return { previousHash: GENESIS_HASH, newId: 1 };
+
+  const expected = await computeRecordHash(
+    tip.id,
+    tip.family_id,
+    tip.child_id ?? 'NULL',
+    tip.amount,
+    tip.currency,
+    tip.entry_type,
+    tip.previous_hash,
+  );
+
+  if (expected !== tip.record_hash) {
+    throw new Error(
+      `Ledger chain integrity failure on family ${familyId} at row ${tip.id}. ` +
+      `Expected hash ${expected}, stored ${tip.record_hash}.`,
+    );
+  }
+
+  return { previousHash: tip.record_hash, newId: tip.id + 1 };
+}
+
 export async function verifyChain(entries: Array<{
   id: number;
   family_id: string;

@@ -50,11 +50,17 @@ interface MarketRateRow {
   sort_order: number;
 }
 
+const MARKET_RATES_TTL = 86_400; // 24 hours
+
 export async function handleMarketRateList(request: Request, env: Env): Promise<Response> {
   const url = new URL(request.url);
 
   // Determine locale: query param overrides, else default
   const localeParam = url.searchParams.get('locale') ?? 'en-GB';
+
+  const cacheKey = `market-rates:${localeParam}`;
+  const cached = await env.CACHE.get(cacheKey);
+  if (cached) return new Response(cached, { headers: { 'Content-Type': 'application/json' } });
 
   const rows = await env.DB
     .prepare('SELECT * FROM market_rates ORDER BY sort_order ASC')
@@ -120,7 +126,9 @@ export async function handleMarketRateList(request: Request, env: Env): Promise<
     };
   });
 
-  return json({ tile_source: 'hardcoded_defaults', rates });
+  const body = JSON.stringify({ tile_source: 'hardcoded_defaults', rates });
+  await env.CACHE.put(cacheKey, body, { expirationTtl: MARKET_RATES_TTL });
+  return new Response(body, { headers: { 'Content-Type': 'application/json' } });
 }
 
 export async function handleMarketRateSuggest(request: Request, env: Env): Promise<Response> {

@@ -3,6 +3,13 @@ main = "src/index.ts"
 compatibility_date = "2024-09-23"
 compatibility_flags = ["nodejs_compat"]
 
+[[kv_namespaces]]
+binding = "CACHE"
+# Create once with: wrangler kv namespace create CACHE
+# Then replace the placeholder below with the id from that command output.
+# For local dev wrangler uses a local KV store automatically — id is still required.
+id = "492ab2ef56e647cbbd4bc53fa6b948be"
+
 [[d1_databases]]
 binding = "DB"
 database_name = "morechard-dev"
@@ -51,6 +58,12 @@ crons = ["0 8 * * 6", "0 3 * * 1", "0 6 * * *", "0 0 * * *"]
 [env.production]
 name = "morechard-api"
 vars = { ENVIRONMENT = "production", APP_URL = "https://app.morechard.com", WORKER_URL = "https://api.morechard.com", FIREBASE_PROJECT_ID = "pocket-money-85878", POSTHOG_HOST = "https://eu.i.posthog.com" }
+
+[[env.production.kv_namespaces]]
+binding = "CACHE"
+# Create once with: wrangler kv namespace create CACHE --env production
+# Then replace the placeholder below with the id from that command output.
+id = "a86dd61fe3d440f689b8450898c51972"
 
 [[env.production.d1_databases]]
 binding = "DB"

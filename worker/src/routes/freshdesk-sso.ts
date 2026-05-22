@@ -62,7 +62,7 @@ export async function handleFreshdeskSso(request: Request, env: Env): Promise<Re
 
   // Look up the parent's name and email
   const user = await env.DB
-    .prepare('SELECT name, email FROM users WHERE id = ?')
+    .prepare('SELECT display_name AS name, email FROM users WHERE id = ?')
     .bind(auth.sub)
     .first<{ name: string; email: string }>();
 
