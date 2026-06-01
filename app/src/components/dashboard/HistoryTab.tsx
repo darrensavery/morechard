@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import type { Completion, PayoutRecord, ChildRecord, UnpaidSummaryRow } from '../../lib/api'
 import {
   getHistory, getPayouts, createPayout, createBonus, formatCurrency,
@@ -918,10 +919,10 @@ function AuditCard({
         </div>
       )}
 
-      {/* Lightbox */}
-      {lightboxOpen && proofUrl && (
+      {/* Lightbox — portalled to body so overflow-hidden ancestors can't clip it */}
+      {lightboxOpen && proofUrl && createPortal(
         <div
-          className="fixed inset-0 z-50 bg-black flex items-center justify-center"
+          className="fixed inset-0 z-[9999] bg-black flex items-center justify-center"
           onClick={() => setLightboxOpen(false)}
         >
           <button
@@ -938,7 +939,8 @@ function AuditCard({
             className="max-w-full max-h-full object-contain"
             onClick={e => e.stopPropagation()}
           />
-        </div>
+        </div>,
+        document.body,
       )}
 
       {/* Card body */}
