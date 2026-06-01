@@ -9,25 +9,21 @@ interface Props {
 }
 
 export function StreakChip({ currentStreak, graceRemaining, consistencyScore, appView }: Props) {
-  const isAmber = currentStreak > 0 && graceRemaining === 0
-  const isTeal  = currentStreak > 0 && graceRemaining > 0
+  if (currentStreak === 0) return null
+
+  const isAmber = graceRemaining === 0
+  const isTeal  = graceRemaining > 0
   const label   = appView === 'CLEAN' ? 'streak' : 'days in a row'
 
   return (
     <div className={cn(
       'inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-[12px] font-semibold',
-      currentStreak === 0
-        ? 'bg-white/[.04] text-white/30'
-        : isTeal
-          ? 'bg-teal-500/15 text-teal-300 border border-teal-500/30'
-          : isAmber
-            ? 'bg-amber-500/15 text-amber-300 border border-amber-500/20'
-            : 'bg-white/[.04] text-white/30',
+      isTeal
+        ? 'bg-teal-500/15 text-teal-300 border border-teal-500/30'
+        : 'bg-amber-500/15 text-amber-300 border border-amber-500/20',
     )}>
-      <span>{currentStreak === 0 ? '—' : '🔥'}</span>
-      <span className="tabular-nums">
-        {currentStreak === 0 ? 'No streak' : `${currentStreak} ${label}`}
-      </span>
+      <span>🔥</span>
+      <span className="tabular-nums">{currentStreak} {label}</span>
       {graceRemaining > 0 && (
         <span className="text-white/40 text-[10px]">
           ({graceRemaining} {appView === 'CLEAN' ? 'grace' : 'rain'})
