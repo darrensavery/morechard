@@ -186,7 +186,9 @@ export function ActivityTab({ familyId, child, childCount, onCountChange, unpaid
       })
       // Stamp paid_out_at on all unpaid completions so the banner clears
       const r = await getCompletions({ family_id: familyId, child_id: child.id, status: 'completed' })
-      const unpaidIds = r.completions.filter(c => c.paid_out_at == null).map(c => c.id)
+      const unpaidIds = r.completions
+        .filter(c => c.id && c.paid_out_at == null)
+        .map(c => c.id)
       if (unpaidIds.length > 0) await markPaidBatch(familyId, unpaidIds)
       setShowPayout(false)
       setPayoutAmount('')

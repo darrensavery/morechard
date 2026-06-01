@@ -53,6 +53,7 @@ export async function handleCompletionList(request: Request, env: Env): Promise<
       comp.note, comp.status, comp.proof_url, comp.parent_notes,
       comp.attempt_count, comp.ledger_id, comp.rating,
       comp.submitted_at, comp.resolved_at, comp.resolved_by,
+      comp.paid_out_at,
       ch.title        AS chore_title,
       ch.reward_amount,
       ch.currency,
@@ -62,7 +63,7 @@ export async function handleCompletionList(request: Request, env: Env): Promise<
     FROM completions comp
     JOIN chores ch ON ch.id = comp.chore_id
     JOIN users  u  ON u.id  = comp.child_id
-    WHERE comp.family_id = ?
+    WHERE comp.id IS NOT NULL AND comp.family_id = ?
   `;
 
   let stmt;
