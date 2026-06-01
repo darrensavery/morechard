@@ -68,10 +68,9 @@ export function LockScreen() {
       return
     }
 
-    // No security set — pass straight through only when no PIN hash is stored.
-    // Guards against a tampered mc_device_identity that sets auth_method='none'
-    // while a pin_hash (or biometric credential) actually exists.
-    if (identity.auth_method === 'none' && !identity.pin_hash && !hasBiometricCredential()) {
+    // No security set — pass straight through. auth_method is the source of truth;
+    // stale biometric credentials or pin_hash from a previous setup don't override it.
+    if (identity.auth_method === 'none') {
       unlock('none')
       return
     }
@@ -174,7 +173,7 @@ export function LockScreen() {
     <div className="min-h-svh bg-[var(--color-bg)] flex flex-col">
 
       {/* Header */}
-      <header className="safe-top sticky top-0 bg-[var(--color-surface)] border-b border-[var(--color-border)] shadow-[0_1px_4px_rgba(0,0,0,.05)] px-4 py-3 flex items-center gap-2.5">
+      <header className="safe-top sticky top-0 z-10 glass-header px-4 py-3 flex items-center gap-2.5">
         <FullLogo iconSize={26} />
         <div className="ml-auto">
           <Lock size={16} className="text-[var(--color-text-muted)]" />
@@ -263,6 +262,16 @@ export function LockScreen() {
             </div>
             {error && <p className="text-[13px] font-semibold text-red-600 mb-2">{error}</p>}
           </>
+        )}
+
+        {/* Fallback: if auth_method is unrecognised and no UI showed, let the user through */}
+        {!showBiometricButton && !showPin && (
+          <button
+            onClick={() => unlock('none')}
+            className="mb-4 h-12 px-8 rounded-2xl bg-[var(--brand-primary)] text-white font-semibold text-[15px] cursor-pointer hover:opacity-90 active:scale-[0.98] transition-all shadow-md"
+          >
+            Tap to continue
+          </button>
         )}
 
         {/* Log out */}
