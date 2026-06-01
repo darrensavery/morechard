@@ -259,21 +259,24 @@ export function PoolTab({ familyId, currentUserId, parentingMode, refreshKey, on
           <div className="flex flex-col gap-2">
             {flaggedExpenses.map(e => (
               <div key={e.id} className="rounded-xl border border-red-200 bg-red-50 dark:bg-red-950/20 p-4 opacity-80">
-                <p className="font-semibold text-sm line-through text-[var(--color-text-muted)]">
-                  <span className="inline-flex items-center gap-1.5"><CategoryIcon category={e.category} />{e.description}</span>
-                </p>
-                <p className="text-xs text-red-500 mt-0.5">Rejected — please discuss and re-submit if agreed</p>
-                <p className="text-sm font-bold tabular-nums mt-1 text-[var(--color-text-muted)]">
-                  {formatAmount(e.total_amount, e.currency)}
-                </p>
-                {e.logged_by === currentUserId && (
-                  <button
-                    onClick={() => handleRemove(e.id)}
-                    className="mt-2 text-xs text-red-600 underline"
-                  >
-                    Remove
-                  </button>
-                )}
+                <div className="flex items-start gap-1.5">
+                  <span className="mt-0.5 shrink-0"><CategoryIcon category={e.category} /></span>
+                  <div className="min-w-0">
+                    <p className="font-semibold text-sm line-through text-[var(--color-text-muted)]">{e.description}</p>
+                    <p className="text-xs text-red-500 mt-0.5">Rejected — please discuss and re-submit if agreed</p>
+                    <p className="text-sm font-bold tabular-nums mt-1 text-[var(--color-text-muted)]">
+                      {formatAmount(e.total_amount, e.currency)}
+                    </p>
+                    {e.logged_by === currentUserId && (
+                      <button
+                        onClick={() => handleRemove(e.id)}
+                        className="mt-2 text-xs text-red-600 underline"
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </div>
+                </div>
               </div>
             ))}
           </div>
