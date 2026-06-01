@@ -156,6 +156,7 @@ export async function handleUnpaidSummary(
          FROM completions comp
          JOIN chores ch ON ch.id = comp.chore_id
         WHERE comp.family_id = ?
+          AND comp.id IS NOT NULL
           AND comp.status = 'completed'
           AND comp.paid_out_at IS NULL
           AND (ch.archived IS NULL OR ch.archived = 0)
