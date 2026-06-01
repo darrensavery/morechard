@@ -303,22 +303,22 @@ export function PoolTab({ familyId, currentUserId, parentingMode, refreshKey, on
                   className="w-full text-left rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 hover:bg-[var(--color-surface-alt)] active:bg-[var(--color-surface-alt)] transition-colors cursor-pointer"
                 >
                   <div className="flex items-start justify-between gap-2">
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-sm">
-                        <span className="inline-flex items-center gap-1.5">
-                          <CategoryIcon category={e.category} />
-                          {e.description}
+                    <div className="flex-1 min-w-0 flex items-start gap-1.5">
+                      <span className="mt-0.5 shrink-0"><CategoryIcon category={e.category} /></span>
+                      <div className="min-w-0">
+                        <p className="font-semibold text-sm flex items-center gap-1">
+                          <span className="truncate">{e.description}</span>
                           {e.receipt_r2_key && (
                             <Receipt size={11} className="text-[var(--brand-primary)] shrink-0" aria-label="Has receipt" />
                           )}
-                        </span>
-                      </p>
-                      <p className="text-xs text-[var(--color-text-muted)] mt-0.5 ml-5">{ledgerNote(e, currentUserId)}</p>
-                      {isCoParenting && uneven && (
-                        <p className="text-[10px] text-[var(--color-text-muted)] mt-0.5 italic">
-                          Your share: {formatAmount(myAmount, e.currency)}
                         </p>
-                      )}
+                        <p className="text-xs text-[var(--color-text-muted)] mt-0.5">{ledgerNote(e, currentUserId)}</p>
+                        {isCoParenting && uneven && (
+                          <p className="text-[10px] text-[var(--color-text-muted)] mt-0.5 italic">
+                            Your share: {formatAmount(myAmount, e.currency)}
+                          </p>
+                        )}
+                      </div>
                     </div>
                     <p className="text-sm font-bold tabular-nums shrink-0">{formatAmount(e.total_amount, e.currency)}</p>
                   </div>
@@ -411,17 +411,17 @@ export function PoolTab({ familyId, currentUserId, parentingMode, refreshKey, on
                               className="w-full text-left rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 opacity-75 hover:opacity-100 hover:bg-[var(--color-surface-alt)] hover:border-[var(--color-text-muted)] transition-all cursor-pointer"
                             >
                               <div className="flex items-start justify-between gap-2">
-                                <div className="flex-1 min-w-0">
-                                  <p className="font-semibold text-sm">
-                                    <span className="inline-flex items-center gap-1.5">
-                                      <CategoryIcon category={e.category} />
-                                      {e.description}
+                                <div className="flex-1 min-w-0 flex items-start gap-1.5">
+                                  <span className="mt-0.5 shrink-0"><CategoryIcon category={e.category} /></span>
+                                  <div className="min-w-0">
+                                    <p className="font-semibold text-sm flex items-center gap-1">
+                                      <span className="truncate">{e.description}</span>
                                       {e.receipt_r2_key && (
                                         <Receipt size={11} className="text-[var(--brand-primary)] shrink-0" aria-label="Has receipt" />
                                       )}
-                                    </span>
-                                  </p>
-                                  <p className="text-xs text-[var(--color-text-muted)] mt-0.5 ml-5">{dateStr}</p>
+                                    </p>
+                                    <p className="text-xs text-[var(--color-text-muted)] mt-0.5">{dateStr}</p>
+                                  </div>
                                 </div>
                                 <p className="text-sm font-bold tabular-nums text-[var(--color-text-muted)]">
                                   {formatAmount(e.total_amount, e.currency)}
