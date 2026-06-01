@@ -848,6 +848,7 @@ function AuditCard({
   const [proofUrl, setProofUrl]     = useState<string | null>(null)
   const [loadingProof, setLoadingProof] = useState(false)
   const [proofError, setProofError] = useState(false)
+  const [lightboxOpen, setLightboxOpen] = useState(false)
 
   const isResubmission = (c.attempt_count ?? 1) > 1
   const hasProof = !!c.proof_url
@@ -887,19 +888,56 @@ function AuditCard({
             </div>
           )}
           {proofUrl && !proofError && (
-            <img
-              src={proofUrl}
-              alt="Proof of work"
-              className="w-full h-full object-cover"
-            />
+            <button
+              type="button"
+              className="absolute inset-0 w-full h-full"
+              onClick={() => setLightboxOpen(true)}
+              aria-label="View full size photo"
+            >
+              <img
+                src={proofUrl}
+                alt="Proof of work"
+                className="w-full h-full object-cover"
+              />
+            </button>
           )}
           {/* Gradient overlay for readability */}
-          <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/60 to-transparent" />
-          <div className="absolute bottom-2.5 left-3">
+          <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/60 to-transparent pointer-events-none" />
+          <div className="absolute bottom-2.5 left-3 pointer-events-none">
             <span className="text-[11px] font-semibold text-white/90 bg-black/40 rounded-full px-2 py-0.5">
               📷 Evidence photo
             </span>
           </div>
+          {proofUrl && !proofError && (
+            <div className="absolute bottom-2.5 right-3 pointer-events-none">
+              <span className="text-[11px] font-semibold text-white/90 bg-black/40 rounded-full px-2 py-0.5">
+                ⤢ Tap to expand
+              </span>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Lightbox */}
+      {lightboxOpen && proofUrl && (
+        <div
+          className="fixed inset-0 z-50 bg-black flex items-center justify-center"
+          onClick={() => setLightboxOpen(false)}
+        >
+          <button
+            type="button"
+            className="absolute top-4 right-4 text-white/80 hover:text-white text-3xl leading-none z-10"
+            onClick={() => setLightboxOpen(false)}
+            aria-label="Close"
+          >
+            ✕
+          </button>
+          <img
+            src={proofUrl}
+            alt="Proof of work"
+            className="max-w-full max-h-full object-contain"
+            onClick={e => e.stopPropagation()}
+          />
         </div>
       )}
 
