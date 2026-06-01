@@ -11,8 +11,7 @@ interface Props {
 export function StreakChip({ currentStreak, graceRemaining, consistencyScore, appView }: Props) {
   if (currentStreak === 0) return null
 
-  const isAmber = graceRemaining === 0
-  const isTeal  = graceRemaining > 0
+  const isTeal = graceRemaining > 0
   const label   = appView === 'CLEAN' ? 'streak' : 'days in a row'
 
   return (
