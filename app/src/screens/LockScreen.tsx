@@ -13,7 +13,7 @@ import { useRef, useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Lock } from 'lucide-react'
 import { getDeviceIdentity, clearDeviceIdentity, verifyPinHash } from '@/lib/deviceIdentity'
-import { challengeBiometrics, hasBiometricCredential } from '@/lib/biometrics'
+import { challengeBiometrics, hasBiometricCredential, clearBiometricCredential } from '@/lib/biometrics'
 import { analytics, track } from '@/lib/analytics'
 import { FullLogo } from '@/components/ui/Logo'
 import * as Sentry from '@sentry/react'
@@ -68,9 +68,13 @@ export function LockScreen() {
       return
     }
 
-    // No security set — pass straight through. auth_method is the source of truth;
-    // stale biometric credentials or pin_hash from a previous setup don't override it.
-    if (identity.auth_method === 'none') {
+    // No security set — pass straight through.
+    // Clean up any stale mc_biometric_id that doesn't match auth_method='none' so
+    // the conjunctive tamper-guard below doesn't trap a legitimate none-auth user.
+    if (identity.auth_method === 'none' && hasBiometricCredential()) {
+      clearBiometricCredential()
+    }
+    if (identity.auth_method === 'none' && !identity.pin_hash && !hasBiometricCredential()) {
       unlock('none')
       return
     }
@@ -264,14 +268,19 @@ export function LockScreen() {
           </>
         )}
 
-        {/* Fallback: if auth_method is unrecognised and no UI showed, let the user through */}
+        {/* Fallback: unrecognised auth state — fail closed, force re-login */}
         {!showBiometricButton && !showPin && (
-          <button
-            onClick={() => unlock('none')}
-            className="mb-4 h-12 px-8 rounded-2xl bg-[var(--brand-primary)] text-white font-semibold text-[15px] cursor-pointer hover:opacity-90 active:scale-[0.98] transition-all shadow-md"
-          >
-            Tap to continue
-          </button>
+          <div className="mb-4 flex flex-col items-center gap-3 text-center max-w-[260px]">
+            <p className="text-[13px] text-[var(--color-text-muted)] leading-snug">
+              Your security settings couldn't be read. Log out and sign in again to continue.
+            </p>
+            <button
+              onClick={handleLogout}
+              className="h-11 px-6 rounded-2xl border border-[var(--color-border)] text-[14px] font-semibold text-[var(--color-text)] cursor-pointer hover:bg-[var(--color-surface-raised)] transition-colors"
+            >
+              Log out
+            </button>
+          </div>
         )}
 
         {/* Log out */}
