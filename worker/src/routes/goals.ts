@@ -14,6 +14,11 @@ import { Env } from '../types.js';
 import { json, error } from '../lib/response.js';
 import { nanoid } from '../lib/nanoid.js';
 import { JwtPayload } from '../lib/jwt.js';
+import {
+  evaluateOnGoalCreate,
+  evaluateOnGoalCancel,
+  evaluateOnGoalPurchase,
+} from '../lib/labTriggers.js';
 
 type AuthedRequest = Request & { auth: JwtPayload };
 
@@ -90,6 +95,10 @@ export async function handleGoalCreate(request: Request, env: Env): Promise<Resp
   ).run();
 
   const goal = await env.DB.prepare('SELECT * FROM goals WHERE id = ?').bind(id).first();
+
+  // Lab triggers — fire-and-forget
+  evaluateOnGoalCreate(env.DB, child_id as string, (category as string) ?? 'other', (deadline as string | null) ?? null).catch(() => {})
+
   return json(goal, 201);
 }
 
@@ -129,14 +138,18 @@ export async function handleGoalUpdate(request: Request, env: Env, id: string): 
 export async function handleGoalDelete(request: Request, env: Env, id: string): Promise<Response> {
   const auth = (request as AuthedRequest).auth;
   const goal = await env.DB
-    .prepare('SELECT family_id FROM goals WHERE id = ?')
-    .bind(id).first<{ family_id: string }>();
+    .prepare('SELECT family_id, child_id, created_at FROM goals WHERE id = ?')
+    .bind(id).first<{ family_id: string; child_id: string; created_at: number }>();
   if (!goal) return error('Goal not found', 404);
   if (goal.family_id !== auth.family_id) return error('Forbidden', 403);
 
   await env.DB
     .prepare('UPDATE goals SET archived = 1, updated_at = ? WHERE id = ?')
     .bind(Math.floor(Date.now() / 1000), id).run();
+
+  // Lab trigger — fire-and-forget
+  evaluateOnGoalCancel(env.DB, goal.child_id, goal.created_at).catch(() => {})
+
   return json({ ok: true });
 }
 
@@ -204,6 +217,9 @@ export async function handleGoalPurchase(request: Request, env: Env, id: string)
   await env.DB
     .prepare(`UPDATE goals SET status = 'REACHED', updated_at = ? WHERE id = ?`)
     .bind(now, id).run();
+
+  // Lab trigger — fire-and-forget
+  evaluateOnGoalPurchase(env.DB, goal.child_id).catch(() => {})
 
   return json({ ok: true, spend_id: spendId });
 }

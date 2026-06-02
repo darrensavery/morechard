@@ -844,6 +844,42 @@ export async function getChatModules(): Promise<ChatModulesResponse> {
 }
 
 // ----------------------------------------------------------------
+// Learning Lab
+// ----------------------------------------------------------------
+
+export interface LabChildData {
+  currency:                string
+  currentBalancePence:     number
+  lifetimeEarningsPence:   number
+  choreRateMedianPence:    number
+  savingsStreakWeeks:       number
+  balance4wkAgoPence:      number
+  consecutiveWeeklyGrowth: number
+  activeGoalsCount:        number
+  reliabilityRating:       number
+  distinctChoreTypes:      number
+}
+
+export interface LabModuleStatus {
+  unlocked_at:    number
+  completed_acts: number[]
+}
+
+export interface LabModulesResponse {
+  modules:   Record<string, LabModuleStatus>
+  childData: LabChildData
+  ageLevel:  number
+}
+
+export async function getLabModules(): Promise<LabModulesResponse> {
+  return request<LabModulesResponse>('/api/lab/modules')
+}
+
+export async function completeLabAct(moduleSlug: string, actNum: 1 | 2 | 3 | 4): Promise<{ ok: boolean }> {
+  return request<{ ok: boolean }>(`/api/lab/modules/${moduleSlug}/acts/${actNum}/complete`, { method: 'POST' })
+}
+
+// ----------------------------------------------------------------
 // Market Rates
 // ----------------------------------------------------------------
 export interface MarketRate {
