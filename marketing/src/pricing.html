@@ -1,0 +1,388 @@
+<!--
+  TITLE: Pricing | Morechard
+  DESCRIPTION: Own Morechard once — no subscriptions, no renewals. Core £44.99, Core AI £64.99, Shield AI £149.99. 14-day free trial included, no card required.
+  CANONICAL: https://morechard.com/pricing
+  PAGE_CSS: page-pricing.css
+-->
+
+<!-- SCHEMA_START -->
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    { "@type": "Question", "name": "Is Morechard really a one-time payment with no subscription?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. Every plan is a single purchase. Once you pay, the software is yours. There are no renewal reminders, no price increases, and no cancellation flows." } },
+    { "@type": "Question", "name": "What happens when the 14-day trial ends?", "acceptedAnswer": { "@type": "Answer", "text": "Your data is safe. Your ledger remains intact and cryptographically sealed. You can still generate a summary data export at any time. To continue using chore tracking, savings goals, and AI features, purchase any plan." } },
+    { "@type": "Question", "name": "What does Core AI add over Core?", "acceptedAnswer": { "@type": "Answer", "text": "Core AI adds Parent Insights (weekly AI summary of your child's behaviour), the AI Mentor (personalised financial coaching), and the Learning Lab (20-module financial literacy curriculum)." } },
+    { "@type": "Question", "name": "When should I choose Shield AI?", "acceptedAnswer": { "@type": "Answer", "text": "Shield AI is built for families who need a verifiable legal record — most commonly separated or co-parenting households. It adds court-ready PDF exports with cryptographic tamper-seals, co-parent verified sharing, and shared expense logging across two homes." } },
+    { "@type": "Question", "name": "Can I upgrade from Core to Core AI or Shield AI later?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. Core users can add AI Mentor + Learning Lab for a one-time £29.99 upgrade. To move to Shield AI, you pay the difference at upgrade time. You never pay full price for something you've already bought." } },
+    { "@type": "Question", "name": "Does Morechard work for single-household families?", "acceptedAnswer": { "@type": "Answer", "text": "Absolutely. Most Core and Core AI users are single-household families. The co-parent features in Shield AI are optional — they won't clutter your experience if you don't need them." } },
+    { "@type": "Question", "name": "What currencies are supported?", "acceptedAnswer": { "@type": "Answer", "text": "GBP (£), USD ($), and PLN (zł) at launch. Your currency is detected automatically from your region. Prices shown are in GBP; equivalents appear at checkout." } },
+    { "@type": "Question", "name": "Is there a refund policy?", "acceptedAnswer": { "@type": "Answer", "text": "The 14-day free trial exists so you evaluate Morechard before committing. Because you try before you buy, purchases are non-refundable. If something isn't working as expected, contact hello@morechard.com." } }
+  ]
+}
+<!-- SCHEMA_END -->
+
+<!-- BODY_START -->
+<main class="pricing-page">
+
+  <!-- ── Hero ── -->
+  <section class="pp-hero">
+    <div class="pp-hero-inner">
+      <div class="pp-chip reveal">Pricing</div>
+      <h1 class="pp-h1 reveal d1">Own it. No subscription, ever.</h1>
+      <p class="pp-sub reveal d2">One payment. Yours for life. No renewal reminders, no price hikes, no cancellation windows.</p>
+      <p class="pp-trial-note reveal d3">14-day free trial &middot; no card required to start</p>
+    </div>
+  </section>
+
+  <!-- ── Plans ── -->
+  <section class="pp-plans">
+    <div class="container">
+      <div class="pricing-grid">
+        {{data:pricing_cards}}
+      </div>
+    </div>
+  </section>
+
+  <!-- ── AI Upgrade callout ── -->
+  <div class="pp-upgrade-strip reveal">
+    <div class="container">
+      <div class="pp-upgrade-inner">
+        <svg class="pp-upgrade-icon" width="16" height="16" fill="none" viewBox="0 0 16 16" aria-hidden="true">
+          <path d="M8 2l1.8 3.6L14 6.4l-3 2.9.7 4.1L8 11.4l-3.7 2 .7-4.1L2 6.4l4.2-.8L8 2z" fill="currentColor"/>
+        </svg>
+        <span><strong>Already on Core?</strong> Add AI Mentor + Learning Lab for a one-time <strong>£29.99</strong> upgrade — no rebuy required.</span>
+        <a href="/#signup" class="pp-upgrade-link">
+          Register interest
+          <svg width="11" height="11" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+            <path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Compare table ── -->
+  <section class="pp-compare" id="compare">
+    <div class="container">
+      <div class="pp-section-head">
+        <div class="pp-chip reveal">Compare plans</div>
+        <h2 class="pp-compare-h2 reveal d1">Everything, side by side</h2>
+      </div>
+
+      <div class="pp-table-wrap reveal d2">
+        <table class="pp-table">
+          <thead>
+            <tr class="pp-thead-row">
+              <th scope="col" class="pp-th-feature"><span class="sr-only">Feature</span></th>
+              <th scope="col" class="pp-th pp-th--core">
+                <span class="pp-th-name">Core</span>
+                <span class="pp-th-price">£44.99</span>
+              </th>
+              <th scope="col" class="pp-th pp-th--core-ai">
+                <span class="pp-th-name">Core <span class="pp-th-ai">AI</span></span>
+                <span class="pp-th-price">£64.99</span>
+              </th>
+              <th scope="col" class="pp-th pp-th--shield">
+                <span class="pp-th-name">Shield <span class="pp-th-ai pp-th-ai--gold">AI</span></span>
+                <span class="pp-th-price">£149.99</span>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- Group: Included in all plans -->
+            <tr class="pp-tr-group">
+              <td colspan="4">Included in all plans</td>
+            </tr>
+            <tr class="pp-tr">
+              <td class="pp-td-label">Chore tracking &amp; immutable ledger</td>
+              <td class="pp-td pp-td--core"><svg class="pp-check pp-check--teal" width="16" height="16" fill="none" viewBox="0 0 16 16" aria-label="Included"><path d="M3 8l3.5 3.5 6.5-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></td>
+              <td class="pp-td pp-td--core-ai"><svg class="pp-check pp-check--purple" width="16" height="16" fill="none" viewBox="0 0 16 16" aria-label="Included"><path d="M3 8l3.5 3.5 6.5-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></td>
+              <td class="pp-td pp-td--shield"><svg class="pp-check pp-check--gold" width="16" height="16" fill="none" viewBox="0 0 16 16" aria-label="Included"><path d="M3 8l3.5 3.5 6.5-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></td>
+            </tr>
+            <tr class="pp-tr">
+              <td class="pp-td-label">Child 6-digit code access (no email)</td>
+              <td class="pp-td pp-td--core"><svg class="pp-check pp-check--teal" width="16" height="16" fill="none" viewBox="0 0 16 16" aria-label="Included"><path d="M3 8l3.5 3.5 6.5-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></td>
+              <td class="pp-td pp-td--core-ai"><svg class="pp-check pp-check--purple" width="16" height="16" fill="none" viewBox="0 0 16 16" aria-label="Included"><path d="M3 8l3.5 3.5 6.5-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></td>
+              <td class="pp-td pp-td--shield"><svg class="pp-check pp-check--gold" width="16" height="16" fill="none" viewBox="0 0 16 16" aria-label="Included"><path d="M3 8l3.5 3.5 6.5-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></td>
+            </tr>
+            <tr class="pp-tr">
+              <td class="pp-td-label">Savings goals (Savings Grove)</td>
+              <td class="pp-td pp-td--core"><svg class="pp-check pp-check--teal" width="16" height="16" fill="none" viewBox="0 0 16 16" aria-label="Included"><path d="M3 8l3.5 3.5 6.5-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></td>
+              <td class="pp-td pp-td--core-ai"><svg class="pp-check pp-check--purple" width="16" height="16" fill="none" viewBox="0 0 16 16" aria-label="Included"><path d="M3 8l3.5 3.5 6.5-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></td>
+              <td class="pp-td pp-td--shield"><svg class="pp-check pp-check--gold" width="16" height="16" fill="none" viewBox="0 0 16 16" aria-label="Included"><path d="M3 8l3.5 3.5 6.5-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></td>
+            </tr>
+            <tr class="pp-tr">
+              <td class="pp-td-label">Payment bridge (Monzo, Revolut, PayPal)</td>
+              <td class="pp-td pp-td--core"><svg class="pp-check pp-check--teal" width="16" height="16" fill="none" viewBox="0 0 16 16" aria-label="Included"><path d="M3 8l3.5 3.5 6.5-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></td>
+              <td class="pp-td pp-td--core-ai"><svg class="pp-check pp-check--purple" width="16" height="16" fill="none" viewBox="0 0 16 16" aria-label="Included"><path d="M3 8l3.5 3.5 6.5-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></td>
+              <td class="pp-td pp-td--shield"><svg class="pp-check pp-check--gold" width="16" height="16" fill="none" viewBox="0 0 16 16" aria-label="Included"><path d="M3 8l3.5 3.5 6.5-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></td>
+            </tr>
+            <tr class="pp-tr">
+              <td class="pp-td-label">Unlimited children</td>
+              <td class="pp-td pp-td--core"><svg class="pp-check pp-check--teal" width="16" height="16" fill="none" viewBox="0 0 16 16" aria-label="Included"><path d="M3 8l3.5 3.5 6.5-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></td>
+              <td class="pp-td pp-td--core-ai"><svg class="pp-check pp-check--purple" width="16" height="16" fill="none" viewBox="0 0 16 16" aria-label="Included"><path d="M3 8l3.5 3.5 6.5-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></td>
+              <td class="pp-td pp-td--shield"><svg class="pp-check pp-check--gold" width="16" height="16" fill="none" viewBox="0 0 16 16" aria-label="Included"><path d="M3 8l3.5 3.5 6.5-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></td>
+            </tr>
+            <tr class="pp-tr">
+              <td class="pp-td-label">Age-appropriate child interface &amp; language</td>
+              <td class="pp-td pp-td--core"><svg class="pp-check pp-check--teal" width="16" height="16" fill="none" viewBox="0 0 16 16" aria-label="Included"><path d="M3 8l3.5 3.5 6.5-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></td>
+              <td class="pp-td pp-td--core-ai"><svg class="pp-check pp-check--purple" width="16" height="16" fill="none" viewBox="0 0 16 16" aria-label="Included"><path d="M3 8l3.5 3.5 6.5-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></td>
+              <td class="pp-td pp-td--shield"><svg class="pp-check pp-check--gold" width="16" height="16" fill="none" viewBox="0 0 16 16" aria-label="Included"><path d="M3 8l3.5 3.5 6.5-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></td>
+            </tr>
+            <tr class="pp-tr">
+              <td class="pp-td-label">Avatar personalisation</td>
+              <td class="pp-td pp-td--core"><svg class="pp-check pp-check--teal" width="16" height="16" fill="none" viewBox="0 0 16 16" aria-label="Included"><path d="M3 8l3.5 3.5 6.5-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></td>
+              <td class="pp-td pp-td--core-ai"><svg class="pp-check pp-check--purple" width="16" height="16" fill="none" viewBox="0 0 16 16" aria-label="Included"><path d="M3 8l3.5 3.5 6.5-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></td>
+              <td class="pp-td pp-td--shield"><svg class="pp-check pp-check--gold" width="16" height="16" fill="none" viewBox="0 0 16 16" aria-label="Included"><path d="M3 8l3.5 3.5 6.5-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></td>
+            </tr>
+            <tr class="pp-tr">
+              <td class="pp-td-label">Login history</td>
+              <td class="pp-td pp-td--core"><svg class="pp-check pp-check--teal" width="16" height="16" fill="none" viewBox="0 0 16 16" aria-label="Included"><path d="M3 8l3.5 3.5 6.5-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></td>
+              <td class="pp-td pp-td--core-ai"><svg class="pp-check pp-check--purple" width="16" height="16" fill="none" viewBox="0 0 16 16" aria-label="Included"><path d="M3 8l3.5 3.5 6.5-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></td>
+              <td class="pp-td pp-td--shield"><svg class="pp-check pp-check--gold" width="16" height="16" fill="none" viewBox="0 0 16 16" aria-label="Included"><path d="M3 8l3.5 3.5 6.5-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></td>
+            </tr>
+
+            <!-- Group: Chore & Ledger -->
+            <tr class="pp-tr-group pp-tr-group--chore">
+              <td colspan="4">Chore &amp; ledger</td>
+            </tr>
+            <tr class="pp-tr">
+              <td class="pp-td-label">Rate Guide benchmarking</td>
+              <td class="pp-td pp-td--core"><svg class="pp-check pp-check--teal" width="16" height="16" fill="none" viewBox="0 0 16 16" aria-label="Included"><path d="M3 8l3.5 3.5 6.5-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></td>
+              <td class="pp-td pp-td--core-ai"><svg class="pp-check pp-check--purple" width="16" height="16" fill="none" viewBox="0 0 16 16" aria-label="Included"><path d="M3 8l3.5 3.5 6.5-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></td>
+              <td class="pp-td pp-td--shield"><svg class="pp-check pp-check--gold" width="16" height="16" fill="none" viewBox="0 0 16 16" aria-label="Included"><path d="M3 8l3.5 3.5 6.5-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></td>
+            </tr>
+            <tr class="pp-tr">
+              <td class="pp-td-label">Optional photo proof per chore</td>
+              <td class="pp-td pp-td--core"><svg class="pp-check pp-check--teal" width="16" height="16" fill="none" viewBox="0 0 16 16" aria-label="Included"><path d="M3 8l3.5 3.5 6.5-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></td>
+              <td class="pp-td pp-td--core-ai"><svg class="pp-check pp-check--purple" width="16" height="16" fill="none" viewBox="0 0 16 16" aria-label="Included"><path d="M3 8l3.5 3.5 6.5-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></td>
+              <td class="pp-td pp-td--shield"><svg class="pp-check pp-check--gold" width="16" height="16" fill="none" viewBox="0 0 16 16" aria-label="Included"><path d="M3 8l3.5 3.5 6.5-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></td>
+            </tr>
+            <tr class="pp-tr">
+              <td class="pp-td-label">Adjustable frequency &amp; due dates</td>
+              <td class="pp-td pp-td--core"><svg class="pp-check pp-check--teal" width="16" height="16" fill="none" viewBox="0 0 16 16" aria-label="Included"><path d="M3 8l3.5 3.5 6.5-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></td>
+              <td class="pp-td pp-td--core-ai"><svg class="pp-check pp-check--purple" width="16" height="16" fill="none" viewBox="0 0 16 16" aria-label="Included"><path d="M3 8l3.5 3.5 6.5-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></td>
+              <td class="pp-td pp-td--shield"><svg class="pp-check pp-check--gold" width="16" height="16" fill="none" viewBox="0 0 16 16" aria-label="Included"><path d="M3 8l3.5 3.5 6.5-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></td>
+            </tr>
+            <tr class="pp-tr">
+              <td class="pp-td-label">No child data required for use</td>
+              <td class="pp-td pp-td--core"><svg class="pp-check pp-check--teal" width="16" height="16" fill="none" viewBox="0 0 16 16" aria-label="Included"><path d="M3 8l3.5 3.5 6.5-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></td>
+              <td class="pp-td pp-td--core-ai"><svg class="pp-check pp-check--purple" width="16" height="16" fill="none" viewBox="0 0 16 16" aria-label="Included"><path d="M3 8l3.5 3.5 6.5-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></td>
+              <td class="pp-td pp-td--shield"><svg class="pp-check pp-check--gold" width="16" height="16" fill="none" viewBox="0 0 16 16" aria-label="Included"><path d="M3 8l3.5 3.5 6.5-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></td>
+            </tr>
+            <tr class="pp-tr">
+              <td class="pp-td-label">Shared parental expense tracking</td>
+              <td class="pp-td pp-td--core"><svg class="pp-check pp-check--teal" width="16" height="16" fill="none" viewBox="0 0 16 16" aria-label="Included"><path d="M3 8l3.5 3.5 6.5-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></td>
+              <td class="pp-td pp-td--core-ai"><svg class="pp-check pp-check--purple" width="16" height="16" fill="none" viewBox="0 0 16 16" aria-label="Included"><path d="M3 8l3.5 3.5 6.5-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></td>
+              <td class="pp-td pp-td--shield"><svg class="pp-check pp-check--gold" width="16" height="16" fill="none" viewBox="0 0 16 16" aria-label="Included"><path d="M3 8l3.5 3.5 6.5-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></td>
+            </tr>
+            <tr class="pp-tr">
+              <td class="pp-td-label">Overdraft facility</td>
+              <td class="pp-td pp-td--core"><svg class="pp-check pp-check--teal" width="16" height="16" fill="none" viewBox="0 0 16 16" aria-label="Included"><path d="M3 8l3.5 3.5 6.5-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></td>
+              <td class="pp-td pp-td--core-ai"><svg class="pp-check pp-check--purple" width="16" height="16" fill="none" viewBox="0 0 16 16" aria-label="Included"><path d="M3 8l3.5 3.5 6.5-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></td>
+              <td class="pp-td pp-td--shield"><svg class="pp-check pp-check--gold" width="16" height="16" fill="none" viewBox="0 0 16 16" aria-label="Included"><path d="M3 8l3.5 3.5 6.5-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></td>
+            </tr>
+            <tr class="pp-tr">
+              <td class="pp-td-label">Flexible earning / pocket money method</td>
+              <td class="pp-td pp-td--core"><svg class="pp-check pp-check--teal" width="16" height="16" fill="none" viewBox="0 0 16 16" aria-label="Included"><path d="M3 8l3.5 3.5 6.5-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></td>
+              <td class="pp-td pp-td--core-ai"><svg class="pp-check pp-check--purple" width="16" height="16" fill="none" viewBox="0 0 16 16" aria-label="Included"><path d="M3 8l3.5 3.5 6.5-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></td>
+              <td class="pp-td pp-td--shield"><svg class="pp-check pp-check--gold" width="16" height="16" fill="none" viewBox="0 0 16 16" aria-label="Included"><path d="M3 8l3.5 3.5 6.5-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></td>
+            </tr>
+
+            <!-- Group: AI & Insights -->
+            <tr class="pp-tr-group pp-tr-group--ai">
+              <td colspan="4">AI &amp; insights</td>
+            </tr>
+            <tr class="pp-tr">
+              <td class="pp-td-label">Parent Insights AI</td>
+              <td class="pp-td pp-td--core"><span class="pp-dash" aria-label="Not included">—</span></td>
+              <td class="pp-td pp-td--core-ai"><svg class="pp-check pp-check--purple" width="16" height="16" fill="none" viewBox="0 0 16 16" aria-label="Included"><path d="M3 8l3.5 3.5 6.5-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></td>
+              <td class="pp-td pp-td--shield"><svg class="pp-check pp-check--gold" width="16" height="16" fill="none" viewBox="0 0 16 16" aria-label="Included"><path d="M3 8l3.5 3.5 6.5-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></td>
+            </tr>
+            <tr class="pp-tr">
+              <td class="pp-td-label">AI Mentor (financial coaching for children)</td>
+              <td class="pp-td pp-td--core"><span class="pp-dash" aria-label="Not included">—</span></td>
+              <td class="pp-td pp-td--core-ai"><svg class="pp-check pp-check--purple" width="16" height="16" fill="none" viewBox="0 0 16 16" aria-label="Included"><path d="M3 8l3.5 3.5 6.5-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></td>
+              <td class="pp-td pp-td--shield"><svg class="pp-check pp-check--gold" width="16" height="16" fill="none" viewBox="0 0 16 16" aria-label="Included"><path d="M3 8l3.5 3.5 6.5-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></td>
+            </tr>
+            <tr class="pp-tr">
+              <td class="pp-td-label">Learning Lab (20-module curriculum)</td>
+              <td class="pp-td pp-td--core"><span class="pp-dash" aria-label="Not included">—</span></td>
+              <td class="pp-td pp-td--core-ai"><svg class="pp-check pp-check--purple" width="16" height="16" fill="none" viewBox="0 0 16 16" aria-label="Included"><path d="M3 8l3.5 3.5 6.5-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></td>
+              <td class="pp-td pp-td--shield"><svg class="pp-check pp-check--gold" width="16" height="16" fill="none" viewBox="0 0 16 16" aria-label="Included"><path d="M3 8l3.5 3.5 6.5-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></td>
+            </tr>
+
+            <!-- Group: Legal & Records -->
+            <tr class="pp-tr-group pp-tr-group--legal">
+              <td colspan="4">Legal &amp; records</td>
+            </tr>
+            <tr class="pp-tr">
+              <td class="pp-td-label">Tamper-evident PDF exports</td>
+              <td class="pp-td pp-td--core"><span class="pp-dash" aria-label="Not included">—</span></td>
+              <td class="pp-td pp-td--core-ai"><span class="pp-dash" aria-label="Not included">—</span></td>
+              <td class="pp-td pp-td--shield"><svg class="pp-check pp-check--gold" width="16" height="16" fill="none" viewBox="0 0 16 16" aria-label="Included"><path d="M3 8l3.5 3.5 6.5-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></td>
+            </tr>
+            <tr class="pp-tr">
+              <td class="pp-td-label">Digital tamper-seal per export</td>
+              <td class="pp-td pp-td--core"><span class="pp-dash" aria-label="Not included">—</span></td>
+              <td class="pp-td pp-td--core-ai"><span class="pp-dash" aria-label="Not included">—</span></td>
+              <td class="pp-td pp-td--shield"><svg class="pp-check pp-check--gold" width="16" height="16" fill="none" viewBox="0 0 16 16" aria-label="Included"><path d="M3 8l3.5 3.5 6.5-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></td>
+            </tr>
+            <tr class="pp-tr">
+              <td class="pp-td-label">Co-parent verified sharing</td>
+              <td class="pp-td pp-td--core"><span class="pp-dash" aria-label="Not included">—</span></td>
+              <td class="pp-td pp-td--core-ai"><span class="pp-dash" aria-label="Not included">—</span></td>
+              <td class="pp-td pp-td--shield"><svg class="pp-check pp-check--gold" width="16" height="16" fill="none" viewBox="0 0 16 16" aria-label="Included"><path d="M3 8l3.5 3.5 6.5-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></td>
+            </tr>
+            <tr class="pp-tr">
+              <td class="pp-td-label">Court-admissible hashed records</td>
+              <td class="pp-td pp-td--core"><span class="pp-dash" aria-label="Not included">—</span></td>
+              <td class="pp-td pp-td--core-ai"><span class="pp-dash" aria-label="Not included">—</span></td>
+              <td class="pp-td pp-td--shield"><svg class="pp-check pp-check--gold" width="16" height="16" fill="none" viewBox="0 0 16 16" aria-label="Included"><path d="M3 8l3.5 3.5 6.5-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Context notes -->
+      <div class="pp-table-notes reveal d3">
+        <p class="pp-note pp-note--shield">UK family mediation averages £140/hr. Morechard Shield AI is a one-time £149.99.</p>
+        <p class="pp-note pp-note--ai">Already on Core? Add AI Mentor + Learning Lab for £29.99 &mdash; one-time upgrade.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── FAQ ── -->
+  <section class="pp-faq" id="faq">
+    <div class="container">
+      <div class="pp-section-head">
+        <div class="pp-chip reveal">Common questions</div>
+        <h2 class="pp-faq-h2 reveal d1">FAQ</h2>
+      </div>
+
+      <div class="pp-faq-list reveal d2">
+
+        <details class="pp-faq-item">
+          <summary class="pp-faq-q">
+            Is this really a one-time payment? No subscription ever?
+            <svg class="pp-faq-chevron" width="16" height="16" fill="none" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </summary>
+          <div class="pp-faq-a">
+            <p>Yes — every plan is a single purchase. Once you pay, the software is yours. There are no renewal reminders, no price increases, and no cancellation flows. We deliberately built it this way because the families who need Morechard most — particularly separated households — shouldn&rsquo;t have to worry about a payment lapsing and losing access to their records.</p>
+          </div>
+        </details>
+
+        <details class="pp-faq-item">
+          <summary class="pp-faq-q">
+            What happens when the 14-day trial ends?
+            <svg class="pp-faq-chevron" width="16" height="16" fill="none" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </summary>
+          <div class="pp-faq-a">
+            <p>Your data is safe. Your ledger remains intact and cryptographically sealed. You can still generate a summary data export at any time &mdash; we don&rsquo;t hold records hostage. To continue using chore tracking, savings goals, and AI features, you&rsquo;ll need to purchase any plan.</p>
+          </div>
+        </details>
+
+        <details class="pp-faq-item">
+          <summary class="pp-faq-q">
+            What does Core AI add over Core?
+            <svg class="pp-faq-chevron" width="16" height="16" fill="none" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </summary>
+          <div class="pp-faq-a">
+            <p>Core AI adds three things: <strong>Parent Insights</strong> &mdash; a weekly AI summary of your child&rsquo;s consistency, earning velocity, and savings behaviour; the <strong>AI Mentor</strong> &mdash; personalised financial coaching for your child based on their real chore and earnings data; and the <strong>Learning Lab</strong> &mdash; a 20-module structured financial literacy curriculum mapped to your child&rsquo;s age and progress.</p>
+          </div>
+        </details>
+
+        <details class="pp-faq-item">
+          <summary class="pp-faq-q">
+            When should I choose Shield AI over Core AI?
+            <svg class="pp-faq-chevron" width="16" height="16" fill="none" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </summary>
+          <div class="pp-faq-a">
+            <p>Shield AI is built for families who need a verifiable legal record &mdash; most commonly separated or co-parenting households. On top of everything in Core AI, it adds court-ready PDF exports with cryptographic tamper-seals, a co-parent verified sharing system, shared expense logging across two homes, and records designed to meet documentary evidence standards. UK family mediation averages £140/hr. Shield AI costs £149.99 once.</p>
+          </div>
+        </details>
+
+        <details class="pp-faq-item">
+          <summary class="pp-faq-q">
+            Can I upgrade later if I start on Core?
+            <svg class="pp-faq-chevron" width="16" height="16" fill="none" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </summary>
+          <div class="pp-faq-a">
+            <p>Yes. Core users can add the AI Mentor + Learning Lab bundle for a one-time <strong>£29.99</strong> upgrade &mdash; no rebuy required. To move to Shield AI, you pay the difference at the time of upgrade. You never pay full price for something you&rsquo;ve already bought.</p>
+          </div>
+        </details>
+
+        <details class="pp-faq-item">
+          <summary class="pp-faq-q">
+            Does Morechard work for single-parent households?
+            <svg class="pp-faq-chevron" width="16" height="16" fill="none" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </summary>
+          <div class="pp-faq-a">
+            <p>Absolutely &mdash; and most Core and Core AI users are single-household families. The co-parent features in Shield AI are entirely optional. If you don&rsquo;t have a second household, those features simply won&rsquo;t appear in your workflow. They don&rsquo;t get in the way.</p>
+          </div>
+        </details>
+
+        <details class="pp-faq-item">
+          <summary class="pp-faq-q">
+            What currencies are supported at launch?
+            <svg class="pp-faq-chevron" width="16" height="16" fill="none" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </summary>
+          <div class="pp-faq-a">
+            <p>GBP (&pound;), USD ($), and PLN (z&#322;). Your currency is detected automatically from your region. Prices shown on this page are in GBP; USD and PLN equivalents are displayed at checkout.</p>
+          </div>
+        </details>
+
+        <details class="pp-faq-item">
+          <summary class="pp-faq-q">
+            Is there a refund policy?
+            <svg class="pp-faq-chevron" width="16" height="16" fill="none" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </summary>
+          <div class="pp-faq-a">
+            <p>The 14-day free trial exists precisely so you can evaluate Morechard with no financial commitment. Because you try before you buy, purchases are non-refundable. If something isn&rsquo;t working as expected, contact us at <a href="mailto:hello@morechard.com">hello@morechard.com</a> and we&rsquo;ll sort it out.</p>
+          </div>
+        </details>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ── CTA strip ── -->
+  <section class="pp-cta">
+    <h2 class="reveal">Interested? Register below.</h2>
+    <p class="reveal d1">Be first to know when Morechard launches.</p>
+    <a href="/#signup" class="btn-primary reveal d2">
+      Register interest
+      <svg width="13" height="13" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+        <path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </a>
+    <p class="pp-cta-note reveal d3">No commitment &middot; No card required</p>
+  </section>
+
+</main>
+<!-- BODY_END -->
+
+<!-- SCRIPTS_START -->
+<script>
+(function () {
+  // Scroll reveal
+  var io = new IntersectionObserver(function (entries) {
+    entries.forEach(function (e) {
+      if (e.isIntersecting) { e.target.classList.add('visible'); io.unobserve(e.target); }
+    });
+  }, { threshold: 0.1 });
+  document.querySelectorAll('.reveal').forEach(function (el) { io.observe(el); });
+
+  // Dark mode trigger — fires when compare section enters viewport (15% early)
+  var darkTrig = document.getElementById('compare');
+  function onScroll() {
+    if (!darkTrig) return;
+    var trigTop = darkTrig.getBoundingClientRect().top + window.scrollY;
+    document.body.classList.toggle('dark', window.scrollY >= trigTop - window.innerHeight * 0.15);
+  }
+  window.addEventListener('scroll', onScroll, { passive: true });
+  onScroll();
+})();
+</script>
+<!-- SCRIPTS_END -->

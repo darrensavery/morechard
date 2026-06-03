@@ -12,9 +12,13 @@
         "items": [
           "Chore tracker & approval flow",
           "Immutable SHA-256 ledger",
-          "Child 6-digit code access",
-          "Unlimited children",
-          "Single & multi-household compatible"
+          "64 in-built chores + custom option",
+          "Adjustable frequency & due dates",
+          "Optional photo proof per chore",
+          "Auto-approve vs parental sign-off",
+          "Chore history archive",
+          "Streak awards",
+          "'Flash' chores"
         ]
       },
       {
@@ -23,7 +27,25 @@
         "items": [
           "Savings goals (Savings Grove)",
           "Payment bridge (Monzo, Revolut, PayPal)",
-          "Rate Guide benchmarking"
+          "Rate Guide benchmarking",
+          "Bonus payments",
+          "Overdraft facility",
+          "Flexible earning / pocket money method",
+          "Shared expense approval threshold & split %",
+          "Shared parental expense tracking"
+        ]
+      },
+      {
+        "label": "Family & Access",
+        "check_color": "teal",
+        "items": [
+          "Child 6-digit code access (no email)",
+          "Unlimited children",
+          "Single & multi-household compatible",
+          "No child data required for use",
+          "Age-appropriate child interface & language",
+          "Avatar personalisation",
+          "Login history"
         ]
       }
     ]
@@ -35,27 +57,8 @@
     "price_dec": ".99",
     "badge": "Most Popular",
     "featured": true,
+    "plus_note": "Everything in Core, plus:",
     "groups": [
-      {
-        "label": "Chores & Ledger",
-        "check_color": "teal",
-        "items": [
-          "Chore tracker & approval flow",
-          "Immutable SHA-256 ledger",
-          "Child 6-digit code access",
-          "Unlimited children",
-          "Single & multi-household compatible"
-        ]
-      },
-      {
-        "label": "Goals & Money",
-        "check_color": "teal",
-        "items": [
-          "Savings goals (Savings Grove)",
-          "Payment bridge (Monzo, Revolut, PayPal)",
-          "Rate Guide benchmarking"
-        ]
-      },
       {
         "label": "AI & Insights",
         "check_color": "purple",
@@ -74,36 +77,8 @@
     "price_dec": ".99",
     "badge": "",
     "featured": false,
+    "plus_note": "Everything in Core AI, plus:",
     "groups": [
-      {
-        "label": "Chores & Ledger",
-        "check_color": "teal",
-        "items": [
-          "Chore tracker & approval flow",
-          "Immutable SHA-256 ledger",
-          "Child 6-digit code access",
-          "Unlimited children",
-          "Single & multi-household compatible"
-        ]
-      },
-      {
-        "label": "Goals & Money",
-        "check_color": "teal",
-        "items": [
-          "Savings goals (Savings Grove)",
-          "Payment bridge (Monzo, Revolut, PayPal)",
-          "Rate Guide benchmarking"
-        ]
-      },
-      {
-        "label": "AI & Insights",
-        "check_color": "purple",
-        "items": [
-          "Parent Insights AI",
-          "AI Mentor coaching",
-          "Learning Lab (20-module financial curriculum)"
-        ]
-      },
       {
         "label": "Legal & Records",
         "check_color": "gold",

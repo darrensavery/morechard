@@ -184,8 +184,12 @@ function InsightsDashboard({
         <LabSection
           childName={child.display_name.split(' ')[0]}
           currentModule={data.current_module}
-          completedSlugs={data.completed_module_slugs}
+          labModuleProgress={data.lab_module_progress ?? []}
+          labActsCompleted={data.lab_acts_completed ?? 0}
+          labTimeInvestedMinutes={data.lab_time_invested_minutes ?? 0}
+          labLastActiveAt={data.lab_last_active_at ?? null}
           retentionScore={data.retention_score}
+          completedSlugs={data.completed_module_slugs}
         />
       )}
 

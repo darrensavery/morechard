@@ -1,335 +1,281 @@
 // app/src/components/dashboard/LabTab.tsx
-// The Orchard Learning Lab — chat input, history feed, module grid.
+// Learning Lab — level-grouped module grid, behaviour-triggered unlocks only.
+// No chat input — the Mentor is observation-driven, not interactive.
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
+import { Lock, BookOpen } from 'lucide-react'
+import { getLabModules, type LabModulesResponse } from '../../lib/api'
 import {
-  postChat, getChatHistory, getChatModules,
-  type ChatHistoryItem, type MentorResponse,
-} from '../../lib/api'
+  MODULES, LEVEL_LABELS, PILLARS, totalMinutes, remainingMinutes,
+  type ModuleSlug, type AgeLevel, type AppView, type ChildLabData,
+} from '../../lib/labCatalogue'
+import { ModuleReader } from './ModuleReader'
 
-// ─── Module catalogue (Phase 1+2: one module) ────────────────────
-
-interface ModuleDef {
-  slug:        string
-  title:       string
-  description: string
-  triggerHint: string
-  content:     string
-}
-
-const MODULE_CATALOGUE: ModuleDef[] = [
-  {
-    slug:        'compound-interest',
-    title:       'The Snowball',
-    description: 'How money grows when you leave it alone.',
-    triggerHint: 'Ask us about growing your money',
-    content:     'When you save money and leave it alone, it starts to grow on its own. This is called compound interest. Imagine you plant a seed and instead of picking the fruit, you let it fall back into the ground. Next season, you have two trees. Then four. The longer you wait, the faster it grows. A £50 saving today, left untouched at 5% interest, becomes £81 in ten years — without a single extra chore. The secret is simply: wait.',
-  },
-]
-
-// ─── Pillar badge colours ─────────────────────────────────────────
-
-const PILLAR_COLOURS: Record<string, string> = {
-  LABOR_VALUE:           'bg-amber-100 text-amber-800',
-  DELAYED_GRATIFICATION: 'bg-blue-100 text-blue-800',
-  OPPORTUNITY_COST:      'bg-orange-100 text-orange-800',
-  CAPITAL_MANAGEMENT:    'bg-green-100 text-green-800',
-  SOCIAL_RESPONSIBILITY: 'bg-purple-100 text-purple-800',
-}
-
-const PILLAR_LABELS: Record<string, string> = {
-  LABOR_VALUE:           'Labour Value',
-  DELAYED_GRATIFICATION: 'Patience',
-  OPPORTUNITY_COST:      'Trade-offs',
-  CAPITAL_MANAGEMENT:    'Growth',
-  SOCIAL_RESPONSIBILITY: 'Giving',
-}
-
-// ─── Props ────────────────────────────────────────────────────────
+const INTRO_DISMISSED_KEY = 'lab_intro_dismissed'
 
 interface LabTabProps {
-  childId: string
-  appView: 'ORCHARD' | 'CLEAN'
+  appView: AppView
 }
 
-// ─── Component ───────────────────────────────────────────────────
-
 export function LabTab({ appView }: LabTabProps) {
-  const [history,        setHistory]        = useState<ChatHistoryItem[]>([])
-  const [unlockedSlugs,  setUnlockedSlugs]  = useState<string[]>([])
-  const [loading,        setLoading]        = useState(true)
-  const [historyError,   setHistoryError]   = useState<string | null>(null)
-  const [modulesError,   setModulesError]   = useState<string | null>(null)
-  const [inputValue,     setInputValue]     = useState('')
-  const [sending,        setSending]        = useState(false)
-  const [sendError,      setSendError]      = useState<string | null>(null)
-  const [historyOffset,  setHistoryOffset]  = useState(0)
-  const [hasMore,        setHasMore]        = useState(false)
-  const [loadingMore,    setLoadingMore]    = useState(false)
-  const [activeModule,   setActiveModule]   = useState<ModuleDef | null>(null)
-  const dialogRef = useRef<HTMLDialogElement>(null)
+  const [labData,       setLabData]       = useState<LabModulesResponse | null>(null)
+  const [loading,       setLoading]       = useState(true)
+  const [error,         setError]         = useState<string | null>(null)
+  const [activeSlug,    setActiveSlug]    = useState<ModuleSlug | null>(null)
+  const [introDismissed, setIntroDismissed] = useState(() =>
+    typeof localStorage !== 'undefined' && localStorage.getItem(INTRO_DISMISSED_KEY) === '1'
+  )
 
-  // ── Load history + modules in parallel on mount ────────────────
+  function dismissIntro() {
+    localStorage.setItem(INTRO_DISMISSED_KEY, '1')
+    setIntroDismissed(true)
+  }
+
   useEffect(() => {
     let cancelled = false
     setLoading(true)
-    setHistoryError(null)
-    setModulesError(null)
-
-    Promise.all([
-      getChatHistory(20, 0).catch(() => {
-        if (!cancelled) setHistoryError('History could not be loaded.')
-        return null
-      }),
-      getChatModules().catch(() => {
-        if (!cancelled) setModulesError('Modules could not be loaded.')
-        return null
-      }),
-    ]).then(([histRes, modRes]) => {
-      if (cancelled) return
-      if (histRes) {
-        setHistory(histRes.history)
-        setHasMore(histRes.history.length === 20)
-      }
-      if (modRes) {
-        setUnlockedSlugs(modRes.modules.map(m => m.module_slug))
-      }
-      setLoading(false)
-    })
-
+    getLabModules()
+      .then(res => { if (!cancelled) { setLabData(res); setLoading(false) } })
+      .catch(() => { if (!cancelled) { setError('Could not load modules.'); setLoading(false) } })
     return () => { cancelled = true }
   }, [])
 
-  // ── Open/close dialog ─────────────────────────────────────────
-  useEffect(() => {
-    const el = dialogRef.current
-    if (!el) return
-    if (activeModule) {
-      if (!el.open) el.showModal()
-    } else {
-      if (el.open) el.close()
-    }
-  }, [activeModule])
+  const levels: AgeLevel[]      = [2, 3, 4]
+  const childAge                 = (labData?.ageLevel ?? 2) as AgeLevel
+  const unlockedSlugs            = new Set(Object.keys(labData?.modules ?? {}))
+  const childLabData: ChildLabData | null = labData
+    ? { ...labData.childData, appView }
+    : null
 
-  // ── Send message ──────────────────────────────────────────────
-  async function handleSend() {
-    const msg = inputValue.trim()
-    if (!msg || sending) return
-    setSending(true)
-    setSendError(null)
-    setInputValue('')
+  if (loading) return (
+    <div className="flex flex-col gap-3 pt-1">
+      {[1,2,3,4,5,6].map(i => (
+        <div key={i} className="animate-pulse rounded-xl bg-[var(--color-border)] h-20" />
+      ))}
+    </div>
+  )
 
-    try {
-      const res: MentorResponse = await postChat(msg)
+  if (error || !labData) return (
+    <p className="text-[13px] text-red-500 pt-2">{error ?? 'No data'}</p>
+  )
 
-      const newItem: ChatHistoryItem = {
-        id:          crypto.randomUUID(),
-        message:     msg,
-        reply:       res.reply,
-        pillar:      res.pillar,
-        unlock_slug: res.unlock_slug ?? null,
-        app_view:    res.app_view,
-        locale:      res.locale,
-        created_at:  Math.floor(Date.now() / 1000),
-      }
+  const totalUnlocked = Object.keys(labData.modules).length
+  const totalModules  = MODULES.length
 
-      setHistory(prev => [newItem, ...prev])
-
-      if (res.unlock_slug && !unlockedSlugs.includes(res.unlock_slug)) {
-        setUnlockedSlugs(prev => [...prev, res.unlock_slug!])
-      }
-    } catch {
-      setSendError('Message could not be sent. Please try again.')
-      setInputValue(msg) // restore so user doesn't lose their message
-    } finally {
-      setSending(false)
-    }
-  }
-
-  // ── Load more history ─────────────────────────────────────────
-  async function handleLoadMore() {
-    if (loadingMore) return
-    setLoadingMore(true)
-    const nextOffset = historyOffset + 20
-    try {
-      const res = await getChatHistory(20, nextOffset)
-      setHistory(prev => [...prev, ...res.history])
-      setHistoryOffset(nextOffset)
-      setHasMore(res.history.length === 20)
-    } catch {
-      // silent — user can retry
-    } finally {
-      setLoadingMore(false)
-    }
-  }
-
-  // ── Skeleton ──────────────────────────────────────────────────
-  if (loading) {
-    return (
-      <div className="flex flex-col gap-4">
-        <p className="text-[13px] text-[var(--color-text-muted)] text-center py-2">
-          {appView === 'ORCHARD' ? 'Consulting the Mentor...' : 'Loading your history...'}
-        </p>
-        {/* History skeletons */}
-        <div className="flex flex-col gap-3">
-          {[1, 2, 3].map(i => (
-            <div key={i} className="animate-pulse rounded-xl bg-[var(--color-border)] h-20" />
-          ))}
-        </div>
-        {/* Module skeleton */}
-        <div className="animate-pulse rounded-xl bg-[var(--color-border)] h-24 mt-2" />
-      </div>
-    )
-  }
-
-  // ── Main render ───────────────────────────────────────────────
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-7">
 
-      {/* ── Chat Input ── */}
-      <div className="flex gap-2 items-end">
-        <input
-          type="text"
-          value={inputValue}
-          onChange={e => setInputValue(e.target.value)}
-          onKeyDown={e => { if (e.key === 'Enter') handleSend() }}
-          placeholder={appView === 'ORCHARD' ? 'Ask your Mentor...' : 'Ask a question...'}
-          disabled={sending}
-          className="flex-1 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-3.5 py-2.5 text-[14px] text-[var(--color-text)] placeholder:text-[var(--color-text-muted)] focus:outline-none focus:border-[var(--brand-primary)] disabled:opacity-50"
-        />
-        <button
-          onClick={handleSend}
-          disabled={sending || !inputValue.trim()}
-          className="rounded-xl bg-[var(--brand-primary)] text-white px-4 py-2.5 text-[13px] font-semibold disabled:opacity-40 cursor-pointer"
-        >
-          {sending ? '...' : 'Send'}
-        </button>
-      </div>
-      {sendError && (
-        <p className="text-[12px] text-red-500 -mt-3">{sendError}</p>
+      {/* ── Introduction ── */}
+      {!introDismissed && (
+        <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 flex flex-col gap-3 relative">
+          {/* Dismiss button */}
+          <button
+            onClick={dismissIntro}
+            className="absolute top-3 right-3 w-6 h-6 rounded-lg flex items-center justify-center text-[var(--color-text-muted)] hover:bg-[var(--color-surface-alt)] cursor-pointer"
+            aria-label="Dismiss introduction"
+          >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+              <path d="M18 6 6 18M6 6l12 12"/>
+            </svg>
+          </button>
+
+          <h2 className="text-[14px] font-bold text-[var(--color-text)] leading-snug pr-6">
+            {appView === 'ORCHARD' ? 'The Orchard Curriculum' : 'Learning Lab'}
+          </h2>
+
+          {appView === 'ORCHARD' ? (
+            <p className="text-[13px] text-[var(--color-text-muted)] leading-relaxed">
+              Seventeen modules on the money skills that actually matter — how wages work, how to spot a financial trap before it closes, how savings compound into something real.
+              The kind of knowledge most adults had to learn the hard way, usually after it cost them.
+            </p>
+          ) : (
+            <p className="text-[13px] text-[var(--color-text-muted)] leading-relaxed">
+              17 modules covering earnings, tax, saving, debt, and investment — financial concepts most adults encountered too late.
+              Each lesson uses your actual figures, not textbook examples.
+            </p>
+          )}
+
+          <div className="flex items-start gap-2.5 pt-1 border-t border-[var(--color-border)]">
+            <svg className="flex-shrink-0 mt-0.5" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--brand-primary)" strokeWidth="2" strokeLinecap="round">
+              <rect x="3" y="11" width="18" height="11" rx="2"/>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+            </svg>
+            <p className="text-[12px] text-[var(--color-text-muted)] leading-relaxed">
+              {appView === 'ORCHARD'
+                ? 'Modules don\'t unlock by tapping buttons — they unlock when you do something. Save for four weeks and compound interest opens. Create a gaming goal and digital currency unlocks.'
+                : 'Modules unlock based on your activity. Save consistently for four weeks and compound interest triggers. Each lesson arrives when your data makes it directly relevant.'}
+            </p>
+          </div>
+
+          {totalUnlocked > 0 && (
+            <p className="text-[11px] font-semibold text-[var(--brand-primary)]">
+              {totalUnlocked} of {totalModules} unlocked
+            </p>
+          )}
+        </div>
       )}
 
-      {/* ── History Feed ── */}
-      <section>
-        <h2 className="text-[12px] font-semibold text-[var(--color-text-muted)] uppercase tracking-wide mb-2">
-          History
-        </h2>
-        {historyError ? (
-          <p className="text-[13px] text-red-500">{historyError}</p>
-        ) : history.length === 0 ? (
-          <p className="text-[13px] text-[var(--color-text-muted)]">
-            {appView === 'ORCHARD'
-              ? 'No conversations yet. Ask the Mentor anything! 🌱'
-              : 'No conversations yet. Send a message to get started.'}
-          </p>
-        ) : (
-          <div className="flex flex-col gap-3">
-            {history.map(item => (
-              <div
-                key={item.id}
-                className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-3 flex flex-col gap-1.5"
-              >
-                {/* User bubble */}
-                <p className="text-[12px] text-[var(--color-text-muted)] text-right">{item.message}</p>
-                {/* Pillar badge */}
-                <span className={`self-start text-[10px] font-semibold px-2 py-0.5 rounded-full ${PILLAR_COLOURS[item.pillar] ?? 'bg-gray-100 text-gray-700'}`}>
-                  {PILLAR_LABELS[item.pillar] ?? item.pillar}
-                </span>
-                {/* Reply */}
-                <p className="text-[13px] text-[var(--color-text)] leading-snug">{item.reply}</p>
-                {/* Unlock indicator */}
-                {item.unlock_slug && (
-                  <p className="text-[11px] text-[var(--brand-primary)] font-semibold">🔓 New module unlocked</p>
-                )}
-              </div>
-            ))}
+      {levels.map(level => {
+        const levelModules  = MODULES.filter(m => m.level === level)
+        const unlockedCount = levelModules.filter(m => unlockedSlugs.has(m.slug)).length
+        const levelLabel    = LEVEL_LABELS[level][appView]
+        const isFuture      = level > childAge
+        const totalCount    = levelModules.length
 
-            {/* Load more */}
-            {hasMore && (
-              <button
-                onClick={handleLoadMore}
-                disabled={loadingMore}
-                className="text-[13px] text-[var(--brand-primary)] font-semibold py-2 disabled:opacity-40 cursor-pointer"
-              >
-                {loadingMore ? 'Loading...' : 'Load more'}
-              </button>
-            )}
-          </div>
-        )}
-      </section>
+        return (
+          <section key={level}>
 
-      {/* ── Module Grid ── */}
-      <section>
-        <h2 className="text-[12px] font-semibold text-[var(--color-text-muted)] uppercase tracking-wide mb-2">
-          Your Modules
-        </h2>
-        {modulesError ? (
-          <p className="text-[13px] text-red-500">{modulesError}</p>
-        ) : (
-          <div className="grid grid-cols-1 gap-3">
-            {MODULE_CATALOGUE.map(mod => {
-              const isUnlocked = unlockedSlugs.includes(mod.slug)
-              return (
-                <button
-                  key={mod.slug}
-                  onClick={() => isUnlocked && setActiveModule(mod)}
-                  disabled={!isUnlocked}
-                  className={`text-left rounded-xl border p-4 transition-colors cursor-pointer
-                    ${isUnlocked
-                      ? 'border-[var(--brand-primary)] bg-[var(--color-surface)] hover:bg-[var(--color-border)]'
-                      : 'border-[var(--color-border)] bg-[var(--color-surface)] opacity-50 cursor-default grayscale'
-                    }`}
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <p className="text-[14px] font-bold text-[var(--color-text)]">{mod.title}</p>
-                      <p className="text-[12px] text-[var(--color-text-muted)] mt-0.5">
-                        {isUnlocked ? mod.description : mod.triggerHint}
-                      </p>
-                    </div>
-                    <span className="text-[18px] flex-shrink-0 mt-0.5">
-                      {isUnlocked ? '📖' : '🔒'}
+            {/* ── Level header ── */}
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <h2 className={`text-[11px] font-bold uppercase tracking-[0.08em] ${isFuture ? 'text-[var(--color-text-muted)]' : 'text-[var(--color-text)]'}`}>
+                  {levelLabel}
+                  {isFuture && (
+                    <span className="ml-1.5 font-normal normal-case tracking-normal text-[10px]">
+                      · unlocks later
                     </span>
-                  </div>
-                </button>
-              )
-            })}
-          </div>
-        )}
-      </section>
+                  )}
+                </h2>
+                <p className="text-[11px] text-[var(--color-text-muted)] mt-0.5">
+                  {unlockedCount} of {totalCount} {unlockedCount === totalCount && totalCount > 0 ? '— complete' : 'unlocked'}
+                </p>
+              </div>
 
-      {/* ── Module Detail Dialog ── */}
-      <dialog
-        ref={dialogRef}
-        onClose={() => setActiveModule(null)}
-        className="fixed inset-0 m-auto w-full max-w-[520px] rounded-t-2xl rounded-b-none sm:rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-0 shadow-xl backdrop:bg-black/50 max-h-[80vh] overflow-y-auto"
-        style={{ bottom: 0, top: 'auto', left: 0, right: 0, maxWidth: '520px', margin: '0 auto' }}
-      >
-        {activeModule && (
-          <div className="p-5 flex flex-col gap-4">
-            {/* Header with explicit close button — min 44×44px tap target */}
-            <div className="flex items-start justify-between gap-2">
-              <h3 className="text-[18px] font-extrabold text-[var(--color-text)]">{activeModule.title}</h3>
-              <button
-                onClick={() => setActiveModule(null)}
-                className="w-8 h-8 rounded-lg border border-[var(--color-border)] flex items-center justify-center text-[var(--color-text-muted)] hover:bg-[var(--color-surface-alt)] flex-shrink-0 cursor-pointer"
-                aria-label="Close"
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
-              </button>
+              {/* Progress bar */}
+              {!isFuture && (
+                <div className="w-16 h-1 rounded-full bg-[var(--color-border)] overflow-hidden">
+                  <div
+                    className="h-full rounded-full transition-all duration-500"
+                    style={{
+                      width: totalCount > 0 ? `${(unlockedCount / totalCount) * 100}%` : '0%',
+                      backgroundColor: 'var(--brand-primary)',
+                    }}
+                  />
+                </div>
+              )}
             </div>
-            {/* Content */}
-            <p className="text-[14px] text-[var(--color-text)] leading-relaxed">{activeModule.content}</p>
-            {/* Bottom close button — large, explicit */}
-            <button
-              onClick={() => setActiveModule(null)}
-              className="w-full py-3 rounded-xl bg-[var(--brand-primary)] text-white text-[14px] font-semibold cursor-pointer"
-            >
-              Close
-            </button>
-          </div>
-        )}
-      </dialog>
+
+            {/* ── 2-column tile grid ── */}
+            <div className="grid grid-cols-2 gap-2.5">
+              {levelModules.map(mod => {
+                const isUnlocked  = unlockedSlugs.has(mod.slug)
+                const Icon        = mod.icon
+                const pillarLabel = appView === 'ORCHARD' ? PILLARS[mod.pillar].orchardName : PILLARS[mod.pillar].name
+
+                // ── Too advanced ──
+                if (isFuture) {
+                  return (
+                    <div key={mod.slug} className="rounded-xl overflow-hidden opacity-30 flex flex-col" style={{ background: 'var(--color-surface-alt)' }}>
+                      <div className="w-full overflow-hidden" style={{ height: 64, background: 'var(--color-border)' }}>
+                        {mod.illustration(true)}
+                      </div>
+                      <div className="p-2.5 flex flex-col gap-1">
+                        <p className="text-[11px] font-semibold text-[var(--color-text-muted)] leading-tight">{mod.title}</p>
+                        <p className="text-[9px] text-[var(--color-text-muted)]">{levelLabel}</p>
+                      </div>
+                    </div>
+                  )
+                }
+
+                // ── Locked (within level) ──
+                if (!isUnlocked) {
+                  return (
+                    <div key={mod.slug} className="rounded-xl overflow-hidden flex flex-col" style={{ background: 'var(--color-surface-alt)' }}>
+                      <div className="w-full overflow-hidden" style={{ height: 64 }}>
+                        {mod.illustration(true)}
+                      </div>
+                      <div className="p-2.5 flex flex-col gap-1.5">
+                        <p className="text-[11px] font-bold text-[var(--color-text)] leading-tight">{mod.title}</p>
+                        <p className="text-[9px] text-[var(--color-text-muted)] leading-tight line-clamp-2">{mod.description}</p>
+                        <div className="flex items-center justify-between mt-auto pt-0.5">
+                          <p className="text-[8px] text-[var(--color-text-muted)] leading-tight flex-1 pr-2 italic">{mod.triggerHint}</p>
+                          <Lock size={9} className="text-[var(--color-text-muted)] flex-shrink-0 opacity-60" />
+                        </div>
+                      </div>
+                    </div>
+                  )
+                }
+
+                // ── Unlocked ──
+                const completedActs = labData.modules[mod.slug]?.completed_acts ?? []
+                const allDone       = completedActs.length === 4
+                const minsLeft      = remainingMinutes(mod.actMinutes, completedActs)
+                const totalMins     = totalMinutes(mod.actMinutes)
+
+                return (
+                  <button
+                    key={mod.slug}
+                    onClick={() => setActiveSlug(mod.slug as ModuleSlug)}
+                    className="rounded-xl overflow-hidden flex flex-col text-left cursor-pointer transition-all hover:shadow-md hover:-translate-y-px active:translate-y-0"
+                    style={{ background: 'var(--color-surface)', boxShadow: '0 1px 4px rgba(0,0,0,0.07)' }}
+                  >
+                    {/* Illustration — no badge overlay */}
+                    <div className="w-full overflow-hidden" style={{ height: 64, background: 'rgba(0,149,156,0.05)' }}>
+                      {mod.illustration(false)}
+                    </div>
+
+                    {/* Text content */}
+                    <div className="p-2.5 flex flex-col gap-1 flex-1 relative">
+                      <p className="text-[11px] font-bold text-[var(--color-text)] leading-tight">{mod.title}</p>
+                      <p className="text-[9px] text-[var(--color-text-muted)] leading-tight line-clamp-2">{mod.description}</p>
+                      {/* Pillar label left, status badge bottom-right */}
+                      <div className="flex items-end justify-between mt-auto pt-1">
+                        <p className="text-[9px] text-[var(--brand-primary)]">{pillarLabel}</p>
+                        {allDone ? (
+                          <span className="text-[8px] font-bold px-1.5 py-0.5 rounded-full text-white leading-none" style={{ background: 'var(--brand-primary)' }}>
+                            ✓ Done
+                          </span>
+                        ) : completedActs.length > 0 ? (
+                          <span className="text-[8px] font-semibold px-1.5 py-0.5 rounded-full leading-none" style={{ background: 'rgba(0,149,156,0.12)', color: 'var(--brand-primary)' }}>
+                            ~{minsLeft}m left
+                          </span>
+                        ) : (
+                          <span className="text-[8px] text-[var(--color-text-muted)] font-medium leading-none">
+                            ~{totalMins}m
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </button>
+                )
+              })}
+            </div>
+          </section>
+        )
+      })}
+
+      {/* ── Empty state if no modules at all ── */}
+      {!loading && MODULES.length === 0 && (
+        <div className="flex flex-col items-center gap-3 py-10">
+          <BookOpen size={32} className="text-[var(--color-text-muted)]" />
+          <p className="text-[13px] text-[var(--color-text-muted)] text-center">
+            Modules unlock as you use the app.
+          </p>
+        </div>
+      )}
+
+      {/* ── Module Reader overlay ── */}
+      {activeSlug && childLabData && labData && (
+        <ModuleReader
+          slug={activeSlug}
+          childData={childLabData}
+          completedActs={labData.modules[activeSlug]?.completed_acts ?? []}
+          onActComplete={(actNum) => {
+            setLabData(prev => {
+              if (!prev) return prev
+              const existing = prev.modules[activeSlug] ?? { unlocked_at: Date.now(), completed_acts: [] }
+              const acts = existing.completed_acts.includes(actNum)
+                ? existing.completed_acts
+                : [...existing.completed_acts, actNum]
+              return {
+                ...prev,
+                modules: { ...prev.modules, [activeSlug]: { ...existing, completed_acts: acts } },
+              }
+            })
+          }}
+          onClose={() => setActiveSlug(null)}
+        />
+      )}
 
     </div>
   )

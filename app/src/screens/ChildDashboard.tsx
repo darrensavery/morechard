@@ -141,6 +141,7 @@ export function ChildDashboard() {
 
   // Per-chore submission state
   const [childTab,      setChildTab]      = useState<'home' | 'chores' | 'money' | 'goals' | 'lab'>('home')
+  const [labUnread,     setLabUnread]     = useState(0)
   const [submitting,    setSubmitting]    = useState<string | null>(null)
   const [submitted,     setSubmitted]     = useState<Set<string>>(new Set())
   const [noteChore,     setNoteChore]     = useState<string | null>(null)
@@ -168,6 +169,16 @@ export function ChildDashboard() {
       const av = (s.app_view ?? 'ORCHARD') as 'ORCHARD' | 'CLEAN'
       setAppView(av)
       if (s.avatar_id) setAvatarId(s.avatar_id)
+      // Count modules unlocked in the last 7 days with no acts started yet
+      try {
+        const { getLabModules } = await import('../lib/api')
+        const labData = await getLabModules()
+        const sevenDaysAgo = Math.floor(Date.now() / 1000) - 7 * 24 * 60 * 60
+        const unread = Object.values(labData.modules).filter(
+          m => m.unlocked_at > sevenDaysAgo && m.completed_acts.length === 0
+        ).length
+        setLabUnread(unread)
+      } catch { /* non-critical — badge silently absent */ }
       // Estimate weekly allowance as sum of all weekly/daily chore rewards
       const weekly = c.reduce((sum, chore) => {
         if (chore.frequency === 'weekly') return sum + chore.reward_amount
@@ -378,11 +389,16 @@ export function ChildDashboard() {
           {([['home', 'Home'], ['chores', 'Chores'], ['money', 'Money'], ['goals', 'Goals'], ['lab', 'Lab']] as const).map(([id, label]) => (
             <button
               key={id}
-              onClick={() => setChildTab(id)}
+              onClick={() => { setChildTab(id); if (id === 'lab') setLabUnread(0) }}
               className={`flex-1 py-2.5 text-[13px] font-semibold relative transition-colors cursor-pointer
                 ${childTab === id ? 'text-[var(--brand-primary)]' : 'text-[var(--color-text-muted)] hover:text-[var(--color-text)]'}`}
             >
               {label}
+              {id === 'lab' && labUnread > 0 && (
+                <span className="absolute top-1.5 right-[calc(50%-18px)] w-4 h-4 rounded-full bg-[var(--brand-primary)] text-white text-[9px] font-bold flex items-center justify-center">
+                  {labUnread}
+                </span>
+              )}
               {childTab === id && (
                 <span className="absolute bottom-0 left-0 right-0 h-[2.5px] bg-[var(--brand-primary)] rounded-t-full" />
               )}
@@ -515,7 +531,7 @@ export function ChildDashboard() {
         </div>
         <div className={childTab === 'money' ? 'tab-panel' : 'tab-panel hidden'}><ChildMoneyTab familyId={familyId} childId={userId} currency={currency} /></div>
         <div className={childTab === 'goals' ? 'tab-panel' : 'tab-panel hidden'}><ChildGoalsTab familyId={familyId} childId={userId} currency={currency} appView={appView} /></div>
-        <div className={childTab === 'lab'   ? 'tab-panel' : 'tab-panel hidden'}><LabTab childId={userId} appView={appView} /></div>
+        <div className={childTab === 'lab'   ? 'tab-panel' : 'tab-panel hidden'}><LabTab appView={appView} /></div>
         {childTab === 'home' && (<>
           {loading ? (
             <div className="py-16 text-center text-[14px] text-[var(--color-text-muted)]">Loading…</div>

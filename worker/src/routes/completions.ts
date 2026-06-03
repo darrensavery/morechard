@@ -22,6 +22,7 @@ import { computeRecordHash, fetchAndVerifyChainTip } from '../lib/hash.js';
 import { JwtPayload } from '../lib/jwt.js';
 import { getStreakState, buildStreakEvent, saveStreakEvent, allScheduledChoresDone } from '../lib/streaks.js';
 import { getBadgeStats, badgesToAward, insertBadges } from '../lib/badges.js';
+import { evaluateOnChoreApproval, evaluatePassive } from '../lib/labTriggers.js';
 import { nanoid } from '../lib/nanoid.js';
 
 type AuthedRequest = Request & { auth: JwtPayload };
@@ -281,6 +282,10 @@ export async function handleCompletionApprove(
       await insertBadges(env.DB, childId, newBadges, nanoid)
       for (const key of newBadges) pendingCelebrations.push(`BADGE_${key}`)
     }
+
+    // Lab triggers — fire-and-forget, non-blocking
+    evaluateOnChoreApproval(env.DB, comp.child_id).catch(() => {})
+    evaluatePassive(env.DB, comp.child_id).catch(() => {})
 
     return json({
       ok: true,

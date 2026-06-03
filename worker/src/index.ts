@@ -174,6 +174,7 @@ import { runDemoReset } from './cron/demo-reset.js';
 import { handleChildChat } from './routes/chat.js';
 import { handleChatHistory } from './routes/chat-history.js';
 import { handleChatModules } from './routes/chat-modules.js';
+import { handleLabModules, handleLabActComplete } from './routes/lab.js';
 import {
   handleReferralMe,
   handleReferralStats,
@@ -523,6 +524,14 @@ async function route(request: Request, env: Env, method: string, path: string): 
   if (path === '/api/chat' && method === 'POST') return withAuth(request, auth, env, (req, e) => handleChildChat(req, e));
   if (path === '/api/chat/history' && method === 'GET') return withAuth(request, auth, env, handleChatHistory);
   if (path === '/api/chat/modules' && method === 'GET') return withAuth(request, auth, env, handleChatModules);
+
+  // Learning Lab
+  if (path === '/api/lab/modules' && method === 'GET') return withAuth(request, auth, env, handleLabModules);
+  const labActMatch = path.match(/^\/api\/lab\/modules\/([^/]+)\/acts\/(\d+)\/complete$/)
+  if (labActMatch && method === 'POST')
+    return withAuth(request, auth, env, (req, e) =>
+      handleLabActComplete(req, e, labActMatch[1], parseInt(labActMatch[2], 10))
+    )
 
   // Market rates — any authenticated role
   if (path === '/api/market-rates' && method === 'GET')        return withAuth(request, auth, env, handleMarketRateList);
