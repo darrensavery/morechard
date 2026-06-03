@@ -184,11 +184,12 @@ export function LabTab({ appView }: LabTabProps) {
                       <div className="w-full overflow-hidden" style={{ height: 64 }}>
                         {mod.illustration(true)}
                       </div>
-                      <div className="p-2.5 flex flex-col gap-1">
+                      <div className="p-2.5 flex flex-col gap-1.5">
                         <p className="text-[11px] font-bold text-[var(--color-text)] leading-tight">{mod.title}</p>
-                        <div className="flex items-end justify-between mt-0.5">
-                          <p className="text-[9px] text-[var(--color-text-muted)] leading-tight flex-1 pr-2">{mod.triggerHint}</p>
-                          <Lock size={10} className="text-[var(--color-text-muted)] flex-shrink-0" />
+                        <p className="text-[9px] text-[var(--color-text-muted)] leading-tight line-clamp-2">{mod.description}</p>
+                        <div className="flex items-center justify-between mt-auto pt-0.5">
+                          <p className="text-[8px] text-[var(--color-text-muted)] leading-tight flex-1 pr-2 italic">{mod.triggerHint}</p>
+                          <Lock size={9} className="text-[var(--color-text-muted)] flex-shrink-0 opacity-60" />
                         </div>
                       </div>
                     </div>
