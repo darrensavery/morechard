@@ -502,6 +502,17 @@ export interface CurrentModule {
   pillar:       string;
 }
 
+export interface LabModuleProgress {
+  slug:           string;
+  title:          string;
+  pillar:         string;
+  level:          number;
+  unlocked_at:    number;
+  completed_acts: number[];
+  total_minutes:  number;
+  minutes_done:   number;
+}
+
 export interface InsightsData {
   period: string;
   period_start_epoch: number | null;
@@ -540,6 +551,11 @@ export interface InsightsData {
   retention_score:        number | null;
   milestone_markers:      MilestoneMarker[];
   chore_events?:          { point_index: number; first_pass: boolean }[];
+  // Richer Learning Lab data
+  lab_module_progress:       LabModuleProgress[];
+  lab_acts_completed:        number;
+  lab_time_invested_minutes: number;
+  lab_last_active_at:        number | null;
 }
 
 export async function getInsights(

@@ -399,62 +399,155 @@ export async function handleInsights(request: Request, env: Env): Promise<Respon
   let retentionScore: number | null = null;
   const milestoneMarkers: { metric: 'responsibility'|'consistency'|'savings'; point_index: number; module_title: string; delta_after: number }[] = [];
 
+  // Per-module act progress (Hook/Lesson/Lab/Quiz) populated from module_act_progress
+  type LabModuleProgress = {
+    slug:           string;
+    title:          string;
+    pillar:         string;
+    level:          number;
+    unlocked_at:    number;
+    completed_acts: number[];   // e.g. [1, 2]
+    total_minutes:  number;
+    minutes_done:   number;
+  };
+  let labModuleProgress: LabModuleProgress[] = [];
+  let labActsCompleted         = 0;
+  let labTimeInvestedMinutes   = 0;
+  let labLastActiveAt: number | null = null;
+
+  // Static lookups for M-series module metadata (mirrors labCatalogue.ts)
+  const M_META: Record<string, { title: string; pillar: string; level: number; actMins: [number,number,number,number] }> = {
+    'M2':   { title: 'Taxes & Net Pay',              pillar: 'LABOR_VALUE',       level: 2, actMins: [2,5,7,4]   },
+    'M3':   { title: 'Entrepreneurship',             pillar: 'LABOR_VALUE',       level: 3, actMins: [2,7,8,3]   },
+    'M3b':  { title: 'Gig Trap vs Salary Safety',    pillar: 'LABOR_VALUE',       level: 3, actMins: [2,6,8,3]   },
+    'M5':   { title: 'Scams & Digital Safety',       pillar: 'SPENDING_CHOICES',  level: 2, actMins: [1,4,5,4]   },
+    'M6':   { title: 'Advertising & Influence',      pillar: 'SPENDING_CHOICES',  level: 3, actMins: [1,5,6,4]   },
+    'M8':   { title: 'Banking 101',                  pillar: 'SAVING_GROWTH',     level: 2, actMins: [2,5,6,3]   },
+    'M9':   { title: 'Opportunity Cost',             pillar: 'SAVING_GROWTH',     level: 3, actMins: [2,6,7,3]   },
+    'M9b':  { title: 'The Snowball',                 pillar: 'SAVING_GROWTH',     level: 2, actMins: [2,6,10,4]  },
+    'M10':  { title: 'The Interest Trap',            pillar: 'BORROWING_DEBT',    level: 2, actMins: [2,5,7,3]   },
+    'M11':  { title: 'Credit Scores & Trust',        pillar: 'BORROWING_DEBT',    level: 3, actMins: [2,5,7,3]   },
+    'M12':  { title: 'Good vs Bad Debt',             pillar: 'BORROWING_DEBT',    level: 3, actMins: [2,7,8,4]   },
+    'M13':  { title: 'Stocks & Shares',              pillar: 'INVESTING_FUTURE',  level: 4, actMins: [2,8,10,5]  },
+    'M14':  { title: 'Inflation',                    pillar: 'INVESTING_FUTURE',  level: 2, actMins: [1,5,6,3]   },
+    'M15':  { title: 'Risk & Diversification',       pillar: 'INVESTING_FUTURE',  level: 4, actMins: [2,7,10,4]  },
+    'M17':  { title: 'Digital vs Physical Currency', pillar: 'SOCIETY_WELLBEING', level: 2, actMins: [1,4,5,3]   },
+    'M18':  { title: 'Money & Mental Health',        pillar: 'SOCIETY_WELLBEING', level: 3, actMins: [1,5,5,4]   },
+    'M18b': { title: 'Social Comparison',            pillar: 'SOCIETY_WELLBEING', level: 3, actMins: [1,4,6,3]   },
+  };
+
+  // Legacy slug→M mapping (old chat-based unlocks)
+  const LEGACY_TO_M: Record<string, string> = {
+    'taxes-net-pay':               'M2',
+    'entrepreneurship':            'M3',
+    'gig-trap-vs-salary':          'M3b',
+    'scams-digital-safety':        'M5',
+    'advertising-influence':       'M6',
+    'banking-101':                 'M8',
+    'opportunity-cost':            'M9',
+    'the-snowball':                'M9b',
+    'compound-interest':           'M9b',  // very old slug
+    'the-interest-trap':           'M10',
+    'credit-scores-trust':         'M11',
+    'good-vs-bad-debt':            'M12',
+    'compound-growth':             'M13',
+    'inflation':                   'M14',
+    'risk-and-diversification':    'M15',
+    'digital-vs-physical-currency':'M17',
+    'money-and-mental-health':     'M18',
+    'social-comparison':           'M18b',
+  };
+
   if (learningLabEnabled) {
-    // Unlocked modules — the actual table created by migration 0028
-    const modRows = await env.DB.prepare(`
-      SELECT module_slug, unlocked_at FROM unlocked_modules
-      WHERE child_id = ? ORDER BY unlocked_at ASC
-    `).bind(effectiveChildId).all<{ module_slug: string; unlocked_at: number }>()
-      .catch(() => ({ results: [] }));
+    // Fetch unlocked modules + act progress in parallel
+    const [modRows, actRows] = await Promise.all([
+      env.DB.prepare(
+        `SELECT module_slug, unlocked_at FROM unlocked_modules WHERE child_id = ? ORDER BY unlocked_at ASC`
+      ).bind(effectiveChildId).all<{ module_slug: string; unlocked_at: number }>().catch(() => ({ results: [] })),
 
-    completedModuleSlugs = modRows.results.map(r => r.module_slug);
+      env.DB.prepare(
+        `SELECT module_slug, act_num, completed_at FROM module_act_progress WHERE child_id = ? ORDER BY completed_at ASC`
+      ).bind(effectiveChildId).all<{ module_slug: string; act_num: number; completed_at: number }>().catch(() => ({ results: [] })),
+    ]);
 
-    // No chat_module_progress table exists — currentModule stays null unless
-    // a child has unlocked modules but not yet finished the final one.
-    // For now: if any modules are unlocked, no "in progress" signal is surfaced.
-
-    // Retention score heuristic
-    if (completedModuleSlugs.length > 0 && savingsConsistency !== null) {
-      retentionScore = Math.min(100, Math.round(savingsConsistency * 1.1));
+    // Build act-progress map (M-series slugs)
+    const actMap = new Map<string, { acts: number[]; lastAt: number }>();
+    for (const row of actRows.results) {
+      // Normalise legacy slugs
+      const slug = LEGACY_TO_M[row.module_slug] ?? row.module_slug;
+      const existing = actMap.get(slug) ?? { acts: [], lastAt: 0 };
+      if (!existing.acts.includes(row.act_num)) existing.acts.push(row.act_num);
+      if (row.completed_at > existing.lastAt) existing.lastAt = row.completed_at;
+      actMap.set(slug, existing);
+      if (row.completed_at > (labLastActiveAt ?? 0)) labLastActiveAt = row.completed_at;
     }
+
+    // Build enriched module list
+    for (const row of modRows.results) {
+      const mSlug = LEGACY_TO_M[row.module_slug] ?? row.module_slug;
+      const meta  = M_META[mSlug];
+      if (!meta) continue;  // unknown/Phase-2 module
+
+      const actData     = actMap.get(mSlug) ?? { acts: [], lastAt: 0 };
+      const totalMins   = meta.actMins.reduce((s, m) => s + m, 0);
+      const minutesDone = actData.acts.reduce((s, actNum) => s + (meta.actMins[actNum - 1] ?? 0), 0);
+
+      labModuleProgress.push({
+        slug:           mSlug,
+        title:          meta.title,
+        pillar:         meta.pillar,
+        level:          meta.level,
+        unlocked_at:    row.unlocked_at,
+        completed_acts: actData.acts,
+        total_minutes:  totalMins,
+        minutes_done:   minutesDone,
+      });
+
+      labActsCompleted       += actData.acts.length;
+      labTimeInvestedMinutes += minutesDone;
+    }
+
+    // completed_module_slugs: M-series slugs where all 4 acts are done
+    completedModuleSlugs = labModuleProgress
+      .filter(m => m.completed_acts.length === 4)
+      .map(m => m.slug);
+
+    // current_module: most recently active with incomplete acts
+    const inProgress = labModuleProgress
+      .filter(m => m.completed_acts.length > 0 && m.completed_acts.length < 4)
+      .sort((a, b) => (actMap.get(b.slug)?.lastAt ?? 0) - (actMap.get(a.slug)?.lastAt ?? 0));
+
+    if (inProgress.length > 0) {
+      const cm = inProgress[0];
+      currentModule = {
+        slug:         cm.slug,
+        title:        cm.title,
+        progress_pct: Math.round((cm.completed_acts.length / 4) * 100),
+        pillar:       cm.pillar,
+      };
+    }
+
+    // Retention score: quiz acts completed / quiz acts possible
+    // Act 4 = quiz. Count how many modules have act 4 done vs total unlocked.
+    const modulesWithQuizUnlocked = labModuleProgress.filter(m => m.completed_acts.length >= 3).length;
+    const modulesWithQuizDone     = labModuleProgress.filter(m => m.completed_acts.includes(4)).length;
+    retentionScore = modulesWithQuizUnlocked > 0
+      ? Math.round((modulesWithQuizDone / modulesWithQuizUnlocked) * 100)
+      : null;
 
     // Milestone markers — map unlock dates onto sparkline buckets
     if (sparklinePoints && modRows.results.length > 0) {
       const sparklineCount = 28;
       const now2           = Math.floor(Date.now() / 1000);
-      // Mirror the all-time window used by buildSparklinePoints
-      const oldestEpoch2   = oldestEpoch; // reuse from above
-      const periodSecs2    = Math.max(30 * 86400, now2 - oldestEpoch2);
+      const periodSecs2    = Math.max(30 * 86400, now2 - oldestEpoch);
       const sparklineStart = now2 - periodSecs2;
       const bucketDuration = periodSecs2 / sparklineCount;
 
-      // Slug→title map — all 20 curriculum modules
-      const slugToTitle: Record<string, string> = {
-        'effort-vs-reward':           'Effort',
-        'taxes-net-pay':              'Taxes',
-        'entrepreneurship':           'Enterprise',
-        'gig-trap-vs-salary':         'Gig vs Salary',
-        'needs-vs-wants':             'Needs & Wants',
-        'scams-digital-safety':       'Scams',
-        'advertising-influence':      'Adverts',
-        'patience-tree':              'Patience',
-        'banking-101':                'Banking',
-        'opportunity-cost':           'Trade-offs',
-        'the-snowball':               'Snowball',
-        'the-interest-trap':          'Interest Trap',
-        'credit-scores-trust':        'Credit Score',
-        'good-vs-bad-debt':           'Good Debt',
-        'compound-growth':            'Compound Growth',
-        'inflation':                  'Inflation',
-        'risk-and-diversification':   'Risk',
-        'giving-and-charity':         'Giving',
-        'digital-vs-physical-currency': 'Digital Money',
-        'money-and-mental-health':    'Money & Mind',
-        'social-comparison':          'Comparison',
-      };
-
       for (const mod of modRows.results) {
         if (mod.unlocked_at < sparklineStart) continue;
+        const mSlug = LEGACY_TO_M[mod.module_slug] ?? mod.module_slug;
+        const meta  = M_META[mSlug];
+        if (!meta) continue;
         const idx = Math.min(
           sparklineCount - 1,
           Math.floor((mod.unlocked_at - sparklineStart) / bucketDuration),
@@ -471,7 +564,7 @@ export async function handleInsights(request: Request, env: Env): Promise<Respon
         milestoneMarkers.push({
           metric:       bestMetric,
           point_index:  idx,
-          module_title: slugToTitle[mod.module_slug] ?? mod.module_slug,
+          module_title: meta.title,
           delta_after:  Math.max(0, bestDelta),
         });
       }
@@ -545,12 +638,16 @@ export async function handleInsights(request: Request, env: Env): Promise<Respon
     sparkline_points:       sparklinePoints,
 
     // Learning Lab
-    learning_lab_enabled:   learningLabEnabled,
-    current_module:         currentModule,
-    completed_module_slugs: completedModuleSlugs,
-    retention_score:        retentionScore,
-    milestone_markers:      milestoneMarkers,
-    chore_events:           choreEvents,
+    learning_lab_enabled:        learningLabEnabled,
+    current_module:              currentModule,
+    completed_module_slugs:      completedModuleSlugs,
+    retention_score:             retentionScore,
+    milestone_markers:           milestoneMarkers,
+    chore_events:                choreEvents,
+    lab_module_progress:         labModuleProgress,
+    lab_acts_completed:          labActsCompleted,
+    lab_time_invested_minutes:   labTimeInvestedMinutes,
+    lab_last_active_at:          labLastActiveAt,
   });
 }
 
