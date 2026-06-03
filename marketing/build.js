@@ -142,6 +142,10 @@ function generatePricingCards(pricing) {
           </ul>`;
     }).join('\n');
 
+    const plusNote = plan.plus_note
+      ? `<div class="plan-plus-note">${plan.plus_note}</div>`
+      : '';
+
     return `
         <div class="plan-card${featuredClass} reveal">
           ${badge}
@@ -153,6 +157,7 @@ function generatePricingCards(pricing) {
           </div>
           <div class="plan-one-time">One-time payment</div>
           <hr class="plan-divider" />
+          ${plusNote}
           ${groups}
           <div class="plan-trial">14-day full-access trial</div>
         </div>`;

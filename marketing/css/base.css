@@ -598,6 +598,8 @@ body.dark .nav-trigger,
 body.dark .nav-item > a { color: var(--text-light); }
 body.dark .nav-panel { background: var(--bg-dark); border-color: var(--border-dark); }
 body.dark .nav-panel a { color: var(--text-light); }
+body.dark .nav-item-title { color: var(--text-light); }
+body.dark .nav-item-desc  { color: var(--text-light-sub); }
 body.dark .nav-toggle span { background: var(--text-light); }
 @media (max-width: 919px) {
   body.dark .nav-list { background: var(--bg-dark); }
