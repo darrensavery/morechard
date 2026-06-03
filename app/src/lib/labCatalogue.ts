@@ -47,6 +47,25 @@ export interface QuizQuestion {
   explanation: string
 }
 
+/** Per-act time estimates in minutes. Vary by module complexity. */
+export interface ActMinutes {
+  hook:   number
+  lesson: number
+  lab:    number
+  quiz:   number
+}
+
+export function totalMinutes(am: ActMinutes): number {
+  return am.hook + am.lesson + am.lab + am.quiz
+}
+
+export function remainingMinutes(am: ActMinutes, completedActs: number[]): number {
+  const actKeys: (keyof ActMinutes)[] = ['hook', 'lesson', 'lab', 'quiz']
+  return actKeys.reduce((sum, key, i) => {
+    return completedActs.includes(i + 1) ? sum : sum + am[key]
+  }, 0)
+}
+
 export interface ModuleDef {
   slug:         ModuleSlug
   title:        string
@@ -56,6 +75,7 @@ export interface ModuleDef {
   icon:         React.ComponentType<{ size?: number; className?: string; style?: React.CSSProperties }>
   triggerHint:  string
   description:  string
+  actMinutes:   ActMinutes
   hook:         (d: ChildLabData) => ReactNode
   lesson:       (d: ChildLabData) => ReactNode
   lab:          (d: ChildLabData) => ReactNode
@@ -102,6 +122,7 @@ export const MODULES: ModuleDef[] = [
     icon:        Receipt,
     triggerHint: 'Earn your first £20 to unlock',
     description: 'Why your pay slip shows less than you earned — and where the rest goes.',
+    actMinutes:  { hook: 2, lesson: 5, lab: 7, quiz: 4 },  // 18 min total
     hook: (d) => React.createElement('div', { className: 'flex flex-col gap-3' },
       React.createElement('p', { className: 'text-[15px] font-bold leading-snug' },
         d.appView === 'ORCHARD'
@@ -202,6 +223,7 @@ export const MODULES: ModuleDef[] = [
     icon:        ShieldAlert,
     triggerHint: 'Triggered when a suspicious item is flagged',
     description: 'How scams are designed to look real — and the signals that give them away.',
+    actMinutes:  { hook: 1, lesson: 4, lab: 5, quiz: 4 },  // 14 min total
     hook: (_d) => React.createElement('div', { className: 'flex flex-col gap-3' },
       React.createElement('p', { className: 'text-[15px] font-bold leading-snug' },
         'Something in your orchard smells like blight. Scams grow fast and look delicious — let\'s learn how to spot them before they spread.'
@@ -281,6 +303,7 @@ export const MODULES: ModuleDef[] = [
     icon:        Landmark,
     triggerHint: 'Save up to £30 to unlock',
     description: 'Accounts, debit vs credit, and why a jar under the bed is a bad plan.',
+    actMinutes:  { hook: 2, lesson: 5, lab: 6, quiz: 3 },  // 16 min total
     hook: (d) => React.createElement('div', { className: 'flex flex-col gap-3' },
       React.createElement('p', { className: 'text-[15px] font-bold leading-snug' },
         d.appView === 'ORCHARD'
@@ -374,6 +397,7 @@ export const MODULES: ModuleDef[] = [
     icon:        TrendingUp,
     triggerHint: 'Save consistently for 4 weeks to unlock',
     description: 'How compound interest makes money grow faster the longer you leave it.',
+    actMinutes:  { hook: 2, lesson: 6, lab: 10, quiz: 4 }, // 22 min — numerically rich Lab
     hook: (d) => React.createElement('div', { className: 'flex flex-col gap-3' },
       React.createElement('p', { className: 'text-[15px] font-bold leading-snug' },
         d.appView === 'ORCHARD'
@@ -484,6 +508,7 @@ export const MODULES: ModuleDef[] = [
     icon:        TrendingDown,
     triggerHint: 'Triggered when a parental loan is requested',
     description: 'What borrowing actually costs — and why minimum payments are a trap.',
+    actMinutes:  { hook: 2, lesson: 5, lab: 7, quiz: 3 },  // 17 min total
     hook: (_d) => React.createElement('div', { className: 'flex flex-col gap-3' },
       React.createElement('p', { className: 'text-[15px] font-bold leading-snug' },
         'Borrowing tomorrow\'s seeds to buy today\'s fruit can work. But the vine always wants something back.'
@@ -576,6 +601,7 @@ export const MODULES: ModuleDef[] = [
     icon:        Gauge,
     triggerHint: 'No new chores for 21 days triggers this',
     description: 'Why money "shrinks" if it just sits still — and what to do about it.',
+    actMinutes:  { hook: 1, lesson: 5, lab: 6, quiz: 3 },  // 15 min total
     hook: (d) => React.createElement('div', { className: 'flex flex-col gap-3' },
       React.createElement('p', { className: 'text-[15px] font-bold leading-snug' },
         d.appView === 'ORCHARD'
@@ -669,6 +695,7 @@ export const MODULES: ModuleDef[] = [
     icon:        Smartphone,
     triggerHint: 'Create a gaming goal to unlock',
     description: 'V-Bucks, Robux, Gems — why in-game currency disconnects you from real money.',
+    actMinutes:  { hook: 1, lesson: 4, lab: 5, quiz: 3 },  // 13 min — concise Lab
     hook: (_d) => React.createElement('div', { className: 'flex flex-col gap-3' },
       React.createElement('p', { className: 'text-[15px] font-bold leading-snug' },
         'V-Bucks, Robux, Gems — the orchard has a dark corner selling "magic seeds" that only grow inside one walled garden. Let\'s map the exit.'
@@ -744,7 +771,7 @@ export const MODULES: ModuleDef[] = [
   // ── Level 3 modules — stubs (populate lesson/lab/quiz from spec docs) ─────
 
   {
-    slug: 'M3', title: 'Entrepreneurship', pillar: 1, level: 3, icon: Briefcase,
+    slug: 'M3', title: 'Entrepreneurship', pillar: 1, level: 3, icon: Briefcase, actMinutes: { hook: 2, lesson: 7, lab: 8, quiz: 3 },  // 20 min
     triggerHint: 'Complete 10 different types of chore to unlock',
     description: 'What it means to make the work work for you — not just do more of it.',
     hook: (d) => React.createElement('p', { className: 'text-[14px] leading-relaxed' },
@@ -756,7 +783,7 @@ export const MODULES: ModuleDef[] = [
   },
 
   {
-    slug: 'M3b', title: 'Gig Trap vs Salary Safety', pillar: 1, level: 3, icon: Scale,
+    slug: 'M3b', title: 'Gig Trap vs Salary Safety', pillar: 1, level: 3, icon: Scale, actMinutes: { hook: 2, lesson: 6, lab: 8, quiz: 3 },  // 19 min
     triggerHint: 'Triggered by variable earnings week to week',
     description: 'The trade-off between high-potential gig income and the safety of steady pay.',
     hook: (_d) => React.createElement('p', { className: 'text-[14px] leading-relaxed' },
@@ -768,7 +795,7 @@ export const MODULES: ModuleDef[] = [
   },
 
   {
-    slug: 'M6', title: 'Advertising & Influence', pillar: 2, level: 3, icon: Megaphone,
+    slug: 'M6', title: 'Advertising & Influence', pillar: 2, level: 3, icon: Megaphone, actMinutes: { hook: 1, lesson: 5, lab: 6, quiz: 4 },  // 16 min
     triggerHint: 'Triggered by repeat spending in the same category',
     description: 'How advertising is designed to make you want things — and how to notice it.',
     hook: (_d) => React.createElement('p', { className: 'text-[14px] leading-relaxed' },
@@ -780,7 +807,7 @@ export const MODULES: ModuleDef[] = [
   },
 
   {
-    slug: 'M9', title: 'Opportunity Cost', pillar: 3, level: 3, icon: GitFork,
+    slug: 'M9', title: 'Opportunity Cost', pillar: 3, level: 3, icon: GitFork, actMinutes: { hook: 2, lesson: 6, lab: 7, quiz: 3 },  // 18 min
     triggerHint: 'Triggered when a goal is cancelled after a competing purchase',
     description: 'Every yes is a hidden no — how to make trade-offs consciously.',
     hook: (_d) => React.createElement('p', { className: 'text-[14px] leading-relaxed' },
@@ -792,7 +819,7 @@ export const MODULES: ModuleDef[] = [
   },
 
   {
-    slug: 'M11', title: 'Credit Scores & Trust', pillar: 4, level: 3, icon: Star,
+    slug: 'M11', title: 'Credit Scores & Trust', pillar: 4, level: 3, icon: Star, actMinutes: { hook: 2, lesson: 5, lab: 7, quiz: 3 },  // 17 min
     triggerHint: 'Achieve 90% reliability over 8 weeks to unlock',
     description: 'How your financial reliability becomes a number — and why it matters.',
     hook: (d) => React.createElement('p', { className: 'text-[14px] leading-relaxed' },
@@ -804,7 +831,7 @@ export const MODULES: ModuleDef[] = [
   },
 
   {
-    slug: 'M12', title: 'Good vs Bad Debt', pillar: 4, level: 3, icon: CreditCard,
+    slug: 'M12', title: 'Good vs Bad Debt', pillar: 4, level: 3, icon: CreditCard, actMinutes: { hook: 2, lesson: 7, lab: 8, quiz: 4 },  // 21 min — builds on M10
     triggerHint: 'Complete The Interest Trap module first',
     description: 'Not all debt is equal — a mortgage and a payday loan are not the same thing.',
     hook: (_d) => React.createElement('p', { className: 'text-[14px] leading-relaxed' },
@@ -816,7 +843,7 @@ export const MODULES: ModuleDef[] = [
   },
 
   {
-    slug: 'M18', title: 'Money & Mental Health', pillar: 6, level: 3, icon: Heart,
+    slug: 'M18', title: 'Money & Mental Health', pillar: 6, level: 3, icon: Heart, actMinutes: { hook: 1, lesson: 5, lab: 5, quiz: 4 },  // 15 min — reflective, less numerical
     triggerHint: 'Triggered after a purchase you felt mixed about',
     description: 'Buyer\'s remorse, contentment, and why getting the thing doesn\'t fix the feeling.',
     hook: (_d) => React.createElement('p', { className: 'text-[14px] leading-relaxed' },
@@ -828,7 +855,7 @@ export const MODULES: ModuleDef[] = [
   },
 
   {
-    slug: 'M18b', title: 'Social Comparison', pillar: 6, level: 3, icon: Users,
+    slug: 'M18b', title: 'Social Comparison', pillar: 6, level: 3, icon: Users, actMinutes: { hook: 1, lesson: 4, lab: 6, quiz: 3 },  // 14 min
     triggerHint: 'Triggered when spending follows a peer\'s purchase',
     description: 'Why "keeping up" is a race with no finish line — and how to opt out.',
     hook: (_d) => React.createElement('p', { className: 'text-[14px] leading-relaxed' },
@@ -842,7 +869,7 @@ export const MODULES: ModuleDef[] = [
   // ── Level 4 modules ───────────────────────────────────────────────────────
 
   {
-    slug: 'M13', title: 'Stocks & Shares', pillar: 5, level: 4, icon: BarChart2,
+    slug: 'M13', title: 'Stocks & Shares', pillar: 5, level: 4, icon: BarChart2, actMinutes: { hook: 2, lesson: 8, lab: 10, quiz: 5 }, // 25 min — most complex Level 4
     triggerHint: 'Earn £100 lifetime to unlock',
     description: 'Fractional ownership of companies — and why long-term investors usually win.',
     hook: (d) => React.createElement('p', { className: 'text-[14px] leading-relaxed' },
@@ -854,7 +881,7 @@ export const MODULES: ModuleDef[] = [
   },
 
   {
-    slug: 'M15', title: 'Risk & Diversification', pillar: 5, level: 4, icon: PieChart,
+    slug: 'M15', title: 'Risk & Diversification', pillar: 5, level: 4, icon: PieChart, actMinutes: { hook: 2, lesson: 7, lab: 10, quiz: 4 }, // 23 min
     triggerHint: 'Have 3 active goals including one long-term goal',
     description: 'Don\'t put all your seeds in one basket — the maths of spreading risk.',
     hook: (d) => React.createElement('p', { className: 'text-[14px] leading-relaxed' },

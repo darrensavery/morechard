@@ -4,7 +4,7 @@
 
 import { useState, useEffect } from 'react'
 import { X, ChevronLeft, ChevronRight, CheckCircle2 } from 'lucide-react'
-import { MODULES, PILLARS, type ModuleSlug, type ChildLabData } from '../../lib/labCatalogue'
+import { MODULES, PILLARS, type ModuleSlug, type ChildLabData, type ActMinutes } from '../../lib/labCatalogue'
 import { completeLabAct } from '../../lib/api'
 
 const ACT_LABELS = ['Hook', 'Lesson', 'Lab', 'Quiz'] as const
@@ -154,6 +154,7 @@ export function ModuleReader({ slug, childData, completedActs, onActComplete, on
           </span>
           <span className="text-[10px] text-[var(--color-text-muted)]">
             {childData.appView === 'ORCHARD' ? pillar.orchardName : pillar.name}
+            {' · '}~{(mod.actMinutes as ActMinutes)[(['hook','lesson','lab','quiz'] as (keyof ActMinutes)[])[actIndex]]}m
           </span>
         </div>
         <button

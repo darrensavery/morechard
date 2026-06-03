@@ -6,7 +6,7 @@ import { useState, useEffect } from 'react'
 import { Lock, ChevronRight, BookOpen } from 'lucide-react'
 import { getLabModules, type LabModulesResponse } from '../../lib/api'
 import {
-  MODULES, LEVEL_LABELS, PILLARS,
+  MODULES, LEVEL_LABELS, PILLARS, totalMinutes, remainingMinutes,
   type ModuleSlug, type AgeLevel, type AppView, type ChildLabData,
 } from '../../lib/labCatalogue'
 import { ModuleReader } from './ModuleReader'
@@ -178,6 +178,8 @@ export function LabTab({ appView }: LabTabProps) {
                 // ── Unlocked ──
                 const completedActs = labData.modules[mod.slug]?.completed_acts ?? []
                 const allDone       = completedActs.length === 4
+                const minsLeft      = remainingMinutes(mod.actMinutes, completedActs)
+                const totalMins     = totalMinutes(mod.actMinutes)
 
                 return (
                   <button
@@ -197,9 +199,13 @@ export function LabTab({ appView }: LabTabProps) {
                         <span className="text-[9px] font-bold text-[var(--brand-primary)] flex-shrink-0 mt-0.5">
                           ✓ Done
                         </span>
+                      ) : completedActs.length > 0 ? (
+                        <span className="text-[10px] text-[var(--color-text-muted)] flex-shrink-0 tabular-nums">
+                          ~{minsLeft}m left
+                        </span>
                       ) : (
                         <span className="text-[10px] text-[var(--color-text-muted)] flex-shrink-0 tabular-nums">
-                          {completedActs.length}/4
+                          ~{totalMins}m
                         </span>
                       )}
                     </div>
