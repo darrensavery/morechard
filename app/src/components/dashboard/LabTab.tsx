@@ -49,8 +49,28 @@ export function LabTab({ appView }: LabTabProps) {
     <p className="text-[13px] text-red-500 pt-2">{error ?? 'No data'}</p>
   )
 
+  const totalUnlocked = Object.keys(labData.modules).length
+  const totalModules  = MODULES.length
+
   return (
     <div className="flex flex-col gap-7">
+
+      {/* ── Introduction ── */}
+      <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 flex flex-col gap-2">
+        <h2 className="text-[14px] font-bold text-[var(--color-text)] leading-snug">
+          {appView === 'ORCHARD' ? 'The Orchard Curriculum' : 'Learning Lab'}
+        </h2>
+        <p className="text-[13px] text-[var(--color-text-muted)] leading-relaxed">
+          {appView === 'ORCHARD'
+            ? 'Each module unlocks when you do something real — earn your first £20, save for four weeks in a row, or set a goal. The lessons use your actual data, not made-up numbers.'
+            : 'Modules unlock based on your activity — earnings, goals, and spending patterns. Each lesson is calculated using your real figures.'}
+        </p>
+        {totalUnlocked > 0 && (
+          <p className="text-[11px] font-semibold text-[var(--brand-primary)]">
+            {totalUnlocked} of {totalModules} modules unlocked
+          </p>
+        )}
+      </div>
 
       {levels.map(level => {
         const levelModules  = MODULES.filter(m => m.level === level)
