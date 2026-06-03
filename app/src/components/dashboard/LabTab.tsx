@@ -56,18 +56,39 @@ export function LabTab({ appView }: LabTabProps) {
     <div className="flex flex-col gap-7">
 
       {/* ── Introduction ── */}
-      <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 flex flex-col gap-2">
+      <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 flex flex-col gap-3">
         <h2 className="text-[14px] font-bold text-[var(--color-text)] leading-snug">
           {appView === 'ORCHARD' ? 'The Orchard Curriculum' : 'Learning Lab'}
         </h2>
-        <p className="text-[13px] text-[var(--color-text-muted)] leading-relaxed">
-          {appView === 'ORCHARD'
-            ? 'Each module unlocks when you do something real — earn your first £20, save for four weeks in a row, or set a goal. The lessons use your actual data, not made-up numbers.'
-            : 'Modules unlock based on your activity — earnings, goals, and spending patterns. Each lesson is calculated using your real figures.'}
-        </p>
+
+        {appView === 'ORCHARD' ? (
+          <p className="text-[13px] text-[var(--color-text-muted)] leading-relaxed">
+            Seventeen modules on the money skills that actually matter — how wages work, how to spot a financial trap before it closes, how savings compound into something real.
+            The kind of knowledge most adults had to learn the hard way, usually after it cost them.
+          </p>
+        ) : (
+          <p className="text-[13px] text-[var(--color-text-muted)] leading-relaxed">
+            17 modules covering earnings, tax, saving, debt, and investment — financial concepts most adults encountered too late.
+            Each lesson uses your actual figures, not textbook examples.
+          </p>
+        )}
+
+        {/* Unlock mechanic */}
+        <div className="flex items-start gap-2.5 pt-1 border-t border-[var(--color-border)]">
+          <svg className="flex-shrink-0 mt-0.5" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--brand-primary)" strokeWidth="2" strokeLinecap="round">
+            <rect x="3" y="11" width="18" height="11" rx="2"/>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+          </svg>
+          <p className="text-[12px] text-[var(--color-text-muted)] leading-relaxed">
+            {appView === 'ORCHARD'
+              ? 'Modules don\'t unlock by tapping buttons — they unlock when you do something. Save for four weeks and compound interest opens. Create a gaming goal and digital currency unlocks. The lesson arrives at the moment it\'s relevant to you.'
+              : 'Modules unlock based on your activity, not a fixed schedule. Save consistently for four weeks and compound interest triggers. Each lesson arrives when your data makes it directly relevant.'}
+          </p>
+        </div>
+
         {totalUnlocked > 0 && (
           <p className="text-[11px] font-semibold text-[var(--brand-primary)]">
-            {totalUnlocked} of {totalModules} modules unlocked
+            {totalUnlocked} of {totalModules} unlocked
           </p>
         )}
       </div>
