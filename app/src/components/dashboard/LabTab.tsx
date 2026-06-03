@@ -3,7 +3,7 @@
 // No chat input — the Mentor is observation-driven, not interactive.
 
 import { useState, useEffect } from 'react'
-import { Lock, ChevronRight, BookOpen } from 'lucide-react'
+import { Lock, BookOpen } from 'lucide-react'
 import { getLabModules, type LabModulesResponse } from '../../lib/api'
 import {
   MODULES, LEVEL_LABELS, PILLARS, totalMinutes, remainingMinutes,
@@ -11,15 +11,25 @@ import {
 } from '../../lib/labCatalogue'
 import { ModuleReader } from './ModuleReader'
 
+const INTRO_DISMISSED_KEY = 'lab_intro_dismissed'
+
 interface LabTabProps {
   appView: AppView
 }
 
 export function LabTab({ appView }: LabTabProps) {
-  const [labData,    setLabData]    = useState<LabModulesResponse | null>(null)
-  const [loading,    setLoading]    = useState(true)
-  const [error,      setError]      = useState<string | null>(null)
-  const [activeSlug, setActiveSlug] = useState<ModuleSlug | null>(null)
+  const [labData,       setLabData]       = useState<LabModulesResponse | null>(null)
+  const [loading,       setLoading]       = useState(true)
+  const [error,         setError]         = useState<string | null>(null)
+  const [activeSlug,    setActiveSlug]    = useState<ModuleSlug | null>(null)
+  const [introDismissed, setIntroDismissed] = useState(() =>
+    typeof localStorage !== 'undefined' && localStorage.getItem(INTRO_DISMISSED_KEY) === '1'
+  )
+
+  function dismissIntro() {
+    localStorage.setItem(INTRO_DISMISSED_KEY, '1')
+    setIntroDismissed(true)
+  }
 
   useEffect(() => {
     let cancelled = false
@@ -56,42 +66,54 @@ export function LabTab({ appView }: LabTabProps) {
     <div className="flex flex-col gap-7">
 
       {/* ── Introduction ── */}
-      <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 flex flex-col gap-3">
-        <h2 className="text-[14px] font-bold text-[var(--color-text)] leading-snug">
-          {appView === 'ORCHARD' ? 'The Orchard Curriculum' : 'Learning Lab'}
-        </h2>
+      {!introDismissed && (
+        <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 flex flex-col gap-3 relative">
+          {/* Dismiss button */}
+          <button
+            onClick={dismissIntro}
+            className="absolute top-3 right-3 w-6 h-6 rounded-lg flex items-center justify-center text-[var(--color-text-muted)] hover:bg-[var(--color-surface-alt)] cursor-pointer"
+            aria-label="Dismiss introduction"
+          >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+              <path d="M18 6 6 18M6 6l12 12"/>
+            </svg>
+          </button>
 
-        {appView === 'ORCHARD' ? (
-          <p className="text-[13px] text-[var(--color-text-muted)] leading-relaxed">
-            Seventeen modules on the money skills that actually matter — how wages work, how to spot a financial trap before it closes, how savings compound into something real.
-            The kind of knowledge most adults had to learn the hard way, usually after it cost them.
-          </p>
-        ) : (
-          <p className="text-[13px] text-[var(--color-text-muted)] leading-relaxed">
-            17 modules covering earnings, tax, saving, debt, and investment — financial concepts most adults encountered too late.
-            Each lesson uses your actual figures, not textbook examples.
-          </p>
-        )}
+          <h2 className="text-[14px] font-bold text-[var(--color-text)] leading-snug pr-6">
+            {appView === 'ORCHARD' ? 'The Orchard Curriculum' : 'Learning Lab'}
+          </h2>
 
-        {/* Unlock mechanic */}
-        <div className="flex items-start gap-2.5 pt-1 border-t border-[var(--color-border)]">
-          <svg className="flex-shrink-0 mt-0.5" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--brand-primary)" strokeWidth="2" strokeLinecap="round">
-            <rect x="3" y="11" width="18" height="11" rx="2"/>
-            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-          </svg>
-          <p className="text-[12px] text-[var(--color-text-muted)] leading-relaxed">
-            {appView === 'ORCHARD'
-              ? 'Modules don\'t unlock by tapping buttons — they unlock when you do something. Save for four weeks and compound interest opens. Create a gaming goal and digital currency unlocks. The lesson arrives at the moment it\'s relevant to you.'
-              : 'Modules unlock based on your activity, not a fixed schedule. Save consistently for four weeks and compound interest triggers. Each lesson arrives when your data makes it directly relevant.'}
-          </p>
+          {appView === 'ORCHARD' ? (
+            <p className="text-[13px] text-[var(--color-text-muted)] leading-relaxed">
+              Seventeen modules on the money skills that actually matter — how wages work, how to spot a financial trap before it closes, how savings compound into something real.
+              The kind of knowledge most adults had to learn the hard way, usually after it cost them.
+            </p>
+          ) : (
+            <p className="text-[13px] text-[var(--color-text-muted)] leading-relaxed">
+              17 modules covering earnings, tax, saving, debt, and investment — financial concepts most adults encountered too late.
+              Each lesson uses your actual figures, not textbook examples.
+            </p>
+          )}
+
+          <div className="flex items-start gap-2.5 pt-1 border-t border-[var(--color-border)]">
+            <svg className="flex-shrink-0 mt-0.5" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--brand-primary)" strokeWidth="2" strokeLinecap="round">
+              <rect x="3" y="11" width="18" height="11" rx="2"/>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+            </svg>
+            <p className="text-[12px] text-[var(--color-text-muted)] leading-relaxed">
+              {appView === 'ORCHARD'
+                ? 'Modules don\'t unlock by tapping buttons — they unlock when you do something. Save for four weeks and compound interest opens. Create a gaming goal and digital currency unlocks.'
+                : 'Modules unlock based on your activity. Save consistently for four weeks and compound interest triggers. Each lesson arrives when your data makes it directly relevant.'}
+            </p>
+          </div>
+
+          {totalUnlocked > 0 && (
+            <p className="text-[11px] font-semibold text-[var(--brand-primary)]">
+              {totalUnlocked} of {totalModules} unlocked
+            </p>
+          )}
         </div>
-
-        {totalUnlocked > 0 && (
-          <p className="text-[11px] font-semibold text-[var(--brand-primary)]">
-            {totalUnlocked} of {totalModules} unlocked
-          </p>
-        )}
-      </div>
+      )}
 
       {levels.map(level => {
         const levelModules  = MODULES.filter(m => m.level === level)
@@ -143,15 +165,14 @@ export function LabTab({ appView }: LabTabProps) {
                 // ── Too advanced ──
                 if (isFuture) {
                   return (
-                    <div
-                      key={mod.slug}
-                      className="rounded-xl border border-[var(--color-border)] p-3 opacity-30 flex flex-col gap-2"
-                    >
-                      <div className="w-7 h-7 rounded-lg flex items-center justify-center bg-[var(--color-border)]">
-                        <Lock size={12} className="text-[var(--color-text-muted)]" />
+                    <div key={mod.slug} className="rounded-xl overflow-hidden opacity-30 flex flex-col" style={{ background: 'var(--color-surface-alt)' }}>
+                      <div className="w-full overflow-hidden" style={{ height: 64, background: 'var(--color-border)' }}>
+                        {mod.illustration(true)}
                       </div>
-                      <p className="text-[11px] font-semibold text-[var(--color-text-muted)] leading-tight">{mod.title}</p>
-                      <p className="text-[10px] text-[var(--color-text-muted)]">{levelLabel}</p>
+                      <div className="p-2.5 flex flex-col gap-1">
+                        <p className="text-[11px] font-semibold text-[var(--color-text-muted)] leading-tight">{mod.title}</p>
+                        <p className="text-[9px] text-[var(--color-text-muted)]">{levelLabel}</p>
+                      </div>
                     </div>
                   )
                 }
@@ -159,18 +180,18 @@ export function LabTab({ appView }: LabTabProps) {
                 // ── Locked (within level) ──
                 if (!isUnlocked) {
                   return (
-                    <div
-                      key={mod.slug}
-                      className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-3 flex flex-col gap-2"
-                    >
-                      <div
-                        className="w-7 h-7 rounded-lg flex items-center justify-center"
-                        style={{ backgroundColor: 'var(--color-border)' }}
-                      >
-                        <Lock size={12} className="text-[var(--color-text-muted)]" />
+                    <div key={mod.slug} className="rounded-xl overflow-hidden flex flex-col" style={{ background: 'var(--color-surface-alt)' }}>
+                      <div className="w-full overflow-hidden relative" style={{ height: 64 }}>
+                        {mod.illustration(true)}
+                        {/* Lock badge */}
+                        <div className="absolute bottom-1.5 right-1.5 w-5 h-5 rounded-full bg-[var(--color-surface)] border border-[var(--color-border)] flex items-center justify-center">
+                          <Lock size={9} className="text-[var(--color-text-muted)]" />
+                        </div>
                       </div>
-                      <p className="text-[11px] font-semibold text-[var(--color-text)] leading-tight">{mod.title}</p>
-                      <p className="text-[10px] text-[var(--color-text-muted)] leading-tight">{mod.triggerHint}</p>
+                      <div className="p-2.5 flex flex-col gap-1">
+                        <p className="text-[11px] font-bold text-[var(--color-text)] leading-tight">{mod.title}</p>
+                        <p className="text-[9px] text-[var(--color-text-muted)] leading-tight">{mod.triggerHint}</p>
+                      </div>
                     </div>
                   )
                 }
@@ -185,39 +206,33 @@ export function LabTab({ appView }: LabTabProps) {
                   <button
                     key={mod.slug}
                     onClick={() => setActiveSlug(mod.slug as ModuleSlug)}
-                    className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-3 flex flex-col gap-2 text-left cursor-pointer transition-all hover:border-[var(--brand-primary)] hover:shadow-sm"
-                    style={{ borderLeftWidth: 3, borderLeftColor: 'var(--brand-primary)' }}
+                    className="rounded-xl overflow-hidden flex flex-col text-left cursor-pointer transition-all hover:shadow-md hover:-translate-y-px active:translate-y-0"
+                    style={{ background: 'var(--color-surface)', boxShadow: '0 1px 4px rgba(0,0,0,0.07)' }}
                   >
-                    <div className="flex items-start justify-between gap-1">
-                      <div
-                        className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
-                        style={{ backgroundColor: 'rgba(0,149,156,0.08)' }}
-                      >
-                        <Icon size={13} style={{ color: 'var(--brand-primary)' }} />
-                      </div>
+                    {/* Illustration */}
+                    <div className="w-full overflow-hidden relative" style={{ height: 64, background: 'rgba(0,149,156,0.05)' }}>
+                      {mod.illustration(false)}
+                      {/* Status badge */}
                       {allDone ? (
-                        <span className="text-[9px] font-bold text-[var(--brand-primary)] flex-shrink-0 mt-0.5">
+                        <span className="absolute top-1.5 right-1.5 text-[8px] font-bold px-1.5 py-0.5 rounded-full text-white" style={{ background: 'var(--brand-primary)' }}>
                           ✓ Done
                         </span>
                       ) : completedActs.length > 0 ? (
-                        <span className="text-[10px] text-[var(--color-text-muted)] flex-shrink-0 tabular-nums">
+                        <span className="absolute top-1.5 right-1.5 text-[8px] font-semibold px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(0,149,156,0.12)', color: 'var(--brand-primary)' }}>
                           ~{minsLeft}m left
                         </span>
                       ) : (
-                        <span className="text-[10px] text-[var(--color-text-muted)] flex-shrink-0 tabular-nums">
+                        <span className="absolute top-1.5 right-1.5 text-[8px] text-[var(--color-text-muted)] font-medium px-1.5 py-0.5 rounded-full bg-white/70">
                           ~{totalMins}m
                         </span>
                       )}
                     </div>
 
-                    <div className="flex flex-col gap-0.5">
-                      <p className="text-[12px] font-bold text-[var(--color-text)] leading-tight">{mod.title}</p>
-                      <p className="text-[10px] text-[var(--color-text-muted)] leading-tight line-clamp-2">{mod.description}</p>
-                    </div>
-
-                    <div className="flex items-center gap-1 mt-auto pt-0.5">
-                      <span className="text-[9px] text-[var(--color-text-muted)]">{pillarLabel}</span>
-                      <ChevronRight size={9} className="text-[var(--color-text-muted)]" />
+                    {/* Text content */}
+                    <div className="p-2.5 flex flex-col gap-1 flex-1">
+                      <p className="text-[11px] font-bold text-[var(--color-text)] leading-tight">{mod.title}</p>
+                      <p className="text-[9px] text-[var(--color-text-muted)] leading-tight line-clamp-2">{mod.description}</p>
+                      <p className="text-[9px] text-[var(--brand-primary)] mt-auto pt-1">{pillarLabel}</p>
                     </div>
                   </button>
                 )
