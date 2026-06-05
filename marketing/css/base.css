@@ -672,7 +672,7 @@ body.dark .cookie-banner {
   display: flex;
   align-items: center;
   gap: 22px;
-  padding: 18px 22px;
+  padding: 12px 22px;
 }
 .cookie-banner__title {
   font-family: var(--font-display);
