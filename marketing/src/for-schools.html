@@ -93,7 +93,10 @@
   .mx-note p { font-size: 12px; line-height: 1.6; color: rgba(237,237,240,0.62); margin: 0; } .mx-note em { color: rgba(237,237,240,0.82); font-style: italic; }
 
   /* ── Learning Lab preview (interactive) ── */
-  .lp-tabs { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 36px; margin-bottom: 22px; }
+  .lp-tabs { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 36px; margin-bottom: 14px; }
+  .lp-progress { height: 3px; border-radius: 99px; background: rgba(27,45,46,0.09); overflow: hidden; margin: 0 0 22px; }
+  body.dark .lp-progress { background: rgba(255,255,255,0.10); }
+  .lp-progress-fill { height: 100%; background: var(--teal); transform: scaleX(0); transform-origin: left center; }
   .lp-tab { font-family: var(--font-body); font-size: 14px; font-weight: 500; color: var(--text-sub); background: var(--bg-cream); border: 1px solid var(--border-light); border-radius: var(--r-pill); padding: 9px 18px; cursor: pointer; transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 8px; }
   .lp-tab .lp-tab-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--teal); }
   .lp-tab[data-k="2"] .lp-tab-dot { background: var(--gold); }
@@ -259,6 +262,24 @@
   .step-h { font-family: var(--font-display); font-size: 20px; font-weight: 500; color: var(--text-dark); margin-bottom: 9px; }
   body.dark .step-h { color: var(--text-light); }
   .step-p { font-size: 14.5px; line-height: 1.6; color: var(--text-sub); } body.dark .step-p { color: var(--text-light-sub); }
+
+  /* ── Animated quote rotator ── */
+  .quote-band { background: var(--teal-06); }
+  body.dark .quote-band { background: rgba(0,149,156,0.10); }
+  .qr { max-width: 860px; margin: 0 auto; text-align: center; position: relative; }
+  .qr-mark { font-family: var(--font-display); font-size: 70px; line-height: 0.6; color: var(--teal); opacity: 0.32; display: block; }
+  .qr-stage { position: relative; min-height: 170px; }
+  @media (max-width: 600px) { .qr-stage { min-height: 250px; } }
+  .qr-item { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: center; opacity: 0; transform: translateY(12px); transition: opacity 0.6s cubic-bezier(0.16,1,0.3,1), transform 0.6s cubic-bezier(0.16,1,0.3,1); pointer-events: none; }
+  .qr-item.is-active { opacity: 1; transform: none; pointer-events: auto; }
+  .qr-text { font-family: var(--font-display); font-weight: 500; font-size: clamp(22px, 3vw, 33px); line-height: 1.3; letter-spacing: -0.01em; color: var(--text-dark); }
+  body.dark .qr-text { color: var(--text-light); }
+  .qr-cite { display: block; margin-top: 18px; font-style: normal; font-size: 12.5px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: var(--teal); }
+  .qr-dots { display: flex; justify-content: center; gap: 9px; margin-top: 28px; }
+  .qr-dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(27,45,46,0.18); border: 0; cursor: pointer; padding: 0; transition: background 0.2s ease, transform 0.2s ease; }
+  body.dark .qr-dot { background: rgba(255,255,255,0.22); }
+  .qr-dot:hover { background: rgba(27,45,46,0.35); }
+  .qr-dot.is-active { background: var(--teal); transform: scale(1.3); }
 </style>
 
 <main class="audience-page">
@@ -292,6 +313,25 @@
     </div>
   </section>
 
+  <!-- ── Animated quote rotator ── -->
+  <section class="audience-section quote-band">
+    <div class="container">
+      <div class="qr reveal" id="qr">
+        <span class="qr-mark" aria-hidden="true">&ldquo;</span>
+        <div class="qr-stage" aria-live="polite">
+          <div class="qr-item is-active"><p class="qr-text">Children's money habits are largely set by the age of seven.</p><cite class="qr-cite">University of Cambridge, 2013</cite></div>
+          <div class="qr-item"><p class="qr-text">Two in five UK adults have less than &pound;1,000 in savings.</p><cite class="qr-cite">Finder, 2026</cite></div>
+          <div class="qr-item"><p class="qr-text">Two thirds of under-35s say money worries have hurt their mental health.</p><cite class="qr-cite">Mental Health Foundation</cite></div>
+        </div>
+        <div class="qr-dots">
+          <button class="qr-dot is-active" type="button" aria-label="Quote 1"></button>
+          <button class="qr-dot" type="button" aria-label="Quote 2"></button>
+          <button class="qr-dot" type="button" aria-label="Quote 3"></button>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- ── Matrix dashboard ── -->
   <section class="audience-section" id="matrix">
     <div class="container">
@@ -303,7 +343,7 @@
         <div class="mx-stats">
           <div class="mx-stat"><span class="mx-stat-num" data-count="25">0</span><span class="mx-stat-label">Curriculum modules, behaviour-triggered</span></div>
           <div class="mx-stat is-teal"><span class="mx-stat-num" data-count="5">0</span><span class="mx-stat-label">Published frameworks mapped</span></div>
-          <div class="mx-stat"><span class="mx-stat-num" data-count="3">0</span><span class="mx-stat-label">UK nations' curricula</span></div>
+          <div class="mx-stat"><span class="mx-stat-num" data-count="100">0</span><span class="mx-stat-label">Five-minute acts &middot; 6+ hours of content</span></div>
           <div class="mx-stat is-gold"><span class="mx-stat-num">&pound;0</span><span class="mx-stat-label">To pilot with a class</span></div>
         </div>
         <div class="mx-tabs" role="tablist" aria-label="Filter by framework">
@@ -387,6 +427,7 @@
         <button class="lp-tab" data-k="1" role="tab" aria-selected="false"><span class="lp-tab-dot"></span> The Snowball</button>
         <button class="lp-tab" data-k="2" role="tab" aria-selected="false"><span class="lp-tab-dot"></span> Gambling &amp; Loot Boxes</button>
       </div>
+      <div class="lp-progress reveal" aria-hidden="true"><div class="lp-progress-fill" id="lp-progress-fill"></div></div>
 
       <div class="lp-stage reveal">
 
@@ -802,18 +843,58 @@
     });
   })();
 
-  // ── Learning Lab preview: tab switching ──
+  // ── Learning Lab preview: auto-playing carousel (progress bar + pause on hover) ──
   (function () {
+    var stage = document.querySelector('.lp-stage');
     var tabs = Array.from(document.querySelectorAll('.lp-tab'));
     var panels = Array.from(document.querySelectorAll('.lp-panel'));
-    if (!tabs.length) return;
-    tabs.forEach(function (tab) {
-      tab.addEventListener('click', function () {
-        var k = tab.dataset.k;
-        tabs.forEach(function (t) { var on = t === tab; t.classList.toggle('is-active', on); t.setAttribute('aria-selected', String(on)); });
-        panels.forEach(function (p) { p.classList.toggle('is-active', p.dataset.k === k); });
-      });
-    });
+    var fill = document.getElementById('lp-progress-fill');
+    if (!stage || !tabs.length) return;
+    var DWELL = 7000, reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var cur = 0, startT = 0, lastTs = 0, paused = false;
+    function show(k) {
+      cur = ((k % tabs.length) + tabs.length) % tabs.length;
+      tabs.forEach(function (t, i) { var on = i === cur; t.classList.toggle('is-active', on); t.setAttribute('aria-selected', String(on)); });
+      panels.forEach(function (p) { p.classList.toggle('is-active', +p.dataset.k === cur); });
+    }
+    function reset() { startT = 0; if (fill) fill.style.transform = 'scaleX(0)'; }
+    function loop(ts) {
+      if (!startT) startT = ts;
+      if (paused) startT += ts - lastTs;
+      lastTs = ts;
+      var pct = Math.min((ts - startT) / DWELL, 1);
+      if (fill) fill.style.transform = 'scaleX(' + pct + ')';
+      if (pct >= 1) { startT = ts; show(cur + 1); }
+      requestAnimationFrame(loop);
+    }
+    tabs.forEach(function (tab, i) { tab.addEventListener('click', function () { show(i); reset(); }); });
+    show(0);
+    if (reduce) return;
+    stage.addEventListener('mouseenter', function () { paused = true; });
+    stage.addEventListener('mouseleave', function () { paused = false; });
+    requestAnimationFrame(loop);
+  })();
+
+  // ── Animated quote rotator (auto-rotate + dots + pause on hover) ──
+  (function () {
+    var qr = document.getElementById('qr');
+    if (!qr) return;
+    var items = Array.from(qr.querySelectorAll('.qr-item'));
+    var dots = Array.from(qr.querySelectorAll('.qr-dot'));
+    if (!items.length) return;
+    var DWELL = 6000, reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var cur = 0, timer = null;
+    function go(k) {
+      cur = ((k % items.length) + items.length) % items.length;
+      items.forEach(function (it, i) { it.classList.toggle('is-active', i === cur); });
+      dots.forEach(function (d, i) { d.classList.toggle('is-active', i === cur); });
+    }
+    function start() { if (reduce) return; stop(); timer = setInterval(function () { go(cur + 1); }, DWELL); }
+    function stop() { if (timer) { clearInterval(timer); timer = null; } }
+    dots.forEach(function (d, i) { d.addEventListener('click', function () { go(i); start(); }); });
+    qr.addEventListener('mouseenter', stop);
+    qr.addEventListener('mouseleave', start);
+    go(0); start();
   })();
 
   // ── Evidence: per-card coverage bar + number count-up (each card as it enters) ──
