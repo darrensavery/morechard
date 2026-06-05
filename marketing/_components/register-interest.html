@@ -23,6 +23,7 @@
             <div class="form-options">
               <button type="button" class="form-option" data-group="contact_type" data-value="parent">Parent</button>
               <button type="button" class="form-option" data-group="contact_type" data-value="professional">Professional</button>
+              <button type="button" class="form-option" data-group="contact_type" data-value="educator">School / Educator</button>
             </div>
           </div>
 
@@ -68,3 +69,82 @@
       </div>
     </div>
   </section>
+
+  <script>
+  /* register-interest form handler - shared across audience pages that include this component */
+  (function () {
+    var form = document.getElementById('interest-form');
+    if (!form || form.dataset.wired) return;
+    form.dataset.wired = '1';
+    var emailInput  = document.getElementById('email-input');
+    var consentBox  = document.getElementById('consent-check');
+    var submitBtn   = document.getElementById('submit-btn');
+    var btnLabel    = document.getElementById('btn-label');
+    var btnArrow    = document.getElementById('btn-arrow');
+    var formPill    = document.getElementById('form-pill');
+    var formError   = document.getElementById('form-error');
+    var formSuccess = document.getElementById('form-success');
+    var qFamilyType = document.getElementById('q-family-type');
+    var EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+    var selections = { contact_type: null, family_type: null };
+
+    form.querySelectorAll('.form-option').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var group = btn.dataset.group;
+        form.querySelectorAll('[data-group="' + group + '"]').forEach(function (b) { b.classList.remove('selected'); });
+        btn.classList.add('selected');
+        selections[group] = btn.dataset.value;
+        if (group === 'contact_type') {
+          if (btn.dataset.value === 'parent') {
+            qFamilyType.classList.remove('hidden');
+          } else {
+            qFamilyType.classList.add('hidden');
+            selections.family_type = null;
+            form.querySelectorAll('[data-group="family_type"]').forEach(function (b) { b.classList.remove('selected'); });
+          }
+        }
+        updateSubmit();
+      });
+    });
+
+    function updateSubmit() {
+      var emailOk  = EMAIL_RE.test(emailInput.value.trim());
+      var typeOk   = selections.contact_type !== null;
+      var familyOk = selections.contact_type !== 'parent' || selections.family_type !== null;
+      submitBtn.disabled = !(emailOk && consentBox.checked && typeOk && familyOk);
+    }
+    emailInput.addEventListener('input', updateSubmit);
+    consentBox.addEventListener('change', updateSubmit);
+
+    function showError(msg) { formError.textContent = msg; formError.classList.add('visible'); formPill.classList.add('error'); }
+    function clearError() { formError.classList.remove('visible'); formPill.classList.remove('error'); }
+    function setLoading(on) {
+      if (on) { btnLabel.innerHTML = '<span class="spinner"></span>'; if (btnArrow) btnArrow.style.display = 'none'; submitBtn.disabled = true; }
+      else { btnLabel.textContent = 'Notify me'; if (btnArrow) btnArrow.style.display = ''; updateSubmit(); }
+    }
+
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      clearError();
+      var email = emailInput.value.trim().toLowerCase();
+      if (!EMAIL_RE.test(email)) { showError('Please enter a valid email address.'); emailInput.focus(); return; }
+      setLoading(true);
+      fetch('https://morechard-api.darren-savery.workers.dev/api/public/interest', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email, consent: true, contact_type: selections.contact_type, family_type: selections.family_type })
+      }).then(function (res) {
+        if (res.ok) {
+          try { if (window.posthog && posthog.capture) posthog.capture('signup_submitted', { contact_type: selections.contact_type, family_type: selections.family_type }); } catch (e) {}
+          form.style.display = 'none';
+          formSuccess.classList.add('visible');
+        } else {
+          return res.json().catch(function () { return {}; }).then(function (data) { showError((data && data.error) || 'Something went wrong - please try again.'); setLoading(false); });
+        }
+      }).catch(function () {
+        showError('Something went wrong - please check your connection and try again.');
+        setLoading(false);
+      });
+    });
+  })();
+  </script>

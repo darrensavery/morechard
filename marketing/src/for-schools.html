@@ -155,6 +155,9 @@
   .lp-action { background: var(--teal); color: #fff; border-radius: var(--r-card); padding: 18px 20px; }
   .lp-action-label { font-size: 10.5px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: rgba(255,255,255,0.8); margin-bottom: 6px; }
   .lp-action p { font-size: 14.5px; line-height: 1.4; color: #fff; margin: 0; font-weight: 500; }
+  .lp-more { margin-top: 26px; text-align: center; font-size: 15px; color: var(--text-sub); }
+  .lp-more a { color: var(--teal); font-weight: 500; text-decoration: none; }
+  .lp-more a:hover { text-decoration: underline; }
 
   /* ── Benefits: bento ── */
   .bento { display: grid; grid-template-columns: repeat(6, 1fr); gap: 18px; margin-top: 40px; }
@@ -310,25 +313,6 @@
     <div class="container">
       <p class="reveal">Financial education has been on the curriculum since 2014. The gap was never the intention - it's the time, the timetable, and the fact that a lesson on compound interest rarely lands when a 13-year-old has nothing yet to compound.</p>
       <p class="reveal d1">Morechard closes that gap from the other side. The concepts are yours to teach; we make them real at home - triggered by the child's own money, at the exact moment the idea finally means something.</p>
-    </div>
-  </section>
-
-  <!-- ── Animated quote rotator ── -->
-  <section class="audience-section quote-band">
-    <div class="container">
-      <div class="qr reveal" id="qr">
-        <span class="qr-mark" aria-hidden="true">&ldquo;</span>
-        <div class="qr-stage" aria-live="polite">
-          <div class="qr-item is-active"><p class="qr-text">Children's money habits are largely set by the age of seven.</p><cite class="qr-cite">University of Cambridge, 2013</cite></div>
-          <div class="qr-item"><p class="qr-text">Two in five UK adults have less than &pound;1,000 in savings.</p><cite class="qr-cite">Finder, 2026</cite></div>
-          <div class="qr-item"><p class="qr-text">Two thirds of under-35s say money worries have hurt their mental health.</p><cite class="qr-cite">Mental Health Foundation</cite></div>
-        </div>
-        <div class="qr-dots">
-          <button class="qr-dot is-active" type="button" aria-label="Quote 1"></button>
-          <button class="qr-dot" type="button" aria-label="Quote 2"></button>
-          <button class="qr-dot" type="button" aria-label="Quote 3"></button>
-        </div>
-      </div>
     </div>
   </section>
 
@@ -519,6 +503,7 @@
         </div>
 
       </div>
+      <p class="lp-more reveal">Prefer to see a full module unfold, act by act? <a href="/features/financial-literacy.html#see-a-module">Watch a module in action &rarr;</a></p>
     </div>
   </section>
 
@@ -719,6 +704,25 @@
     </div>
   </section>
 
+  <!-- ── Animated quote rotator (reinforcing evidence) ── -->
+  <section class="audience-section quote-band">
+    <div class="container">
+      <div class="qr reveal" id="qr">
+        <span class="qr-mark" aria-hidden="true">&ldquo;</span>
+        <div class="qr-stage" aria-live="polite">
+          <div class="qr-item is-active"><p class="qr-text">Children's money habits are largely set by the age of seven.</p><cite class="qr-cite">University of Cambridge, 2013</cite></div>
+          <div class="qr-item"><p class="qr-text">Two in five UK adults have less than &pound;1,000 in savings.</p><cite class="qr-cite">Finder, 2026</cite></div>
+          <div class="qr-item"><p class="qr-text">Two thirds of under-35s say money worries have hurt their mental health.</p><cite class="qr-cite">Mental Health Foundation</cite></div>
+        </div>
+        <div class="qr-dots">
+          <button class="qr-dot is-active" type="button" aria-label="Quote 1"></button>
+          <button class="qr-dot" type="button" aria-label="Quote 2"></button>
+          <button class="qr-dot" type="button" aria-label="Quote 3"></button>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- ── Getting started (stepper) ── -->
   <section class="audience-section">
     <div class="container">
@@ -850,7 +854,7 @@
     var panels = Array.from(document.querySelectorAll('.lp-panel'));
     var fill = document.getElementById('lp-progress-fill');
     if (!stage || !tabs.length) return;
-    var DWELL = 7000, reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var DWELL = 12000, reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     var cur = 0, startT = 0, lastTs = 0, paused = false;
     function show(k) {
       cur = ((k % tabs.length) + tabs.length) % tabs.length;

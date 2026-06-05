@@ -48,7 +48,7 @@ export async function handlePublicInterest(request: Request, env: Env): Promise<
     return error('Consent is required', 400)
   }
 
-  const VALID_CONTACT_TYPES = ['parent', 'professional']
+  const VALID_CONTACT_TYPES = ['parent', 'professional', 'educator']
   const VALID_FAMILY_TYPES  = ['single_household', 'multi_household']
   const contactType = typeof body.contact_type === 'string' && VALID_CONTACT_TYPES.includes(body.contact_type) ? body.contact_type : null
   const familyType  = typeof body.family_type  === 'string' && VALID_FAMILY_TYPES.includes(body.family_type)   ? body.family_type  : null
