@@ -10,10 +10,12 @@
  */
 
 import { useState, useEffect, useMemo, useCallback } from 'react'
-import { Database, FileText, Scale, AlertTriangle, Download, Lock, Zap, Shield } from 'lucide-react'
+import { Database, FileText, Scale, AlertTriangle, Download, Lock, Zap, Shield, BarChart3 } from 'lucide-react'
 import { Toast, useToast, SettingsRow, SectionCard, SectionHeader } from '../shared'
-import { getFamilyId, type ShieldUpgradePrice } from '../../../lib/api'
+import { getFamilyId, postAnalyticsConsent, type ShieldUpgradePrice } from '../../../lib/api'
 import { useExportManager } from '../../../hooks/useExportManager'
+import { hasAnalyticsConsent, grantAnalyticsConsent, revokeAnalyticsConsent } from '../../../lib/analytics'
+import { cn } from '../../../lib/utils'
 
 interface Props {
   isLead:              boolean
@@ -37,6 +39,26 @@ export function DataSettings({
 
   const [pruneStep, setPruneStep] = useState<PruneStep>('idle')
   const { toast: localToast, showToast } = useToast()
+
+  const [analyticsOn, setAnalyticsOn] = useState(hasAnalyticsConsent())
+  const toggleAnalytics = useCallback(() => {
+    setAnalyticsOn(prev => {
+      const next = !prev
+      if (next) {
+        grantAnalyticsConsent()
+        showToast('Usage analytics on — thank you')
+      } else {
+        revokeAnalyticsConsent()
+        showToast('Usage analytics off')
+      }
+      // Record this parent's vote server-side; the worker recomputes the
+      // family-effective child flag (veto model). Best-effort.
+      postAnalyticsConsent(next).catch(err =>
+        console.error('[consent] failed to record analytics consent:', err)
+      )
+      return next
+    })
+  }, [showToast])
 
   // React to prune completion
   useEffect(() => {
@@ -93,6 +115,45 @@ export function DataSettings({
       {localToast && <Toast message={localToast} />}
 
       <SectionHeader title="Data & Exports" onBack={onBack} />
+
+      {/* Privacy — analytics consent (withdraw as easily as it was given) */}
+      <SectionCard>
+        <div className="px-3 pt-3 pb-1">
+          <p className="text-[10px] font-semibold text-[var(--color-text-muted)] uppercase tracking-wider">
+            Privacy
+          </p>
+        </div>
+        <div className="flex items-start gap-3 px-4 py-3">
+          <span className="shrink-0 w-8 h-8 rounded-xl flex items-center justify-center bg-[color-mix(in_srgb,var(--brand-primary)_10%,transparent)] text-[var(--brand-primary)]">
+            <BarChart3 size={15} />
+          </span>
+          <div className="flex-1 min-w-0">
+            <p className="text-[13px] font-semibold text-[var(--color-text)]">Usage analytics</p>
+            <p className="text-[11px] text-[var(--color-text-muted)] mt-0.5 leading-snug">
+              Share anonymous usage data to help improve Morechard. No ads, never sold,
+              and your children's screens are never recorded.
+            </p>
+          </div>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={analyticsOn}
+            aria-label="Usage analytics"
+            onClick={toggleAnalytics}
+            className={cn(
+              'relative w-11 h-6 rounded-full transition-colors shrink-0 cursor-pointer mt-0.5',
+              analyticsOn ? 'bg-teal-600' : 'bg-gray-300',
+            )}
+          >
+            <span
+              className={cn(
+                'absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform',
+                analyticsOn && 'translate-x-5',
+              )}
+            />
+          </button>
+        </div>
+      </SectionCard>
 
       {/* Family Summary — always available */}
       <SectionCard>

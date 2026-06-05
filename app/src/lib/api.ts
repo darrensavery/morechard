@@ -1020,6 +1020,19 @@ export async function getMarketingConsent(): Promise<{ consented: boolean | null
   );
 }
 
+/** Record this parent's analytics choice. Server recomputes the family-effective child flag. */
+export async function postAnalyticsConsent(consented: boolean): Promise<{ child_analytics: boolean }> {
+  return request<{ ok: boolean; child_analytics: boolean }>('/api/consent/analytics', {
+    method: 'POST',
+    body: JSON.stringify({ consented }),
+  });
+}
+
+/** Family-effective child analytics flag (veto model). Any family member may read it. */
+export async function getAnalyticsEffective(): Promise<{ child_analytics: boolean }> {
+  return request<{ child_analytics: boolean }>('/api/consent/analytics/effective');
+}
+
 // ----------------------------------------------------------------
 // Shared Expenses
 // ----------------------------------------------------------------

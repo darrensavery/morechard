@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "wrangler dev",
+    "dev": "wrangler dev --local",
     "deploy": "wrangler deploy",
     "db:migrate": "wrangler d1 migrations apply morechard",
     "db:migrate:local": "wrangler d1 migrations apply morechard --local",

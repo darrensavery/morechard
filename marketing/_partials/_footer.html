@@ -47,6 +47,7 @@
           <ul>
             <li><a href="/privacy-policy.html">Privacy Policy</a></li>
             <li><a href="/terms.html">Terms of Use</a></li>
+            <li><a href="#" data-cookie-settings>Cookie settings</a></li>
           </ul>
         </div>
 
@@ -58,3 +59,78 @@
       <p class="footer-copy">&copy; 2026 Morechard. All rights reserved.</p>
     </div>
   </footer>
+
+  <!-- ── Cookie consent banner (non-blocking, GDPR/PECR-style) ── -->
+  <section id="cookie-banner" class="cookie-banner" role="region" aria-label="Cookie consent" hidden>
+    <div class="cookie-banner__inner">
+      <div class="cookie-banner__text">
+        <p class="cookie-banner__title">We value your privacy</p>
+        <p class="cookie-banner__body">
+          Morechard uses analytics cookies only to understand how the site is used so we can make it
+          better. Nothing loads until you choose &mdash; and you can change your mind anytime.
+          See our <a href="/privacy-policy.html#cookies">cookie&nbsp;notice</a>.
+        </p>
+      </div>
+      <div class="cookie-banner__actions">
+        <button type="button" class="cookie-btn cookie-btn--ghost" data-cookie="decline">Decline</button>
+        <button type="button" class="cookie-btn cookie-btn--accept" data-cookie="accept">Accept cookies</button>
+      </div>
+    </div>
+  </section>
+
+  <script>
+  (function () {
+    var KEY = 'mc_cookie_consent';
+    var banner = document.getElementById('cookie-banner');
+    if (!banner) return;
+
+    function store(status) {
+      try {
+        localStorage.setItem(KEY, JSON.stringify({ status: status, ts: new Date().toISOString(), v: 1 }));
+      } catch (e) {}
+    }
+    function decided() {
+      try {
+        var s = JSON.parse(localStorage.getItem(KEY) || 'null');
+        return !!(s && (s.status === 'accepted' || s.status === 'declined'));
+      } catch (e) { return false; }
+    }
+    function show() {
+      banner.hidden = false;
+      requestAnimationFrame(function () { banner.classList.add('is-visible'); });
+    }
+    function hide() {
+      banner.classList.remove('is-visible');
+      banner.addEventListener('transitionend', function te() {
+        banner.hidden = true;
+        banner.removeEventListener('transitionend', te);
+      });
+    }
+
+    banner.addEventListener('click', function (ev) {
+      var btn = ev.target.closest('[data-cookie]');
+      if (!btn) return;
+      if (btn.getAttribute('data-cookie') === 'accept') {
+        store('accepted');
+        if (typeof window.mcLoadPostHog === 'function') window.mcLoadPostHog();
+      } else {
+        store('declined');
+        // If analytics already ran this session, withdraw consent properly.
+        if (window.posthog && window.posthog.opt_out_capturing) {
+          try { window.posthog.opt_out_capturing(); window.posthog.reset(); } catch (e) {}
+        }
+      }
+      hide();
+    });
+
+    // Footer "Cookie settings" link re-opens the banner so the choice can be changed.
+    document.addEventListener('click', function (ev) {
+      var link = ev.target.closest('[data-cookie-settings]');
+      if (!link) return;
+      ev.preventDefault();
+      show();
+    });
+
+    if (!decided()) show();
+  })();
+  </script>

@@ -57,12 +57,14 @@ export function Stage1ParentIdentity({ data, onNext }: Props) {
   const [marketingConsent, setMarketingConsent] = useState<boolean | null>(
     data.marketing_consent ?? null
   )
+  // Non-essential product analytics — required yes/no with no default (GDPR: no pre-selection).
+  const [analyticsConsent, setAnalyticsConsent] = useState<boolean | null>(data.analytics_consent ?? null)
   const [touched, setTouch] = useState<Record<string, boolean>>({})
   const [submitted, setSubmitted] = useState(false)
 
   const strength = getStrength(password)
 
-  const canContinue = !!displayName.trim() && isValidEmail(email) && password.length >= 8 && marketingConsent !== null
+  const canContinue = !!displayName.trim() && isValidEmail(email) && password.length >= 8 && marketingConsent !== null && analyticsConsent !== null
 
   // Live validation — only show errors after field is touched or submit attempted
   const errors = {
@@ -70,6 +72,7 @@ export function Stage1ParentIdentity({ data, onNext }: Props) {
     email:            !isValidEmail(email)     ? 'Enter a valid email address' : '',
     password:         password.length < 8     ? 'Minimum 8 characters' : '',
     marketingConsent: marketingConsent === null ? 'Please make a selection' : '',
+    analyticsConsent: analyticsConsent === null ? 'Please make a selection' : '',
   }
 
   const showError = (field: keyof typeof errors) =>
@@ -81,7 +84,7 @@ export function Stage1ParentIdentity({ data, onNext }: Props) {
 
   function handleNext() {
     setSubmitted(true)
-    if (errors.displayName || errors.email || errors.password || errors.marketingConsent) return
+    if (errors.displayName || errors.email || errors.password || errors.marketingConsent || errors.analyticsConsent) return
     vibrate()
     onNext({
       display_name:      displayName.trim(),
@@ -90,6 +93,7 @@ export function Stage1ParentIdentity({ data, onNext }: Props) {
       parenting_mode:    parentingMode,
       governance_mode:   parentingMode === 'co-parenting' ? 'standard' : 'amicable',
       marketing_consent: marketingConsent!,
+      analytics_consent: analyticsConsent!,
     })
   }
 
@@ -281,6 +285,56 @@ export function Stage1ParentIdentity({ data, onNext }: Props) {
         {submitted && errors.marketingConsent && (
           <p className="text-xs text-red-500 font-medium pl-1 mt-1.5">
             {errors.marketingConsent}
+          </p>
+        )}
+      </fieldset>
+
+      {/* ── Analytics consent (required, no default) ─────────────────── */}
+      <fieldset>
+        <legend className={cn(
+          'text-sm font-semibold mb-1.5',
+          (submitted && errors.analyticsConsent) ? 'text-red-500' : 'text-gray-700',
+        )}>
+          Help improve Morechard with usage analytics?
+        </legend>
+        <p className="text-xs text-gray-500 leading-relaxed mb-3">
+          Anonymous data on what's used, to make the app better. No ads, never sold,
+          and your children's screens are never recorded. Change it anytime in Settings.
+        </p>
+        <div className="flex flex-col gap-2">
+          {([
+            { value: true,  label: "Yes, that's fine" },
+            { value: false, label: 'No thanks' },
+          ] as const).map(({ value, label }) => (
+            <label
+              key={String(value)}
+              className={cn(
+                'flex items-center gap-3 rounded-xl border px-4 py-3 cursor-pointer transition-all duration-150',
+                analyticsConsent === value
+                  ? 'border-teal-500 bg-teal-50'
+                  : 'border-gray-200 bg-white hover:border-gray-300',
+              )}
+            >
+              <input
+                type="radio"
+                name="analytics_consent"
+                value={String(value)}
+                checked={analyticsConsent === value}
+                onChange={() => setAnalyticsConsent(value)}
+                className="accent-teal-600 w-4 h-4 shrink-0"
+              />
+              <span className={cn(
+                'text-sm font-medium',
+                analyticsConsent === value ? 'text-teal-700' : 'text-gray-500',
+              )}>
+                {label}
+              </span>
+            </label>
+          ))}
+        </div>
+        {submitted && errors.analyticsConsent && (
+          <p className="text-xs text-red-500 font-medium pl-1 mt-1.5">
+            {errors.analyticsConsent}
           </p>
         )}
       </fieldset>

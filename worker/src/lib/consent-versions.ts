@@ -3,3 +3,6 @@ export const CONSENT_VERSIONS: Record<string, string> = {
 }
 
 export const CURRENT_CONSENT_VERSION = 'v1'
+
+// Analytics/cookies consent is a separate consent from marketing email.
+export const ANALYTICS_CONSENT_VERSION = 'analytics-v1'

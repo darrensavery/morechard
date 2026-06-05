@@ -3,7 +3,8 @@ import {
   getDetails, setDetails, clearDetails, type StoredBankDetails,
 } from './localBankDetails';
 
-beforeEach(() => { localStorage.clear(); });
+// localBankDetails uses sessionStorage (see localBankDetails.ts) — clear that store.
+beforeEach(() => { sessionStorage.clear(); });
 
 describe('localBankDetails', () => {
   test('setDetails then getDetails round-trips', () => {
@@ -49,7 +50,7 @@ describe('localBankDetails', () => {
   });
 
   test('survives corrupt JSON gracefully', () => {
-    localStorage.setItem('morechard.bankdetails.v1.fam_1', 'not-json');
+    sessionStorage.setItem('morechard.bankdetails.v1.fam_1', 'not-json');
     expect(getDetails('fam_1', 'c_abc')).toBeNull();
   });
 });

@@ -55,6 +55,9 @@ export async function evaluateOnChoreApproval(db: D1Database, childId: string): 
   // M13 — Stocks & Shares: cumulative >= £100 (10000 pence)
   if (lifetimeEarnings >= 10000) await unlock(db, childId, 'M13')
 
+  // M19 — Pensions & The Long Game: cumulative >= £150 (15000 pence)
+  if (lifetimeEarnings >= 15000) await unlock(db, childId, 'M19')
+
   // M3 — Entrepreneurship: 10+ distinct chore types AND avg > £3 (300 pence)
   if (distinctChores >= 10 && avgChoreValue > 300) await unlock(db, childId, 'M3')
 
@@ -99,6 +102,9 @@ export async function evaluatePassive(db: D1Database, childId: string): Promise<
 
   if ((balRow?.bal ?? 0) >= 3000) await unlock(db, childId, 'M8')
 
+  // M16 — Insurance & Protection: current balance >= £75 (7500 pence)
+  if ((balRow?.bal ?? 0) >= 7500) await unlock(db, childId, 'M16')
+
   // M9b — The Snowball: active goal AND current_streak >= 4
   const [activeGoalRow, streakRow] = await Promise.all([
     db.prepare(`SELECT id FROM goals WHERE child_id = ? AND archived = 0 LIMIT 1`).bind(childId).first(),
@@ -138,6 +144,9 @@ export async function evaluateOnGoalCreate(
       `SELECT COUNT(*) AS cnt FROM goals WHERE child_id = ? AND category = 'gaming'`
     ).bind(childId).first<{ cnt: number }>()
     if ((countRow?.cnt ?? 0) <= 1) await unlock(db, childId, 'M17')
+
+    // M20 — Gambling & Loot Boxes: repeated gaming spend (2nd+ gaming goal)
+    if ((countRow?.cnt ?? 0) >= 2) await unlock(db, childId, 'M20')
   }
 
   // M15 — Risk & Diversification: 3+ active goals with at least one long-term (>90 days)
@@ -178,6 +187,9 @@ export async function evaluateOnGoalCancel(
 // Call when a goal is marked as purchased.
 
 export async function evaluateOnGoalPurchase(db: D1Database, childId: string): Promise<void> {
+  // M21 — Consumer Rights & Contracts: any completed goal purchase (every purchase is a contract)
+  await unlock(db, childId, 'M21')
+
   // M6 — Advertising & Influence: 3+ payments in same non-essential category within 30 days
   const thirtyDaysAgo = Math.floor(Date.now() / 1000) - 30 * 86400
   const purchaseRow = await db.prepare(

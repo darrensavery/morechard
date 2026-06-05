@@ -159,7 +159,6 @@ export function LabTab({ appView }: LabTabProps) {
             <div className="grid grid-cols-2 gap-2.5">
               {levelModules.map(mod => {
                 const isUnlocked  = unlockedSlugs.has(mod.slug)
-                const Icon        = mod.icon
                 const pillarLabel = appView === 'ORCHARD' ? PILLARS[mod.pillar].orchardName : PILLARS[mod.pillar].name
 
                 // ── Too advanced ──

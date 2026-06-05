@@ -17,7 +17,7 @@ import { FullLogo }                     from '@/components/ui/Logo'
 import { cn }                           from '@/lib/utils'
 import { getDeviceIdentity, setDeviceIdentity, toInitials, hashPin } from '@/lib/deviceIdentity'
 import { isBiometricsAvailable, registerBiometrics }        from '@/lib/biometrics'
-import { analytics, track }             from '@/lib/analytics'
+import { analytics, track, applyInheritedChildConsent } from '@/lib/analytics'
 import { apiUrl }                       from '@/lib/api'
 import * as Sentry                      from '@sentry/react'
 
@@ -34,6 +34,8 @@ interface RedeemResponse {
   user_id:     string
   family_id:   string
   display_name?: string
+  /** Family-effective analytics decision (veto model) — present for child joins. */
+  child_analytics?: boolean
 }
 
 // ── Main screen ───────────────────────────────────────────────────────────────
@@ -241,6 +243,13 @@ export function JoinFamilyScreen() {
       auth_method:    authMethod,
       pin_hash,
     })
+
+    // Child devices inherit the family-effective analytics decision (events only,
+    // replay always off). Apply before identify so capture is live if allowed.
+    // Co-parents arrive with no consent and stay off until they opt in via Settings.
+    if (role === 'child') {
+      applyInheritedChildConsent(redeemedData.child_analytics ?? false)
+    }
 
     Sentry.setUser({ id: redeemedData.user_id })
     Sentry.setTag('auth_method', authMethod)

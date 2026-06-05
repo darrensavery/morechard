@@ -5,6 +5,14 @@
     "price_dec": ".99",
     "badge": "",
     "featured": false,
+    "tagline": "Everything you need to run a fair, structured pocket money system.",
+    "summary_mode": true,
+    "summary_groups": [
+      { "label": "Chores & Ledger", "detail": "SHA-256 immutable ledger, 64 built-in chores, streak awards, flash chores & photo proof" },
+      { "label": "Goals & Money", "detail": "Savings Grove goals, Rate Guide benchmarking, payment bridge & overdraft facility" },
+      { "label": "Family & Access", "detail": "Unlimited children, 6-digit child codes, multi-household compatible & avatar personalisation" }
+    ],
+    "compare_link": "#compare",
     "groups": [
       {
         "label": "Chores & Ledger",
@@ -58,14 +66,15 @@
     "badge": "Most Popular",
     "featured": true,
     "plus_note": "Everything in Core, plus:",
+    "tagline": "See how your child is growing — not just what they've earned.",
     "groups": [
       {
         "label": "AI & Insights",
         "check_color": "purple",
         "items": [
-          "Parent Insights AI",
-          "AI Mentor coaching",
-          "Learning Lab (20-module financial curriculum)"
+          { "title": "Parent Insights AI", "desc": "Weekly AI brief on your child's consistency, earning velocity, and savings behaviour — with trend deltas vs the week before." },
+          { "title": "AI Mentor coaching", "desc": "Personalised financial coaching for your child, triggered by their real chore and earnings data. Not generic advice — context it actually knows." },
+          { "title": "Learning Lab", "desc": "20-module financial literacy curriculum covering budgeting, saving, and smart spending — sequenced to your child's age and progress." }
         ]
       }
     ]
@@ -78,14 +87,16 @@
     "badge": "",
     "featured": false,
     "plus_note": "Everything in Core AI, plus:",
+    "tagline": "For separated and co-parenting families who need a record that holds up.",
     "groups": [
       {
         "label": "Legal & Records",
         "check_color": "gold",
         "items": [
-          "Tamper-evident PDF exports",
-          "Court-ready audit export",
-          "Ledger seal & verification"
+          { "title": "Tamper-evident PDF exports", "desc": "Cryptographically sealed records, accepted by UK family courts and solicitors. Each export carries a SHA-256 hash proving it hasn't been altered." },
+          { "title": "Court-ready audit export", "desc": "Complete chronological history of every transaction, approval, and chore — formatted to documentary evidence standards." },
+          { "title": "Co-parent verified sharing", "desc": "Separate logins for both households. Each parent sees what they need; neither can edit the other's view of the record." },
+          { "title": "Ledger seal & verification", "desc": "A QR-verifiable seal on every export so a mediator, solicitor, or judge can confirm authenticity without specialist tools." }
         ]
       }
     ]

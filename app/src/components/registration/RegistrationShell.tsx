@@ -19,6 +19,7 @@ import { Stage4CoParentBridge }     from './Stage4CoParentBridge'
 import { WelcomeNudge }             from './WelcomeNudge'
 import { createFamily, requestMagicLink, saveRegistrationStep } from '@/lib/api'
 import { detectLocale, type AppLocale } from '@/lib/locale'
+import { grantAnalyticsConsent, setAnalyticsConsent } from '@/lib/analytics'
 
 // ── Shared state ─────────────────────────────────────────────────────────────
 
@@ -38,6 +39,8 @@ export interface RegistrationState {
   governance_mode?: 'amicable' | 'standard'
 
   marketing_consent?: boolean
+  /** Opt-in for non-essential product analytics (PostHog). Off unless explicitly chosen. */
+  analytics_consent?: boolean
 
   // Step 2
   base_currency?: 'GBP' | 'USD' | 'PLN'   // add USD
@@ -94,6 +97,14 @@ export function RegistrationShell({ onComplete }: Props) {
 
     try {
       if (step === 1) {
+        // Persist the analytics opt-in for this (parent) device. Granting starts
+        // PostHog immediately so the rest of onboarding is measured; declining
+        // records the choice and keeps analytics off.
+        if (merged.analytics_consent === true) {
+          grantAnalyticsConsent()
+        } else {
+          setAnalyticsConsent(false)
+        }
         // Step 1 just collects identity — advance to Step 2 (currency) first
         setSaving(false)
         setStep(2)
@@ -121,9 +132,12 @@ export function RegistrationShell({ onComplete }: Props) {
           merged.user_id   = familyResult.user_id
           setState(merged)
 
-          // Store consent choice for posting after email verification (no JWT yet at this point)
+          // Store consent choices for posting after email verification (no JWT yet at this point)
           if (typeof merged.marketing_consent === 'boolean') {
             localStorage.setItem('mc_pending_consent', String(merged.marketing_consent))
+          }
+          if (typeof merged.analytics_consent === 'boolean') {
+            localStorage.setItem('mc_pending_analytics_consent', String(merged.analytics_consent))
           }
 
           // Send magic link — user must verify email before continuing

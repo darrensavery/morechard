@@ -8,13 +8,15 @@ import {
   Receipt, ShieldAlert, Landmark, TrendingUp, TrendingDown, Gauge,
   Smartphone, Briefcase, Scale, Megaphone, GitFork, Star, CreditCard,
   Heart, Users, BarChart2, PieChart,
+  Umbrella, Hourglass, Dices, ScrollText,
 } from 'lucide-react'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 export type ModuleSlug =
   | 'M2' | 'M3' | 'M3b' | 'M5' | 'M6' | 'M8' | 'M9' | 'M9b'
-  | 'M10' | 'M11' | 'M12' | 'M13' | 'M14' | 'M15' | 'M17' | 'M18' | 'M18b'
+  | 'M10' | 'M11' | 'M12' | 'M13' | 'M14' | 'M15' | 'M16' | 'M17' | 'M18' | 'M18b'
+  | 'M19' | 'M20' | 'M21'
 
 export type AgeLevel = 1 | 2 | 3 | 4   // 1=Sprout(Phase2), 2=Sapling, 3=Oak, 4=Canopy
 export type AppView  = 'ORCHARD' | 'CLEAN'
@@ -1123,5 +1125,439 @@ export const MODULES: ModuleDef[] = [
     lesson: (_d) => React.createElement('p', { className: 'text-[14px] text-[var(--color-text-muted)]' }, 'Content coming soon — see docs/notebooklm/09-module-15-risk-and-diversification.md Act 2'),
     lab: (_d) => React.createElement('p', { className: 'text-[14px] text-[var(--color-text-muted)]' }, 'Interactive lab coming soon'),
     quiz: [],
+  },
+
+  // ── M16: Insurance & Protection ──────────────────────────────────────────
+  {
+    slug:        'M16',
+    title:       'Insurance & Protection',
+    pillar:      5,
+    level:       3,
+    icon:        Umbrella,
+    triggerHint: 'Save up to £75 to unlock',
+    description: 'Why paying a little, often, can protect you from a loss you couldn\'t afford.',
+    actMinutes:  { hook: 2, lesson: 6, lab: 6, quiz: 4 },  // 18 min total
+    illustration: (locked) => React.createElement('svg', { width: '100%', height: 64, viewBox: '0 0 160 64', fill: 'none' },
+      // Rain — coral drops (the risks)
+      React.createElement('line', { x1: 40, y1: 8, x2: 36, y2: 16, stroke: cRed(locked, 0.5), strokeWidth: 1.5, strokeLinecap: 'round' }),
+      React.createElement('line', { x1: 80, y1: 6, x2: 76, y2: 14, stroke: cRed(locked, 0.5), strokeWidth: 1.5, strokeLinecap: 'round' }),
+      React.createElement('line', { x1: 120, y1: 8, x2: 116, y2: 16, stroke: cRed(locked, 0.5), strokeWidth: 1.5, strokeLinecap: 'round' }),
+      // Umbrella canopy — teal (the protection)
+      React.createElement('path', { d: 'M44 30 C44 18 116 18 116 30 Z', fill: c(locked, 0.18), stroke: c(locked, 0.5), strokeWidth: 1.5 }),
+      React.createElement('line', { x1: 80, y1: 30, x2: 80, y2: 48, stroke: c(locked, 0.45), strokeWidth: 1.5, strokeLinecap: 'round' }),
+      React.createElement('path', { d: 'M80 48 C80 54 74 54 74 50', stroke: c(locked, 0.45), strokeWidth: 1.5, fill: 'none', strokeLinecap: 'round' }),
+      // Coin sheltered underneath — gold (what you're protecting)
+      React.createElement('circle', { cx: 80, cy: 40, r: 6, fill: cGold(locked, 0.6) }),
+      React.createElement('text', { x: 80, y: 43.5, fontSize: 8, textAnchor: 'middle', fill: cGold(locked, 0.95), fontWeight: 'bold' }, '£'),
+    ),
+    hook: (d) => React.createElement('div', { className: 'flex flex-col gap-3' },
+      React.createElement('p', { className: 'text-[15px] font-bold leading-snug' },
+        d.appView === 'ORCHARD'
+          ? `You've sheltered ${fmtPence(d.currentBalancePence, d.currency)} in your grove. One bad storm could flatten it overnight — unless you build a roof before the clouds arrive.`
+          : `You've built ${fmtPence(d.currentBalancePence, d.currency)} in savings. A single unexpected loss could wipe it out. Insurance is the tool that stops one bad day from undoing months of work.`
+      ),
+      React.createElement('p', { className: 'text-[14px] leading-relaxed' },
+        'Insurance is a deal: you pay a small, predictable amount regularly, and in return someone else agrees to cover a big, unpredictable loss if it happens. You\'re trading a small certain cost for protection against a large uncertain one.'
+      )
+    ),
+    lesson: (_d) => React.createElement('div', { className: 'flex flex-col gap-4' },
+      React.createElement('p', { className: 'text-[14px] leading-relaxed' },
+        React.createElement('strong', null, 'How it works — pooling risk: '),
+        'Thousands of people each pay a small amount (the ', React.createElement('strong', null, 'premium'), ') into a shared pot. Most won\'t need it. The few who suffer a big loss are paid from the pot. Everyone trades a little money for peace of mind.'
+      ),
+      React.createElement('p', { className: 'text-[14px] leading-relaxed' },
+        React.createElement('strong', null, 'The excess: '),
+        'When you claim, you usually pay the first slice yourself — the ', React.createElement('strong', null, 'excess'), '. A £400 phone claim with a £50 excess means the insurer pays £350 and you pay £50. A higher excess makes the premium cheaper, but leaves more to find if you claim.'
+      ),
+      React.createElement('div', { className: 'rounded-xl bg-[var(--color-surface-alt)] p-3 text-[13px] flex flex-col gap-2' },
+        React.createElement('p', null, React.createElement('strong', null, 'Required by law: '), 'Car insurance — you cannot legally drive without it.'),
+        React.createElement('p', null, React.createElement('strong', null, 'Strongly worth it: '), 'Home contents, and travel insurance (medical bills abroad can be enormous).'),
+        React.createElement('p', null, React.createElement('strong', null, 'Often not worth it: '), 'Cheap gadgets and extended warranties on low-cost items you could simply replace.')
+      ),
+      React.createElement('p', { className: 'text-[14px] leading-relaxed' },
+        React.createElement('strong', null, 'The rule: '),
+        'Insure what you couldn\'t afford to replace. Don\'t insure what you could comfortably cover yourself — for small losses, you are your own best insurer.'
+      )
+    ),
+    lab: (d) => {
+      const phone   = 40000  // £400 in pence
+      const premium = 700    // £7/month
+      const annual  = premium * 12
+      const excess  = 5000   // £50
+      const rate    = d.choreRateMedianPence
+      const phoneChores = Math.ceil(phone / rate)
+      return React.createElement('div', { className: 'flex flex-col gap-4' },
+        React.createElement('p', { className: 'text-[13px] text-[var(--color-text-muted)]' },
+          'Imagine a phone worth ', React.createElement('strong', null, fmtPence(phone, d.currency)), ' — that\'s ', React.createElement('strong', null, `${phoneChores} chores`), ' of effort at your median rate.'
+        ),
+        React.createElement('div', { className: 'rounded-xl bg-[var(--color-surface-alt)] p-3 text-[13px] font-mono flex flex-col gap-1' },
+          React.createElement('p', null, `Replace it yourself:   ${fmtPence(phone, d.currency)}`),
+          React.createElement('p', null, `Insurance premium:     ${fmtPence(premium, d.currency)}/month (${fmtPence(annual, d.currency)}/yr)`),
+          React.createElement('p', null, `Excess if you claim:   ${fmtPence(excess, d.currency)}`),
+          React.createElement('p', { className: 'font-bold border-t border-[var(--color-border)] pt-1' }, `If it breaks: you pay ${fmtPence(excess, d.currency)}, not ${fmtPence(phone, d.currency)}`)
+        ),
+        React.createElement('p', { className: 'text-[13px] leading-relaxed' },
+          `If your savings couldn't absorb a sudden ${fmtPence(phone, d.currency)} loss, the ${fmtPence(annual, d.currency)} a year buys protection worth having. If you could easily replace it, you might skip the premium and self-insure. The question is never "will it break?" — it's "could I cope if it did?"`
+        )
+      )
+    },
+    quiz: [
+      {
+        question: 'What is an insurance "premium"?',
+        options: [
+          { label: 'A', text: 'The large payout you receive when you make a claim' },
+          { label: 'B', text: 'The regular amount you pay to be insured' },
+          { label: 'C', text: 'A bonus the insurer pays if you never claim' },
+        ],
+        correct: 'B',
+        explanation: 'The premium is the regular cost of being insured. You pay it whether or not you ever claim — it\'s the price of transferring the risk to the insurer.',
+      },
+      {
+        question: 'Insurance works by "pooling risk". What does that mean?',
+        options: [
+          { label: 'A', text: 'Many people pay in; the few who suffer a loss are paid from the shared pot' },
+          { label: 'B', text: 'The insurer invests your money and gives it all back later' },
+          { label: 'C', text: 'You only pay anything if something goes wrong' },
+        ],
+        correct: 'A',
+        explanation: 'Lots of people each contribute a small premium. Most won\'t claim, so there\'s enough in the pot to cover the unlucky few. That\'s how a small cost can protect against a large loss.',
+      },
+      {
+        question: 'Which of these is usually NOT worth insuring?',
+        options: [
+          { label: 'A', text: 'Your car (which is also a legal requirement)' },
+          { label: 'B', text: 'A cheap item you could easily afford to replace yourself' },
+          { label: 'C', text: 'Expensive medical costs while travelling abroad' },
+        ],
+        correct: 'B',
+        explanation: 'Insure what you couldn\'t afford to lose. For small, easily-replaced items the premiums often cost more over time than just replacing the item — so self-insuring is smarter.',
+      },
+    ],
+  },
+
+  // ── M19: Pensions & The Long Game ────────────────────────────────────────
+  {
+    slug:        'M19',
+    title:       'Pensions & The Long Game',
+    pillar:      5,
+    level:       4,
+    icon:        Hourglass,
+    triggerHint: 'Earn £150 lifetime to unlock',
+    description: 'The money you set aside for a "you" that\'s decades away — and why starting first beats saving most.',
+    actMinutes:  { hook: 2, lesson: 7, lab: 10, quiz: 4 },  // 23 min — numerically rich Lab
+    illustration: (locked) => React.createElement('svg', { width: '100%', height: 64, viewBox: '0 0 160 64', fill: 'none' },
+      // Hourglass caps — teal
+      React.createElement('line', { x1: 56, y1: 10, x2: 104, y2: 10, stroke: c(locked, 0.5), strokeWidth: 2, strokeLinecap: 'round' }),
+      React.createElement('line', { x1: 56, y1: 54, x2: 104, y2: 54, stroke: c(locked, 0.5), strokeWidth: 2, strokeLinecap: 'round' }),
+      // Glass sides — teal
+      React.createElement('path', { d: 'M60 10 C60 26 80 30 80 32 C80 34 60 38 60 54', stroke: c(locked, 0.45), strokeWidth: 1.5, fill: 'none' }),
+      React.createElement('path', { d: 'M100 10 C100 26 80 30 80 32 C80 34 100 38 100 54', stroke: c(locked, 0.45), strokeWidth: 1.5, fill: 'none' }),
+      // Top sand — small remaining (teal)
+      React.createElement('path', { d: 'M66 14 L94 14 C94 22 80 28 80 28 C80 28 66 22 66 14 Z', fill: c(locked, 0.2) }),
+      // Falling grain — gold
+      React.createElement('line', { x1: 80, y1: 30, x2: 80, y2: 40, stroke: cGold(locked, 0.7), strokeWidth: 1.5, strokeLinecap: 'round' }),
+      // Bottom sand — large pile (gold — wealth accumulating)
+      React.createElement('path', { d: 'M66 50 C66 40 80 36 80 36 C80 36 94 40 94 50 Z', fill: cGold(locked, 0.6) }),
+    ),
+    hook: (d) => React.createElement('div', { className: 'flex flex-col gap-3' },
+      React.createElement('p', { className: 'text-[15px] font-bold leading-snug' },
+        d.appView === 'ORCHARD'
+          ? 'The oldest orchards were planted by people who knew they\'d never sit in their shade. A pension is that tree — planted now, harvested in fifty years.'
+          : 'A pension is money you lock away now for a version of you that won\'t exist for decades. It sounds distant — but the maths makes starting early the single most powerful move you can make.'
+      ),
+      React.createElement('p', { className: 'text-[14px] leading-relaxed' },
+        'You\'ve already learned how compound growth works. A pension is compound growth given its longest possible run — often 40 or 50 years. Over that long, the difference between starting now and starting "later" is enormous.'
+      )
+    ),
+    lesson: (_d) => React.createElement('div', { className: 'flex flex-col gap-4' },
+      React.createElement('p', { className: 'text-[14px] leading-relaxed' },
+        React.createElement('strong', null, 'What a pension is: '),
+        'A pension is a long-term savings pot for retirement. The money is invested (usually in shares and bonds) so it grows over decades, and you generally can\'t touch it until your late 50s — which is the point.'
+      ),
+      React.createElement('p', { className: 'text-[14px] leading-relaxed' },
+        React.createElement('strong', null, 'Free money — the employer match: '),
+        'In the UK, most workers are automatically enrolled into a workplace pension. You pay in, your ', React.createElement('strong', null, 'employer also pays in'), ', and the government adds tax relief on top. Opting out means turning down free money from your employer.'
+      ),
+      React.createElement('div', { className: 'rounded-xl bg-[var(--color-surface-alt)] p-3 text-[13px] flex flex-col gap-1' },
+        React.createElement('p', null, React.createElement('strong', null, 'You contribute:'), ' e.g. 5% of pay'),
+        React.createElement('p', null, React.createElement('strong', null, 'Employer adds:'), ' e.g. 3% of pay — free'),
+        React.createElement('p', null, React.createElement('strong', null, 'Government adds:'), ' tax relief on your share'),
+        React.createElement('p', { className: 'font-bold border-t border-[var(--color-border)] pt-1' }, 'Every £1 you pay becomes more than £1 invested.')
+      ),
+      React.createElement('p', { className: 'text-[14px] leading-relaxed' },
+        React.createElement('strong', null, 'The State Pension exists too '),
+        '— but it\'s modest and starts late. It\'s a floor, not a comfortable retirement. The earlier you add your own pension on top, the more the decades of compounding do the heavy lifting for you.'
+      )
+    ),
+    lab: (d) => {
+      const monthly = 10000 // £100/month in pence
+      const r = 0.05 / 12   // 5% annual, monthly
+      const fv = (months: number) => Math.round(monthly * ((Math.pow(1 + r, months) - 1) / r))
+      const early   = fv(47 * 12)  // started at 20, to 67
+      const late    = fv(37 * 12)  // started at 30, to 67
+      const earlyIn = monthly * 47 * 12
+      const lateIn  = monthly * 37 * 12
+      const gap     = early - late
+      return React.createElement('div', { className: 'flex flex-col gap-4' },
+        React.createElement('p', { className: 'text-[13px] text-[var(--color-text-muted)]' },
+          'Two people each save ', React.createElement('strong', null, fmtPence(monthly, d.currency)), '/month into a pension growing ~5% a year. The only difference: when they started.'
+        ),
+        React.createElement('div', { className: 'rounded-xl bg-[var(--color-surface-alt)] p-3 text-[13px] font-mono flex flex-col gap-1' },
+          React.createElement('p', { className: 'font-bold' }, 'Started at 20 (paid in 47 years):'),
+          React.createElement('p', null, `Paid in:   ${fmtPence(earlyIn, d.currency)}`),
+          React.createElement('p', null, `Pot at 67: ${fmtPence(early, d.currency)}`),
+          React.createElement('p', { className: 'font-bold mt-2' }, 'Started at 30 (paid in 37 years):'),
+          React.createElement('p', null, `Paid in:   ${fmtPence(lateIn, d.currency)}`),
+          React.createElement('p', null, `Pot at 67: ${fmtPence(late, d.currency)}`),
+          React.createElement('p', { style: { color: 'var(--brand-primary)', fontWeight: 'bold' }, className: 'border-t border-[var(--color-border)] pt-1' }, `Ten years earlier = ${fmtPence(gap, d.currency)} more`)
+        ),
+        React.createElement('p', { className: 'text-[13px] leading-relaxed' },
+          `The early starter paid in only ${fmtPence(earlyIn - lateIn, d.currency)} more, but ended up with ${fmtPence(gap, d.currency)} more. That gap is pure compounding — the reward for time, not effort. You can't buy back the years you didn't start, which is exactly why this lesson reaches you now.`
+        )
+      )
+    },
+    quiz: [
+      {
+        question: 'In a UK workplace pension, who pays into your pot?',
+        options: [
+          { label: 'A', text: 'Only you' },
+          { label: 'B', text: 'You, your employer, and the government (via tax relief)' },
+          { label: 'C', text: 'Only your employer' },
+        ],
+        correct: 'B',
+        explanation: 'Auto-enrolment means you contribute, your employer adds their own contribution, and the government tops it up with tax relief. Opting out means giving up the free employer and government money.',
+      },
+      {
+        question: 'Why does starting a pension early matter so much?',
+        options: [
+          { label: 'A', text: 'Younger people are given higher interest rates' },
+          { label: 'B', text: 'The money has more years to compound, so each pound grows far larger' },
+          { label: 'C', text: 'Pensions become more expensive to open as you age' },
+        ],
+        correct: 'B',
+        explanation: 'A pension is compound growth over decades. Starting ten years earlier can mean a dramatically bigger pot, even if you pay in only a little more — time does the work.',
+      },
+      {
+        question: 'The "employer match" in a workplace pension is best described as:',
+        options: [
+          { label: 'A', text: 'A loan you repay later' },
+          { label: 'B', text: 'Essentially free money added to your pension by your employer' },
+          { label: 'C', text: 'A tax taken from your salary' },
+        ],
+        correct: 'B',
+        explanation: 'When your employer contributes alongside you, that\'s extra money you wouldn\'t otherwise get. Turning it down is leaving part of your pay on the table.',
+      },
+    ],
+  },
+
+  // ── M20: Gambling & Loot Boxes ───────────────────────────────────────────
+  {
+    slug:        'M20',
+    title:       'Gambling & Loot Boxes',
+    pillar:      6,
+    level:       3,
+    icon:        Dices,
+    triggerHint: 'Triggered by repeated chance-based in-game spending',
+    description: 'Why the house always wins — and how loot boxes borrow the same playbook.',
+    actMinutes:  { hook: 2, lesson: 6, lab: 7, quiz: 4 },  // 19 min total
+    illustration: (locked) => React.createElement('svg', { width: '100%', height: 64, viewBox: '0 0 160 64', fill: 'none' },
+      // Mystery / loot box — teal, with a ?
+      React.createElement('rect', { x: 30, y: 26, width: 40, height: 30, rx: 4, fill: c(locked, 0.1), stroke: c(locked, 0.4), strokeWidth: 1.5 }),
+      React.createElement('path', { d: 'M30 34 L70 34 M50 26 L50 56', stroke: c(locked, 0.3), strokeWidth: 1 }),
+      React.createElement('path', { d: 'M30 34 L50 22 L70 34', fill: c(locked, 0.18), stroke: c(locked, 0.4), strokeWidth: 1.5 }),
+      React.createElement('text', { x: 50, y: 49, fontSize: 12, textAnchor: 'middle', fill: c(locked, 0.6), fontWeight: 'bold' }, '?'),
+      // Coins going in — gold (you put in a lot)
+      React.createElement('circle', { cx: 88, cy: 16, r: 4, fill: cGold(locked, 0.7) }),
+      React.createElement('circle', { cx: 98, cy: 22, r: 4, fill: cGold(locked, 0.6) }),
+      React.createElement('circle', { cx: 88, cy: 28, r: 4, fill: cGold(locked, 0.65) }),
+      // One small coin out — coral (you get back less)
+      React.createElement('circle', { cx: 120, cy: 46, r: 4, fill: cRed(locked, 0.4) }),
+      // Net loss arrow — coral down
+      React.createElement('path', { d: 'M138 14 L138 50 M132 44 L138 50 L144 44', stroke: cRed(locked, 0.7), strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' }),
+    ),
+    hook: (d) => React.createElement('div', { className: 'flex flex-col gap-3' },
+      React.createElement('p', { className: 'text-[15px] font-bold leading-snug' },
+        d.appView === 'ORCHARD'
+          ? 'A stall at the orchard market sells sealed baskets — "one might hold a golden apple!" Most hold a single bruised plum. The stallholder, somehow, is always rich.'
+          : 'A loot box promises a rare reward for a small payment. Most of the time you get something nearly worthless. The company selling it always comes out ahead — and that\'s not luck, it\'s design.'
+      ),
+      React.createElement('p', { className: 'text-[14px] leading-relaxed' },
+        'Gambling and chance-based game purchases run on the same maths: you pay a certain amount for an uncertain reward that, on average, is worth less than you paid. Understanding the maths is how you stop being the product.'
+      )
+    ),
+    lesson: (_d) => React.createElement('div', { className: 'flex flex-col gap-4' },
+      React.createElement('p', { className: 'text-[14px] leading-relaxed' },
+        React.createElement('strong', null, 'The house edge: '),
+        'Every casino game, lottery and loot box is built so that, on average, players get back less than they put in. The gap is the operator\'s profit. You might win sometimes — but play long enough and the maths grinds you down. The house never needs luck; it just needs you to keep playing.'
+      ),
+      React.createElement('p', { className: 'text-[14px] leading-relaxed' },
+        React.createElement('strong', null, 'The gambler\'s fallacy: '),
+        'After five reds in a row, it feels like black is "due". It isn\'t. Each spin is independent — the odds reset every time. Believing you\'re "owed" a win is exactly the thought that keeps people spending.'
+      ),
+      React.createElement('p', { className: 'text-[14px] leading-relaxed' },
+        React.createElement('strong', null, 'Why loot boxes hook you: '),
+        'They use "variable rewards" — you never know when the good one is coming, so your brain keeps you opening "just one more". Near-misses (the rare item that "almost" dropped) and flashy animations are deliberately designed to feel like a win even when you lost.'
+      ),
+      React.createElement('p', { className: 'text-[13px] leading-relaxed text-[var(--color-text-muted)]' },
+        'Spending on chance can quietly turn into a habit, and the costs can build into debt. If it ever stops feeling like a free choice — for you or a friend — talk to an adult you trust.'
+      )
+    ),
+    lab: (d) => {
+      const box       = 200            // £2 per box
+      const avgBack   = 80             // avg value you actually get: £0.80
+      const lossEach  = box - avgBack  // £1.20
+      const tries     = 20
+      const totalSpent = box * tries
+      const totalBack  = avgBack * tries
+      const totalLost  = totalSpent - totalBack
+      const rate      = d.choreRateMedianPence
+      const choresLost = Math.ceil(totalLost / rate)
+      return React.createElement('div', { className: 'flex flex-col gap-4' },
+        React.createElement('p', { className: 'text-[14px] font-semibold' }, 'The house edge, in numbers'),
+        React.createElement('div', { className: 'rounded-xl bg-[var(--color-surface-alt)] p-3 text-[13px] font-mono flex flex-col gap-1' },
+          React.createElement('p', null, `Each box costs:        ${fmtPence(box, d.currency)}`),
+          React.createElement('p', null, `Average reward value:  ${fmtPence(avgBack, d.currency)}`),
+          React.createElement('p', { className: 'font-bold' }, `Average loss per box:   ${fmtPence(lossEach, d.currency)}`),
+          React.createElement('p', { className: 'border-t border-[var(--color-border)] pt-1' }, `Open ${tries} boxes — spend: ${fmtPence(totalSpent, d.currency)}`),
+          React.createElement('p', null, `Get back (value):      ${fmtPence(totalBack, d.currency)}`),
+          React.createElement('p', { style: { color: 'var(--brand-primary)', fontWeight: 'bold' } }, `Lost to the house:     ${fmtPence(totalLost, d.currency)}`)
+        ),
+        React.createElement('p', { className: 'text-[13px] leading-relaxed' },
+          `That ${fmtPence(totalLost, d.currency)} is `, React.createElement('strong', null, `${choresLost} chores`), ` of real effort, gone — not to a thing you chose, but to chance. The flashy animation hides a simple truth: the more boxes you open, the closer your result gets to that guaranteed loss.`
+        )
+      )
+    },
+    quiz: [
+      {
+        question: 'After a coin lands heads five times in a row, what are the odds the next flip is heads?',
+        options: [
+          { label: 'A', text: 'Lower — tails is "due" now' },
+          { label: 'B', text: 'Still 50% — each flip is independent of the last' },
+          { label: 'C', text: 'Higher — heads is on a streak' },
+        ],
+        correct: 'B',
+        explanation: 'This is the gambler\'s fallacy. The coin has no memory — every flip is 50/50 regardless of what came before. Believing you\'re "due" a result is what keeps gamblers betting.',
+      },
+      {
+        question: 'Why does "the house always win" over the long run?',
+        options: [
+          { label: 'A', text: 'The games are random, so it\'s pure luck either way' },
+          { label: 'B', text: 'Games are designed so players get back less than they pay in on average — the gap is the operator\'s profit' },
+          { label: 'C', text: 'The house cheats on every single game' },
+        ],
+        correct: 'B',
+        explanation: 'It isn\'t cheating — it\'s the "house edge" built into the odds. You might win occasionally, but the longer you play, the closer you get to the average outcome, which is a loss for you.',
+      },
+      {
+        question: 'What makes loot boxes so effective at keeping you spending?',
+        options: [
+          { label: 'A', text: 'They always give you exactly what you want' },
+          { label: 'B', text: 'Unpredictable "variable" rewards and near-misses are designed to keep you opening "one more"' },
+          { label: 'C', text: 'They are free, so there\'s no harm in trying' },
+        ],
+        correct: 'B',
+        explanation: 'Not knowing when the good reward will come is exactly what makes the urge so strong. Near-misses and flashy effects are deliberate design choices that make losing feel like almost-winning.',
+      },
+    ],
+  },
+
+  // ── M21: Consumer Rights & Contracts ─────────────────────────────────────
+  {
+    slug:        'M21',
+    title:       'Consumer Rights & Contracts',
+    pillar:      2,
+    level:       3,
+    icon:        ScrollText,
+    triggerHint: 'Triggered when you complete a goal purchase',
+    description: 'Every purchase is a contract — and the law gives you rights a "no refunds" sign can\'t remove.',
+    actMinutes:  { hook: 2, lesson: 6, lab: 6, quiz: 4 },  // 18 min total
+    illustration: (locked) => React.createElement('svg', { width: '100%', height: 64, viewBox: '0 0 160 64', fill: 'none' },
+      // Contract document — teal
+      React.createElement('rect', { x: 44, y: 8, width: 72, height: 48, rx: 5, fill: c(locked, 0.06), stroke: c(locked, 0.35), strokeWidth: 1.5 }),
+      // Small-print lines — teal
+      React.createElement('rect', { x: 52, y: 18, width: 44, height: 4, rx: 2, fill: c(locked, 0.22) }),
+      React.createElement('rect', { x: 52, y: 26, width: 56, height: 4, rx: 2, fill: c(locked, 0.16) }),
+      React.createElement('rect', { x: 52, y: 34, width: 50, height: 4, rx: 2, fill: c(locked, 0.16) }),
+      // Seal of your rights — gold tick
+      React.createElement('circle', { cx: 100, cy: 46, r: 9, fill: cGold(locked, 0.18), stroke: cGold(locked, 0.55), strokeWidth: 1.5 }),
+      React.createElement('path', { d: 'M96 46 L99 49 L105 42', stroke: cGold(locked, 0.9), strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round', fill: 'none' }),
+    ),
+    hook: (d) => React.createElement('div', { className: 'flex flex-col gap-3' },
+      React.createElement('p', { className: 'text-[15px] font-bold leading-snug' },
+        d.appView === 'ORCHARD'
+          ? 'Every trade at the orchard market is a two-way promise: your coins for sound fruit. When the fruit turns out rotten, the law sides with the buyer — even if the stall has a "no swaps" sign.'
+          : 'Every time you buy something you enter a legal contract — and UK law gives you rights the seller cannot take away, no matter what their returns sign says.'
+      ),
+      React.createElement('p', { className: 'text-[14px] leading-relaxed' },
+        'Knowing your rights turns "I suppose I\'m stuck with it" into "actually, I\'m owed a refund." It\'s one of the most useful — and least taught — money skills there is.'
+      )
+    ),
+    lesson: (_d) => React.createElement('div', { className: 'flex flex-col gap-4' },
+      React.createElement('p', { className: 'text-[14px] leading-relaxed' },
+        React.createElement('strong', null, 'A purchase is a contract: '),
+        'When you buy something, you and the seller make a legal agreement. In the UK, the ', React.createElement('strong', null, 'Consumer Rights Act 2015'), ' says everything you buy must be:'
+      ),
+      React.createElement('ol', { className: 'flex flex-col gap-2 pl-4 list-decimal text-[14px]' },
+        React.createElement('li', null, React.createElement('strong', null, 'Of satisfactory quality '), '— not faulty or damaged.'),
+        React.createElement('li', null, React.createElement('strong', null, 'Fit for purpose '), '— it does what it\'s meant to do.'),
+        React.createElement('li', null, React.createElement('strong', null, 'As described '), '— it matches the photo, label or claims.')
+      ),
+      React.createElement('p', { className: 'text-[14px] leading-relaxed' },
+        React.createElement('strong', null, 'If it\'s faulty: '),
+        'You have a ', React.createElement('strong', null, '30-day right to reject'), ' it for a full refund. After that, you\'re entitled to a repair or replacement. A shop sign saying "no refunds" is meaningless for faulty goods — your legal rights override it.'
+      ),
+      React.createElement('p', { className: 'text-[14px] leading-relaxed' },
+        React.createElement('strong', null, 'Changed your mind? '),
+        'In a shop there\'s no automatic right to a refund for simply changing your mind — returns are the shop\'s goodwill. But buy ', React.createElement('strong', null, 'online'), ' and you usually get a 14-day cooling-off period to return it for any reason.'
+      ),
+      React.createElement('p', { className: 'text-[14px] leading-relaxed' },
+        React.createElement('strong', null, 'Watch the small print: '),
+        'Free trials that auto-renew into paid subscriptions are a common trap. Always check what happens when the trial ends — and keep receipts and order confirmations as proof of the contract.'
+      )
+    ),
+    lab: (_d) => React.createElement('div', { className: 'flex flex-col gap-4' },
+      React.createElement('p', { className: 'text-[14px] font-semibold' }, 'Know your rights. For each case, what are you actually entitled to?'),
+      ...[
+        { scenario: 'Headphones you bought in a shop 10 days ago stop working through no fault of yours.', answer: 'FULL REFUND', why: 'Faulty goods within 30 days — you have the right to reject them for a full refund under the Consumer Rights Act.' },
+        { scenario: 'The shop has a big "STRICTLY NO REFUNDS" sign by the till. Your new kettle arrived broken.', answer: 'YOUR RIGHTS WIN', why: 'A "no refunds" sign cannot remove your legal rights for faulty goods. It is not enforceable here.' },
+        { scenario: 'You bought a jumper online, it fits fine, but you\'ve gone off the colour. It arrived 3 days ago.', answer: 'RETURN IT (ONLINE)', why: 'Online purchases come with a 14-day cooling-off period — you can return it just for changing your mind. (In-store, this would be goodwill only.)' },
+      ].map((item, i) => React.createElement('div', { key: i, className: 'rounded-xl border border-[var(--color-border)] p-3 flex flex-col gap-2' },
+        React.createElement('p', { className: 'text-[13px]' }, item.scenario),
+        React.createElement('p', { className: 'text-[12px] font-bold text-[var(--brand-primary)]' }, item.answer),
+        React.createElement('p', { className: 'text-[12px] text-[var(--color-text-muted)]' }, item.why)
+      ))
+    ),
+    quiz: [
+      {
+        question: 'Under the Consumer Rights Act 2015, goods you buy must be all of the following EXCEPT:',
+        options: [
+          { label: 'A', text: 'Of satisfactory quality' },
+          { label: 'B', text: 'Fit for purpose and as described' },
+          { label: 'C', text: 'The cheapest available version' },
+        ],
+        correct: 'C',
+        explanation: 'The three legal standards are satisfactory quality, fit for purpose, and as described. There\'s no rule that goods must be cheap — only that they meet those quality standards.',
+      },
+      {
+        question: 'A shop has a "no refunds" sign. You bought a toaster that turned out to be faulty. What are your rights?',
+        options: [
+          { label: 'A', text: 'None — the sign means no refunds' },
+          { label: 'B', text: 'You\'re entitled to a refund or repair; the sign can\'t remove your legal rights for faulty goods' },
+          { label: 'C', text: 'You can only get store credit' },
+        ],
+        correct: 'B',
+        explanation: 'Your statutory rights for faulty goods cannot be signed away by the shop. A "no refunds" notice has no legal force when an item is faulty — within 30 days you can claim a full refund.',
+      },
+      {
+        question: 'You change your mind about a non-faulty item. When do you have an automatic right to return it?',
+        options: [
+          { label: 'A', text: 'Always, in any shop' },
+          { label: 'B', text: 'When you bought it online — there\'s usually a 14-day cooling-off period' },
+          { label: 'C', text: 'Never — you can never return something you simply don\'t want' },
+        ],
+        correct: 'B',
+        explanation: 'For online purchases you typically get 14 days to change your mind and return for a refund. In a physical shop, returns for a change of mind are goodwill, not a legal right.',
+      },
+    ],
   },
 ]

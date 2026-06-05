@@ -131,20 +131,53 @@ function generatePricingCards(pricing) {
       ? plan.name.replace(' AI', ` <span class="plan-name-ai">AI</span>`)
       : plan.name;
 
-    const groups = plan.groups.map(group => {
-      const items = group.items.map(item =>
-        `<li><span class="plan-check plan-check--${group.check_color}">${CHECK_SVG}</span>${item}</li>`
-      ).join('\n            ');
-      return `
-          <div class="plan-group-label plan-group-label--mt">${group.label}</div>
-          <ul class="plan-features">
-            ${items}
-          </ul>`;
-    }).join('\n');
+    const tagline = plan.tagline
+      ? `<p class="plan-tagline">${plan.tagline}</p>`
+      : '';
 
     const plusNote = plan.plus_note
       ? `<div class="plan-plus-note">${plan.plus_note}</div>`
       : '';
+
+    let body;
+    if (plan.summary_mode && plan.summary_groups) {
+      // Core: condensed feature-set summary view
+      const summaryItems = plan.summary_groups.map(g => `
+          <li class="plan-summary-group">
+            <span class="plan-check plan-check--teal">${CHECK_SVG}</span>
+            <span class="plan-summary-text">
+              <span class="plan-summary-label">${g.label}</span>
+              <span class="plan-summary-detail">${g.detail}</span>
+            </span>
+          </li>`).join('');
+      const compareLink = plan.compare_link
+        ? `<a href="${plan.compare_link}" class="plan-compare-link">See full feature list
+            <svg width="11" height="11" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M7 2l5 5-5 5M2 7h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </a>`
+        : '';
+      body = `<ul class="plan-features plan-features--summary">${summaryItems}</ul>${compareLink}`;
+    } else {
+      // Core AI / Shield AI: expanded items with descriptions
+      body = plan.groups.map(group => {
+        const items = group.items.map(item => {
+          if (typeof item === 'string') {
+            return `<li><span class="plan-check plan-check--${group.check_color}">${CHECK_SVG}</span><span>${item}</span></li>`;
+          }
+          return `<li class="plan-feat-expanded">
+              <span class="plan-check plan-check--${group.check_color}">${CHECK_SVG}</span>
+              <span class="plan-feat-body">
+                <span class="plan-feat-title">${item.title}</span>
+                <span class="plan-feat-desc">${item.desc}</span>
+              </span>
+            </li>`;
+        }).join('\n            ');
+        return `
+          <div class="plan-group-label plan-group-label--mt">${group.label}</div>
+          <ul class="plan-features">
+            ${items}
+          </ul>`;
+      }).join('\n');
+    }
 
     return `
         <div class="plan-card${featuredClass} reveal">
@@ -156,9 +189,10 @@ function generatePricingCards(pricing) {
             <span class="plan-price-dec">${plan.price_dec}</span>
           </div>
           <div class="plan-one-time">One-time payment</div>
+          ${tagline}
           <hr class="plan-divider" />
           ${plusNote}
-          ${groups}
+          ${body}
           <div class="plan-trial">14-day full-access trial</div>
         </div>`;
   }).join('\n');
@@ -807,6 +841,11 @@ function build() {
     let scripts = '';
     const scriptsMatch = src.match(/<!-- SCRIPTS_START -->([\s\S]*?)<!-- SCRIPTS_END -->/);
     if (scriptsMatch) scripts = scriptsMatch[1];
+
+    // Inject reading progress bar into every page that doesn't already have it
+    if (!scripts.includes('reading-progress')) {
+      scripts += `\n<script>(function(){var b=document.createElement('div');b.id='reading-progress';document.body.appendChild(b);var t=false;function u(){t=false;var d=document.documentElement.scrollHeight-window.innerHeight;b.style.width=(d>0?Math.min(window.scrollY/d,1):0)*100+'%';}window.addEventListener('scroll',function(){if(!t){requestAnimationFrame(u);t=true;}},{passive:true});u();})();<\/script>`;
+    }
 
     // Extract optional per-page schema block
     let schemaTag = '';

@@ -6,6 +6,7 @@ import type { Env } from '../types.js'
 import { json, error } from '../lib/response.js'
 import { nanoid } from '../lib/nanoid.js'
 import type { JwtPayload } from '../lib/jwt.js'
+import { evaluatePassive } from '../lib/labTriggers.js'
 
 type AuthedRequest = Request & { auth: JwtPayload }
 
@@ -15,6 +16,13 @@ export async function handleLabModules(request: Request, env: Env): Promise<Resp
   if (auth.role !== 'child') return json({ error: 'Child auth required' }, 403)
 
   const childId = auth.sub
+
+  // Re-evaluate passive unlock conditions (inactivity, balance, streak, reliability)
+  // on every Lab open, so triggers that depend on the *absence* of activity still
+  // fire (e.g. M14 Inflation after 21 days with no transactions). Awaited so any
+  // newly-unlocked module is reflected in this same response. Failures are
+  // swallowed — unlock evaluation must never block the Lab from loading.
+  await evaluatePassive(env.DB, childId).catch(() => {})
 
   const [unlockRows, progressRows, settings, balanceRow, earningsRow, choreRows, streakRow] =
     await Promise.all([

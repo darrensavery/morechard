@@ -171,6 +171,7 @@ import {
 import { runMarketRateAggregation } from './jobs/marketRateAggregation.js';
 import { runMarketingEmails } from './cron/marketing-emails.js';
 import { runDemoReset } from './cron/demo-reset.js';
+import { runPassiveUnlockSweep } from './cron/passive-unlocks.js';
 import { handleChildChat } from './routes/chat.js';
 import { handleChatHistory } from './routes/chat-history.js';
 import { handleChatModules } from './routes/chat-modules.js';
@@ -180,7 +181,7 @@ import {
   handleReferralStats,
   handleReferralClick,
 } from './routes/referrals.js';
-import { handleConsentPost, handleConsentGet } from './routes/consent.js';
+import { handleConsentPost, handleConsentGet, handleAnalyticsConsentPost, handleAnalyticsEffectiveGet } from './routes/consent.js';
 import { handlePublicInterest } from './routes/public-interest.js';
 import { json, error } from './lib/response.js';
 import { JwtPayload } from './lib/jwt.js';
@@ -198,7 +199,9 @@ import { handleVoidSharedExpense } from './routes/sharedExpenseVoid.js';
 
 const SENSITIVE_FIELDS = new Set(['password', 'pin', 'token', 'secret', 'authorization', 'jwt', 'api_key', 'apikey']);
 
-function scrubSentryEvent(event: Sentry.Event): Sentry.Event | null {
+// beforeSend only receives error events (not transactions), so type it as
+// ErrorEvent to satisfy CloudflareOptions['beforeSend'].
+function scrubSentryEvent(event: Sentry.ErrorEvent): Sentry.ErrorEvent | null {
   if (event.extra) {
     for (const key of Object.keys(event.extra)) {
       if (SENSITIVE_FIELDS.has(key.toLowerCase())) delete event.extra[key];
@@ -272,6 +275,16 @@ export default Sentry.withSentry(
 
     // ── 6. Nightly demo reset (Thomson family) ─────────────────
     await runDemoReset(env);
+
+    // ── 7. Learning Lab passive-unlock sweep ───────────────────
+    // Re-evaluates inactivity/balance/streak unlock conditions for every active
+    // child, so triggers that depend on the absence of activity (e.g. M14
+    // Inflation, 21 days with no transactions) fire even when the app is closed.
+    // evaluatePassive is idempotent. Gated to the 00:00 UTC tick so this per-child
+    // sweep runs once daily rather than on every cron tick.
+    if (new Date(now * 1000).getUTCHours() === 0) {
+      await runPassiveUnlockSweep(env);
+    }
   },
 } satisfies ExportedHandler<Env>,
 );
@@ -435,6 +448,8 @@ async function route(request: Request, env: Env, method: string, path: string): 
   // Settings (any role — children can update their own avatar/theme)
   if (path === '/api/consent/marketing' && method === 'POST') return withAuth(request, auth, env, handleConsentPost)
   if (path === '/api/consent/marketing' && method === 'GET')  return withAuth(request, auth, env, handleConsentGet)
+  if (path === '/api/consent/analytics' && method === 'POST') return withAuth(request, auth, env, handleAnalyticsConsentPost)
+  if (path === '/api/consent/analytics/effective' && method === 'GET') return withAuth(request, auth, env, handleAnalyticsEffectiveGet)
 
   if (path === '/api/settings' && method === 'GET')   return withAuth(request, auth, env, handleSettingsGet);
   if (path === '/api/settings' && method === 'PATCH')  return withAuth(request, auth, env, handleSettingsUpdate);

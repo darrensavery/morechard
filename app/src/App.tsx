@@ -13,7 +13,7 @@ import LoginScreen from './screens/LoginScreen'
 import AuthCallbackScreen from './screens/AuthCallbackScreen'
 import { getDeviceIdentity, setDeviceIdentity, toInitials, hashPin } from './lib/deviceIdentity'
 import { LocaleProvider } from './lib/locale'
-import { analytics, track } from './lib/analytics'
+import { analytics, track, applyInheritedChildConsent } from './lib/analytics'
 import { verifyMagicLink, setToken, getMe } from './lib/api'
 import { AppUrlListener } from './components/AppUrlListener'
 import { AndroidBackController } from './components/AndroidBackController'
@@ -255,6 +255,18 @@ export default function App() {
         trackReferralClick(ref.toUpperCase()).catch(() => null)
       )
     }
+  }, [])
+
+  // Child devices: refresh the family-effective analytics decision on boot so a
+  // parent's later opt-in or veto propagates (events only — replay stays off).
+  useEffect(() => {
+    const id = getDeviceIdentity()
+    if (id?.role !== 'child' || !localStorage.getItem('mc_token')) return
+    import('./lib/api').then(({ getAnalyticsEffective }) =>
+      getAnalyticsEffective()
+        .then(({ child_analytics }) => applyInheritedChildConsent(child_analytics))
+        .catch(() => null)
+    )
   }, [])
 
   // Read app_view from localStorage so ThemeProvider can bias 'system' → 'dark'

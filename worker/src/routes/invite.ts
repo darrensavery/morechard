@@ -206,7 +206,14 @@ async function redeemChildInvite(
     env.JWT_SECRET,
   );
 
-  return json({ token, expires_in: CHILD_JWT_EXPIRY, role: 'child', user_id: userId, family_id: familyId }, 201);
+  // Inherit the family-effective analytics decision (veto model) so the child
+  // device gates analytics on the parents' choice — events only, never replay.
+  const fam = await env.DB
+    .prepare('SELECT child_analytics_consent FROM families WHERE id = ?')
+    .bind(familyId)
+    .first<{ child_analytics_consent: number }>();
+
+  return json({ token, expires_in: CHILD_JWT_EXPIRY, role: 'child', user_id: userId, family_id: familyId, child_analytics: fam?.child_analytics_consent === 1 }, 201);
 }
 
 async function redeemCoParentInvite(

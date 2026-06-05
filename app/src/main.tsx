@@ -9,11 +9,15 @@ if (!Array.prototype.at) {
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import * as Sentry from '@sentry/react'
-import { initAnalytics } from './lib/analytics'
+import { initAnalytics, replayAllowed } from './lib/analytics'
 import './index.css'
 import App from './App.tsx'
 
 initAnalytics()
+
+// Session replay is non-essential and never runs for children — only attach the
+// replay integration when consent allows it. Error monitoring stays always-on.
+const allowReplay = replayAllowed()
 
 const SENSITIVE_FIELDS = new Set(['password', 'pin', 'token', 'secret', 'authorization', 'jwt', 'api_key', 'apikey']);
 
@@ -24,10 +28,10 @@ Sentry.init({
   // Only send errors in production to keep dev noise-free
   enabled: import.meta.env.PROD,
   tracesSampleRate: 0.2,
-  replaysOnErrorSampleRate: 1.0,
+  replaysOnErrorSampleRate: allowReplay ? 1.0 : 0,
   integrations: [
     Sentry.browserTracingIntegration(),
-    Sentry.replayIntegration({ maskAllText: true, blockAllMedia: true }),
+    ...(allowReplay ? [Sentry.replayIntegration({ maskAllText: true, blockAllMedia: true })] : []),
   ],
   beforeSend(event) {
     if (event.extra) {

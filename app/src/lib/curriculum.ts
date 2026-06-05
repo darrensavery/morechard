@@ -290,6 +290,55 @@ export const CURRICULUM: CurriculumModule[] = [
       'Apply the "my goals, not their goals" test to a spending choice',
     ],
   },
+  // ── Gap-closure modules (curriculum mapping G1–G4) ───────────────────────────
+  {
+    slug:      'insurance-protection',
+    label:     'Insurance',
+    pillar:    'INVESTING_FUTURE',
+    level:     3,
+    objective: 'Understand how paying a small, regular cost can protect against a large, unexpected loss.',
+    outcomes:  [
+      'Explain what a premium and an excess are',
+      'Describe how pooling risk lets insurance work',
+      'Decide when something is worth insuring and when to self-insure',
+    ],
+  },
+  {
+    slug:      'pensions-long-game',
+    label:     'Pensions',
+    pillar:    'INVESTING_FUTURE',
+    level:     4,
+    objective: 'Understand what a pension is and why starting early beats saving more later.',
+    outcomes:  [
+      'Explain who contributes to a UK workplace pension (you, employer, government)',
+      'Describe why decades of compounding make early contributions so powerful',
+      'Recognise an employer match as effectively free money',
+    ],
+  },
+  {
+    slug:      'gambling-loot-boxes',
+    label:     'Gambling',
+    pillar:    'SOCIETY_WELLBEING',
+    level:     3,
+    objective: 'Understand why chance-based spending favours the operator, and how loot boxes use the same design.',
+    outcomes:  [
+      'Explain the house edge and why the house wins over time',
+      'Identify the gambler\'s fallacy and why each event is independent',
+      'Recognise how loot boxes use variable rewards and near-misses to encourage spending',
+    ],
+  },
+  {
+    slug:      'consumer-rights-contracts',
+    label:     'Consumer Rights',
+    pillar:    'SPENDING_CHOICES',
+    level:     3,
+    objective: 'Understand that every purchase is a contract and what rights the law gives the buyer.',
+    outcomes:  [
+      'Name the three Consumer Rights Act standards (satisfactory quality, fit for purpose, as described)',
+      'Explain why a "no refunds" sign cannot override rights for faulty goods',
+      'Describe the 14-day online cooling-off right versus in-store change-of-mind',
+    ],
+  },
 ]
 
 /** Slug-to-label map for quick lookups in the worker. */

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import { Loader2 } from 'lucide-react'
-import { exchangeSlt, setToken, postMarketingConsent } from '../lib/api'
+import { exchangeSlt, setToken, postMarketingConsent, postAnalyticsConsent } from '../lib/api'
 import { setDeviceIdentity, toInitials } from '../lib/deviceIdentity'
 import { getLocale, isPolish } from '../lib/locale'
 import { FullLogo } from '../components/ui/Logo'
@@ -43,6 +43,16 @@ export default function AuthCallbackScreen() {
           localStorage.removeItem('mc_pending_consent')
           postMarketingConsent(pendingConsent === 'true').catch(err => {
             console.error('[consent] failed to record marketing consent:', err)
+          })
+        }
+
+        // Flush pending analytics consent — server records it and recomputes the
+        // family-effective child flag (the lead is the first vote in the veto model).
+        const pendingAnalytics = localStorage.getItem('mc_pending_analytics_consent')
+        if (pendingAnalytics !== null) {
+          localStorage.removeItem('mc_pending_analytics_consent')
+          postAnalyticsConsent(pendingAnalytics === 'true').catch(err => {
+            console.error('[consent] failed to record analytics consent:', err)
           })
         }
 
