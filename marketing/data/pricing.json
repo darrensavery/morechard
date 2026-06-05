@@ -74,7 +74,7 @@
         "items": [
           { "title": "Parent Insights AI", "desc": "Weekly AI brief on your child's consistency, earning velocity, and savings behaviour — with trend deltas vs the week before." },
           { "title": "AI Mentor coaching", "desc": "Personalised financial coaching for your child, triggered by their real chore and earnings data. Not generic advice — context it actually knows." },
-          { "title": "Learning Lab", "desc": "20-module financial literacy curriculum covering budgeting, saving, and smart spending — sequenced to your child's age and progress." }
+          { "title": "Learning Lab", "desc": "25-module financial literacy curriculum covering budgeting, saving, and smart spending — sequenced to your child's age and progress." }
         ]
       }
     ]
