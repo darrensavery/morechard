@@ -1,0 +1,750 @@
+<!--
+  TITLE: For Schools & Educators | Morechard
+  DESCRIPTION: Morechard's 25-module Learning Lab maps to the financial-education frameworks across England, Scotland and Wales — and delivers each lesson the moment a child's real money makes it land. Free for schools.
+  CANONICAL: https://morechard.com/for-schools
+  PAGE_CSS: page-audience.css
+-->
+
+<!-- SCHEMA_START -->
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    { "@type": "Question", "name": "Does Morechard replace what we teach in class?", "acceptedAnswer": { "@type": "Answer", "text": "No. Morechard is built to support the curriculum, not replace it. Schools provide the concepts; Morechard reinforces them at home, where the child applies each idea to their own real earning and spending. Every module is mapped to the published programmes of study so it slots alongside what you already deliver." } },
+    { "@type": "Question", "name": "Is Morechard really free for schools?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. There is no cost to the school. Morechard is offered to schools at no charge as part of our public-benefit commitment to financial education — no licence fees, no per-pupil charges, and no IT procurement." } },
+    { "@type": "Question", "name": "Which frameworks does the Learning Lab map to?", "acceptedAnswer": { "@type": "Answer", "text": "All 25 modules are mapped against the PSHE Association Programme of Study (2026 edition), England Citizenship and Mathematics (statutory), Curriculum for Wales, and Scotland's Curriculum for Excellence. Mapping is drawn from the published programmes of study, cited on the page. Gatsby Benchmarks are referenced as contributory only, through the Earning & Value pillar." } },
+    { "@type": "Question", "name": "What about pupil data and safeguarding?", "acceptedAnswer": { "@type": "Answer", "text": "Children are identified by nickname only — Morechard never asks for or stores a child's real name. No child personal data is sent to AI or language-model providers. Family data is stored in UK and EU regions, aligned with UK GDPR, COPPA and GDPR-K. There are no debit cards and no bank accounts." } },
+    { "@type": "Question", "name": "Does Morechard cover the statutory financial-harms content?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. The 2026 PSHE Association Programme of Study places gambling and chance-based transactions in gaming (including loot boxes) within statutory Section 1 RSHE. Morechard's Gambling & Loot Boxes module covers the house edge, the gambler's fallacy, and the design features loot boxes use to encourage spending." } },
+    { "@type": "Question", "name": "Which year groups is it for?", "acceptedAnswer": { "@type": "Answer", "text": "The Learning Lab launches across three tiers: Sapling (ages 10–12, upper KS2/KS3), Oak (ages 13–15, KS3/KS4) and Canopy (ages 16+, KS4/post-16). A Seed tier for ages 6–9 is in development." } },
+    { "@type": "Question", "name": "Is there independent or Quality Mark validation?", "acceptedAnswer": { "@type": "Answer", "text": "Morechard is preparing a submission for the Financial Education Quality Mark, and this curriculum-mapping matrix is the per-module evidence artifact behind it. Framework wording is verified against primary sources; an independent educationalist review is in progress." } }
+  ]
+}
+<!-- SCHEMA_END -->
+
+<!-- BODY_START -->
+<style>
+  /* ── Schools page: dark alignment-dashboard hero ── */
+  .schools-hero {
+    position: relative;
+    background: var(--bg-dark);
+    color: var(--text-light);
+    margin-top: calc(var(--h-nav) * -1);
+    padding: calc(var(--h-nav) + 52px) var(--pad-x) 72px;
+    overflow: hidden;
+    isolation: isolate;
+  }
+  .schools-hero::before {
+    /* atmospheric glow + faint grid so the dark surface has depth */
+    content: '';
+    position: absolute; inset: 0; z-index: -1;
+    background:
+      radial-gradient(60% 80% at 78% 8%, rgba(0,149,156,0.20), transparent 60%),
+      radial-gradient(50% 70% at 12% 96%, rgba(230,178,34,0.12), transparent 60%),
+      linear-gradient(rgba(255,255,255,0.028) 1px, transparent 1px) 0 0 / 100% 38px,
+      linear-gradient(90deg, rgba(255,255,255,0.028) 1px, transparent 1px) 0 0 / 38px 100%;
+  }
+  .schools-hero .container { max-width: var(--max-w); margin: 0 auto; padding: 0 var(--pad-x); }
+  .schools-hero .hero-badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 6px 12px; border-radius: 999px;
+    background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.18);
+    font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; font-weight: 500;
+    color: #fff; margin-bottom: 20px;
+  }
+  .schools-hero .hero-badge-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--gold); animation: heroBadgePulse 2.2s cubic-bezier(0.4,0,0.6,1) infinite; }
+  .schools-hero h1 {
+    font-family: var(--font-display); font-weight: 500;
+    font-size: clamp(32px, 4.8vw, 54px); line-height: 1.06; letter-spacing: -0.015em;
+    max-width: 880px; margin-bottom: 20px;
+  }
+  .schools-hero h1 em { font-style: italic; color: var(--gold); }
+  .schools-hero .hero-sub {
+    font-size: clamp(16px, 1.7vw, 19px); line-height: 1.58;
+    color: rgba(237,237,240,0.82); max-width: 720px; margin-bottom: 8px;
+  }
+  .schools-hero .hero-sub strong { color: #fff; font-weight: 600; }
+
+  /* ── Matrix dashboard ── */
+  .mx-dash { margin-top: 40px; }
+  .mx-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 28px; }
+  @media (max-width: 720px) { .mx-stats { grid-template-columns: repeat(2, 1fr); } }
+  .mx-stat {
+    background: rgba(255,255,255,0.045); border: 1px solid rgba(255,255,255,0.10);
+    border-radius: var(--r-card); padding: 18px 20px;
+  }
+  .mx-stat-num {
+    font-family: var(--font-display); font-weight: 500; font-size: clamp(28px, 3.4vw, 38px);
+    line-height: 1; color: #fff; font-variant-numeric: tabular-nums; display: block;
+  }
+  .mx-stat.is-gold .mx-stat-num { color: var(--gold); }
+  .mx-stat.is-teal .mx-stat-num { color: #3ec6cc; }
+  .mx-stat-label { font-size: 12.5px; color: rgba(237,237,240,0.62); margin-top: 8px; line-height: 1.4; }
+
+  .mx-panel {
+    background: rgba(255,255,255,0.035); border: 1px solid rgba(255,255,255,0.12);
+    border-radius: var(--r-card); padding: 22px;
+  }
+  .mx-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+  .mx-tab {
+    font-family: var(--font-body); font-size: 13px; font-weight: 500;
+    color: rgba(237,237,240,0.72); background: transparent;
+    border: 1px solid rgba(255,255,255,0.16); border-radius: var(--r-pill);
+    padding: 7px 14px; cursor: pointer; transition: all 0.2s ease; white-space: nowrap;
+  }
+  .mx-tab:hover { border-color: rgba(62,198,204,0.6); color: #fff; }
+  .mx-tab.is-active { background: rgba(62,198,204,0.16); border-color: #3ec6cc; color: #fff; }
+
+  .mx-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; margin: 0 -6px; padding: 0 6px; }
+  .mx-table { width: 100%; border-collapse: collapse; min-width: 640px; }
+  .mx-table thead th {
+    position: sticky; top: 0;
+    font-family: var(--font-body); font-size: 11.5px; font-weight: 600;
+    letter-spacing: 0.04em; color: rgba(237,237,240,0.78); text-align: center;
+    padding: 10px 6px 12px; border-bottom: 1px solid rgba(255,255,255,0.16);
+    vertical-align: bottom; cursor: pointer; transition: color 0.2s ease;
+    white-space: nowrap;
+  }
+  .mx-table thead th:hover { color: #fff; }
+  .mx-table thead th.mx-h-mod { text-align: left; cursor: default; color: rgba(237,237,240,0.5); font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; font-size: 10.5px; }
+  .mx-th-sub { display: block; font-weight: 400; font-size: 10px; color: rgba(237,237,240,0.45); letter-spacing: 0.02em; margin-top: 2px; }
+  .mx-table tbody th {
+    text-align: left; font-weight: 500; padding: 9px 14px 9px 0; vertical-align: middle;
+  }
+  .mx-mod { display: block; font-size: 14px; color: #fff; font-family: var(--font-body); font-weight: 500; }
+  .mx-meta { display: block; font-size: 11px; color: rgba(237,237,240,0.5); margin-top: 1px; }
+  .mx-table tbody tr {
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    opacity: 0; transform: translateY(6px);
+    transition: opacity 0.5s cubic-bezier(0.16,1,0.3,1), transform 0.5s cubic-bezier(0.16,1,0.3,1), background-color 0.2s ease;
+  }
+  .mx-table.is-in tbody tr { opacity: 1; transform: translateY(0); }
+  .mx-table tbody tr:hover { background: rgba(255,255,255,0.04); }
+  .mx-table tbody tr[data-pillar] th { border-left: 2px solid transparent; }
+  .mx-table tbody tr[data-pillar] { box-shadow: inset 2px 0 0 var(--mx-pillar, transparent); }
+
+  .mx-c { text-align: center; padding: 9px 6px; font-size: 0; transition: opacity 0.25s ease; }
+  .mx-c::before {
+    font-size: 15px; line-height: 1; display: inline-block;
+  }
+  .mx-full::before { content: '\25CF'; color: #3ec6cc; }           /* ● direct */
+  .mx-part::before { content: '\25D0'; color: var(--gold); }        /* ◐ partial */
+  .mx-none::before { content: '\2013'; color: rgba(237,237,240,0.28); } /* – none */
+
+  /* Column focus: dim non-selected framework columns */
+  .mx-table[data-focus] td.mx-c { opacity: 0.22; }
+  .mx-table[data-focus] thead th { color: rgba(237,237,240,0.32); }
+  .mx-table[data-focus="1"] td.mx-c:nth-child(2), .mx-table[data-focus="1"] thead th:nth-child(2),
+  .mx-table[data-focus="2"] td.mx-c:nth-child(3), .mx-table[data-focus="2"] thead th:nth-child(3),
+  .mx-table[data-focus="3"] td.mx-c:nth-child(4), .mx-table[data-focus="3"] thead th:nth-child(4),
+  .mx-table[data-focus="4"] td.mx-c:nth-child(5), .mx-table[data-focus="4"] thead th:nth-child(5),
+  .mx-table[data-focus="5"] td.mx-c:nth-child(6), .mx-table[data-focus="5"] thead th:nth-child(6) {
+    opacity: 1; color: #fff;
+  }
+
+  .mx-legend { display: flex; flex-wrap: wrap; gap: 18px; margin-top: 16px; font-size: 12px; color: rgba(237,237,240,0.62); }
+  .mx-legend span { display: inline-flex; align-items: center; gap: 7px; }
+  .mx-legend i { font-style: normal; font-size: 14px; }
+  .mx-legend .lg-full { color: #3ec6cc; }
+  .mx-legend .lg-part { color: var(--gold); }
+  .mx-legend .lg-none { color: rgba(237,237,240,0.4); }
+
+  .mx-caption {
+    margin-top: 18px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.10);
+    font-size: 14px; line-height: 1.6; color: rgba(237,237,240,0.8); min-height: 44px;
+  }
+  .mx-caption strong { color: #fff; font-weight: 600; }
+
+  .mx-foot { margin-top: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 720px) { .mx-foot { grid-template-columns: 1fr; } }
+  .mx-note {
+    font-size: 11.5px; line-height: 1.6; color: rgba(237,237,240,0.52);
+    background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);
+    border-radius: var(--r-sm); padding: 14px 16px;
+  }
+  .mx-note b { color: rgba(237,237,240,0.78); font-weight: 600; }
+  .mx-note a { color: #3ec6cc; text-decoration: none; }
+  .mx-note a:hover { text-decoration: underline; }
+
+  .mx-cta { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; margin-top: 32px; }
+  .mx-cta .btn-primary { background: var(--teal); }
+  .mx-cta .btn-ghost {
+    display: inline-flex; align-items: center; gap: 8px;
+    color: #fff; border: 1px solid rgba(255,255,255,0.28); border-radius: var(--r-pill);
+    padding: 0 22px; height: 48px; font-weight: 500; font-size: 15px; text-decoration: none;
+    transition: border-color 0.2s ease, background 0.2s ease;
+  }
+  .mx-cta .btn-ghost:hover { border-color: #fff; background: rgba(255,255,255,0.08); }
+
+  /* ── Key-stage crosswalk ── */
+  .ks-cross { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-top: 32px; }
+  @media (max-width: 800px) { .ks-cross { grid-template-columns: 1fr; } }
+  .ks-card {
+    background: var(--bg-cream); border: 1px solid var(--border-light);
+    border-radius: var(--r-card); padding: 24px; position: relative; overflow: hidden;
+  }
+  .ks-card::after { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--teal); opacity: 0.8; }
+  .ks-card.tier-oak::after { background: var(--gold); }
+  .ks-card.tier-canopy::after { background: linear-gradient(90deg, var(--gold), var(--teal)); }
+  .ks-tier { font-family: var(--font-display); font-size: 20px; font-weight: 500; color: var(--text-dark); }
+  .ks-age { font-size: 12.5px; color: var(--teal); font-weight: 600; letter-spacing: 0.04em; margin: 2px 0 16px; }
+  .ks-rows { list-style: none; }
+  .ks-rows li { display: flex; justify-content: space-between; gap: 10px; font-size: 13.5px; padding: 7px 0; border-bottom: 1px dashed var(--border-light); }
+  .ks-rows li:last-child { border-bottom: 0; }
+  .ks-rows .ks-k { color: var(--text-sub); }
+  .ks-rows .ks-v { color: var(--text-dark); font-weight: 500; text-align: right; font-variant-numeric: tabular-nums; }
+
+  /* ── Sources strip ── */
+  .src-list { margin-top: 28px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px 28px; max-width: 880px; }
+  @media (max-width: 720px) { .src-list { grid-template-columns: 1fr; } }
+  .src-list li { list-style: none; font-size: 12.5px; line-height: 1.55; color: rgba(237,237,240,0.6); padding-left: 16px; position: relative; }
+  .src-list li::before { content: '\25AA'; position: absolute; left: 0; color: var(--gold); }
+  .src-list a { color: #3ec6cc; text-decoration: none; }
+  .src-list a:hover { text-decoration: underline; }
+</style>
+
+<main class="audience-page">
+
+  <!-- ── Hero: alignment dashboard ── -->
+  <section class="schools-hero" id="hero">
+    <div class="container">
+      <div class="hero-badge reveal"><span class="hero-badge-dot"></span> For schools &amp; educators</div>
+      <h1 class="reveal d1">The financial curriculum, <em>brought to life</em> with real money.</h1>
+      <p class="hero-sub reveal d2">Morechard's 25-module Learning Lab maps to the financial-education frameworks across England, Scotland and Wales — and delivers each lesson the moment a child's own earning and spending makes it land. <strong>Free for schools.</strong></p>
+
+      <div class="mx-dash reveal d3">
+
+        <div class="mx-stats">
+          <div class="mx-stat"><span class="mx-stat-num" data-count="25">0</span><span class="mx-stat-label">Curriculum modules, behaviour-triggered</span></div>
+          <div class="mx-stat is-teal"><span class="mx-stat-num" data-count="5">0</span><span class="mx-stat-label">Published frameworks mapped</span></div>
+          <div class="mx-stat"><span class="mx-stat-num" data-count="3">0</span><span class="mx-stat-label">UK nations' curricula</span></div>
+          <div class="mx-stat is-gold"><span class="mx-stat-num">&pound;0</span><span class="mx-stat-label">Cost to your school</span></div>
+        </div>
+
+        <div class="mx-panel">
+          <div class="mx-tabs" role="tablist" aria-label="Filter by framework">
+            <button class="mx-tab is-active" data-focus="0" role="tab" aria-selected="true">All frameworks</button>
+            <button class="mx-tab" data-focus="1" role="tab" aria-selected="false">PSHE</button>
+            <button class="mx-tab" data-focus="2" role="tab" aria-selected="false">England · Citizenship</button>
+            <button class="mx-tab" data-focus="3" role="tab" aria-selected="false">England · Maths</button>
+            <button class="mx-tab" data-focus="4" role="tab" aria-selected="false">Wales · CfW</button>
+            <button class="mx-tab" data-focus="5" role="tab" aria-selected="false">Scotland · CfE</button>
+          </div>
+
+          <div class="mx-table-wrap">
+            <table class="mx-table" id="mx-table">
+              <thead>
+                <tr>
+                  <th class="mx-h-mod" scope="col">Module</th>
+                  <th scope="col">PSHE<span class="mx-th-sub">2026 PoS</span></th>
+                  <th scope="col">England<span class="mx-th-sub">Citizenship</span></th>
+                  <th scope="col">England<span class="mx-th-sub">Maths</span></th>
+                  <th scope="col">Wales<span class="mx-th-sub">CfW</span></th>
+                  <th scope="col">Scotland<span class="mx-th-sub">CfE</span></th>
+                </tr>
+              </thead>
+              <tbody>
+                <!-- Pillar 1 · Earning & Value -->
+                <tr data-pillar="1" style="--mx-pillar:#3ec6cc"><th scope="row"><span class="mx-mod">Effort &amp; Reward</span><span class="mx-meta">Earning &amp; Value · L1</span></th><td class="mx-c mx-full"></td><td class="mx-c mx-full"></td><td class="mx-c mx-part"></td><td class="mx-c mx-full"></td><td class="mx-c mx-full"></td></tr>
+                <tr data-pillar="1" style="--mx-pillar:#3ec6cc"><th scope="row"><span class="mx-mod">Taxes &amp; Net Pay</span><span class="mx-meta">Earning &amp; Value · L2</span></th><td class="mx-c mx-full"></td><td class="mx-c mx-full"></td><td class="mx-c mx-full"></td><td class="mx-c mx-full"></td><td class="mx-c mx-full"></td></tr>
+                <tr data-pillar="1" style="--mx-pillar:#3ec6cc"><th scope="row"><span class="mx-mod">Enterprise</span><span class="mx-meta">Earning &amp; Value · L3</span></th><td class="mx-c mx-full"></td><td class="mx-c mx-part"></td><td class="mx-c mx-none"></td><td class="mx-c mx-full"></td><td class="mx-c mx-full"></td></tr>
+                <tr data-pillar="1" style="--mx-pillar:#3ec6cc"><th scope="row"><span class="mx-mod">Gig vs. Salary</span><span class="mx-meta">Earning &amp; Value · L3</span></th><td class="mx-c mx-full"></td><td class="mx-c mx-part"></td><td class="mx-c mx-none"></td><td class="mx-c mx-part"></td><td class="mx-c mx-full"></td></tr>
+                <!-- Pillar 2 · Spending & Choices -->
+                <tr data-pillar="2" style="--mx-pillar:#3ec6cc"><th scope="row"><span class="mx-mod">Needs vs. Wants</span><span class="mx-meta">Spending &amp; Choices · L1</span></th><td class="mx-c mx-full"></td><td class="mx-c mx-full"></td><td class="mx-c mx-part"></td><td class="mx-c mx-full"></td><td class="mx-c mx-full"></td></tr>
+                <tr data-pillar="2" style="--mx-pillar:#3ec6cc"><th scope="row"><span class="mx-mod">Spotting Scams</span><span class="mx-meta">Spending &amp; Choices · L2</span></th><td class="mx-c mx-full"></td><td class="mx-c mx-full"></td><td class="mx-c mx-none"></td><td class="mx-c mx-full"></td><td class="mx-c mx-full"></td></tr>
+                <tr data-pillar="2" style="--mx-pillar:#3ec6cc"><th scope="row"><span class="mx-mod">Adverts &amp; Influence</span><span class="mx-meta">Spending &amp; Choices · L3</span></th><td class="mx-c mx-full"></td><td class="mx-c mx-part"></td><td class="mx-c mx-none"></td><td class="mx-c mx-full"></td><td class="mx-c mx-part"></td></tr>
+                <tr data-pillar="2" style="--mx-pillar:#3ec6cc"><th scope="row"><span class="mx-mod">Consumer Rights</span><span class="mx-meta">Spending &amp; Choices · L3</span></th><td class="mx-c mx-full"></td><td class="mx-c mx-full"></td><td class="mx-c mx-none"></td><td class="mx-c mx-full"></td><td class="mx-c mx-full"></td></tr>
+                <!-- Pillar 3 · Saving & Growth -->
+                <tr data-pillar="3" style="--mx-pillar:#3ec6cc"><th scope="row"><span class="mx-mod">Patience</span><span class="mx-meta">Saving &amp; Growth · L1</span></th><td class="mx-c mx-full"></td><td class="mx-c mx-part"></td><td class="mx-c mx-none"></td><td class="mx-c mx-full"></td><td class="mx-c mx-full"></td></tr>
+                <tr data-pillar="3" style="--mx-pillar:#3ec6cc"><th scope="row"><span class="mx-mod">Banking 101</span><span class="mx-meta">Saving &amp; Growth · L2</span></th><td class="mx-c mx-full"></td><td class="mx-c mx-full"></td><td class="mx-c mx-part"></td><td class="mx-c mx-full"></td><td class="mx-c mx-full"></td></tr>
+                <tr data-pillar="3" style="--mx-pillar:#3ec6cc"><th scope="row"><span class="mx-mod">Trade-offs</span><span class="mx-meta">Saving &amp; Growth · L3</span></th><td class="mx-c mx-full"></td><td class="mx-c mx-part"></td><td class="mx-c mx-part"></td><td class="mx-c mx-full"></td><td class="mx-c mx-full"></td></tr>
+                <tr data-pillar="3" style="--mx-pillar:#3ec6cc"><th scope="row"><span class="mx-mod">The Snowball</span><span class="mx-meta">Saving &amp; Growth · L2</span></th><td class="mx-c mx-full"></td><td class="mx-c mx-full"></td><td class="mx-c mx-full"></td><td class="mx-c mx-full"></td><td class="mx-c mx-full"></td></tr>
+                <!-- Pillar 4 · Borrowing & Debt -->
+                <tr data-pillar="4" style="--mx-pillar:#e6b222"><th scope="row"><span class="mx-mod">The Interest Trap</span><span class="mx-meta">Borrowing &amp; Debt · L2</span></th><td class="mx-c mx-full"></td><td class="mx-c mx-full"></td><td class="mx-c mx-full"></td><td class="mx-c mx-full"></td><td class="mx-c mx-full"></td></tr>
+                <tr data-pillar="4" style="--mx-pillar:#e6b222"><th scope="row"><span class="mx-mod">Credit Scores</span><span class="mx-meta">Borrowing &amp; Debt · L3</span></th><td class="mx-c mx-full"></td><td class="mx-c mx-full"></td><td class="mx-c mx-none"></td><td class="mx-c mx-part"></td><td class="mx-c mx-full"></td></tr>
+                <tr data-pillar="4" style="--mx-pillar:#e6b222"><th scope="row"><span class="mx-mod">Good vs. Bad Debt</span><span class="mx-meta">Borrowing &amp; Debt · L3</span></th><td class="mx-c mx-full"></td><td class="mx-c mx-full"></td><td class="mx-c mx-none"></td><td class="mx-c mx-part"></td><td class="mx-c mx-full"></td></tr>
+                <!-- Pillar 5 · Investing & Future -->
+                <tr data-pillar="5" style="--mx-pillar:#e6b222"><th scope="row"><span class="mx-mod">Compound Growth</span><span class="mx-meta">Investing &amp; Future · L4</span></th><td class="mx-c mx-part"></td><td class="mx-c mx-full"></td><td class="mx-c mx-full"></td><td class="mx-c mx-full"></td><td class="mx-c mx-full"></td></tr>
+                <tr data-pillar="5" style="--mx-pillar:#e6b222"><th scope="row"><span class="mx-mod">Inflation</span><span class="mx-meta">Investing &amp; Future · L2</span></th><td class="mx-c mx-part"></td><td class="mx-c mx-part"></td><td class="mx-c mx-full"></td><td class="mx-c mx-full"></td><td class="mx-c mx-full"></td></tr>
+                <tr data-pillar="5" style="--mx-pillar:#e6b222"><th scope="row"><span class="mx-mod">Risk &amp; Diversification</span><span class="mx-meta">Investing &amp; Future · L4</span></th><td class="mx-c mx-full"></td><td class="mx-c mx-full"></td><td class="mx-c mx-part"></td><td class="mx-c mx-part"></td><td class="mx-c mx-full"></td></tr>
+                <tr data-pillar="5" style="--mx-pillar:#e6b222"><th scope="row"><span class="mx-mod">Insurance</span><span class="mx-meta">Investing &amp; Future · L3</span></th><td class="mx-c mx-full"></td><td class="mx-c mx-full"></td><td class="mx-c mx-part"></td><td class="mx-c mx-full"></td><td class="mx-c mx-full"></td></tr>
+                <tr data-pillar="5" style="--mx-pillar:#e6b222"><th scope="row"><span class="mx-mod">Pensions</span><span class="mx-meta">Investing &amp; Future · L4</span></th><td class="mx-c mx-full"></td><td class="mx-c mx-full"></td><td class="mx-c mx-full"></td><td class="mx-c mx-full"></td><td class="mx-c mx-full"></td></tr>
+                <!-- Pillar 6 · Society & Wellbeing -->
+                <tr data-pillar="6" style="--mx-pillar:#e6b222"><th scope="row"><span class="mx-mod">Giving &amp; Charity</span><span class="mx-meta">Society &amp; Wellbeing · L1</span></th><td class="mx-c mx-full"></td><td class="mx-c mx-full"></td><td class="mx-c mx-none"></td><td class="mx-c mx-full"></td><td class="mx-c mx-full"></td></tr>
+                <tr data-pillar="6" style="--mx-pillar:#e6b222"><th scope="row"><span class="mx-mod">Digital Money</span><span class="mx-meta">Society &amp; Wellbeing · L2</span></th><td class="mx-c mx-full"></td><td class="mx-c mx-part"></td><td class="mx-c mx-none"></td><td class="mx-c mx-full"></td><td class="mx-c mx-full"></td></tr>
+                <tr data-pillar="6" style="--mx-pillar:#e6b222"><th scope="row"><span class="mx-mod">Money &amp; Mind</span><span class="mx-meta">Society &amp; Wellbeing · L3</span></th><td class="mx-c mx-full"></td><td class="mx-c mx-part"></td><td class="mx-c mx-none"></td><td class="mx-c mx-full"></td><td class="mx-c mx-full"></td></tr>
+                <tr data-pillar="6" style="--mx-pillar:#e6b222"><th scope="row"><span class="mx-mod">Social Comparison</span><span class="mx-meta">Society &amp; Wellbeing · L3</span></th><td class="mx-c mx-full"></td><td class="mx-c mx-none"></td><td class="mx-c mx-none"></td><td class="mx-c mx-full"></td><td class="mx-c mx-part"></td></tr>
+                <tr data-pillar="6" style="--mx-pillar:#e6b222"><th scope="row"><span class="mx-mod">Gambling &amp; Loot Boxes</span><span class="mx-meta">Society &amp; Wellbeing · L3 · statutory RSHE</span></th><td class="mx-c mx-full"></td><td class="mx-c mx-none"></td><td class="mx-c mx-part"></td><td class="mx-c mx-full"></td><td class="mx-c mx-full"></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="mx-legend">
+            <span><i class="lg-full">&#9679;</i> Direct coverage</span>
+            <span><i class="lg-part">&#9680;</i> Partial / contributory</span>
+            <span><i class="lg-none">&#8211;</i> Not addressed</span>
+          </div>
+
+          <p class="mx-caption" id="mx-caption">Every one of the 25 modules maps — fully or partially — to the <strong>PSHE programme of study</strong> and Scotland's <strong>Curriculum for Excellence</strong>. Tap a framework above to see how each module lines up.</p>
+
+          <div class="mx-foot">
+            <p class="mx-note"><b>How to read this.</b> Coverage is drawn from the published programmes of study (sources below). Framework wording is verified against primary sources; an independent educationalist review is in progress as part of our Financial Education Quality Mark submission.</p>
+            <p class="mx-note"><b>Gatsby Benchmarks.</b> Referenced as <em>contributory only</em>: the Earning &amp; Value pillar contributes to Benchmarks 2 and 4 by giving learners labour-market information and linking curriculum concepts to the world of work.</p>
+          </div>
+        </div><!-- /mx-panel -->
+
+        <div class="mx-cta">
+          <a href="#signup" class="btn-primary btn-hero">
+            Bring Morechard to your school
+            <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </a>
+          <a href="#evidence" class="btn-ghost">See the evidence base</a>
+        </div>
+
+      </div><!-- /mx-dash -->
+    </div>
+  </section>
+
+  <!-- ── Editorial intro (pro-school framing) ── -->
+  <section class="audience-section audience-intro">
+    <div class="container">
+      <p class="reveal">Financial education has been on the curriculum since 2014. The gap was never the intention — it's the time, the timetable, and the fact that a lesson on compound interest rarely lands when a 13-year-old has nothing yet to compound.</p>
+      <p class="reveal d1">Morechard closes that gap from the other side. The concepts are yours to teach; we make them real at home — triggered by the child's own money, at the exact moment the idea finally means something.</p>
+    </div>
+  </section>
+
+  <!-- ── Benefits grid ── -->
+  <section class="audience-section">
+    <div class="container">
+      <span class="section-label reveal">Why it works for schools</span>
+      <h2 class="section-headline reveal">Six things that matter to an educator.</h2>
+
+      <div class="audience-benefits-grid">
+
+        <article class="benefit-card reveal d1">
+          <div class="benefit-scene">
+            <svg viewBox="0 0 280 140" fill="none" aria-hidden="true" preserveAspectRatio="xMidYMid meet">
+              <rect x="22" y="20" width="150" height="100" rx="8" fill="var(--bg-cream)" stroke="var(--border-light)"/>
+              <rect x="34" y="32" width="80" height="6" rx="3" fill="var(--text-sub)" opacity="0.4"/>
+              <circle cx="40" cy="54" r="6" fill="var(--teal)" opacity="0.85"/><path d="M37 54l2 2 4-4" stroke="#fff" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+              <rect x="52" y="51" width="100" height="5" rx="2.5" fill="var(--text-sub)" opacity="0.28"/>
+              <circle cx="40" cy="74" r="6" fill="var(--teal)" opacity="0.7"/><path d="M37 74l2 2 4-4" stroke="#fff" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+              <rect x="52" y="71" width="86" height="5" rx="2.5" fill="var(--text-sub)" opacity="0.22"/>
+              <circle cx="40" cy="94" r="6" fill="var(--teal)" opacity="0.55"/><path d="M37 94l2 2 4-4" stroke="#fff" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+              <rect x="52" y="91" width="94" height="5" rx="2.5" fill="var(--text-sub)" opacity="0.18"/>
+              <rect x="196" y="34" width="60" height="16" rx="5" fill="var(--teal-08)" stroke="var(--teal)" stroke-width="0.9"/><text x="226" y="45" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="8" font-weight="600" fill="var(--teal)">PSHE</text>
+              <rect x="196" y="56" width="60" height="16" rx="5" fill="var(--teal-08)" stroke="var(--teal)" stroke-width="0.9"/><text x="226" y="67" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="8" font-weight="600" fill="var(--teal)">CfW</text>
+              <rect x="196" y="78" width="60" height="16" rx="5" fill="var(--gold-12)" stroke="var(--gold-30)"/><text x="226" y="89" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="8" font-weight="600" fill="var(--gold-dark)">CfE</text>
+            </svg>
+          </div>
+          <span class="benefit-feature">Curriculum-aligned</span>
+          <h3 class="benefit-headline">Mapped to the frameworks you already work to.</h3>
+          <p class="benefit-body">Every module is mapped against PSHE, England Citizenship &amp; Maths, Curriculum for Wales, and Scotland's CfE — drawn from the published programmes of study, not our marketing.</p>
+        </article>
+
+        <article class="benefit-card reveal d1">
+          <div class="benefit-scene">
+            <svg viewBox="0 0 280 140" fill="none" aria-hidden="true" preserveAspectRatio="xMidYMid meet">
+              <rect x="92" y="40" width="96" height="74" rx="8" fill="var(--bg-cream)" stroke="var(--border-light)"/>
+              <path d="M92 58h96" stroke="var(--border-light)"/>
+              <rect x="104" y="46" width="30" height="6" rx="3" fill="var(--gold-dark)" opacity="0.5"/>
+              <circle cx="176" cy="49" r="3" fill="var(--gold)"/>
+              <rect x="120" y="70" width="40" height="32" rx="5" fill="var(--gold-12)" stroke="var(--gold-30)"/>
+              <text x="140" y="91" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="13" font-weight="700" fill="var(--gold-dark)">?</text>
+              <path d="M140 24l6 4v6c0 4-2.6 6.2-6 6.8-3.4-.6-6-2.8-6-6.8v-6l6-4z" fill="var(--teal-08)" stroke="var(--teal)" stroke-width="1.4" stroke-linejoin="round"/>
+              <path d="M137 32l2 2 4-4" stroke="var(--teal)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              <text x="140" y="128" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="8.5" fill="var(--text-sub)" opacity="0.6">Loot box · the house edge, taught</text>
+            </svg>
+          </div>
+          <span class="benefit-feature">Statutory financial-harms</span>
+          <h3 class="benefit-headline">Covers the gambling &amp; loot-box content that's now statutory.</h3>
+          <p class="benefit-body">The 2026 PSHE programme places gambling and chance-based gaming transactions in statutory RSHE. Our module teaches the house edge, the gambler's fallacy, and how loot boxes are designed to pull spending.</p>
+        </article>
+
+        <article class="benefit-card reveal d1">
+          <div class="benefit-scene">
+            <svg viewBox="0 0 280 140" fill="none" aria-hidden="true" preserveAspectRatio="xMidYMid meet">
+              <circle cx="56" cy="70" r="22" fill="var(--gold-12)" stroke="var(--gold-30)"/>
+              <text x="56" y="76" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="13" font-weight="700" fill="var(--gold-dark)">£3</text>
+              <path d="M86 70h28" stroke="var(--teal)" stroke-width="1.4" stroke-dasharray="5 4"/><path d="M108 64l6 6-6 6" stroke="var(--teal)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+              <rect x="124" y="40" width="132" height="60" rx="8" fill="var(--teal-08)" stroke="var(--teal)" stroke-width="1.1"/>
+              <path d="M150 70a8 8 0 0116 0" stroke="var(--teal)" stroke-width="1.6" stroke-linecap="round"/><circle cx="158" cy="60" r="4" fill="var(--teal)"/><line x1="158" y1="52" x2="158" y2="48" stroke="var(--teal)" stroke-width="1.4" stroke-linecap="round"/><line x1="158" y1="48" x2="162" y2="50" stroke="var(--teal)" stroke-width="1.4" stroke-linecap="round"/>
+              <rect x="176" y="56" width="68" height="5" rx="2.5" fill="var(--teal)" opacity="0.4"/>
+              <rect x="176" y="66" width="56" height="5" rx="2.5" fill="var(--teal)" opacity="0.3"/>
+              <rect x="176" y="76" width="62" height="5" rx="2.5" fill="var(--teal)" opacity="0.22"/>
+              <text x="140" y="124" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="8.5" fill="var(--text-sub)" opacity="0.6">Real chore → the lesson it triggers</text>
+            </svg>
+          </div>
+          <span class="benefit-feature">Real-data, not slides</span>
+          <h3 class="benefit-headline">Lessons triggered by what a child actually did.</h3>
+          <p class="benefit-body">No generic worksheet. When a child earns, saves, or overspends, the matching lesson surfaces — five minutes, grounded in their own numbers. Timing is the pedagogy.</p>
+        </article>
+
+        <article class="benefit-card reveal d2">
+          <div class="benefit-scene">
+            <svg viewBox="0 0 280 140" fill="none" aria-hidden="true" preserveAspectRatio="xMidYMid meet">
+              <rect x="20" y="48" width="80" height="64" rx="6" fill="var(--bg-cream)" stroke="var(--border-light)"/>
+              <path d="M28 48l32-20 32 20" fill="none" stroke="var(--teal)" stroke-width="1.6" stroke-linejoin="round"/>
+              <rect x="40" y="64" width="16" height="16" rx="2" fill="var(--teal-08)" stroke="var(--teal)" stroke-width="0.9"/><rect x="64" y="64" width="16" height="16" rx="2" fill="var(--teal-08)" stroke="var(--teal)" stroke-width="0.9"/>
+              <rect x="50" y="92" width="20" height="20" fill="var(--teal)" opacity="0.18"/>
+              <text x="60" y="126" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="8" fill="var(--text-sub)" opacity="0.6">School</text>
+              <path d="M100 92c40-28 40-28 80 0" stroke="var(--gold)" stroke-width="1.6" stroke-dasharray="4 4" fill="none"/>
+              <circle cx="140" cy="73" r="13" fill="var(--gold-12)" stroke="var(--gold-30)"/><text x="140" y="77" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="8" font-weight="600" fill="var(--gold-dark)">child</text>
+              <rect x="180" y="56" width="80" height="56" rx="6" fill="var(--bg-cream)" stroke="var(--border-light)"/>
+              <path d="M188 56l32-18 32 18" fill="none" stroke="var(--gold)" stroke-width="1.6" stroke-linejoin="round"/>
+              <rect x="206" y="78" width="28" height="34" rx="2" fill="var(--gold)" opacity="0.16"/>
+              <text x="220" y="126" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="8" fill="var(--text-sub)" opacity="0.6">Home</text>
+            </svg>
+          </div>
+          <span class="benefit-feature">Home–school bridge</span>
+          <h3 class="benefit-headline">The lesson continues at the kitchen table.</h3>
+          <p class="benefit-body">What you start in class is reinforced at home, with parents in the loop. Each module opens a conversation between parent and child — extending your teaching beyond the school gate.</p>
+        </article>
+
+        <article class="benefit-card reveal d2">
+          <div class="benefit-scene">
+            <svg viewBox="0 0 280 140" fill="none" aria-hidden="true" preserveAspectRatio="xMidYMid meet">
+              <rect x="106" y="58" width="68" height="52" rx="7" fill="var(--teal-08)" stroke="var(--teal)" stroke-width="1.3"/>
+              <path d="M122 58v-10a18 18 0 0136 0v10" stroke="var(--teal)" stroke-width="1.6" stroke-linecap="round"/>
+              <circle cx="140" cy="80" r="5" fill="var(--teal)" opacity="0.8"/><line x1="140" y1="85" x2="140" y2="94" stroke="var(--teal)" stroke-width="1.6" stroke-linecap="round"/>
+              <rect x="78" y="118" width="56" height="0" />
+              <rect x="58" y="22" width="58" height="20" rx="6" fill="var(--card-light)" stroke="var(--border-light)"/><text x="87" y="35" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="8.5" fill="var(--text-sub)">"Alex"</text>
+              <rect x="164" y="22" width="74" height="20" rx="6" fill="var(--card-light)" stroke="var(--border-light)"/><text x="201" y="35" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="8" fill="var(--text-sub)">no real name</text>
+              <line x1="93" y1="42" x2="120" y2="58" stroke="var(--teal)" stroke-width="1" stroke-dasharray="3 3"/><line x1="195" y1="42" x2="160" y2="58" stroke="var(--teal)" stroke-width="1" stroke-dasharray="3 3"/>
+              <text x="140" y="126" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="8.5" fill="var(--text-sub)" opacity="0.6">Nicknames only · no data to AI</text>
+            </svg>
+          </div>
+          <span class="benefit-feature">Safeguarding by design</span>
+          <h3 class="benefit-headline">Built for child privacy from the ground up.</h3>
+          <p class="benefit-body">Nicknames only — never a child's real name. No child data is sent to AI providers, data sits in UK/EU regions, and there are no debit cards. Aligned with UK GDPR, COPPA and GDPR-K.</p>
+        </article>
+
+        <article class="benefit-card reveal d2">
+          <div class="benefit-scene">
+            <svg viewBox="0 0 280 140" fill="none" aria-hidden="true" preserveAspectRatio="xMidYMid meet">
+              <rect x="92" y="56" width="96" height="58" rx="8" fill="var(--gold-12)" stroke="var(--gold-30)"/>
+              <path d="M92 74h96" stroke="var(--gold-30)"/>
+              <rect x="136" y="40" width="8" height="74" fill="var(--gold)" opacity="0.5"/>
+              <path d="M140 40c-2-12-18-12-16 0 0 0 8 2 16 0z" fill="var(--gold)" opacity="0.6"/>
+              <path d="M140 40c2-12 18-12 16 0 0 0-8 2-16 0z" fill="var(--gold)" opacity="0.6"/>
+              <text x="140" y="100" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="16" font-weight="700" fill="var(--gold-dark)">£0</text>
+              <text x="140" y="128" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="8.5" fill="var(--text-sub)" opacity="0.6">A gift to the school · no procurement</text>
+            </svg>
+          </div>
+          <span class="benefit-feature">Free for schools</span>
+          <h3 class="benefit-headline">No licence fees. No per-pupil charges.</h3>
+          <p class="benefit-body">Morechard is offered to schools at no cost, as a public-benefit commitment to financial education. Nothing to procure, nothing to install — pupils access it at home through their families.</p>
+        </article>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Key-stage crosswalk ── -->
+  <section class="audience-section">
+    <div class="container">
+      <span class="section-label reveal">Where it fits</span>
+      <h2 class="section-headline reveal">Three tiers, mapped to your key stages.</h2>
+      <p class="section-sub reveal">The Lab's tiers track each nation's progression structure. Ages are indicative — frameworks define progression by attainment, not age. A Seed tier (ages 6–9) is in development.</p>
+
+      <div class="ks-cross">
+        <div class="ks-card tier-sapling reveal d1">
+          <div class="ks-tier">Sapling</div>
+          <div class="ks-age">Ages 10–12</div>
+          <ul class="ks-rows">
+            <li><span class="ks-k">England</span><span class="ks-v">Upper KS2 / KS3</span></li>
+            <li><span class="ks-k">Wales</span><span class="ks-v">PS2–PS3</span></li>
+            <li><span class="ks-k">Scotland</span><span class="ks-v">Second / Third</span></li>
+          </ul>
+        </div>
+        <div class="ks-card tier-oak reveal d2">
+          <div class="ks-tier">Oak</div>
+          <div class="ks-age">Ages 13–15</div>
+          <ul class="ks-rows">
+            <li><span class="ks-k">England</span><span class="ks-v">KS3 / KS4</span></li>
+            <li><span class="ks-k">Wales</span><span class="ks-v">PS3–PS4</span></li>
+            <li><span class="ks-k">Scotland</span><span class="ks-v">Third / Fourth</span></li>
+          </ul>
+        </div>
+        <div class="ks-card tier-canopy reveal d3">
+          <div class="ks-tier">Canopy</div>
+          <div class="ks-age">Ages 16+</div>
+          <ul class="ks-rows">
+            <li><span class="ks-k">England</span><span class="ks-v">KS4 / post-16</span></li>
+            <li><span class="ks-k">Wales</span><span class="ks-v">PS4–PS5</span></li>
+            <li><span class="ks-k">Scotland</span><span class="ks-v">Fourth / Senior</span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Is / Isn't ── -->
+  <section class="audience-section">
+    <div class="container">
+      <span class="section-label reveal">Before you introduce it</span>
+      <h2 class="section-headline reveal">What Morechard is (and isn't).</h2>
+      <p class="section-sub reveal">A quick disambiguation, because it sits alongside your teaching — not in place of it.</p>
+
+      <div class="audience-spec-cols">
+        <div class="spec-col positive reveal d1">
+          <h3>Morechard is&hellip;</h3>
+          <ul>
+            <li>A curriculum-aligned home companion to your teaching</li>
+            <li>A real-data financial-literacy programme for families</li>
+            <li>A bridge between the classroom and the kitchen table</li>
+            <li>Free for schools, with nothing to install</li>
+          </ul>
+        </div>
+        <div class="spec-col negative reveal d2">
+          <h3>Morechard is not&hellip;</h3>
+          <ul>
+            <li>A replacement for classroom financial education</li>
+            <li>A debit card, bank account, or banking product</li>
+            <li>A data-harvesting or advertising platform</li>
+            <li>A school IT system to procure and maintain</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Evidence base (forensic-style dark card) ── -->
+  <section class="audience-section" id="evidence">
+    <div class="container">
+      <span class="section-label reveal">The evidence base</span>
+      <h2 class="section-headline reveal">Mapped against the published programmes of study.</h2>
+      <p class="section-sub reveal">For curriculum leads who want the references before they recommend anything.</p>
+
+      <div class="signature-forensic reveal" id="evidence-spec">
+        <div class="forensic-header">Morechard Learning Lab &middot; Curriculum Alignment</div>
+        <h3>Coverage, frameworks, verification.</h3>
+        <dl class="forensic-grid">
+          <dt data-step="1">Modules mapped</dt>        <dd data-step="1">25 across 6 financial pillars</dd>
+          <dt data-step="2">PSHE (2026 PoS)</dt>       <dd data-step="2">25 / 25 — incl. statutory Section 1 RSHE</dd>
+          <dt data-step="3">Scotland — CfE</dt>        <dd data-step="3">25 / 25 — Money organiser (code 09)</dd>
+          <dt data-step="4">Curriculum for Wales</dt>  <dd data-step="4">Maths &amp; Numeracy + Health &amp; Well-being</dd>
+          <dt data-step="5">England — Citizenship</dt> <dd data-step="5">Statutory KS3 / KS4 money content</dd>
+          <dt data-step="6">England — Mathematics</dt> <dd data-step="6">Financial maths: % , interest, compound</dd>
+          <dt data-step="7">Gatsby Benchmarks</dt>     <dd data-step="7">Contributory only &middot; B2 &amp; B4</dd>
+          <dt data-step="8">Statutory harms</dt>       <dd data-step="8">Gambling &amp; loot boxes &middot; covered</dd>
+          <dt data-step="9">Verification</dt>          <dd data-step="9">Wording checked vs primary sources</dd>
+          <dt data-step="10">Independent review</dt>    <dd data-step="10">Educationalist sign-off in progress</dd>
+          <dt data-step="11">Quality Mark</dt>         <dd data-step="11">Financial Education Quality Mark &middot; in submission</dd>
+        </dl>
+        <p class="forensic-disclaimer">This mapping is drawn from the published programmes of study cited below. Independent educationalist review is in progress; we will publish the reviewer's name on completion.</p>
+      </div>
+
+      <ul class="src-list reveal">
+        <li><b>DfE</b> — National curriculum in England: Citizenship programmes of study (KS3 &amp; KS4). <a href="https://www.gov.uk/government/publications/national-curriculum-in-england-citizenship-programmes-of-study" target="_blank" rel="noopener">gov.uk</a></li>
+        <li><b>PSHE Association</b> — Programme of Study for PSHE education (KS1–5), 2026 edition. <a href="https://pshe-association.org.uk/" target="_blank" rel="noopener">pshe-association.org.uk</a></li>
+        <li><b>Welsh Government</b> — Curriculum for Wales: Mathematics &amp; Numeracy; Health &amp; Well-being. <a href="https://hwb.gov.wales/curriculum-for-wales/" target="_blank" rel="noopener">hwb.gov.wales</a></li>
+        <li><b>Education Scotland</b> — Numeracy &amp; Mathematics Experiences &amp; Outcomes (Money, code 09). <a href="https://education.gov.scot/" target="_blank" rel="noopener">education.gov.scot</a></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ── How to bring it to your school ── -->
+  <section class="audience-section">
+    <div class="container">
+      <span class="section-label reveal">Getting started</span>
+      <h2 class="section-headline reveal">A simple way to bring it in.</h2>
+      <p class="section-sub reveal">No procurement, no contract, no cost. A path you can move along at your own pace.</p>
+
+      <div class="recommend-row">
+        <div class="recommend-card reveal d1">
+          <h3>Pilot</h3>
+          <p>Introduce Morechard to one year group's families — a newsletter line and a link is all it takes. Pupils access it at home; nothing changes in your IT.</p>
+        </div>
+        <div class="recommend-card reveal d2">
+          <h3>Embed</h3>
+          <p>Point each module to where it already sits in your scheme of work using the alignment matrix, so home learning reinforces the classroom at the right moment.</p>
+        </div>
+        <div class="recommend-card reveal d3">
+          <h3>Evidence</h3>
+          <p>Use the curriculum-mapping matrix and engagement as evidence of financial-education provision — useful for PSHE audits and the Financial Education Quality Mark.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── FAQ ── -->
+  <section class="audience-section">
+    <div class="container">
+      <span class="section-label reveal">Common questions</span>
+      <h2 class="section-headline reveal">For schools &amp; educators.</h2>
+
+      <div class="audience-faq">
+        <details class="reveal">
+          <summary>Does Morechard replace what we teach in class?</summary>
+          <div class="faq-answer"><div class="faq-inner">No. Morechard is built to support the curriculum, not replace it. Schools provide the concepts; Morechard reinforces them at home, where the child applies each idea to their own real earning and spending. Every module is mapped to the published programmes of study so it slots alongside what you already deliver.</div></div>
+        </details>
+        <details class="reveal">
+          <summary>Is Morechard really free for schools?</summary>
+          <div class="faq-answer"><div class="faq-inner">Yes. There is no cost to the school — no licence fees, no per-pupil charges, and no IT procurement. Morechard is offered to schools at no charge as part of our public-benefit commitment to financial education. Pupils access it at home through their families.</div></div>
+        </details>
+        <details class="reveal">
+          <summary>Which frameworks does the Learning Lab map to?</summary>
+          <div class="faq-answer"><div class="faq-inner">All 25 modules are mapped against the PSHE Association Programme of Study (2026 edition), England Citizenship and Mathematics (statutory), Curriculum for Wales, and Scotland's Curriculum for Excellence. The mapping is drawn from the published programmes of study, cited on this page. Gatsby Benchmarks are referenced as contributory only, through the Earning &amp; Value pillar.</div></div>
+        </details>
+        <details class="reveal">
+          <summary>What about pupil data and safeguarding?</summary>
+          <div class="faq-answer"><div class="faq-inner">Children are identified by nickname only — Morechard never asks for or stores a child's real name. No child personal data is sent to AI or language-model providers. Family data is stored in UK and EU regions, aligned with UK GDPR, COPPA and GDPR-K. There are no debit cards and no bank accounts.</div></div>
+        </details>
+        <details class="reveal">
+          <summary>Does it cover the statutory financial-harms content?</summary>
+          <div class="faq-answer"><div class="faq-inner">Yes. The 2026 PSHE Association Programme of Study places gambling and chance-based transactions in gaming — including loot boxes — within statutory Section 1 RSHE. Morechard's Gambling &amp; Loot Boxes module covers the house edge, the gambler's fallacy, and the design features loot boxes use to encourage spending.</div></div>
+        </details>
+        <details class="reveal">
+          <summary>Which year groups is it for?</summary>
+          <div class="faq-answer"><div class="faq-inner">The Learning Lab launches across three tiers: Sapling (ages 10–12, upper KS2/KS3), Oak (ages 13–15, KS3/KS4) and Canopy (ages 16+, KS4/post-16). A Seed tier for ages 6–9 is in development.</div></div>
+        </details>
+        <details class="reveal">
+          <summary>Is there independent or Quality Mark validation?</summary>
+          <div class="faq-answer"><div class="faq-inner">Morechard is preparing a submission for the Financial Education Quality Mark, and this curriculum-mapping matrix is the per-module evidence artifact behind it. Framework wording is verified against primary sources, and an independent educationalist review is in progress. We will publish the reviewer's name on completion.</div></div>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  {{component:register-interest}}
+
+</main>
+<!-- BODY_END -->
+
+<!-- SCRIPTS_START -->
+<script>
+  document.documentElement.classList.add('no-transition');
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    document.documentElement.classList.remove('no-transition');
+  }));
+
+  // ── FAQ accordion ──
+  document.querySelectorAll('.audience-faq details').forEach(function (det) {
+    var answer = det.querySelector('.faq-answer');
+    var summary = det.querySelector('summary');
+    if (!answer || !summary) return;
+    det.setAttribute('open', '');
+    answer.style.height = '0';
+    summary.addEventListener('click', function (e) {
+      e.preventDefault();
+      var opening = !det.classList.contains('is-open');
+      answer.style.height = getComputedStyle(answer).height;
+      answer.classList.toggle('is-open', opening);
+      det.classList.toggle('is-open', opening);
+      requestAnimationFrame(function () {
+        if (opening) {
+          answer.style.height = answer.scrollHeight + 'px';
+          answer.addEventListener('transitionend', function onEnd(ev) {
+            if (ev.propertyName !== 'height') return;
+            answer.style.height = 'auto';
+            answer.removeEventListener('transitionend', onEnd);
+          });
+        } else {
+          answer.style.height = '0';
+        }
+      });
+    });
+  });
+
+  // ── Scroll-reveal ──
+  var io = new IntersectionObserver(
+    function (entries) { entries.forEach(function (e) { if (e.isIntersecting) e.target.classList.add('visible'); }); },
+    { threshold: 0.08 }
+  );
+  document.querySelectorAll('.reveal').forEach(function (el) { io.observe(el); });
+
+  // ── Matrix: stat count-up + row stagger when in view ──
+  (function () {
+    var table = document.getElementById('mx-table');
+    var stats = Array.from(document.querySelectorAll('.mx-stat-num[data-count]'));
+    var played = false;
+    function countUp(el) {
+      var target = parseInt(el.dataset.count, 10);
+      var start = null, dur = 900;
+      function step(ts) {
+        if (!start) start = ts;
+        var p = Math.min((ts - start) / dur, 1);
+        var eased = 1 - Math.pow(1 - p, 3);
+        el.textContent = Math.round(eased * target);
+        if (p < 1) requestAnimationFrame(step);
+      }
+      requestAnimationFrame(step);
+    }
+    function play() {
+      if (played) return;
+      played = true;
+      stats.forEach(countUp);
+      if (table) table.classList.add('is-in');
+    }
+    var dash = document.querySelector('.mx-dash');
+    if (!dash) return;
+    var mio = new IntersectionObserver(function (es) {
+      es.forEach(function (e) { if (e.isIntersecting) play(); });
+    }, { threshold: 0.2 });
+    mio.observe(dash);
+  })();
+
+  // ── Matrix: framework column filter ──
+  (function () {
+    var table = document.getElementById('mx-table');
+    var caption = document.getElementById('mx-caption');
+    var tabs = Array.from(document.querySelectorAll('.mx-tab'));
+    if (!table || !tabs.length) return;
+    var COPY = {
+      '0': 'Every one of the 25 modules maps — fully or partially — to the <strong>PSHE programme of study</strong> and Scotland’s <strong>Curriculum for Excellence</strong>. Tap a framework above to see how each module lines up.',
+      '1': '<strong>PSHE Association (2026 edition).</strong> All 25 modules map to the programme of study — 23 directly — including the statutory Section 1 RSHE content on gambling, scams and financial harms.',
+      '2': '<strong>England — Citizenship (statutory).</strong> Direct or partial coverage of the KS3/KS4 money content: income and expenditure, credit and debt, insurance, savings and pensions, and how public money is raised and spent.',
+      '3': '<strong>England — Mathematics (statutory).</strong> The numeracy modules deliver financial maths directly — percentages, interest, and compound growth on the child’s own real figures.',
+      '4': '<strong>Curriculum for Wales.</strong> Anchored in the Mathematics &amp; Numeracy “number system” statement and complemented in Health &amp; Well-being through risk and personal debt.',
+      '5': '<strong>Scotland — Curriculum for Excellence.</strong> All 25 modules map to the Money organiser (code 09) and its reinforcement in Health &amp; Wellbeing and Social Studies.'
+    };
+    tabs.forEach(function (tab) {
+      tab.addEventListener('click', function () {
+        var f = tab.dataset.focus;
+        tabs.forEach(function (t) { t.classList.toggle('is-active', t === tab); t.setAttribute('aria-selected', String(t === tab)); });
+        if (f === '0') table.removeAttribute('data-focus');
+        else table.setAttribute('data-focus', f);
+        if (caption && COPY[f]) caption.innerHTML = COPY[f];
+      });
+    });
+  })();
+
+  // ── Evidence spec: animated row-by-row reveal ──
+  (function () {
+    var spec = document.getElementById('evidence-spec');
+    if (!spec) return;
+    var rows = Array.from(spec.querySelectorAll('[data-step]'));
+    var STEP_MS = 150, played = false;
+    function play() {
+      if (played) return; played = true;
+      rows.forEach(function (el) {
+        var step = parseInt(el.dataset.step, 10);
+        setTimeout(function () { el.classList.add('is-visible'); }, step * STEP_MS);
+      });
+    }
+    var visIo = new IntersectionObserver(function (es) {
+      es.forEach(function (e) { if (e.isIntersecting) play(); });
+    }, { threshold: 0.3 });
+    visIo.observe(spec);
+  })();
+
+  // ── Reading progress bar (.read-progress — matches page-audience.css; skip build auto reading-progress) ──
+  (function () {
+    var progress = document.createElement('div');
+    progress.className = 'read-progress';
+    progress.setAttribute('aria-hidden', 'true');
+    var fill = document.createElement('div');
+    fill.className = 'read-progress-fill';
+    progress.appendChild(fill);
+    document.body.appendChild(progress);
+    var ticking = false;
+    function frame() {
+      var docH = document.documentElement.scrollHeight - window.innerHeight;
+      fill.style.width = (docH > 0 ? Math.min(1, Math.max(0, window.scrollY / docH)) : 0) * 100 + '%';
+      ticking = false;
+    }
+    window.addEventListener('scroll', function () { if (!ticking) { requestAnimationFrame(frame); ticking = true; } }, { passive: true });
+    frame();
+  })();
+</script>
+<!-- SCRIPTS_END -->
