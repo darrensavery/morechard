@@ -205,6 +205,17 @@ body.dark .benefit-card:hover { background: rgba(255,255,255,0.1); box-shadow: 0
 body.dark .benefit-card .benefit-scene { background: rgba(0,149,156,0.1); border-color: var(--border-dark); }
 .benefit-card:hover .benefit-scene { background: rgba(0,149,156,0.12); }
 
+/* Animated beam — household-neutral benefit scene (House A ↔ child ↔ House B).
+   Both homes' dashes flow inward, toward the shared record in the centre. */
+.benefit-scene .beam { stroke-linecap: round; }
+.benefit-scene .beam-a { animation: beamFlowA 1.1s linear infinite; }
+.benefit-scene .beam-b { animation: beamFlowB 1.1s linear infinite; }
+@keyframes beamFlowA { to { stroke-dashoffset: -16; } }
+@keyframes beamFlowB { to { stroke-dashoffset: 16; } }
+@media (prefers-reduced-motion: reduce) {
+  .benefit-scene .beam-a, .benefit-scene .beam-b { animation: none; }
+}
+
 .benefit-card .benefit-feature {
   font-size: 11px;
   font-weight: 500;
@@ -671,6 +682,67 @@ body.dark .audience-legal-note { color: var(--text-light-sub); }
   color: var(--text-sub);
 }
 
+/* ── Scenario timeline (connected 01·02·03 — replaces the case-card grid on
+   the separated-families page; sits below the dark trigger, so it carries
+   body.dark variants) ── */
+.scenario-timeline { position: relative; margin-top: 44px; }
+.scenario-timeline .st-list {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 30px;
+}
+@media (max-width: 800px) { .scenario-timeline .st-list { grid-template-columns: 1fr; gap: 34px; } }
+
+/* Connecting rail behind the number badges — draws in on reveal */
+.scenario-timeline .st-rail {
+  position: absolute;
+  top: 18px; left: 19px; right: 19px;
+  height: 2px;
+  background: var(--border-light);
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 0.9s cubic-bezier(0.16,1,0.3,1);
+}
+.scenario-timeline.visible .st-rail { transform: scaleX(1); }
+body.dark .scenario-timeline .st-rail { background: rgba(255,255,255,0.14); }
+@media (max-width: 800px) {
+  .scenario-timeline .st-rail { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .scenario-timeline .st-rail { transition: none; transform: scaleX(1); }
+}
+
+.scenario-timeline .st-node { position: relative; }
+.scenario-timeline .st-num {
+  width: 38px; height: 38px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-display);
+  font-size: 15px; font-weight: 500;
+  color: var(--teal);
+  background: var(--bg-cream);
+  border: 2px solid var(--teal);
+  margin-bottom: 18px;
+  position: relative; z-index: 1;
+  font-variant-numeric: tabular-nums;
+}
+body.dark .scenario-timeline .st-num { background: var(--bg-dark); }
+.scenario-timeline .st-title {
+  font-family: var(--font-display);
+  font-size: 19px; font-weight: 500;
+  line-height: 1.25;
+  color: var(--text-dark);
+  margin-bottom: 10px;
+}
+body.dark .scenario-timeline .st-title { color: var(--text-light); }
+.scenario-timeline .st-body {
+  font-size: 14.5px;
+  line-height: 1.55;
+  color: var(--text-sub);
+}
+body.dark .scenario-timeline .st-body { color: var(--text-light-sub); }
+
 /* ── 3-step (Plant / Tend / Harvest) ── */
 .audience-steps {
   display: grid;
@@ -727,15 +799,37 @@ body.dark .audience-legal-note { color: var(--text-light-sub); }
 
 /* ── Shield AI callout (Page 2) ── */
 .audience-callout {
+  position: relative;
   margin-top: 32px;
   padding: 32px;
   border-radius: var(--r-card);
-  border: 2px solid var(--teal);
+  border: 2px solid transparent;
   background: rgba(0,149,156,0.04);
   display: grid;
   grid-template-columns: 1fr auto;
   gap: 24px;
   align-items: center;
+}
+/* Animated teal→gold gradient border — echoes the app's premium shell, draws a
+   gentle eye to the conversion/price element. Masked ring so the fill stays clean. */
+.audience-callout::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 2px;
+  background: linear-gradient(120deg, var(--teal) 0%, var(--gold) 50%, var(--teal) 100%);
+  background-size: 220% 100%;
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+          mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+          mask-composite: exclude;
+  animation: calloutBorder 7s linear infinite;
+  pointer-events: none;
+}
+@keyframes calloutBorder { to { background-position: 220% 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .audience-callout::before { animation: none; }
 }
 @media (max-width: 720px) { .audience-callout { grid-template-columns: 1fr; } }
 .audience-callout .callout-eyebrow {
@@ -903,6 +997,14 @@ body.dark .audience-faq summary:hover { color: var(--teal); }
   padding: 22px;
   background: var(--card-light);
   border-radius: var(--r-card);
+  transition: transform 0.25s cubic-bezier(0.16,1,0.3,1), box-shadow 0.3s cubic-bezier(0,0,0.2,1);
+}
+.audience-why .why-tile:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 14px 32px rgba(27,45,46,0.10), 0 2px 6px rgba(27,45,46,0.04);
+}
+body.dark .audience-why .why-tile:hover {
+  box-shadow: 0 14px 36px rgba(0,0,0,0.45), 0 2px 8px rgba(0,0,0,0.25);
 }
 .audience-why .why-tile .why-title {
   font-family: var(--font-display);
@@ -1225,7 +1327,8 @@ body, body.dark { transition: background-color 0.55s cubic-bezier(0,0,0.6,1), co
 .benefit-card:hover,
 .case-card:hover,
 .step-card:hover,
-.recommend-card:hover { transition-duration: 0.25s; }
+.recommend-card:hover,
+.audience-why .why-tile:hover { transition-duration: 0.25s; }
 .audience-faq .faq-answer {
   transition:
     height 0.38s cubic-bezier(0.16,1,0.3,1),
