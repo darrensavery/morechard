@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { evaluateEligibility, FIRST_MILESTONE, REPEAT_DELTA, COOLDOWN_DAYS, MAYBE_LATER_DAYS, MAX_PROMPTS, FAMILY_COOLDOWN_DAYS } from './reviewPrompt'
+import { evaluateEligibility, FIRST_MILESTONE, REPEAT_DELTA, MAX_PROMPTS, FAMILY_COOLDOWN_DAYS } from './reviewPrompt'
 import type { ReviewPromptState } from '../types'
 
 const DAY_MS = 86_400_000
