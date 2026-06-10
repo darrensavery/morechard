@@ -161,14 +161,18 @@ export function ActivityTab({ familyId, child, childCount, onCountChange, unpaid
   const approveAllCurrency = completions[0]?.currency ?? 'GBP'
 
   const load = useCallback(async () => {
+    if (!familyId) return
     setLoading(true)
-    const [h, p] = await Promise.all([
-      getHistory({ family_id: familyId, child_id: child.id, limit: LIMIT, offset: 0 }),
-      getPayouts(familyId, child.id),
-    ])
-    setHistory(h.history)
-    setPayouts(p.payouts)
-    setLoading(false)
+    try {
+      const [h, p] = await Promise.all([
+        getHistory({ family_id: familyId, child_id: child.id, limit: LIMIT, offset: 0 }),
+        getPayouts(familyId, child.id),
+      ])
+      setHistory(h.history)
+      setPayouts(p.payouts)
+    } finally {
+      setLoading(false)
+    }
   }, [familyId, child.id])
 
   useEffect(() => { load() }, [familyId, child.id])
