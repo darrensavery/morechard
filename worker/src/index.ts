@@ -145,6 +145,7 @@ import {
 import { requireAuth, requireRole, requireFamilyMatch } from './lib/middleware.js';
 import { checkTrialStatus, getTrialStatus } from './lib/trial.js';
 import { handleCreateCheckout, handleStripeWebhook, handleCancelPlan, handleShieldUpgradePrice } from './routes/stripe.js';
+import { handleCreatePromoCode, handleListPromoCodes, handleGetPromoCode } from './routes/admin.js';
 import { handleExchange } from './routes/exchange.js';
 import {
   handleGenerateInvite,
@@ -419,6 +420,12 @@ async function route(request: Request, env: Env, method: string, path: string): 
 
   // Stripe webhook — public but signature-verified internally
   if (path === '/api/stripe/webhook' && method === 'POST') return handleStripeWebhook(request, env);
+
+  // Admin — protected by X-Admin-Key header
+  if (path === '/api/admin/promo-codes' && method === 'POST') return handleCreatePromoCode(request, env);
+  if (path === '/api/admin/promo-codes' && method === 'GET')  return handleListPromoCodes(request, env);
+  const promoMatch = path.match(/^\/api\/admin\/promo-codes\/([^/]+)$/);
+  if (promoMatch && method === 'GET') return handleGetPromoCode(promoMatch[1], request, env);
 
   // Market rates — CRON health check (no user auth)
   if (path === '/api/market-rates/cron' && method === 'GET') return handleMarketRateCron(request, env);

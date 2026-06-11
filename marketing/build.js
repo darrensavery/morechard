@@ -396,7 +396,7 @@ function buildBlog(headCommon, navHtml, footerHtml, hash) {
 
   var latestItems = latestSpokes.map(function(s) {
     var thumb = s.heroImage
-      ? '<img class="blog-article-item__thumb" src="/Images/' + s.heroImage + '_16_9.webp" alt="" loading="lazy" width="400" height="225" />'
+      ? '<img class="blog-article-item__thumb" src="/Images/' + s.heroImage + '.webp" alt="" loading="lazy" />'
       : ARTICLE_CARD_PLACEHOLDER;
     return '    <li class="blog-article-item"><a href="/blog/' + s.slug + '/">' +
       thumb +
@@ -586,7 +586,7 @@ function buildBlog(headCommon, navHtml, footerHtml, hash) {
       '  <ul class="blog-articles-list">\n' +
       pillarSpokes.map(function(s) {
         var thumb = s.heroImage
-          ? '<img class="blog-article-item__thumb" src="/Images/' + s.heroImage + '_16_9.webp" alt="" loading="lazy" width="400" height="225" />'
+          ? '<img class="blog-article-item__thumb" src="/Images/' + s.heroImage + '.webp" alt="" loading="lazy" />'
           : ARTICLE_CARD_PLACEHOLDER;
         return '    <li class="blog-article-item"><a href="/blog/' + s.slug + '/">' +
           thumb +
@@ -657,10 +657,10 @@ function buildBlog(headCommon, navHtml, footerHtml, hash) {
       dateModified: spoke.dateModified || spoke.datePublished,
       url: spokeCanonical,
       mainEntityOfPage: { '@type': 'WebPage', '@id': spokeCanonical },
-      ...(spoke.heroImage ? { image: 'https://morechard.com/Images/' + spoke.heroImage + '_16_9.webp' } : {})
+      ...(spoke.heroImage ? { image: 'https://morechard.com/Images/' + spoke.heroImage + '.webp' } : {})
     });
 
-    var heroImg16x9 = spoke.heroImage ? 'https://morechard.com/Images/' + spoke.heroImage + '_16_9.webp' : '';
+    var heroImg16x9 = spoke.heroImage ? 'https://morechard.com/Images/' + spoke.heroImage + '.webp' : '';
     var ogImageMeta = heroImg16x9
       ? '\n  <meta property="og:image" content="' + escapeAttr(heroImg16x9) + '" />'
         + '\n  <meta property="og:image:width" content="1200" />'
@@ -711,7 +711,7 @@ function buildBlog(headCommon, navHtml, footerHtml, hash) {
       '<span>' + escapeHtml(spoke.author || 'Darren Savery') + '</span>' +
       '</div>\n    </header>\n' +
       (spoke.heroImage
-        ? '<img class="blog-hero-img" src="/Images/' + spoke.heroImage + '_16_9.webp" alt="' + escapeAttr(spoke.title) + '" loading="eager" width="1200" height="675" />\n'
+        ? '<img class="blog-hero-img" src="/Images/' + spoke.heroImage + '.webp" alt="' + escapeAttr(spoke.title) + '" loading="eager" />\n'
         : '') +
       '    <div class="blog-body">' + spoke.bodyHtml + '</div>\n' +
       '  </article>\n' +
