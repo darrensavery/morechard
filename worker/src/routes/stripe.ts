@@ -32,17 +32,21 @@ import { JwtPayload } from '../lib/jwt.js';
 
 // ----------------------------------------------------------------
 // Product catalogue
-// Price IDs are test-mode values. Swap for live IDs before go-live.
+// Price IDs are read from environment variables so test/live values
+// are swapped without a code deploy. Set in wrangler.toml [vars]
+// for dev (test-mode IDs) and [env.production] vars for live IDs.
 // All modes are 'payment' (one-time). No 'subscription' mode used.
 // ----------------------------------------------------------------
-const PRICE_IDS: Partial<Record<PaymentType, string>> = {
-  COMPLETE:    'price_1TPqqZKGVFJVwtJFo37uEPPW',  // £44.99 one-time
-  COMPLETE_AI: 'price_1TQVUFKGVFJVwtJFmYUryKw6',  // £64.99 one-time
-  SHIELD_AI:   'price_1TQVVRKGVFJVwtJFbtozHn3b',  // £149.99 one-time
-  AI_UPGRADE:  'price_1TQVViKGVFJVwtJFLhSnEuh7',  // £29.99 one-time
-  // SHIELD legacy price retained so old sessions still resolve
-  SHIELD:      'price_1TPqqcKGVFJVwtJF6cFgzWf9',  // legacy alias → SHIELD_AI
-};
+
+function getPriceId(env: Env, paymentType: PaymentType): string | undefined {
+  switch (paymentType) {
+    case 'COMPLETE':    return env.STRIPE_PRICE_COMPLETE;
+    case 'COMPLETE_AI': return env.STRIPE_PRICE_COMPLETE_AI;
+    case 'SHIELD_AI':   return env.STRIPE_PRICE_SHIELD_AI;
+    case 'AI_UPGRADE':  return env.STRIPE_PRICE_AI_UPGRADE;
+    default:            return undefined;
+  }
+}
 
 // Amounts in minor units (pence), for audit log only.
 // Stripe is authoritative for the actual charge.
@@ -113,6 +117,7 @@ async function createCheckoutSession(
     'line_items[0][price]':    priceId,
     'line_items[0][quantity]': '1',
     'mode':                    'payment',
+    'allow_promotion_codes':   'true',
     'metadata[family_id]':     familyId,
     'metadata[payment_type]':  paymentType,
     'success_url':             `${appUrl}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
@@ -194,7 +199,13 @@ async function verifyWebhookSignature(
   const sig = await crypto.subtle.sign('HMAC', key, msgData);
   const hex = Array.from(new Uint8Array(sig)).map(b => b.toString(16).padStart(2, '0')).join('');
 
-  return hex === v1;
+  // Constant-time comparison to prevent timing attacks.
+  const a = new TextEncoder().encode(hex);
+  const b = new TextEncoder().encode(v1);
+  if (a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) diff |= a[i] ^ b[i];
+  return diff === 0;
 }
 
 // ----------------------------------------------------------------
@@ -235,6 +246,8 @@ export async function handleCreateCheckout(
   env: Env,
   auth: JwtPayload,
 ): Promise<Response> {
+  if (auth.role !== 'parent') return error('Only parents can purchase', 403);
+
   const body = await request.json() as { payment_type?: unknown };
   const payment_type = body.payment_type as PaymentType;
 
@@ -242,7 +255,7 @@ export async function handleCreateCheckout(
     return error(`payment_type must be one of: ${PURCHASABLE.join(', ')}`, 400);
   }
 
-  let priceId: string | undefined = PRICE_IDS[payment_type];
+  let priceId: string | undefined = getPriceId(env, payment_type);
 
   // For Shield, calculate upgrade credit and use a dynamic price if applicable
   if (payment_type === 'SHIELD_AI') {
@@ -361,6 +374,24 @@ async function handleCheckoutCompleted(session: StripeSession, env: Env): Promis
   // Record referral conversion if applicable
   const now = Math.floor(Date.now() / 1000);
   await recordReferralConversion(env, family_id, payment_type, session.id, now);
+
+  // Record promo code redemption if one was applied at checkout
+  const promoCodeId = session.discounts?.[0]?.promotion_code ?? null;
+  if (promoCodeId) {
+    const promoRow = await env.DB
+      .prepare('SELECT id FROM promo_codes WHERE stripe_promo_code_id = ?')
+      .bind(promoCodeId)
+      .first<{ id: string }>();
+    if (promoRow) {
+      await env.DB
+        .prepare(`
+          INSERT OR IGNORE INTO promo_code_redemptions (id, promo_code_id, family_id, stripe_session_id, redeemed_at)
+          VALUES (?, ?, ?, ?, ?)
+        `)
+        .bind(crypto.randomUUID(), promoRow.id, family_id, session.id, now)
+        .run();
+    }
+  }
 
   console.log(`Webhook: processed ${rawType} (normalised: ${payment_type}) for family ${family_id}`);
 }
@@ -573,4 +604,5 @@ interface StripeSession {
   id: string;
   metadata?: Record<string, string>;
   amount_total?: number;  // actual charge in minor units (pence for GBP)
+  discounts?: Array<{ promotion_code: string | null }>;
 }

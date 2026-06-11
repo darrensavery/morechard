@@ -10,6 +10,8 @@ import { useGatekeeper } from '../../hooks/useGatekeeper'
 import { useAndroidBack } from '../../hooks/useAndroidBack'
 import { useDragToClose } from '../../hooks/useDragToClose'
 import { PremiumShell, MentorAvatar, ProBadge, injectPremiumStyles } from '../ui/PremiumShell'
+import { getDetails } from '../../lib/localBankDetails'
+import { useLocale, currencySymbol } from '../../lib/locale'
 
 interface Props {
   familyId: string
@@ -52,6 +54,8 @@ function MiniSheet({ onClose, children }: { onClose: () => void; children: React
 
 export function ActivityTab({ familyId, child, childCount, onCountChange, unpaidRow, onAfterPayout, goalProgress }: Props) {
   // ── Pending completions (absorbed from PendingTab) ───────────────────────────
+  const { locale } = useLocale()
+  const familyCurrency = locale === 'en-US' ? 'USD' : locale === 'pl' ? 'PLN' : 'GBP'
   const { challenge, GatekeeperModal } = useGatekeeper()
   const onCountChangeRef = useRef(onCountChange)
   useEffect(() => { onCountChangeRef.current = onCountChange }, [onCountChange])
@@ -161,14 +165,18 @@ export function ActivityTab({ familyId, child, childCount, onCountChange, unpaid
   const approveAllCurrency = completions[0]?.currency ?? 'GBP'
 
   const load = useCallback(async () => {
+    if (!familyId) return
     setLoading(true)
-    const [h, p] = await Promise.all([
-      getHistory({ family_id: familyId, child_id: child.id, limit: LIMIT, offset: 0 }),
-      getPayouts(familyId, child.id),
-    ])
-    setHistory(h.history)
-    setPayouts(p.payouts)
-    setLoading(false)
+    try {
+      const [h, p] = await Promise.all([
+        getHistory({ family_id: familyId, child_id: child.id, limit: LIMIT, offset: 0 }),
+        getPayouts(familyId, child.id),
+      ])
+      setHistory(h.history)
+      setPayouts(p.payouts)
+    } finally {
+      setLoading(false)
+    }
   }, [familyId, child.id])
 
   useEffect(() => { load() }, [familyId, child.id])
@@ -182,7 +190,7 @@ export function ActivityTab({ familyId, child, childCount, onCountChange, unpaid
       await createPayout({
         family_id: familyId, child_id: child.id,
         amount: Math.round(parseFloat(payoutAmount) * 100),
-        currency: 'GBP', // TODO: thread actual family currency once currency is wired to history API
+        currency: unpaidRow?.currency ?? familyCurrency,
         note: payoutNote || undefined,
       })
       // Stamp paid_out_at on all unpaid completions so the banner clears
@@ -212,7 +220,7 @@ export function ActivityTab({ familyId, child, childCount, onCountChange, unpaid
       await createBonus({
         family_id: familyId, child_id: child.id,
         amount: Math.round(parseFloat(bonusAmount) * 100),
-        currency: 'GBP', // TODO: thread actual family currency once currency is wired to history API
+        currency: familyCurrency,
         reason: bonusReason.trim(),
       })
       setShowBonus(false)
@@ -340,16 +348,37 @@ export function ActivityTab({ familyId, child, childCount, onCountChange, unpaid
       )}
 
       {/* ── Unpaid earnings summary ───────────────────────────────────────────── */}
-      {unpaidRow && unpaidRow.unpaid_total > 0 && (
-        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
-          <p className="text-[13px] font-semibold text-amber-900">
-            {formatCurrency(unpaidRow.unpaid_total, unpaidRow.currency)} approved but not yet transferred
-          </p>
-          <p className="text-[12px] text-amber-700 mt-0.5">
-            Use the Pay out button above to transfer earnings
-          </p>
-        </div>
-      )}
+      {unpaidRow && unpaidRow.unpaid_total > 0 && (() => {
+        const bankDetails = getDetails(familyId, child.id)
+        const hasPaymentDetails =
+          !!child.monzo_handle || !!child.revolut_handle ||
+          !!child.paypal_handle || !!child.venmo_handle ||
+          !!(bankDetails?.sortCode && bankDetails?.accountNumber) ||
+          !!bankDetails?.zelleHandle
+        return (
+          <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
+            <p className="text-[13px] font-semibold text-amber-900">
+              {formatCurrency(unpaidRow.unpaid_total, unpaidRow.currency)} approved but not yet transferred
+            </p>
+            {hasPaymentDetails && onOpenBridge ? (
+              <div className="mt-2 flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={onOpenBridge}
+                  className="rounded-lg bg-amber-800 px-3 py-1.5 text-[12px] font-semibold text-white"
+                >
+                  Pay now
+                </button>
+                <span className="text-[11px] text-amber-700">or use Pay out above to log cash</span>
+              </div>
+            ) : (
+              <p className="text-[12px] text-amber-700 mt-0.5">
+                Use the Pay out button above to transfer earnings
+              </p>
+            )}
+          </div>
+        )
+      })()}
 
       {/* ── AI Mentor empty-state card (shown only when no pending approvals) ── */}
       {!pendingLoading && completions.length === 0 && (
@@ -369,7 +398,7 @@ export function ActivityTab({ familyId, child, childCount, onCountChange, unpaid
             </div>
             {payoutError && <p className="text-[13px] text-red-600">{payoutError}</p>}
             <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[14px] text-[var(--color-text-muted)]">£</span>
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[14px] text-[var(--color-text-muted)]">{currencySymbol(unpaidRow?.currency ?? familyCurrency)}</span>
               <input
                 type="number" min="0.01" step="0.01" required autoFocus
                 className="w-full border border-[var(--color-border)] rounded-lg pl-7 pr-3 py-2.5 text-[14px] bg-[var(--color-surface)] text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]"
@@ -411,7 +440,7 @@ export function ActivityTab({ familyId, child, childCount, onCountChange, unpaid
             </div>
             {bonusError && <p className="text-[13px] text-red-600">{bonusError}</p>}
             <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[14px] text-[var(--color-text-muted)]">£</span>
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[14px] text-[var(--color-text-muted)]">{currencySymbol(familyCurrency)}</span>
               <input
                 type="number" min="0.01" step="0.01" required autoFocus
                 className="w-full border border-[var(--color-border)] rounded-lg pl-7 pr-3 py-2.5 text-[14px] bg-[var(--color-surface)] text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]"

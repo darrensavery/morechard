@@ -48,18 +48,22 @@ export function ChoresTab({ familyId, child, children }: Props) {
   useEffect(() => { injectPremiumStyles() }, [])
 
   const load = useCallback(async (silent = false) => {
+    if (!familyId) return
     if (!silent) setLoading(true)
-    const [c, a, s, p] = await Promise.all([
-      getChores({ family_id: familyId, child_id: child.id }).then(r => r.chores),
-      getChores({ family_id: familyId, child_id: child.id, archived: true }).then(r => r.chores),
-      getSuggestions(familyId, 'pending').then(r => r.suggestions.filter(s => s.child_id === child.id)),
-      getPlans(familyId, child.id, weekStart).then(r => r.plans),
-    ])
-    setChores(c)
-    setArchived(a)
-    setSuggestions(s)
-    setPlans(p)
-    setLoading(false)
+    try {
+      const [c, a, s, p] = await Promise.all([
+        getChores({ family_id: familyId, child_id: child.id }).then(r => r.chores),
+        getChores({ family_id: familyId, child_id: child.id, archived: true }).then(r => r.chores),
+        getSuggestions(familyId, 'pending').then(r => r.suggestions.filter(s => s.child_id === child.id)),
+        getPlans(familyId, child.id, weekStart).then(r => r.plans),
+      ])
+      setChores(c)
+      setArchived(a)
+      setSuggestions(s)
+      setPlans(p)
+    } finally {
+      setLoading(false)
+    }
   }, [familyId, child.id, weekStart])
 
   useEffect(() => { load() }, [load])

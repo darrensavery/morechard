@@ -16,7 +16,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { CreditCard, Clock, Receipt, Zap, Shield, Star, X, Check, Mail, AlertTriangle } from 'lucide-react'
 import { Toast, SettingsRow, SectionCard, SectionHeader } from '../shared'
 import {
-  getTrialStatus, getBillingHistory, createCheckoutSession, cancelPlan,
+  getTrialStatus, getBillingHistory, createCheckoutSession, cancelPlan, getShieldUpgradePrice,
   type TrialStatus, type PaymentRecord, type ShieldUpgradePrice,
 } from '../../../lib/api'
 import { cn } from '../../../lib/utils'
@@ -272,12 +272,25 @@ function PlanView({ onBack, showToast, shieldUpgradePrice }: {
   const [showCompare, setShowCompare]   = useState(false)
   const [cancelling, setCancelling]     = useState(false)
   const [showCancelConfirm, setShowCancelConfirm] = useState(false)
+  const [resolvedShieldPrice, setResolvedShieldPrice] = useState<ShieldUpgradePrice | null>(shieldUpgradePrice)
+  const [shieldPriceFetching, setShieldPriceFetching] = useState(false)
 
   useEffect(() => {
     Promise.all([getTrialStatus(), getBillingHistory()])
       .then(([t, h]) => { setTrial(t); setPayments(h.payments) })
       .finally(() => setLoading(false))
   }, [])
+
+  // If the parent-level fetch of shieldUpgradePrice failed (null), retry once
+  // after trial data is available — but only if the family doesn't already have Shield.
+  useEffect(() => {
+    if (resolvedShieldPrice !== null || shieldPriceFetching || !trial || trial.has_shield) return
+    setShieldPriceFetching(true)
+    getShieldUpgradePrice()
+      .then(setResolvedShieldPrice)
+      .catch(() => {})
+      .finally(() => setShieldPriceFetching(false))
+  }, [trial, resolvedShieldPrice, shieldPriceFetching])
 
   async function handlePurchase(sku: PurchasableSku) {
     setBuying(sku)
@@ -347,9 +360,10 @@ function PlanView({ onBack, showToast, shieldUpgradePrice }: {
     return `£${(pence / 100).toFixed(2)}`
   }
 
-  const shieldDelta     = shieldUpgradePrice?.delta ?? 14999
-  const shieldPaid      = shieldUpgradePrice?.already_paid ?? 0
-  const shieldIsUpgrade = shieldPaid > 0
+  const shieldDelta        = resolvedShieldPrice?.delta ?? 14999
+  const shieldPaid         = resolvedShieldPrice?.already_paid ?? 0
+  const shieldIsUpgrade    = shieldPaid > 0
+  const shieldPriceUnknown = resolvedShieldPrice === null && (hasBase || hasAi)
 
   return (
     <>
@@ -519,8 +533,14 @@ function PlanView({ onBack, showToast, shieldUpgradePrice }: {
                           <span className="px-1.5 py-0.5 rounded-md bg-amber-100 text-amber-700 text-[10px] font-bold uppercase tracking-wide">Professional</span>
                         </div>
                         <p className="text-[20px] font-bold text-amber-600 leading-none mt-0.5">
-                          {formatGBP(shieldDelta)}
-                          <span className="text-[12px] font-semibold text-[var(--color-text-muted)] ml-1">one-time</span>
+                          {shieldPriceUnknown && shieldPriceFetching
+                            ? <span className="text-[14px] font-semibold text-amber-400">Loading price…</span>
+                            : shieldPriceUnknown
+                            ? <span className="text-[14px] font-semibold text-amber-400">Price unavailable</span>
+                            : formatGBP(shieldDelta)}
+                          {!shieldPriceUnknown && (
+                            <span className="text-[12px] font-semibold text-[var(--color-text-muted)] ml-1">one-time</span>
+                          )}
                           {shieldIsUpgrade && (
                             <span className="ml-2 text-[12px] font-semibold text-[var(--color-text-muted)] line-through">
                               £149.99
@@ -528,7 +548,9 @@ function PlanView({ onBack, showToast, shieldUpgradePrice }: {
                           )}
                         </p>
                         <p className="text-[11px] text-amber-700 font-medium mt-1">
-                          {shieldIsUpgrade
+                          {shieldPriceUnknown
+                            ? 'Reload the page to see your upgrade price'
+                            : shieldIsUpgrade
                             ? `You've already paid ${formatGBP(shieldPaid)} — only the difference is charged`
                             : 'Less than one hour of professional mediation'}
                         </p>
@@ -554,12 +576,14 @@ function PlanView({ onBack, showToast, shieldUpgradePrice }: {
                   <div className="px-4 pb-4">
                     <button
                       type="button"
-                      disabled={buying !== null}
+                      disabled={buying !== null || shieldPriceUnknown}
                       onClick={() => handlePurchase('SHIELD_AI')}
                       className="w-full py-2.5 rounded-xl bg-amber-500 text-white text-[13px] font-bold hover:bg-amber-600 hover:shadow-[0_4px_14px_color-mix(in_srgb,#f59e0b_40%,transparent)] active:bg-amber-700 active:scale-[0.98] active:shadow-none transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {buying === 'SHIELD_AI'
                         ? 'Loading…'
+                        : shieldPriceUnknown
+                        ? (shieldPriceFetching ? 'Fetching price…' : 'Price unavailable — reload to retry')
                         : shieldIsUpgrade
                         ? `Upgrade to Morechard Shield AI — ${formatGBP(shieldDelta)}`
                         : 'Get Morechard Shield AI — £149.99'}
