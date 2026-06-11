@@ -5,6 +5,8 @@ type: post
 pillar: effort-reward-connection
 description: "A letter from school offered my son a £3,000 trip to China. Before we say yes, he has to show us how much he wants it. Here's the thinking - and the research."
 author: Darren Savery
+heroImage: expensive-school-trips-part-1
+draft: false
 datePublished: 2026-06-11
 dateModified: 2026-06-11
 schemaType: BlogPosting
