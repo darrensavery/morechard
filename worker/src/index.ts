@@ -196,6 +196,11 @@ import {
 } from './routes/sharedExpenses.js';
 import { handleUploadReceipt, handleGetReceiptUrl, handleDeleteReceipt } from './routes/sharedExpenseReceipt.js';
 import { handleVoidSharedExpense } from './routes/sharedExpenseVoid.js';
+import {
+  handleReviewOutcome,
+  handleReviewFeedback,
+  handleFeedbackDigest,
+} from './routes/reviewPrompt.js';
 
 const SENSITIVE_FIELDS = new Set(['password', 'pin', 'token', 'secret', 'authorization', 'jwt', 'api_key', 'apikey']);
 
@@ -284,6 +289,11 @@ export default Sentry.withSentry(
     // sweep runs once daily rather than on every cron tick.
     if (new Date(now * 1000).getUTCHours() === 0) {
       await runPassiveUnlockSweep(env);
+    }
+
+    // ── 8. Review feedback email digest ────────────────────────
+    if (new Date(now * 1000).getUTCHours() === 7) {
+      await handleFeedbackDigest(env);
     }
   },
 } satisfies ExportedHandler<Env>,
@@ -630,6 +640,9 @@ async function route(request: Request, env: Env, method: string, path: string): 
   const compRejectMatch = path.match(/^\/api\/completions\/([^/]+)\/reject$/);
   if (compRejectMatch && method === 'POST') return withAuth(request, auth, env, (req, e) => handleCompletionReject(req, e, compRejectMatch[1]));
   if (path === '/api/completions/approve-all' && method === 'POST') return withAuth(request, auth, env, handleApproveAll);
+
+  if (path === '/api/review-prompt/outcome'  && method === 'POST') return withAuth(request, auth, env, handleReviewOutcome);
+  if (path === '/api/review-prompt/feedback' && method === 'POST') return withAuth(request, auth, env, handleReviewFeedback);
 
   // Goals write (parent only)
   if (path === '/api/goals' && method === 'POST') return withAuth(request, auth, env, handleGoalCreate);

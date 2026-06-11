@@ -20,6 +20,8 @@ import {
 import { PaymentBridgeSheet } from '../payment/PaymentBridgeSheet'
 import { useToast, Toast } from '../settings/shared'
 import { useAndroidBack } from '../../hooks/useAndroidBack'
+import { ReviewPromptSheet } from '../review/ReviewPromptSheet'
+import { trackReviewPrompt } from '../../lib/reviewPrompt'
 
 interface Props {
   familyId: string
@@ -48,6 +50,7 @@ export function PendingTab({ familyId, child, onCountChange }: Props) {
     label: string;
     onClick: () => void;
   }>(null)
+  const [showReviewPrompt, setShowReviewPrompt] = useState(false)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -62,7 +65,7 @@ export function PendingTab({ familyId, child, onCountChange }: Props) {
   async function handleApprove(id: string) {
     setBusy(id)
     try {
-      await approveCompletion(id)
+      const result = await approveCompletion(id)
       const approved = completions.find((c) => c.id === id)
       await load()
       if (approved) {
@@ -75,6 +78,12 @@ export function PendingTab({ familyId, child, onCountChange }: Props) {
           }),
         })
         showToast(`Approved ✓`)
+      }
+      if (result.show_review_prompt) {
+        setTimeout(() => {
+          trackReviewPrompt('shown', { platform: 'web', trigger: 'nth_approval' })
+          setShowReviewPrompt(true)
+        }, 500)
       }
     } finally {
       setBusy(null)
@@ -256,6 +265,10 @@ export function PendingTab({ familyId, child, onCountChange }: Props) {
           onPaid={() => { /* parent dashboard refetches unpaid-summary on its own */ }}
         />
       )}
+      <ReviewPromptSheet
+        open={showReviewPrompt}
+        onClose={() => setShowReviewPrompt(false)}
+      />
     </div>
   )
 }

@@ -286,3 +286,27 @@ export interface ReferralStats {
   conversions:     number;
   rewards_pending: number;
 }
+
+export interface ReviewPromptState {
+  user_id:                  string;
+  family_id:                string;
+  prompt_count:             number;
+  last_prompted_at:         number | null;
+  approvals_at_last_prompt: number;
+  last_outcome:             'prompted' | 'dismissed' | 'maybe_later' | null;
+  suppress_until:           number | null;
+  opted_out:                number;  // 0 | 1
+  created_at:               number;
+  updated_at:               number;
+}
+
+export interface ReviewFeedback {
+  id:           string;
+  user_id:      string;
+  family_id:    string;
+  message:      string | null;
+  app_platform: 'android' | 'ios' | 'web';
+  app_version:  string;
+  created_at:   number;
+  emailed_at:   number | null;
+}

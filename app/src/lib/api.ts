@@ -429,7 +429,12 @@ export async function getHistory(params: {
   return request(`/api/completions/history?${q}`);
 }
 
-export async function approveCompletion(id: string): Promise<{ ledger_id: number; amount: number; currency: string }> {
+export async function approveCompletion(id: string): Promise<{
+  ledger_id:          number;
+  amount:             number;
+  currency:           string;
+  show_review_prompt: boolean;
+}> {
   return request(`/api/completions/${id}/approve`, { method: 'POST' });
 }
 
@@ -439,6 +444,24 @@ export async function reviseCompletion(id: string, parent_notes: string): Promis
 
 export async function rejectCompletion(id: string, parent_notes?: string): Promise<void> {
   await request(`/api/completions/${id}/reject`, { method: 'POST', body: JSON.stringify({ parent_notes: parent_notes ?? '' }) });
+}
+
+export async function postReviewOutcome(outcome: 'prompted' | 'dismissed' | 'maybe_later'): Promise<void> {
+  await request('/api/review-prompt/outcome', {
+    method: 'POST',
+    body: JSON.stringify({ outcome }),
+  });
+}
+
+export async function postReviewFeedback(payload: {
+  message:     string;
+  platform:    'android' | 'ios' | 'web';
+  app_version: string;
+}): Promise<void> {
+  await request('/api/review-prompt/feedback', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
 }
 
 /** Upload photo evidence for a completion. Returns the R2 object key. */

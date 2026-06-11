@@ -17,7 +17,9 @@
  */
 
 import { Env } from '../types.js';
+import type { ReviewPromptState } from '../types.js';
 import { json, error, clientIp } from '../lib/response.js';
+import { evaluateEligibility } from '../lib/reviewPrompt.js';
 import { computeRecordHash, fetchAndVerifyChainTip } from '../lib/hash.js';
 import { JwtPayload } from '../lib/jwt.js';
 import { getStreakState, buildStreakEvent, saveStreakEvent, allScheduledChoresDone } from '../lib/streaks.js';
@@ -287,6 +289,33 @@ export async function handleCompletionApprove(
     evaluateOnChoreApproval(env.DB, comp.child_id).catch(() => {})
     evaluatePassive(env.DB, comp.child_id).catch(() => {})
 
+    // ── Review prompt eligibility check ───────────────────────────
+    let showReviewPrompt = false
+    try {
+      const [rState, approvalsRow, familyRow] = await Promise.all([
+        env.DB.prepare('SELECT * FROM review_prompt_state WHERE user_id = ?')
+          .bind(auth.sub)
+          .first<ReviewPromptState>(),
+        env.DB.prepare(`SELECT COUNT(*) AS cnt FROM completions WHERE family_id = ? AND status = 'completed'`)
+          .bind(comp.family_id)
+          .first<{ cnt: number }>(),
+        env.DB.prepare(`
+          SELECT MIN(last_prompted_at) AS family_last
+          FROM review_prompt_state
+          WHERE family_id = ? AND user_id != ?
+        `).bind(comp.family_id, auth.sub).first<{ family_last: number | null }>(),
+      ])
+
+      const approvalsCount   = (approvalsRow?.cnt ?? 0) + 1  // +1 for the one just approved
+      const familyLastPrompt = familyRow?.family_last ?? null
+
+      const verdict    = evaluateEligibility(rState ?? null, approvalsCount, familyLastPrompt, Date.now())
+      showReviewPrompt = verdict.eligible
+    } catch {
+      // Non-critical — never block the approval response
+    }
+    // ── End review prompt check ────────────────────────────────────
+
     return json({
       ok: true,
       ledger_id:            newLedgerId,
@@ -295,6 +324,7 @@ export async function handleCompletionApprove(
       amount:               comp.reward_amount,
       currency:             comp.currency,
       pending_celebrations: pendingCelebrations,
+      show_review_prompt:   showReviewPrompt,
     })
   } catch {
     // Gamification is non-critical — return success even if it fails
@@ -306,6 +336,7 @@ export async function handleCompletionApprove(
       amount:               comp.reward_amount,
       currency:             comp.currency,
       pending_celebrations: [],
+      show_review_prompt:   false,
     })
   }
   // ── End gamification hook ──────────────────────────────────────────
