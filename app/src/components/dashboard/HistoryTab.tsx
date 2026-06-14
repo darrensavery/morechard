@@ -52,7 +52,7 @@ function MiniSheet({ onClose, children }: { onClose: () => void; children: React
   )
 }
 
-export function ActivityTab({ familyId, child, childCount, onCountChange, unpaidRow, onAfterPayout, goalProgress }: Props) {
+export function ActivityTab({ familyId, child, childCount, onCountChange, unpaidRow, onOpenBridge, onAfterPayout, goalProgress }: Props) {
   // ── Pending completions (absorbed from PendingTab) ───────────────────────────
   const { locale } = useLocale()
   const familyCurrency = locale === 'en-US' ? 'USD' : locale === 'pl' ? 'PLN' : 'GBP'

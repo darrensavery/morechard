@@ -683,19 +683,28 @@ export async function deletePlan(id: string): Promise<void> {
 // ----------------------------------------------------------------
 export interface Suggestion {
   id: string; child_id: string; child_name: string; title: string;
-  frequency: string | null; proposed_amount: number; reason: string | null; status: string;
-  submitted_at: number;
+  frequency: string | null; proposed_amount: number; reason: string | null;
+  due_date: string | null; status: string; rejection_note: string | null;
+  submitted_at: number; resolved_at: number | null;
 }
 export async function getSuggestions(family_id: string, status?: string): Promise<{ suggestions: Suggestion[] }> {
   const q = new URLSearchParams({ family_id });
   if (status) q.set('status', status);
   return request(`/api/suggestions?${q}`);
 }
-export async function createSuggestion(body: { family_id: string; title: string; proposed_amount: number; frequency?: string; reason?: string }): Promise<{ id: string }> {
+export async function createSuggestion(body: {
+  family_id: string; title: string; proposed_amount: number;
+  frequency?: string; reason?: string; due_date?: string;
+}): Promise<{ id: string }> {
   return request('/api/suggestions', { method: 'POST', body: JSON.stringify(body) });
 }
-export async function rejectSuggestion(id: string): Promise<void> {
-  await request(`/api/suggestions/${id}/reject`, { method: 'POST', body: JSON.stringify({}) });
+export async function approveSuggestion(id: string, overrides?: {
+  title?: string; proposed_amount?: number; frequency?: string; due_date?: string | null;
+}): Promise<{ ok: boolean; chore_id: string }> {
+  return request(`/api/suggestions/${id}/approve`, { method: 'POST', body: JSON.stringify(overrides ?? {}) });
+}
+export async function rejectSuggestion(id: string, rejectionNote: string): Promise<void> {
+  await request(`/api/suggestions/${id}/reject`, { method: 'POST', body: JSON.stringify({ rejection_note: rejectionNote }) });
 }
 
 // ----------------------------------------------------------------

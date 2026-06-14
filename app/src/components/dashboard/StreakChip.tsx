@@ -9,7 +9,7 @@ interface Props {
 }
 
 export function StreakChip({ currentStreak, graceRemaining, consistencyScore, appView }: Props) {
-  if (currentStreak === 0) return null
+  if (currentStreak < 2) return null
 
   const isTeal = graceRemaining > 0
   const label   = appView === 'CLEAN' ? 'streak' : 'days in a row'
@@ -19,7 +19,7 @@ export function StreakChip({ currentStreak, graceRemaining, consistencyScore, ap
       'inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-[12px] font-semibold',
       isTeal
         ? 'bg-teal-500/15 text-teal-300 border border-teal-500/30'
-        : 'bg-amber-500/15 text-amber-300 border border-amber-500/20',
+        : 'bg-amber-500/20 text-amber-100 border border-amber-500/40',
     )}>
       <span>🔥</span>
       <span className="tabular-nums">{currentStreak} {label}</span>

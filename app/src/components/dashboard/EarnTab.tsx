@@ -179,8 +179,11 @@ export function EarnTab({ familyId, childId, currency, grovePlans = {}, onToggle
         <button
           type="button"
           onClick={() => setChoreGuideOpen(true)}
-          className="text-xs font-medium text-[var(--brand-primary)] hover:underline underline-offset-2"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[var(--brand-primary)] text-[var(--brand-primary)] text-[12px] font-semibold hover:bg-[color-mix(in_srgb,var(--brand-primary)_8%,transparent)] transition-colors cursor-pointer"
         >
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/>
+          </svg>
           Chore Guide
         </button>
       </div>
