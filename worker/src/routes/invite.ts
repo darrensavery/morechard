@@ -14,7 +14,7 @@ import { signJwt } from '../lib/jwt.js';
 import { AuthedRequest } from './auth.js';
 
 const INVITE_TTL = 72 * 60 * 60; // 72 hours in seconds
-const CHILD_JWT_EXPIRY = 24 * 3600;
+const CHILD_JWT_EXPIRY = 90 * 24 * 3600;  // 90 days — children have no re-auth mechanism
 const PARENT_JWT_EXPIRY = 7 * 24 * 3600;
 
 // ── Generates a cryptographically random 6-char uppercase code ──────────────
