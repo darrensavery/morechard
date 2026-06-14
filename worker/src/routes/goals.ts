@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Goals routes
  *
  * GET    /api/goals?family_id=&child_id=   List goals for a child
@@ -11,7 +11,8 @@
  */
 
 import { Env } from '../types.js';
-import { json, error } from '../lib/response.js';
+
+import { json, error, parseBody } from '../lib/response.js';
 import { nanoid } from '../lib/nanoid.js';
 import { JwtPayload } from '../lib/jwt.js';
 import {
@@ -257,9 +258,4 @@ export async function handleGoalContribute(request: Request, env: Env, id: strin
 
   const updated = await env.DB.prepare('SELECT * FROM goals WHERE id = ?').bind(id).first();
   return json(updated);
-}
-
-async function parseBody(request: Request): Promise<Record<string, unknown> | null> {
-  try { return await request.json() as Record<string, unknown>; }
-  catch { return null; }
 }

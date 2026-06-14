@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Plans routes — weekly job planner
  *
  * GET    /api/plans?family_id=&child_id=&week_start=
@@ -7,7 +7,8 @@
  */
 
 import { Env } from '../types.js';
-import { json, error } from '../lib/response.js';
+
+import { json, error, parseBody } from '../lib/response.js';
 import { nanoid } from '../lib/nanoid.js';
 import { JwtPayload } from '../lib/jwt.js';
 
@@ -112,9 +113,4 @@ function getMondayISO(): string {
   const diff = (day === 0 ? -6 : 1 - day);
   d.setDate(d.getDate() + diff);
   return d.toISOString().split('T')[0];
-}
-
-async function parseBody(request: Request): Promise<Record<string, unknown> | null> {
-  try { return await request.json() as Record<string, unknown>; }
-  catch { return null; }
 }

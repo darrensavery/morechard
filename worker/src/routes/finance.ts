@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Finance routes — spending, payouts, bonus payments, subscriptions
  *
  * POST   /api/spending                Log a child purchase
@@ -15,7 +15,8 @@
  */
 
 import { Env } from '../types.js';
-import { json, error, clientIp } from '../lib/response.js';
+
+import { json, error, clientIp, parseBody } from '../lib/response.js';
 import { nanoid } from '../lib/nanoid.js';
 import { computeRecordHash, GENESIS_HASH } from '../lib/hash.js';
 import { JwtPayload } from '../lib/jwt.js';
@@ -449,9 +450,4 @@ export async function handleBalance(request: Request, env: Env): Promise<Respons
     },
     pending_celebrations: pendingCelebrations,
   });
-}
-
-async function parseBody(request: Request): Promise<Record<string, unknown> | null> {
-  try { return await request.json() as Record<string, unknown>; }
-  catch { return null; }
 }

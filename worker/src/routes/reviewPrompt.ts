@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Review Prompt routes.
  *
  * POST /api/review-prompt/outcome   — records what happened after the prompt was shown
@@ -7,21 +7,14 @@
  */
 
 import { Env, ReviewPromptState } from '../types.js'
-import { json, error } from '../lib/response.js'
+
+import { json, error, parseBody } from '../lib/response.js'
 import { JwtPayload } from '../lib/jwt.js'
 import { COOLDOWN_DAYS, MAYBE_LATER_DAYS, MAX_PROMPTS } from '../lib/reviewPrompt.js'
 
 type AuthedRequest = Request & { auth: JwtPayload }
 
 const DAY_MS = 86_400_000
-
-// ----------------------------------------------------------------
-// Helpers
-// ----------------------------------------------------------------
-async function parseBody(request: Request): Promise<Record<string, unknown> | null> {
-  try { return await request.json() as Record<string, unknown> }
-  catch { return null }
-}
 
 // ----------------------------------------------------------------
 // POST /api/review-prompt/outcome

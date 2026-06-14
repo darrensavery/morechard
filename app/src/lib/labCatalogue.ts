@@ -4,6 +4,7 @@
 
 import React from 'react'
 import type { ReactNode } from 'react'
+import { formatCurrency as fmtPence } from './api'
 import {
   Receipt, ShieldAlert, Landmark, TrendingUp, TrendingDown, Gauge,
   Smartphone, Briefcase, Scale, Megaphone, GitFork, Star, CreditCard,
@@ -105,13 +106,6 @@ export const LEVEL_LABELS: Record<AgeLevel, Record<AppView, string>> = {
   4: { ORCHARD: 'Canopy',     CLEAN: 'Mastery'    },
 }
 
-/** Format pence as currency string. */
-export function fmtPence(pence: number, currency: string): string {
-  const major = pence / 100
-  if (currency === 'GBP') return `£${major.toFixed(2)}`
-  if (currency === 'PLN') return `${major.toFixed(2)} zł`
-  return `$${major.toFixed(2)}`
-}
 
 // ── Illustration helpers ──────────────────────────────────────────────────────
 // c()     → brand teal  (#00959c) or grey when locked

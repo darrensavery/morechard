@@ -1,4 +1,4 @@
-// worker/src/routes/market-rates.ts
+﻿// worker/src/routes/market-rates.ts
 /**
  * Market Rates routes
  *
@@ -8,7 +8,8 @@
  */
 
 import { Env } from '../types.js';
-import { json, error } from '../lib/response.js';
+
+import { json, error, parseBody } from '../lib/response.js';
 import { JwtPayload } from '../lib/jwt.js';
 import { nanoid } from '../lib/nanoid.js';
 
@@ -187,9 +188,4 @@ export async function handleMarketRateCron(request: Request, env: Env): Promise<
   console.log(`[market-rate-cron] row_count=${rowCount}`);
 
   return json({ status: 'ok', row_count: rowCount, message: 'aggregation not yet implemented' });
-}
-
-async function parseBody(request: Request): Promise<Record<string, unknown> | null> {
-  try { return await request.json() as Record<string, unknown>; }
-  catch { return null; }
 }

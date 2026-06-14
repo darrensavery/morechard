@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Suggestions routes — child proposes a new job
  *
  * POST   /api/suggestions
@@ -8,7 +8,8 @@
  */
 
 import { Env } from '../types.js';
-import { json, error } from '../lib/response.js';
+
+import { json, error, parseBody } from '../lib/response.js';
 import { nanoid } from '../lib/nanoid.js';
 import { JwtPayload } from '../lib/jwt.js';
 
@@ -161,9 +162,4 @@ export async function handleSuggestionReject(
     .bind(rejection_note, now, auth.sub, id).run();
 
   return json({ ok: true });
-}
-
-async function parseBody(request: Request): Promise<Record<string, unknown> | null> {
-  try { return await request.json() as Record<string, unknown>; }
-  catch { return null; }
 }

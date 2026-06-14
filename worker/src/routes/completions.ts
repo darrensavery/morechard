@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Completions routes — Parent approval queue
  *
  * GET    /api/completions                   List completions by status (parent/child)
@@ -18,7 +18,8 @@
 
 import { Env } from '../types.js';
 import type { ReviewPromptState } from '../types.js';
-import { json, error, clientIp } from '../lib/response.js';
+
+import { json, error, clientIp, parseBody } from '../lib/response.js';
 import { evaluateEligibility } from '../lib/reviewPrompt.js';
 import { computeRecordHash, fetchAndVerifyChainTip } from '../lib/hash.js';
 import { JwtPayload } from '../lib/jwt.js';
@@ -261,17 +262,18 @@ export async function handleCompletionApprove(
     }
 
     // Badge evaluation runs on every approval
-    const [stats, latestStreak] = await Promise.all([
-      getBadgeStats(env.DB, childId),
-      getStreakState(env.DB, childId),
-    ])
+    const stats = await getBadgeStats(env.DB, childId)
+    const effectiveCurrentStreak = streakEvent ? streakEvent.newStreak : streakState.current_streak
+    const effectiveLongestStreak = streakEvent
+      ? Math.max(streakEvent.newStreak, streakState.longest_streak)
+      : streakState.longest_streak
     const totalApprovedChores = stats.totalApprovedChores + 1
     const isFirstChore = totalApprovedChores === 1
 
     const newBadges = badgesToAward({
       earnedBadgeKeys:       stats.earnedBadgeKeys,
-      currentStreak:         latestStreak.current_streak,
-      longestStreak:         Math.max(latestStreak.longest_streak, latestStreak.current_streak),
+      currentStreak:         effectiveCurrentStreak,
+      longestStreak:         effectiveLongestStreak,
       totalApprovedChores,
       totalGoalsCompleted:   stats.totalGoalsCompleted,
       totalSavedPence:       stats.totalSavedPence,
@@ -590,9 +592,4 @@ export async function handleApproveAll(request: Request, env: Env): Promise<Resp
     return json({ approved: pending.length, pending_celebrations: [] })
   }
   // ── End gamification hook (approve-all) ───────────────────────────
-}
-
-async function parseBody(request: Request): Promise<Record<string, unknown> | null> {
-  try { return await request.json() as Record<string, unknown>; }
-  catch { return null; }
 }

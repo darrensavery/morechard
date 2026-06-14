@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import type { ChildRecord } from '../lib/api'
 import { getChildren, getCompletions, clearToken, getUnpaidSummary, getFamily, getTrialStatus, authHeaders, apiUrl, type UnpaidSummaryRow, type TrialStatus } from '../lib/api'
@@ -39,7 +39,8 @@ type Tab = 'chores' | 'activity' | 'pool' | 'insights' | 'goals'
 export function ParentDashboard() {
   const navigate   = useNavigate()
   const { locale } = useLocale()
-  const familyId   = getDeviceIdentity()?.family_id ?? ''
+  const identity   = useMemo(() => getDeviceIdentity(), [])
+  const familyId   = identity?.family_id ?? ''
 
   const [tab,        setTab]        = useState<Tab>(() => {
     const saved = localStorage.getItem('mc_parent_tab')
@@ -211,14 +212,13 @@ export function ParentDashboard() {
     return () => { clearInterval(t); document.removeEventListener('visibilitychange', onVisible) }
   }, [familyId, children])
 
-  const poolLabel = 'Expenses'
-  const TABS: { id: Tab; label: string; badge?: number }[] = [
-    { id: 'chores',   label: 'Chores' },
-    { id: 'activity', label: 'Activity', badge: pendingCount || undefined },
-    { id: 'pool',     label: poolLabel },
-    { id: 'insights', label: 'Insights' },
-    { id: 'goals',    label: 'Goals' },
-  ]
+  const TABS = useMemo(() => [
+    { id: 'chores'   as Tab, label: 'Chores' },
+    { id: 'activity' as Tab, label: 'Activity', badge: pendingCount || undefined },
+    { id: 'pool'     as Tab, label: 'Expenses' },
+    { id: 'insights' as Tab, label: 'Insights' },
+    { id: 'goals'    as Tab, label: 'Goals' },
+  ], [pendingCount])
 
   useEffect(() => {
     const idx = TABS.findIndex(t => t.id === tab)
@@ -246,7 +246,6 @@ export function ParentDashboard() {
             {/* Avatar — opens settings drawer */}
             {(() => {
               const avatarId = localStorage.getItem('mc_parent_avatar')
-              const identity = getDeviceIdentity()
               if (identity?.google_picture) {
                 return (
                   <button
@@ -421,7 +420,7 @@ export function ParentDashboard() {
             <div className={tab === 'pool'     ? 'tab-panel' : 'tab-panel hidden'}>
               <PoolTab
                 familyId={familyId}
-                currentUserId={getDeviceIdentity()?.user_id ?? ''}
+                currentUserId={identity?.user_id ?? ''}
                 parentingMode={parentingMode}
                 refreshKey={poolRefreshKey}
                 onAddClick={() => setShowAddExpense(true)}
@@ -433,8 +432,7 @@ export function ParentDashboard() {
           </>
         ) : (
           (() => {
-            const identity = getDeviceIdentity()
-            const name     = identity?.display_name ?? ''
+            const name = identity?.display_name ?? ''
             const welcome  = isPolish(locale)
               ? `Witaj, ${name}. Zacznijmy uprawę Twojego sadu.`
               : `Welcome, ${name}. Let's grow your orchard.`

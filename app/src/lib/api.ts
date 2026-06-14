@@ -801,9 +801,10 @@ export async function setChildPin(childId: string, pin: string): Promise<{ ok: b
 // Helpers
 // ----------------------------------------------------------------
 export function formatCurrency(amount: number, currency: string): string {
-  const symbol = currency === 'PLN' ? 'zł' : '£';
   const formatted = (amount / 100).toFixed(2);
-  return currency === 'PLN' ? `${formatted} ${symbol}` : `${symbol}${formatted}`;
+  if (currency === 'PLN') return `${formatted} zł`;
+  if (currency === 'USD') return `$${formatted}`;
+  return `£${formatted}`;
 }
 
 export function getMondayISO(): string {

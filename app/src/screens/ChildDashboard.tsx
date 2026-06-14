@@ -323,12 +323,15 @@ export function ChildDashboard() {
 
   // ── Filtered chores for active day ────────────────────────────────────────
 
-  const dayChores = chores.filter(c => {
-    const days = effectiveDays(c, grovePlans)
-    return days.includes(activeDay)
-  })
+  const dayChores = useMemo(
+    () => chores.filter(c => effectiveDays(c, grovePlans).includes(activeDay)),
+    [chores, grovePlans, activeDay],
+  )
 
-  const unplannedChores = chores.filter(c => effectiveDays(c, grovePlans).length === 0)
+  const unplannedChores = useMemo(
+    () => chores.filter(c => effectiveDays(c, grovePlans).length === 0),
+    [chores, grovePlans],
+  )
 
   const activeTopGoal = goals[0] ?? null
   const tone = useAppView(appView)

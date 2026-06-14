@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Chores routes
  *
  * POST   /api/chores                  Parent creates a job
@@ -10,7 +10,8 @@
  */
 
 import { Env } from '../types.js';
-import { json, error, clientIp } from '../lib/response.js';
+
+import { json, error, clientIp, parseBody } from '../lib/response.js';
 import { nanoid } from '../lib/nanoid.js';
 import { JwtPayload } from '../lib/jwt.js';
 import { computeRecordHash, GENESIS_HASH } from '../lib/hash.js';
@@ -505,10 +506,6 @@ export async function handleChoreSubmit(request: Request, env: Env, id: string):
 // ----------------------------------------------------------------
 // Helpers
 // ----------------------------------------------------------------
-async function parseBody(request: Request): Promise<Record<string, unknown> | null> {
-  try { return await request.json() as Record<string, unknown>; }
-  catch { return null; }
-}
 
 function todayEpoch(): number {
   const d = new Date();

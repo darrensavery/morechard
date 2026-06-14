@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Settings routes
  *
  * GET    /api/settings               Get user settings (avatar, theme, locale)
@@ -13,7 +13,8 @@
  */
 
 import { Env } from '../types.js';
-import { json, error } from '../lib/response.js';
+
+import { json, error, parseBody } from '../lib/response.js';
 import { JwtPayload } from '../lib/jwt.js';
 
 type AuthedRequest = Request & { auth: JwtPayload };
@@ -456,11 +457,6 @@ async function resolveTargetUserId(
     .bind(requested, auth.family_id)
     .first<{ user_id: string }>();
   return member ? requested : null;
-}
-
-async function parseBody(request: Request): Promise<Record<string, unknown> | null> {
-  try { return await request.json() as Record<string, unknown>; }
-  catch { return null; }
 }
 
 // ----------------------------------------------------------------

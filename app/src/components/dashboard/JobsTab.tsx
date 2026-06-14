@@ -9,9 +9,9 @@ import { CreateChoreSheet } from './CreateChoreSheet'
 import { RateGuideSheet } from './RateGuideSheet'
 import { PremiumShell, MentorAvatar, ProBadge, injectPremiumStyles } from '../ui/PremiumShell'
 import { Button } from '../ui/button'
+import { useLocale } from '../../lib/locale'
 
 const DAYS = ['M', 'T', 'W', 'T', 'F', 'S', 'S']
-const CURRENCY = 'GBP'
 
 // Maps UI label → D1 frequency value
 const FREQUENCY_OPTIONS: { label: string; value: string; recurring: boolean }[] = [
@@ -30,6 +30,8 @@ interface Props {
 }
 
 export function ChoresTab({ familyId, child, children }: Props) {
+  const { locale } = useLocale()
+  const CURRENCY = locale === 'en-US' ? 'USD' : locale === 'pl' ? 'PLN' : 'GBP'
   const [chores, setChores]           = useState<Chore[]>([])
   const [archived, setArchived]       = useState<Chore[]>([])
   const [suggestions, setSuggestions] = useState<Suggestion[]>([])

@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Invite code routes
  *
  * POST /auth/invite/generate   Parent generates a typed 6-char invite code
@@ -7,7 +7,8 @@
  */
 
 import { Env, InviteRole } from '../types.js';
-import { json, error, clientIp } from '../lib/response.js';
+
+import { json, error, clientIp, parseBody } from '../lib/response.js';
 import { nanoid } from '../lib/nanoid.js';
 import { hashPassword } from '../lib/crypto.js';
 import { signJwt } from '../lib/jwt.js';
@@ -429,8 +430,3 @@ export async function handleSaveRegistrationStep(request: Request, env: Env): Pr
 // parenting_mode, governance_mode, base_currency.
 // This is wired separately in index.ts via the existing /auth/create-family route
 // — the new fields are now persisted because the migration added the columns.
-
-async function parseBody(request: Request): Promise<Record<string, unknown> | null> {
-  try { return await request.json() as Record<string, unknown>; }
-  catch { return null; }
-}

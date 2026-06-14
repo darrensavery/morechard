@@ -333,15 +333,10 @@ export async function handleStripeWebhook(
 // License grant logic — provider-neutral
 // ----------------------------------------------------------------
 async function handleCheckoutCompleted(session: StripeSession, env: Env): Promise<void> {
-  console.log('Webhook session object keys:', Object.keys(session).join(', '));
-  console.log('Webhook session.metadata:', JSON.stringify(session.metadata));
-  console.log('Webhook session.id:', session.id);
-
   const { family_id, payment_type: rawType } = session.metadata ?? {};
 
   const KNOWN: string[] = [...PURCHASABLE, 'LIFETIME', 'AI_ANNUAL', 'SHIELD'];
   if (!family_id || !KNOWN.includes(rawType)) {
-    console.error('Webhook: missing or invalid metadata', JSON.stringify(session.metadata));
     return;
   }
 
@@ -355,7 +350,6 @@ async function handleCheckoutCompleted(session: StripeSession, env: Env): Promis
     .first<{ id: number }>();
 
   if (existing) {
-    console.log('Webhook: duplicate event for session', session.id, '— skipping');
     return;
   }
 
@@ -393,7 +387,6 @@ async function handleCheckoutCompleted(session: StripeSession, env: Env): Promis
     }
   }
 
-  console.log(`Webhook: processed ${rawType} (normalised: ${payment_type}) for family ${family_id}`);
 }
 
 function normaliseSku(sku: PaymentType): PaymentType {

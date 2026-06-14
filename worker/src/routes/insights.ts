@@ -310,12 +310,8 @@ export async function handleInsights(request: Request, env: Env): Promise<Respon
     : '';
 
   // Weeks of history (min 1 to avoid division by zero)
-  const oldestCompletionRow = await env.DB.prepare(`
-    SELECT MIN(resolved_at) AS oldest FROM completions
-    WHERE family_id = ? AND child_id = ? AND status = 'completed'
-  `).bind(family_id, effectiveChildId).first<{ oldest: number | null }>();
-
-  const oldestEpoch    = oldestCompletionRow?.oldest ?? now;
+  // firstEverResolved is already fetched in the allTimeRow query above
+  const oldestEpoch    = firstEverResolved ?? now;
   const weeksOfHistory = Math.max(1, (now - oldestEpoch) / (7 * 86400));
 
   const velocityContext = isTeenMode

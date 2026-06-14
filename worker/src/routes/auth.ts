@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Auth routes
  *
  * POST /auth/register          Create parent account (email + optional password)
@@ -13,7 +13,8 @@
 
 import { Env } from '../types.js'
 import { EmailService, buildVerifyEmailHtml, buildVerifyEmailText } from '../lib/email.js';
-import { json, error, clientIp } from '../lib/response.js';
+
+import { json, error, clientIp, parseBody } from '../lib/response.js';
 import { hashPassword, verifyPassword } from '../lib/crypto.js';
 import { signJwt } from '../lib/jwt.js';
 import type { JwtPayload } from '../lib/jwt.js';
@@ -1537,14 +1538,6 @@ function isValidEmail(email: string): boolean {
 
 function escHtml(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-}
-
-async function parseBody(request: Request): Promise<Record<string, unknown> | null> {
-  try {
-    return await request.json() as Record<string, unknown>;
-  } catch {
-    return null;
-  }
 }
 
 // Augmented request type used by middleware + auth routes
