@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import type { Chore, Suggestion, Plan, ChildRecord } from '../../lib/api'
 import {
   getChores, archiveChore, restoreChore,
-  getSuggestions, rejectSuggestion, getPlans, createPlan, deletePlan,
+  getSuggestions, approveSuggestion, rejectSuggestion, getPlans, createPlan, deletePlan,
   formatCurrency, getMondayISO,
 } from '../../lib/api'
 import { CreateChoreSheet } from './CreateChoreSheet'
@@ -44,6 +44,19 @@ export function ChoresTab({ familyId, child, children }: Props) {
   const [toast, setToast]                 = useState<{ choreId: string; title: string } | null>(null)
   const toastTimerRef                     = useRef<ReturnType<typeof setTimeout> | null>(null)
   const weekStart = getMondayISO()
+
+  // Suggestion review state
+  const [reviewId, setReviewId]       = useState<string | null>(null)
+  const [reviewMode, setReviewMode]   = useState<'edit' | 'decline' | null>(null)
+  const [reviewBusy, setReviewBusy]   = useState(false)
+  const [reviewError, setReviewError] = useState<string | null>(null)
+  // Edit fields (pre-filled from suggestion on open)
+  const [editTitle, setEditTitle]     = useState('')
+  const [editAmount, setEditAmount]   = useState('')
+  const [editFreq, setEditFreq]       = useState('as_needed')
+  const [editDueDate, setEditDueDate] = useState('')
+  // Decline field
+  const [rejectNote, setRejectNote]   = useState('')
 
   useEffect(() => { injectPremiumStyles() }, [])
 
@@ -106,6 +119,63 @@ export function ChoresTab({ familyId, child, children }: Props) {
     await load()
   }
 
+  function openReview(s: Suggestion, mode: 'edit' | 'decline') {
+    setReviewId(s.id)
+    setReviewMode(mode)
+    setReviewError(null)
+    setRejectNote('')
+    setEditTitle(s.title)
+    setEditAmount((s.proposed_amount / 100).toFixed(2))
+    setEditFreq(s.frequency ?? 'as_needed')
+    setEditDueDate(s.due_date ?? '')
+  }
+
+  function closeReview() {
+    setReviewId(null)
+    setReviewMode(null)
+    setReviewError(null)
+  }
+
+  async function handleApprove() {
+    if (!reviewId) return
+    const pence = Math.round(parseFloat(editAmount) * 100)
+    if (!editTitle.trim()) { setReviewError('Title is required.'); return }
+    if (!editAmount || isNaN(pence) || pence <= 0) { setReviewError('Enter a valid amount.'); return }
+    setReviewBusy(true)
+    setReviewError(null)
+    try {
+      await approveSuggestion(reviewId, {
+        title: editTitle.trim(),
+        proposed_amount: pence,
+        frequency: editFreq,
+        due_date: editDueDate || null,
+      })
+      setSuggestions(prev => prev.filter(x => x.id !== reviewId))
+      closeReview()
+      await load()
+    } catch {
+      setReviewError('Something went wrong — please try again.')
+    } finally {
+      setReviewBusy(false)
+    }
+  }
+
+  async function handleReject() {
+    if (!reviewId) return
+    if (!rejectNote.trim()) { setReviewError('Please explain why you\'re declining.'); return }
+    setReviewBusy(true)
+    setReviewError(null)
+    try {
+      await rejectSuggestion(reviewId, rejectNote.trim())
+      setSuggestions(prev => prev.filter(x => x.id !== reviewId))
+      closeReview()
+    } catch {
+      setReviewError('Something went wrong — please try again.')
+    } finally {
+      setReviewBusy(false)
+    }
+  }
+
   async function togglePlan(chore: Chore, dayIndex: number) {
     const dayOfWeek = dayIndex + 1
     const existing = plans.find(p => p.chore_id === chore.id && p.day_of_week === dayOfWeek)
@@ -142,61 +212,155 @@ export function ChoresTab({ familyId, child, children }: Props) {
     }
   }
 
-  function handleSuggestionView(s: Suggestion) {
-    setPreFill({ title: s.title, reward_amount: s.proposed_amount })
-    setSuggestions(prev => prev.filter(x => x.id !== s.id))
-    setShowSheet(true)
-  }
-
   if (loading) return <div className="py-10 text-center text-[14px] text-[var(--color-text-muted)]">Loading…</div>
 
   return (
     <div className="space-y-4">
-      {/* Suggestions banner */}
+      {/* Suggestion cards */}
       {suggestions.length > 0 && (
-        <div className="space-y-2">
+        <div className="space-y-3">
           {suggestions.map(s => {
-            const hasModule = s.reason?.startsWith('module:') ?? false
+            const isReviewing = reviewId === s.id
+            const hasModule   = s.reason?.startsWith('module:') ?? false
             const moduleLabel = hasModule
               ? s.reason!.replace('module:', '').replace(/-/g, ' ').replace(/^\d+\s*/, '')
               : null
+            const userReason  = !hasModule && s.reason ? s.reason : null
+
             return (
-              <div key={s.id} className="bg-[color-mix(in_srgb,var(--brand-primary)_8%,transparent)] border border-[color-mix(in_srgb,var(--brand-primary)_25%,transparent)] rounded-xl p-3.5">
-                <p className="text-[13px] text-[var(--color-text)] mb-2">
-                  {hasModule ? (
-                    <>
-                      <span className="font-semibold">{child.display_name}</span> just finished a lesson on{' '}
-                      <span className="capitalize">{moduleLabel}</span> and wants to put it into practice!
-                      They'd like to try <span className="font-semibold">{s.title}</span> for{' '}
-                      {formatCurrency(s.proposed_amount, CURRENCY)}.
-                    </>
-                  ) : (
-                    <>
-                      <span className="font-semibold">{child.display_name}</span> wants to earn{' '}
-                      {formatCurrency(s.proposed_amount, CURRENCY)} by{' '}
-                      <span className="font-semibold">{s.title}</span>.
-                    </>
+              <div key={s.id} className="bg-[color-mix(in_srgb,var(--brand-primary)_8%,transparent)] border border-[color-mix(in_srgb,var(--brand-primary)_30%,transparent)] rounded-2xl overflow-hidden">
+                {/* Summary row */}
+                <div className="px-4 pt-4 pb-3">
+                  <p className="text-[11px] font-bold text-[var(--brand-primary)] uppercase tracking-wider mb-1.5">
+                    {hasModule ? '🌱 Learning Lab chore idea' : '💡 Chore suggestion'}
+                  </p>
+                  <p className="text-[14px] font-semibold text-[var(--color-text)]">{s.title}</p>
+                  <p className="text-[13px] text-[var(--color-text-muted)] mt-0.5 tabular-nums">
+                    {hasModule ? (
+                      <>Inspired by the <span className="capitalize">{moduleLabel}</span> lesson — {formatCurrency(s.proposed_amount, CURRENCY)}</>
+                    ) : (
+                      <>{formatCurrency(s.proposed_amount, CURRENCY)}</>
+                    )}
+                  </p>
+                  {userReason && (
+                    <p className="text-[12px] text-[var(--color-text-muted)] mt-1 italic">"{userReason}"</p>
                   )}
-                </p>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => handleSuggestionView(s)}
-                    className={`flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
-                      hasModule
-                        ? 'border border-[var(--brand-primary)] text-[var(--brand-primary)]'
-                        : 'bg-[var(--brand-primary)] text-white'
-                    }`}
-                  >
-                    {hasModule && <span>🌱</span>}
-                    {hasModule ? 'Accept' : 'View'}
-                  </button>
-                  <button
-                    onClick={() => { rejectSuggestion(s.id); setSuggestions(prev => prev.filter(x => x.id !== s.id)) }}
-                    className="rounded-lg px-3 py-1.5 text-xs font-medium text-[var(--color-text-muted)] hover:text-[var(--color-text)]"
-                  >
-                    Decline
-                  </button>
+                  {s.due_date && (
+                    <p className="text-[12px] text-[var(--color-text-muted)] mt-1">
+                      Requested by: <span className="font-semibold">{s.due_date}</span>
+                    </p>
+                  )}
                 </div>
+
+                {/* Review panel */}
+                {!isReviewing ? (
+                  <div className="px-4 pb-4 flex gap-2">
+                    <button
+                      onClick={() => openReview(s, 'edit')}
+                      className="flex-1 bg-[var(--brand-primary)] text-white rounded-xl py-2 text-[13px] font-bold hover:opacity-90 cursor-pointer active:scale-[0.98] transition-all"
+                    >
+                      Review &amp; approve
+                    </button>
+                    <button
+                      onClick={() => openReview(s, 'decline')}
+                      className="flex-1 border border-[var(--color-border)] rounded-xl py-2 text-[13px] font-medium text-[var(--color-text-muted)] hover:text-[var(--color-text)] cursor-pointer"
+                    >
+                      Decline
+                    </button>
+                  </div>
+                ) : reviewMode === 'edit' ? (
+                  <div className="border-t border-[color-mix(in_srgb,var(--brand-primary)_20%,transparent)] px-4 pt-3 pb-4 space-y-3">
+                    <p className="text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider">Edit before approving</p>
+                    {reviewError && <p className="text-[12px] text-red-600">{reviewError}</p>}
+                    <div>
+                      <label className="text-[11px] font-semibold text-[var(--color-text-muted)] block mb-1">Chore title</label>
+                      <input
+                        type="text"
+                        value={editTitle}
+                        onChange={e => setEditTitle(e.target.value)}
+                        className="w-full border border-[var(--color-border)] rounded-xl px-3 py-2 text-[13px] bg-[var(--color-surface)] text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]"
+                      />
+                    </div>
+                    <div className="flex gap-2">
+                      <div className="flex-1">
+                        <label className="text-[11px] font-semibold text-[var(--color-text-muted)] block mb-1">Pay (£)</label>
+                        <input
+                          type="number" min="0.01" step="0.01"
+                          value={editAmount}
+                          onChange={e => setEditAmount(e.target.value)}
+                          className="w-full border border-[var(--color-border)] rounded-xl px-3 py-2 text-[13px] bg-[var(--color-surface)] text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]"
+                        />
+                      </div>
+                      <div className="flex-1">
+                        <label className="text-[11px] font-semibold text-[var(--color-text-muted)] block mb-1">Frequency</label>
+                        <select
+                          value={editFreq}
+                          onChange={e => setEditFreq(e.target.value)}
+                          className="w-full border border-[var(--color-border)] rounded-xl px-3 py-2 text-[13px] bg-[var(--color-surface)] text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]"
+                        >
+                          {FREQUENCY_OPTIONS.map(o => (
+                            <option key={o.value} value={o.value}>{o.label}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-[11px] font-semibold text-[var(--color-text-muted)] block mb-1">Due date <span className="font-normal">(optional)</span></label>
+                      <input
+                        type="date"
+                        value={editDueDate}
+                        onChange={e => setEditDueDate(e.target.value)}
+                        className="w-full border border-[var(--color-border)] rounded-xl px-3 py-2 text-[13px] bg-[var(--color-surface)] text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]"
+                      />
+                    </div>
+                    <div className="flex gap-2 pt-1">
+                      <button
+                        onClick={closeReview}
+                        className="flex-1 border border-[var(--color-border)] rounded-xl py-2.5 text-[13px] font-medium text-[var(--color-text-muted)] cursor-pointer"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={handleApprove}
+                        disabled={reviewBusy}
+                        className="flex-1 bg-[var(--brand-primary)] text-white rounded-xl py-2.5 text-[13px] font-bold hover:opacity-90 disabled:opacity-50 cursor-pointer active:scale-[0.98] transition-all"
+                      >
+                        {reviewBusy ? 'Approving…' : 'Approve →'}
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="border-t border-[color-mix(in_srgb,var(--brand-primary)_20%,transparent)] px-4 pt-3 pb-4 space-y-3">
+                    <p className="text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider">Explain your decision</p>
+                    <p className="text-[12px] text-[var(--color-text-muted)]">
+                      {child.display_name} will see this message. Be clear and encouraging.
+                    </p>
+                    {reviewError && <p className="text-[12px] text-red-600">{reviewError}</p>}
+                    <textarea
+                      rows={3}
+                      placeholder={`e.g. We already have this covered, but try suggesting something else!`}
+                      value={rejectNote}
+                      onChange={e => setRejectNote(e.target.value)}
+                      autoFocus
+                      className="w-full border border-[var(--color-border)] rounded-xl px-3.5 py-2.5 text-[13px] resize-none bg-[var(--color-surface)] text-[var(--color-text)] placeholder:text-[var(--color-text-muted)]/60 focus:outline-none focus:ring-2 focus:ring-red-400"
+                    />
+                    <div className="flex gap-2">
+                      <button
+                        onClick={closeReview}
+                        className="flex-1 border border-[var(--color-border)] rounded-xl py-2.5 text-[13px] font-medium text-[var(--color-text-muted)] cursor-pointer"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={handleReject}
+                        disabled={reviewBusy || !rejectNote.trim()}
+                        className="flex-1 bg-red-500 text-white rounded-xl py-2.5 text-[13px] font-bold hover:opacity-90 disabled:opacity-40 cursor-pointer active:scale-[0.98] transition-all"
+                      >
+                        {reviewBusy ? 'Declining…' : 'Send decline'}
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             )
           })}
