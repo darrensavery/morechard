@@ -95,11 +95,12 @@ async function request<T>(path: string, options: RequestInit = {}, _retries = 2,
     throw new Error('Unexpected response from server. Please try again.');
   }
 
-  // Token expired or revoked — clear session and force re-login.
-  // Only applies to authenticated API routes, not the auth endpoints themselves.
+  // Token expired or revoked — clear the token but NOT the device identity.
+  // Device identity is set during join and is independent of the JWT lifetime.
+  // Clearing it would force the child through the full re-join flow (6-digit code),
+  // which is wrong — only the token needs refreshing.
   if (res.status === 401 && !path.startsWith('/auth/')) {
     localStorage.removeItem('mc_token');
-    localStorage.removeItem('mc_device_identity');
     window.location.href = '/';
     throw new Error((data as Record<string, unknown>).error as string ?? 'Session expired');
   }
