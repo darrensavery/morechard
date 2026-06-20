@@ -10,7 +10,7 @@
  */
 
 import { useRef, useState, useEffect, useCallback } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Lock } from 'lucide-react'
 import { getDeviceIdentity, clearDeviceIdentity, verifyPinHash } from '@/lib/deviceIdentity'
 import { AvatarSVG } from '@/lib/avatars'
@@ -25,13 +25,16 @@ const MAX_ATTEMPTS  = 5
 const LOCKOUT_MS    = 30_000 // 30 seconds
 
 export function LockScreen() {
-  const navigate  = useNavigate()
-  const identity  = getDeviceIdentity()
+  const navigate      = useNavigate()
+  const [searchParams] = useSearchParams()
+  const isManualLock  = searchParams.get('manual') === '1'
+  const identity      = getDeviceIdentity()
 
   const [digits,              setDigits]             = useState<string[]>(Array(PIN_LENGTH).fill(''))
   const [error,               setError]              = useState('')
   const [unlocking,           setUnlocking]          = useState(false)
   const [bioRunning,          setBioRunning]         = useState(false)
+  const [showAuth,            setShowAuth]           = useState(!isManualLock)
   const [pinAttempts,         setPinAttempts]        = useState(0)
   const [lockedUntil,         setLockedUntil]        = useState<number | null>(null)
   // Tracks whether the JWT was absent when this screen mounted — drives re-auth logic
@@ -105,6 +108,9 @@ export function LockScreen() {
       void unlock('none')
       return
     }
+
+    // Manual lock — skip auto-auth; user taps "Tap to unlock" first
+    if (isManualLock) return
 
     // Biometrics → auto-challenge on mount
     if (identity.auth_method === 'biometrics' && hasBiometricCredential()) {
@@ -263,8 +269,25 @@ export function LockScreen() {
           </div>
         </div>
 
+        {/* Manual-lock splash — just show "Tap to unlock", no auth UI yet */}
+        {!showAuth && (
+          <button
+            onClick={() => {
+              setShowAuth(true)
+              if (identity.auth_method === 'biometrics' && hasBiometricCredential()) {
+                setTimeout(() => void runBiometrics(), 50)
+              } else {
+                setTimeout(() => inputRefs.current[0]?.focus(), 100)
+              }
+            }}
+            className="mb-6 h-12 px-8 rounded-2xl bg-[var(--brand-primary)] text-white text-[14px] font-semibold active:scale-[0.97] transition-transform cursor-pointer"
+          >
+            Tap to unlock
+          </button>
+        )}
+
         {/* Biometric tap button */}
-        {showBiometricButton && (
+        {showAuth && showBiometricButton && (
           <div className="mb-6 flex flex-col items-center gap-3">
             <button
               onClick={runBiometrics}
@@ -299,7 +322,7 @@ export function LockScreen() {
         )}
 
         {/* PIN pad */}
-        {showPin && (
+        {showAuth && showPin && (
           <>
             <p className="text-[14px] font-semibold text-[var(--color-text)] mb-5">
               {showBiometricButton ? 'Or enter your PIN' : 'Enter your PIN to get back in'}
@@ -335,7 +358,7 @@ export function LockScreen() {
         )}
 
         {/* Fallback: unrecognised auth state — fail closed, force re-login */}
-        {!showBiometricButton && !showPin && (
+        {showAuth && !showBiometricButton && !showPin && (
           <div className="mb-4 flex flex-col items-center gap-3 text-center max-w-[260px]">
             <p className="text-[13px] text-[var(--color-text-muted)] leading-snug">
               Your security settings couldn't be read. Log out and sign in again to continue.

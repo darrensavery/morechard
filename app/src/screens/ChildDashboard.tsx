@@ -393,7 +393,7 @@ export function ChildDashboard() {
               </svg>
             </button>
             <button
-              onClick={() => navigate('/lock')}
+              onClick={() => navigate('/lock?manual=1')}
               className="w-8 h-8 rounded-lg border border-[var(--color-border)] flex items-center justify-center text-[var(--color-text-muted)] hover:bg-[var(--color-surface-alt)] cursor-pointer"
               title="Lock"
             >
@@ -530,7 +530,7 @@ export function ChildDashboard() {
             <div>
               <p className="text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-2">Account</p>
               <button
-                onClick={() => { setShowSettings(false); navigate('/lock') }}
+                onClick={() => { setShowSettings(false); navigate('/lock?manual=1') }}
                 className="w-full flex items-center justify-between rounded-xl border border-[var(--color-border)] px-3.5 py-3 text-left hover:bg-[var(--color-surface-alt)] transition-colors cursor-pointer"
               >
                 <div>
