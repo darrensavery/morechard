@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from 'react'
-import type { BalanceSummary, Goal } from '../../lib/api'
-import { getBalance, getGoals, formatCurrency } from '../../lib/api'
+import type { BalanceSummary, Goal, SpendingRecord } from '../../lib/api'
+import { getBalance, getGoals, getSpending, formatCurrency } from '../../lib/api'
 import { ChildHistoryTab } from './ChildHistoryTab'
+import { SpendGuideSheet } from './SpendGuideSheet'
 
 interface Props {
   familyId: string
@@ -9,20 +10,30 @@ interface Props {
   currency: string
 }
 
+function fmtDate(epochSec: number): string {
+  return new Date(epochSec * 1000).toLocaleDateString('en-GB', {
+    day: 'numeric', month: 'short', year: 'numeric',
+  })
+}
+
 export function ChildMoneyTab({ familyId, childId, currency }: Props) {
-  const [balance, setBalance] = useState<BalanceSummary | null>(null)
-  const [goals,   setGoals]   = useState<Goal[]>([])
-  const [loading, setLoading] = useState(true)
+  const [balance,  setBalance]  = useState<BalanceSummary | null>(null)
+  const [goals,    setGoals]    = useState<Goal[]>([])
+  const [spending, setSpending] = useState<SpendingRecord[]>([])
+  const [loading,  setLoading]  = useState(true)
+  const [logOpen,  setLogOpen]  = useState(false)
 
   const load = useCallback(async () => {
     setLoading(true)
     try {
-      const [b, g] = await Promise.all([
+      const [b, g, s] = await Promise.all([
         getBalance(familyId, childId),
         getGoals(familyId, childId).then(r => r.goals).catch(() => [] as Goal[]),
+        getSpending(familyId, childId).then(r => r.spending).catch(() => [] as SpendingRecord[]),
       ])
       setBalance(b)
       setGoals(g)
+      setSpending(s)
     } catch { /* silently degrade */ }
     finally { setLoading(false) }
   }, [familyId, childId])
@@ -40,6 +51,13 @@ export function ChildMoneyTab({ familyId, childId, currency }: Props) {
     .filter(g => g.status === 'ACTIVE' || !g.status)
     .reduce((s, g) => s + (g.current_saved_pence ?? 0), 0)
 
+  const symbol = currency === 'GBP' ? '£' : currency === 'USD' ? '$' : 'zł'
+
+  function handleSaved() {
+    setLogOpen(false)
+    load()
+  }
+
   return (
     <div className="space-y-4">
 
@@ -49,7 +67,7 @@ export function ChildMoneyTab({ familyId, childId, currency }: Props) {
           Available to spend
         </div>
         <div className="text-[46px] font-extrabold text-[var(--color-text)] leading-none tracking-tight tabular-nums">
-          {loading || !balance ? '£—' : formatCurrency(balance.available, currency)}
+          {loading || !balance ? `${symbol}—` : formatCurrency(balance.available, currency)}
         </div>
         {(balance?.pending ?? 0) > 0 && (
           <p className="text-[13px] text-[var(--color-text-muted)] mt-2">
@@ -61,31 +79,42 @@ export function ChildMoneyTab({ familyId, childId, currency }: Props) {
         )}
       </div>
 
-      {/* Breakdown grid */}
+      {/* Stat cards */}
       <div className="grid grid-cols-3 gap-2.5">
-        <StatCard
-          label="Earned"
-          value={loading || !balance ? '—' : formatCurrency(balance.earned, currency)}
-          tone="brand"
-        />
-        <StatCard
-          label="Spent"
-          value={loading || !balance ? '—' : formatCurrency(balance.spent, currency)}
-          tone="muted"
-        />
-        <StatCard
-          label="Saved"
-          value={loading ? '—' : formatCurrency(saved, currency)}
-          tone="muted"
-        />
+        <StatCard label="Earned" value={loading || !balance ? '—' : formatCurrency(balance.earned, currency)} tone="brand" />
+        <StatCard label="Spent"  value={loading || !balance ? '—' : formatCurrency(balance.spent,  currency)} tone="muted" />
+        <StatCard label="Saved"  value={loading             ? '—' : formatCurrency(saved,           currency)} tone="muted" />
       </div>
 
-      {/* Money-focused history */}
+      {/* Log a spend CTA */}
+      <button
+        type="button"
+        onClick={() => setLogOpen(true)}
+        className="w-full flex items-center justify-center gap-2.5 bg-[var(--color-surface)] border-2 border-dashed border-[var(--brand-primary)]/40 hover:border-[var(--brand-primary)] hover:bg-[color-mix(in_srgb,var(--brand-primary)_6%,transparent)] rounded-2xl py-4 transition-all cursor-pointer group"
+      >
+        <span className="text-[22px] group-hover:scale-110 transition-transform">💸</span>
+        <span className="text-[15px] font-bold text-[var(--brand-primary)]">Log a spend</span>
+      </button>
+
+      {/* Spending history */}
+      {spending.length > 0 && (
+        <SpendingHistory spending={spending} currency={currency} />
+      )}
+
+      {/* Earnings history (chore completions) */}
       <ChildHistoryTab
         familyId={familyId}
         childId={childId}
         currency={currency}
         variant="money"
+      />
+
+      <SpendGuideSheet
+        open={logOpen}
+        familyId={familyId}
+        currency={currency}
+        onClose={() => setLogOpen(false)}
+        onSaved={handleSaved}
       />
     </div>
   )
@@ -100,6 +129,61 @@ function StatCard({ label, value, tone }: { label: string; value: string; tone: 
       <p className={`text-[15px] font-extrabold tabular-nums ${tone === 'brand' ? 'text-[var(--brand-primary)]' : 'text-[var(--color-text)]'}`}>
         {value}
       </p>
+    </div>
+  )
+}
+
+function SpendingHistory({ spending, currency }: { spending: SpendingRecord[]; currency: string }) {
+  const [open, setOpen] = useState(true)
+  const total = spending.reduce((s, r) => s + r.amount, 0)
+
+  return (
+    <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl overflow-hidden">
+      <button
+        type="button"
+        onClick={() => setOpen(v => !v)}
+        className="w-full flex items-center justify-between px-4 py-3 bg-[color-mix(in_srgb,var(--color-surface-alt)_70%,var(--color-border))] hover:bg-[color-mix(in_srgb,var(--color-surface-alt)_55%,var(--color-border))] transition-colors cursor-pointer border-b border-[var(--color-border)]"
+      >
+        <div className="flex items-center gap-2">
+          <svg
+            width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+            className={`text-[var(--color-text-muted)] transition-transform duration-150 ${open ? 'rotate-90' : ''}`}
+          >
+            <path d="M9 18l6-6-6-6"/>
+          </svg>
+          <span className="text-[13px] font-bold text-[var(--color-text)]">My spending</span>
+          <span className="text-[11px] text-[var(--color-text-muted)]">
+            ({spending.length} item{spending.length !== 1 ? 's' : ''})
+          </span>
+        </div>
+        <span className="text-[13px] font-bold tabular-nums text-red-400">
+          −{formatCurrency(total, currency)}
+        </span>
+      </button>
+
+      {open && (
+        <div className="divide-y divide-[var(--color-border)]">
+          {spending.map(record => (
+            <div key={record.id} className="px-4 py-3 flex items-center justify-between gap-3">
+              <div className="min-w-0 flex-1">
+                <p className="text-[14px] font-semibold text-[var(--color-text)] truncate">
+                  {record.title}
+                </p>
+                <p className="text-[11px] text-[var(--color-text-muted)] mt-0.5">
+                  {fmtDate(record.spent_at)}
+                  {record.note && (
+                    <span className="ml-1.5 italic">· {record.note}</span>
+                  )}
+                </p>
+              </div>
+              <span className="text-[14px] font-bold tabular-nums text-red-400 shrink-0">
+                −{formatCurrency(record.amount, record.currency)}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }

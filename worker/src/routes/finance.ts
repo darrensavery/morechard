@@ -40,7 +40,7 @@ export async function handleSpendingCreate(request: Request, env: Env): Promise<
   if (!title || typeof title !== 'string') return error('title required');
   if (!Number.isInteger(amount) || (amount as number) <= 0)
     return error('amount must be a positive integer');
-  if (!currency || !['GBP','PLN'].includes(currency as string)) return error('Invalid currency');
+  if (!currency || !['GBP','USD','PLN'].includes(currency as string)) return error('Invalid currency');
 
   const id  = nanoid();
   const now = Math.floor(Date.now() / 1000);

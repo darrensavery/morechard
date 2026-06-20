@@ -67,7 +67,7 @@ export function LabTab({ appView }: LabTabProps) {
 
       {/* ── Introduction ── */}
       {!introDismissed && (
-        <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 flex flex-col gap-3 relative">
+        <div className="rounded-xl border border-teal-500/30 bg-[color-mix(in_srgb,var(--brand-primary)_7%,var(--color-surface))] p-4 flex flex-col gap-3 relative">
           {/* Dismiss button */}
           <button
             onClick={dismissIntro}
@@ -127,23 +127,32 @@ export function LabTab({ appView }: LabTabProps) {
 
             {/* ── Level header ── */}
             <div className="flex items-center justify-between mb-3">
-              <div>
-                <h2 className={`text-[11px] font-bold uppercase tracking-[0.08em] ${isFuture ? 'text-[var(--color-text-muted)]' : 'text-[var(--color-text)]'}`}>
-                  {levelLabel}
-                  {isFuture && (
-                    <span className="ml-1.5 font-normal normal-case tracking-normal text-[10px]">
-                      · unlocks later
-                    </span>
-                  )}
-                </h2>
-                <p className="text-[11px] text-[var(--color-text-muted)] mt-0.5">
-                  {unlockedCount} of {totalCount} {unlockedCount === totalCount && totalCount > 0 ? '— complete' : 'unlocked'}
-                </p>
+              <div className="flex items-center gap-2">
+                <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold shrink-0 ${
+                  isFuture
+                    ? 'bg-[var(--color-border)] text-[var(--color-text-muted)]'
+                    : 'bg-[var(--brand-primary)] text-white'
+                }`}>
+                  {level - 1}
+                </span>
+                <div>
+                  <h2 className={`text-[11px] font-bold uppercase tracking-[0.08em] ${isFuture ? 'text-[var(--color-text-muted)]' : 'text-[var(--color-text)]'}`}>
+                    {levelLabel}
+                    {isFuture && (
+                      <span className="ml-1.5 font-normal normal-case tracking-normal text-[10px]">
+                        · unlocks later
+                      </span>
+                    )}
+                  </h2>
+                  <p className="text-[11px] text-[var(--color-text-muted)] mt-0.5">
+                    {unlockedCount} of {totalCount} {unlockedCount === totalCount && totalCount > 0 ? '— complete' : 'unlocked'}
+                  </p>
+                </div>
               </div>
 
               {/* Progress bar */}
               {!isFuture && (
-                <div className="w-16 h-1 rounded-full bg-[var(--color-border)] overflow-hidden">
+                <div className="w-16 h-1.5 rounded-full bg-[var(--color-border)] overflow-hidden">
                   <div
                     className="h-full rounded-full transition-all duration-500"
                     style={{
@@ -179,16 +188,16 @@ export function LabTab({ appView }: LabTabProps) {
                 // ── Locked (within level) ──
                 if (!isUnlocked) {
                   return (
-                    <div key={mod.slug} className="rounded-xl overflow-hidden flex flex-col" style={{ background: 'var(--color-surface-alt)' }}>
+                    <div key={mod.slug} className="rounded-xl overflow-hidden flex flex-col border-t-2 border-t-amber-400/50" style={{ background: 'var(--color-surface-alt)' }}>
                       <div className="w-full overflow-hidden" style={{ height: 64 }}>
                         {mod.illustration(true)}
                       </div>
                       <div className="p-2.5 flex flex-col gap-1.5">
                         <p className="text-[11px] font-bold text-[var(--color-text)] leading-tight">{mod.title}</p>
-                        <p className="text-[9px] text-[var(--color-text-muted)] leading-tight line-clamp-2">{mod.description}</p>
+                        <p className="text-[11px] text-[var(--color-text-muted)] leading-tight line-clamp-2">{mod.description}</p>
                         <div className="flex items-center justify-between mt-auto pt-0.5">
-                          <p className="text-[8px] text-[var(--color-text-muted)] leading-tight flex-1 pr-2 italic">{mod.triggerHint}</p>
-                          <Lock size={9} className="text-[var(--color-text-muted)] flex-shrink-0 opacity-60" />
+                          <p className="text-[10px] text-[var(--color-text-muted)] leading-tight flex-1 pr-2 italic">{mod.triggerHint}</p>
+                          <Lock size={9} className="text-amber-400/70 flex-shrink-0" />
                         </div>
                       </div>
                     </div>
@@ -205,8 +214,8 @@ export function LabTab({ appView }: LabTabProps) {
                   <button
                     key={mod.slug}
                     onClick={() => setActiveSlug(mod.slug as ModuleSlug)}
-                    className="rounded-xl overflow-hidden flex flex-col text-left cursor-pointer transition-all hover:shadow-md hover:-translate-y-px active:translate-y-0"
-                    style={{ background: 'var(--color-surface)', boxShadow: '0 1px 4px rgba(0,0,0,0.07)' }}
+                    className="rounded-xl overflow-hidden flex flex-col text-left cursor-pointer transition-all hover:shadow-md hover:-translate-y-px active:translate-y-0 border-t-2 border-t-[var(--brand-primary)]"
+                    style={{ background: 'var(--color-surface)', boxShadow: '0 1px 6px rgba(0,0,0,0.09)' }}
                   >
                     {/* Illustration — no badge overlay */}
                     <div className="w-full overflow-hidden" style={{ height: 64, background: 'rgba(0,149,156,0.05)' }}>
@@ -216,10 +225,10 @@ export function LabTab({ appView }: LabTabProps) {
                     {/* Text content */}
                     <div className="p-2.5 flex flex-col gap-1 flex-1 relative">
                       <p className="text-[11px] font-bold text-[var(--color-text)] leading-tight">{mod.title}</p>
-                      <p className="text-[9px] text-[var(--color-text-muted)] leading-tight line-clamp-2">{mod.description}</p>
+                      <p className="text-[11px] text-[var(--color-text-muted)] leading-tight line-clamp-2">{mod.description}</p>
                       {/* Pillar label left, status badge bottom-right */}
                       <div className="flex items-end justify-between mt-auto pt-1">
-                        <p className="text-[9px] text-[var(--brand-primary)]">{pillarLabel}</p>
+                        <p className="text-[8px] font-semibold text-[var(--brand-primary)] bg-[color-mix(in_srgb,var(--brand-primary)_12%,transparent)] px-1.5 py-0.5 rounded-full leading-none">{pillarLabel}</p>
                         {allDone ? (
                           <span className="text-[8px] font-bold px-1.5 py-0.5 rounded-full text-white leading-none" style={{ background: 'var(--brand-primary)' }}>
                             ✓ Done

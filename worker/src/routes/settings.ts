@@ -48,7 +48,7 @@ export async function handleSettingsGet(request: Request, env: Env): Promise<Res
   }
 
   const body = JSON.stringify(settings);
-  await env.CACHE.put(cacheKey, body, { expirationTtl: 3600 });
+  await env.CACHE.put(cacheKey, body, { expirationTtl: 60 });
   return new Response(body, { headers: { 'Content-Type': 'application/json' } });
 }
 

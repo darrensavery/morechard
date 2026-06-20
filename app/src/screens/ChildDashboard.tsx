@@ -410,7 +410,7 @@ export function ChildDashboard() {
 
         {/* Tab bar */}
         <div ref={tabBarRef} className="max-w-[560px] mx-auto border-t border-[var(--color-border)] flex relative">
-          {([['chores', 'Chores'], ['money', 'Money'], ['goals', 'Goals'], ['lab', 'Lab']] as const).map(([id, label], i) => (
+          {([['chores', 'Chores'], ['money', 'Money'], ['goals', 'Goals'], ['lab', 'Learn']] as const).map(([id, label], i) => (
             <button
               key={id}
               ref={el => { tabRefs.current[i] = el }}
