@@ -183,6 +183,14 @@ export async function deleteFamily(): Promise<{ ok: boolean; action: string }> {
   return request('/auth/family', { method: 'DELETE' });
 }
 
+export async function getCoParents(): Promise<{ co_parents: { user_id: string; display_name: string }[] }> {
+  return request('/auth/family/co-parents');
+}
+
+export async function removeCoParent(userId: string): Promise<{ ok: boolean }> {
+  return request(`/auth/family/co-parent/${userId}`, { method: 'DELETE' });
+}
+
 // ----------------------------------------------------------------
 // Security — PIN & Sessions
 // ----------------------------------------------------------------

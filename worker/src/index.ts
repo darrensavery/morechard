@@ -133,6 +133,8 @@ import {
   handleFamilyLeads,
   handleLeaveFamily,
   handleDeleteFamily,
+  handleGetCoParents,
+  handleRemoveCoParent,
   handlePinSet,
   handleVerifyPin,
   handleGetSessions,
@@ -458,9 +460,13 @@ async function route(request: Request, env: Env, method: string, path: string): 
   if (path === '/auth/logout'       && method === 'POST') return withAuth(request, auth, env, handleLogout);
 
   // Co-parent-aware account deletion — placed before trial check so expired-trial users can still delete
-  if (path === '/auth/family/leads' && method === 'GET')    return withAuth(request, auth, env, handleFamilyLeads);
-  if (path === '/auth/me/leave'     && method === 'DELETE') return withAuth(request, auth, env, handleLeaveFamily);
-  if (path === '/auth/family'       && method === 'DELETE') return withAuth(request, auth, env, handleDeleteFamily);
+  if (path === '/auth/family/leads'       && method === 'GET')    return withAuth(request, auth, env, handleFamilyLeads);
+  if (path === '/auth/family/co-parents'  && method === 'GET')    return withAuth(request, auth, env, handleGetCoParents);
+  if (path === '/auth/me/leave'           && method === 'DELETE') return withAuth(request, auth, env, handleLeaveFamily);
+  if (path === '/auth/family'             && method === 'DELETE') return withAuth(request, auth, env, handleDeleteFamily);
+
+  const removeCoParentMatch = path.match(/^\/auth\/family\/co-parent\/([^/]+)$/);
+  if (removeCoParentMatch && method === 'DELETE') return withAuth(request, auth, env, (req, e) => handleRemoveCoParent(req, e, removeCoParentMatch[1]));
 
   // Settings (any role — children can update their own avatar/theme)
   if (path === '/api/consent/marketing' && method === 'POST') return withAuth(request, auth, env, handleConsentPost)

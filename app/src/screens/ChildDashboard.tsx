@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { X } from 'lucide-react'
+import { updateDeviceIdentity } from '../lib/deviceIdentity'
 import {
   getChores, submitChore, uploadProof, getBalance, getGoals,
   getCompletions, getSettings, updateSettings, getFamilyId, getUserId,
@@ -140,8 +142,11 @@ export function ChildDashboard() {
   } | null>(null)
 
   // Per-chore submission state
-  const [childTab,      setChildTab]      = useState<'home' | 'chores' | 'money' | 'goals' | 'lab'>('home')
+  const [childTab,      setChildTab]      = useState<'chores' | 'money' | 'goals' | 'lab'>('chores')
   const [labUnread,     setLabUnread]     = useState(0)
+  const tabBarRef = useRef<HTMLDivElement>(null)
+  const tabRefs   = useRef<(HTMLButtonElement | null)[]>([])
+  const [indicator, setIndicator]         = useState({ left: 0, width: 0 })
   const [submitting,    setSubmitting]    = useState<string | null>(null)
   const [submitted,     setSubmitted]     = useState<Set<string>>(new Set())
   const [noteChore,     setNoteChore]     = useState<string | null>(null)
@@ -168,7 +173,10 @@ export function ChildDashboard() {
       setPending(p)
       const av = (s.app_view ?? 'ORCHARD') as 'ORCHARD' | 'CLEAN'
       setAppView(av)
-      if (s.avatar_id) setAvatarId(s.avatar_id)
+      if (s.avatar_id) {
+        setAvatarId(s.avatar_id)
+        updateDeviceIdentity({ avatar_id: s.avatar_id })
+      }
       // Count modules unlocked in the last 7 days with no acts started yet
       try {
         const { getLabModules } = await import('../lib/api')
@@ -251,6 +259,16 @@ export function ChildDashboard() {
 
   // Clean up goal bar timer on unmount
   useEffect(() => () => { if (goalBarTimer.current) clearTimeout(goalBarTimer.current) }, [])
+
+  // Sliding tab indicator — mirrors parent portal pattern
+  const CHILD_TABS = ['chores', 'money', 'goals', 'lab'] as const
+  useEffect(() => {
+    const idx = CHILD_TABS.indexOf(childTab)
+    const btn = tabRefs.current[idx]
+    const bar = tabBarRef.current
+    if (!btn || !bar) return
+    setIndicator({ left: btn.offsetLeft - bar.scrollLeft, width: btn.offsetWidth })
+  }, [childTab])
 
   // ── Grove planner helpers ──────────────────────────────────────────────────
 
@@ -388,12 +406,13 @@ export function ChildDashboard() {
         </div>
 
         {/* Tab bar */}
-        <div className="max-w-[560px] mx-auto border-t border-[var(--color-border)] flex">
-          {([['home', 'Home'], ['chores', 'Chores'], ['money', 'Money'], ['goals', 'Goals'], ['lab', 'Lab']] as const).map(([id, label]) => (
+        <div ref={tabBarRef} className="max-w-[560px] mx-auto border-t border-[var(--color-border)] flex relative">
+          {([['chores', 'Chores'], ['money', 'Money'], ['goals', 'Goals'], ['lab', 'Lab']] as const).map(([id, label], i) => (
             <button
               key={id}
+              ref={el => { tabRefs.current[i] = el }}
               onClick={() => { setChildTab(id); if (id === 'lab') setLabUnread(0) }}
-              className={`flex-1 py-2.5 text-[13px] font-semibold relative transition-colors cursor-pointer
+              className={`flex-1 py-2.5 text-[13px] font-semibold relative transition-colors duration-100 cursor-pointer
                 ${childTab === id ? 'text-[var(--brand-primary)]' : 'text-[var(--color-text-muted)] hover:text-[var(--color-text)]'}`}
             >
               {label}
@@ -402,11 +421,17 @@ export function ChildDashboard() {
                   {labUnread}
                 </span>
               )}
-              {childTab === id && (
-                <span className="absolute bottom-0 left-0 right-0 h-[2.5px] bg-[var(--brand-primary)] rounded-t-full" />
-              )}
             </button>
           ))}
+          {/* Sliding active indicator */}
+          <span
+            className="absolute bottom-0 h-[2.5px] bg-[var(--brand-primary)] rounded-t-full pointer-events-none"
+            style={{
+              left: indicator.left,
+              width: indicator.width,
+              transition: 'left 250ms cubic-bezier(0.4,0,0.2,1), width 250ms cubic-bezier(0.4,0,0.2,1)',
+            }}
+          />
         </div>
       </header>
 
@@ -420,18 +445,13 @@ export function ChildDashboard() {
           />
           {/* Sheet */}
           <div className="relative bg-[var(--color-surface)] rounded-t-2xl shadow-xl max-w-[560px] w-full mx-auto px-4 pt-4 pb-10 space-y-5">
-            {/* Drag handle */}
-            <div className="flex justify-center pt-1 pb-0">
-              <div className="w-10 h-1 rounded-full bg-[var(--color-border)]" />
-            </div>
-
             <div className="flex items-center justify-between">
               <p className="text-[16px] font-extrabold text-[var(--color-text)]">Settings</p>
               <button
                 onClick={() => setShowSettings(false)}
-                className="w-8 h-8 flex items-center justify-center text-[var(--color-text-muted)] hover:text-[var(--color-text)] text-[20px] leading-none cursor-pointer"
+                className="text-[var(--color-text-muted)] hover:text-[var(--color-text)] cursor-pointer"
               >
-                ×
+                <X size={18} />
               </button>
             </div>
 
@@ -465,6 +485,7 @@ export function ChildDashboard() {
                               try {
                                 await updateSettings({ avatar_id: avId })
                                 setAvatarId(avId)
+                                updateDeviceIdentity({ avatar_id: avId })
                               } finally {
                                 setSavingAvatar(false)
                               }
@@ -528,90 +549,108 @@ export function ChildDashboard() {
       <main className="flex-1 max-w-[560px] mx-auto w-full px-3.5 py-4 flex flex-col gap-4">
         <div className={childTab === 'chores' ? 'tab-panel' : 'tab-panel hidden'}>
           <div className="space-y-4">
+            {/* Weekly day planner */}
+            {!loading && (
+              <div className={cardClass}>
+                <div className="px-4 pt-4 pb-1">
+                  <h2 className="text-[15px] font-bold text-[var(--color-text)]">{tone.weekSection}</h2>
+                  <p className="text-[12px] text-[var(--color-text-muted)] mt-0.5">{tone.weekSubtitle}</p>
+                </div>
+                <div className="flex gap-1.5 px-4 pb-3 mt-2 overflow-x-auto scrollbar-hide">
+                  {DAYS.map((day, i) => {
+                    const dayNum = i + 1
+                    const isToday = activeDay === dayNum
+                    const hasChores = chores.some(c => effectiveDays(c, grovePlans).includes(dayNum))
+                    return (
+                      <button
+                        key={day}
+                        onClick={() => setActiveDay(dayNum)}
+                        className={`shrink-0 flex flex-col items-center rounded-xl px-2.5 py-2 min-w-[44px] transition-colors duration-100 cursor-pointer
+                          ${isToday ? 'bg-[var(--brand-primary)] text-white' : 'bg-[var(--color-surface-alt)] text-[var(--color-text-muted)] hover:bg-[var(--color-border)]'}`}
+                      >
+                        <span className="text-[11px] font-semibold">{day}</span>
+                        <span className={`mt-1.5 rounded-full w-1.5 h-1.5 ${hasChores ? (isToday ? 'bg-white/50' : 'bg-[var(--brand-primary)]') : 'bg-transparent'}`} />
+                      </button>
+                    )
+                  })}
+                </div>
+                <div className="border-t border-[var(--color-border)] divide-y divide-[var(--color-border)]">
+                  {dayChores.length === 0 ? (
+                    <p className="px-4 py-5 text-[13px] text-[var(--color-text-muted)] text-center">
+                      {tone.nothingToday} {DAYS[activeDay - 1]} yet
+                    </p>
+                  ) : (
+                    dayChores.map(chore => (
+                      <ChoreRow
+                        key={chore.id}
+                        chore={chore}
+                        tone={tone}
+                        submitted={submitted.has(chore.id)}
+                        submitting={submitting === chore.id}
+                        noteOpen={noteChore === chore.id}
+                        noteText={noteChore === chore.id ? noteText : ''}
+                        submitErr={submitErr}
+                        onDone={() => chore.proof_required ? startProofCapture(chore.id) : chore.description ? setNoteChore(chore.id) : handleDone(chore.id)}
+                        onNoteChange={setNoteText}
+                        onNoteSubmit={() => handleDone(chore.id, noteText || undefined)}
+                        onNoteCancel={() => { setNoteChore(null); setNoteText('') }}
+                        showPlantButton={false}
+                        planted={true}
+                      />
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Compact top-goal progress bar */}
+            {!loading && activeTopGoal && (
+              <div className={cardClass}>
+                <div className="px-4 py-3 flex items-center gap-3">
+                  <GrowingTree pct={goalBarPct} size={40} showLabel />
+                  <div className="flex-1 min-w-0">
+                    <div className="text-[13px] font-semibold text-[var(--color-text)] truncate mb-1.5">{activeTopGoal.title}</div>
+                    <div className="w-full h-2.5 bg-[var(--color-surface-alt)] rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-[var(--brand-primary)] rounded-full"
+                        style={{ width: `${goalBarPct}%`, transition: 'width 1.1s cubic-bezier(0.25, 1, 0.5, 1)' }}
+                      />
+                    </div>
+                    <div className="flex justify-between mt-1">
+                      <span className="text-[11px] text-[var(--color-text-muted)] tabular-nums">
+                        {formatCurrency(balance?.available ?? 0, activeTopGoal.currency)} saved
+                      </span>
+                      <span className="text-[11px] text-[var(--color-text-muted)] tabular-nums">
+                        {Math.min(100, Math.round(((balance?.available ?? 0) / effectiveTarget(activeTopGoal)) * 100))}% of {formatCurrency(effectiveTarget(activeTopGoal), activeTopGoal.currency)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <EarnTab familyId={familyId} childId={userId} currency={chores[0]?.currency ?? 'GBP'} grovePlans={grovePlans} onTogglePlant={togglePlant} />
             <ChildHistoryTab familyId={familyId} childId={userId} currency={currency} variant="chore" />
+
+            {/* Badges & streaks */}
+            {!loading && streakData && (
+              <BadgeAlmanac
+                earnedBadgeKeys={streakData.earned_badge_keys}
+                progress={{
+                  longestStreak:         streakData.longest_streak,
+                  totalApprovedChores:   streakData.total_approved_chores,
+                  totalGoalsCompleted:   streakData.total_goals_completed,
+                  totalSavedPence:       streakData.total_saved_pence,
+                  totalLessonsCompleted: 0,
+                }}
+                appView={appView}
+              />
+            )}
           </div>
         </div>
         <div className={childTab === 'money' ? 'tab-panel' : 'tab-panel hidden'}><ChildMoneyTab familyId={familyId} childId={userId} currency={currency} /></div>
         <div className={childTab === 'goals' ? 'tab-panel' : 'tab-panel hidden'}><ChildGoalsTab familyId={familyId} childId={userId} currency={currency} appView={appView} /></div>
         <div className={childTab === 'lab'   ? 'tab-panel' : 'tab-panel hidden'}><LabTab appView={appView} /></div>
-        {childTab === 'home' && (<>
-          {loading ? (
-            <div className="py-16 text-center text-[14px] text-[var(--color-text-muted)]">Loading…</div>
-          ) : tone.isChild ? (
-            /* ═══════════════════════════════════════════════════════════
-               ORCHARD VIEW — card-based, metaphorical, playful
-               ══════════════════════════════════════════════════════════ */
-            <OrchardView
-              balance={balance}
-              appView={appView}
-              chores={chores}
-              pending={pending}
-              goals={goals}
-              tone={tone}
-              activeDay={activeDay}
-              setActiveDay={setActiveDay}
-              grovePlans={grovePlans}
-              dayChores={dayChores}
-              unplannedChores={unplannedChores}
-              activeTopGoal={activeTopGoal}
-              goalBarPct={goalBarPct}
-              submitted={submitted}
-              submitting={submitting}
-              purchasing={purchasing}
-              noteChore={noteChore}
-              noteText={noteText}
-              submitErr={submitErr}
-              cardClass={cardClass}
-              currency={currency}
-              weeklyAllowancePence={weeklyAllowancePence}
-              isPlanted={isPlanted}
-              togglePlant={togglePlant}
-              handleDone={handleDone}
-              handlePurchase={handlePurchase}
-              setNoteChore={setNoteChore}
-              setNoteText={setNoteText}
-              onPlantGoal={() => setShowGrove(true)}
-              onDoneWithProof={startProofCapture}
-            />
-          ) : (
-            /* ═══════════════════════════════════════════════════════════
-               PROFESSIONAL VIEW — compact table/list, financial language
-               All colours via CSS variables — inherits Light/Dark theme
-               ══════════════════════════════════════════════════════════ */
-            <ProfessionalView
-              balance={balance}
-              appView={appView}
-              chores={chores}
-              pending={pending}
-              goals={goals}
-              tone={tone}
-              currency={currency}
-              submitted={submitted}
-              submitting={submitting}
-              noteChore={noteChore}
-              noteText={noteText}
-              submitErr={submitErr}
-              handleDone={handleDone}
-              setNoteChore={setNoteChore}
-              setNoteText={setNoteText}
-              onDoneWithProof={startProofCapture}
-            />
-          )}
-          {!loading && streakData && (
-            <BadgeAlmanac
-              earnedBadgeKeys={streakData.earned_badge_keys}
-              progress={{
-                longestStreak:         streakData.longest_streak,
-                totalApprovedChores:   streakData.total_approved_chores,
-                totalGoalsCompleted:   streakData.total_goals_completed,
-                totalSavedPence:       streakData.total_saved_pence,
-                totalLessonsCompleted: 0,  // Learning Lab not shipped
-              }}
-              appView={appView}
-            />
-          )}
-        </>)}
 
       </main>
 

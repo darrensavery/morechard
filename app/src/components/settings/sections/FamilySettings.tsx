@@ -8,8 +8,9 @@
 
 import { useState, useRef, useEffect, type FormEvent } from 'react'
 import { copyText } from '../../../lib/clipboard'
-import { Users, Shield, Calendar, ChevronRight } from 'lucide-react'
+import { Users, Shield, Calendar, ChevronRight, AlertTriangle } from 'lucide-react'
 import type { ChildRecord, ChildGrowthSettings } from '../../../lib/api'
+import { getCoParents, removeCoParent } from '../../../lib/api'
 import { AvatarSVG } from '../../../lib/avatars'
 import { Toast, SettingsRow, SectionCard, SectionHeader, ReadOnlyBadge } from '../shared'
 import { ChildProfileSettings } from './ChildProfileSettings'
@@ -45,6 +46,7 @@ interface Props {
   overdraftEnabled:      boolean
   overdraftLimitPence:   number
   onSaveOverdraftPolicy: (enabled: boolean, limitPence: number) => Promise<void>
+  onCoParentRemoved:     () => Promise<void>
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -58,6 +60,7 @@ export function FamilySettings({
   onSharedExpenseThresholdChange, onSharedExpenseSplitChange, onSaveSharedExpense,
   pocketMoneyDay, onSavePocketMoneyDay,
   overdraftEnabled, overdraftLimitPence, onSaveOverdraftPolicy,
+  onCoParentRemoved,
 }: Props) {
   const { terminology } = useTone(0)  // parent settings — never teen view
   const [activeChildId,       setActiveChildId]       = useState<string | null>(null)
@@ -83,6 +86,12 @@ export function FamilySettings({
   const [localEnabled,        setLocalEnabled]        = useState(overdraftEnabled)
   const [localLimitPence,     setLocalLimitPence]     = useState(overdraftLimitPence)
   const [savingOverdraft,     setSavingOverdraft]     = useState(false)
+
+  const [showRemoveCoParent,   setShowRemoveCoParent]   = useState(false)
+  const [coParentInfo,         setCoParentInfo]         = useState<{ user_id: string; display_name: string } | null>(null)
+  const [loadingCoParent,      setLoadingCoParent]      = useState(false)
+  const [removingCoParent,     setRemovingCoParent]     = useState(false)
+  const [removeCoParentError,  setRemoveCoParentError]  = useState<string | null>(null)
 
   async function handleAddChild(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -126,6 +135,32 @@ export function FamilySettings({
       if (copyTimerRef.current) clearTimeout(copyTimerRef.current)
       setCopied(true)
       copyTimerRef.current = setTimeout(() => setCopied(false), 1500)
+    }
+  }
+
+  useEffect(() => {
+    if (!showRemoveCoParent) return
+    setLoadingCoParent(true)
+    setRemoveCoParentError(null)
+    getCoParents()
+      .then(({ co_parents }) => setCoParentInfo(co_parents[0] ?? null))
+      .catch(() => setRemoveCoParentError('Could not load co-parent information.'))
+      .finally(() => setLoadingCoParent(false))
+  }, [showRemoveCoParent])
+
+  async function handleConfirmRemoveCoParent() {
+    if (!coParentInfo) return
+    setRemovingCoParent(true)
+    setRemoveCoParentError(null)
+    try {
+      await removeCoParent(coParentInfo.user_id)
+      setShowRemoveCoParent(false)
+      setCoParentInfo(null)
+      await onCoParentRemoved()
+    } catch (err) {
+      setRemoveCoParentError(err instanceof Error ? err.message : 'Something went wrong.')
+    } finally {
+      setRemovingCoParent(false)
     }
   }
 
@@ -315,6 +350,69 @@ export function FamilySettings({
     )
   }
 
+  if (showRemoveCoParent) {
+    return (
+      <div className="space-y-4">
+        {toast && <Toast message={toast} />}
+        <SectionHeader title="Remove Co-Parent" onBack={() => { setShowRemoveCoParent(false); setRemoveCoParentError(null) }} />
+
+        {loadingCoParent && (
+          <p className="text-center text-[14px] text-[var(--color-text-muted)] py-8">Loading…</p>
+        )}
+
+        {!loadingCoParent && coParentInfo && (
+          <>
+            <SectionCard>
+              <div className="px-4 py-4 space-y-3">
+                <div className="flex items-center gap-3">
+                  <span className="shrink-0 w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
+                    <AlertTriangle size={18} className="text-red-600" />
+                  </span>
+                  <div>
+                    <p className="text-[14px] font-semibold text-[var(--color-text)]">{coParentInfo.display_name}</p>
+                    <p className="text-[12px] text-[var(--color-text-muted)]">Co-parent</p>
+                  </div>
+                </div>
+                <p className="text-[13px] text-[var(--color-text-muted)] leading-relaxed">
+                  Removing <strong>{coParentInfo.display_name}</strong> will immediately revoke their access. They will be
+                  logged out on all devices and won't be able to view or manage the family. Any pending shared expenses will
+                  be voided. This cannot be undone — you would need to send a new invite to re-add them.
+                </p>
+              </div>
+            </SectionCard>
+
+            {removeCoParentError && (
+              <p className="text-[13px] text-red-600 font-semibold px-1">{removeCoParentError}</p>
+            )}
+
+            <button
+              onClick={handleConfirmRemoveCoParent}
+              disabled={removingCoParent}
+              className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold text-[14px] py-3 rounded-xl disabled:opacity-50 cursor-pointer transition-colors"
+            >
+              {removingCoParent ? 'Removing…' : `Remove ${coParentInfo.display_name}`}
+            </button>
+
+            <button
+              onClick={() => { setShowRemoveCoParent(false); setRemoveCoParentError(null) }}
+              className="w-full border border-[var(--color-border)] text-[var(--color-text-muted)] font-semibold text-[14px] py-3 rounded-xl cursor-pointer hover:bg-[var(--color-surface-alt)] transition-colors"
+            >
+              Cancel
+            </button>
+          </>
+        )}
+
+        {!loadingCoParent && !coParentInfo && !removeCoParentError && (
+          <p className="text-center text-[14px] text-[var(--color-text-muted)] py-8">No co-parent found.</p>
+        )}
+
+        {removeCoParentError && !coParentInfo && (
+          <p className="text-[13px] text-red-600 font-semibold px-1">{removeCoParentError}</p>
+        )}
+      </div>
+    )
+  }
+
   if (activeChild) {
     return (
       <>
@@ -456,7 +554,7 @@ export function FamilySettings({
             />
           )}
           {isLead && hasCoParent && (
-            <SettingsRow icon={<Users size={15} />} label="Remove Co-Parent" description="Revoke access for the secondary manager" onClick={onComingSoon} destructive />
+            <SettingsRow icon={<Users size={15} />} label="Remove Co-Parent" description="Revoke access for the secondary manager" onClick={() => setShowRemoveCoParent(true)} destructive />
           )}
         </SectionCard>
       </div>

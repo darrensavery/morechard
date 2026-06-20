@@ -13,9 +13,11 @@ import { useRef, useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Lock } from 'lucide-react'
 import { getDeviceIdentity, clearDeviceIdentity, verifyPinHash } from '@/lib/deviceIdentity'
+import { AvatarSVG } from '@/lib/avatars'
 import { challengeBiometrics, hasBiometricCredential, clearBiometricCredential } from '@/lib/biometrics'
 import { analytics, track } from '@/lib/analytics'
 import { FullLogo } from '@/components/ui/Logo'
+import { childLogin, setToken } from '@/lib/api'
 import * as Sentry from '@sentry/react'
 
 const PIN_LENGTH    = 4
@@ -26,23 +28,56 @@ export function LockScreen() {
   const navigate  = useNavigate()
   const identity  = getDeviceIdentity()
 
-  const [digits,       setDigits]      = useState<string[]>(Array(PIN_LENGTH).fill(''))
-  const [error,        setError]       = useState('')
-  const [unlocking,    setUnlocking]   = useState(false)
-  const [bioRunning,   setBioRunning]  = useState(false)
-  const [pinAttempts,  setPinAttempts] = useState(0)
-  const [lockedUntil,  setLockedUntil] = useState<number | null>(null)
+  const [digits,              setDigits]             = useState<string[]>(Array(PIN_LENGTH).fill(''))
+  const [error,               setError]              = useState('')
+  const [unlocking,           setUnlocking]          = useState(false)
+  const [bioRunning,          setBioRunning]         = useState(false)
+  const [pinAttempts,         setPinAttempts]        = useState(0)
+  const [lockedUntil,         setLockedUntil]        = useState<number | null>(null)
+  // Tracks whether the JWT was absent when this screen mounted — drives re-auth logic
+  const [tokenMissingOnMount] = useState(() => !localStorage.getItem('mc_token'))
+  // Parent-specific: shown after biometrics/PIN succeed but JWT is gone (rare — ~annual)
+  const [sessionExpiredForParent, setSessionExpiredForParent] = useState(false)
   const inputRefs = useRef<(HTMLInputElement | null)[]>([])
 
   const destination = identity?.role === 'child' ? '/child' : '/parent'
 
-  const unlock = useCallback((authMethod: 'biometrics' | 'pin' | 'none') => {
+  const unlock = useCallback(async (authMethod: 'biometrics' | 'pin' | 'none', rawPin?: string) => {
     if (!identity) return
+
+    // JWT is missing (expired) — re-authenticate before entering the app
+    if (tokenMissingOnMount) {
+      if (identity.role === 'child') {
+        // Children: silently get a new JWT using the just-verified PIN
+        if (!rawPin) {
+          setError('Could not reconnect — please ask a parent to reset your code.')
+          setUnlocking(false)
+          setDigits(Array(PIN_LENGTH).fill(''))
+          return
+        }
+        try {
+          const result = await childLogin(identity.family_id, identity.user_id, rawPin)
+          setToken(result.token)
+        } catch {
+          setError('Could not reconnect — check your internet and try again.')
+          setUnlocking(false)
+          setDigits(Array(PIN_LENGTH).fill(''))
+          setTimeout(() => inputRefs.current[0]?.focus(), 50)
+          return
+        }
+      } else {
+        // Parents: can't silently re-auth without email — show session-expired prompt
+        setSessionExpiredForParent(true)
+        setUnlocking(false)
+        return
+      }
+    }
+
     Sentry.setUser({ id: identity.user_id })
     analytics.identify(identity.user_id, { role: identity.role })
     track.lockScreenUnlocked({ auth_method: authMethod })
     navigate(destination, { replace: true })
-  }, [navigate, destination, identity])
+  }, [navigate, destination, identity, tokenMissingOnMount])
 
   const runBiometrics = useCallback(async () => {
     if (bioRunning) return
@@ -52,21 +87,13 @@ export function LockScreen() {
     if (result.ok) {
       Sentry.setTag('auth_method', 'biometrics')
       if ('vibrate' in navigator) navigator.vibrate([10, 50, 10])
-      unlock('biometrics')
+      await unlock('biometrics')
     }
     // On denial/error — do nothing, user can tap the button or use PIN
   }, [bioRunning, unlock])
 
   useEffect(() => {
     if (!identity) { navigate('/', { replace: true }); return }
-
-    // No token means the session has expired regardless of auth method.
-    // Clear device identity so RootGate routes back to the landing/login screen.
-    if (!localStorage.getItem('mc_token')) {
-      localStorage.removeItem('mc_device_identity')
-      navigate('/', { replace: true })
-      return
-    }
 
     // No security set — pass straight through.
     // Clean up any stale mc_biometric_id that doesn't match auth_method='none' so
@@ -75,13 +102,13 @@ export function LockScreen() {
       clearBiometricCredential()
     }
     if (identity.auth_method === 'none' && !identity.pin_hash && !hasBiometricCredential()) {
-      unlock('none')
+      void unlock('none')
       return
     }
 
     // Biometrics → auto-challenge on mount
     if (identity.auth_method === 'biometrics' && hasBiometricCredential()) {
-      runBiometrics()
+      void runBiometrics()
     } else {
       // PIN — focus first box
       setTimeout(() => inputRefs.current[0]?.focus(), 100)
@@ -89,6 +116,41 @@ export function LockScreen() {
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!identity) return null
+
+  // Parent's JWT expired (happens at most once a year with 365-day tokens).
+  // Show a clear recovery screen instead of dumping them back to the landing page.
+  if (sessionExpiredForParent) {
+    return (
+      <div className="min-h-svh bg-[var(--color-bg)] flex flex-col items-center justify-center px-6 gap-6">
+        <FullLogo iconSize={26} />
+        <div className="max-w-sm w-full rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] px-6 py-7 text-center space-y-3 shadow-sm">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-amber-500/10">
+            <svg className="h-6 w-6 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+            </svg>
+          </div>
+          <h2 className="text-base font-semibold text-[var(--color-text)]">Session expired</h2>
+          <p className="text-sm text-[var(--color-text-muted)] leading-relaxed">
+            Your sign-in has expired. Request a new link — your family data is safe.
+          </p>
+        </div>
+        <div className="max-w-sm w-full flex flex-col gap-2.5">
+          <a
+            href="/auth/login"
+            className="block w-full rounded-xl bg-[var(--brand-primary)] py-3 text-sm font-semibold text-white text-center active:scale-[0.98] transition-transform"
+          >
+            Get a new sign-in link
+          </a>
+          <button
+            onClick={handleLogout}
+            className="w-full text-sm text-[var(--color-text-muted)] underline underline-offset-2 cursor-pointer hover:text-[var(--color-text)] transition-colors"
+          >
+            Log out of this device
+          </button>
+        </div>
+      </div>
+    )
+  }
 
   function handleInput(idx: number, value: string) {
     const char = value.replace(/\D/g, '').slice(-1)
@@ -133,7 +195,7 @@ export function LockScreen() {
     if (!stored) {
       // No hash stored — let through (auth_method may be 'none' or biometrics fallback)
       Sentry.setTag('auth_method', 'pin')
-      unlock('pin')
+      await unlock('pin', entered)
       return
     }
 
@@ -158,7 +220,8 @@ export function LockScreen() {
     setPinAttempts(0)
     setLockedUntil(null)
     Sentry.setTag('auth_method', 'pin')
-    unlock('pin')
+    // Pass raw PIN so unlock() can silently re-issue the child's JWT if it expired
+    await unlock('pin', entered)
   }
 
   function handleLogout() {
@@ -188,8 +251,11 @@ export function LockScreen() {
 
         {/* Avatar */}
         <div className="mb-7 flex flex-col items-center gap-3">
-          <div className="w-[76px] h-[76px] rounded-full bg-[color-mix(in_srgb,var(--brand-primary)_12%,transparent)] flex items-center justify-center border-2 border-[color-mix(in_srgb,var(--brand-primary)_30%,transparent)] shadow-md">
-            <span className="text-[28px] font-extrabold text-[var(--brand-primary)]">{identity.initials}</span>
+          <div className="w-[76px] h-[76px] rounded-full bg-[color-mix(in_srgb,var(--brand-primary)_12%,transparent)] flex items-center justify-center border-2 border-[color-mix(in_srgb,var(--brand-primary)_30%,transparent)] shadow-md overflow-hidden">
+            {identity.avatar_id
+              ? <AvatarSVG id={identity.avatar_id} size={76} />
+              : <span className="text-[28px] font-extrabold text-[var(--brand-primary)]">{identity.initials}</span>
+            }
           </div>
           <div className="text-center">
             <p className="text-[19px] font-extrabold text-[var(--color-text)] tracking-tight">{identity.display_name}</p>

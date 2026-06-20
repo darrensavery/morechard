@@ -353,6 +353,12 @@ export function ParentSettingsTab({ familyId, online, onChildrenChange, onClose 
     showToast('Overdraft policy saved')
   }
 
+  async function handleCoParentRemoved() {
+    const updated = await getFamily()
+    setFamily(updated)
+    showToast('Co-parent removed')
+  }
+
   // ── Section views ────────────────────────────────────────────────────────────
 
   const back = () => setView({ type: 'menu' })
@@ -364,7 +370,8 @@ pocketMoneyDay={pocketMoneyDay}
 onSavePocketMoneyDay={handleSavePocketMoneyDay}
 overdraftEnabled={overdraftEnabled}
 overdraftLimitPence={overdraftLimitPence}
-onSaveOverdraftPolicy={handleSaveOverdraftPolicy} /></ProfileSection>
+onSaveOverdraftPolicy={handleSaveOverdraftPolicy}
+onCoParentRemoved={handleCoParentRemoved} /></ProfileSection>
     if (view.section === 'security')   return <ProfileSection><SecuritySettings   profile={profile} toast={toast} onBack={back} onComingSoon={comingSoon} /></ProfileSection>
     if (view.section === 'appearance') return <ProfileSection><AppearanceSettings toast={toast} onBack={back} /></ProfileSection>
     if (view.section === 'billing')    return <ProfileSection><BillingSettings    toast={toast} onBack={back} onComingSoon={comingSoon} initialView={view.billingSubView} shieldUpgradePrice={shieldUpgradePrice} /></ProfileSection>

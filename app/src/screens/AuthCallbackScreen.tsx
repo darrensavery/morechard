@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import { Loader2 } from 'lucide-react'
 import { exchangeSlt, setToken, postMarketingConsent, postAnalyticsConsent } from '../lib/api'
-import { setDeviceIdentity, toInitials } from '../lib/deviceIdentity'
+import { setDeviceIdentity, getDeviceIdentity, toInitials } from '../lib/deviceIdentity'
 import { getLocale, isPolish } from '../lib/locale'
 import { FullLogo } from '../components/ui/Logo'
 
@@ -56,6 +56,10 @@ export default function AuthCallbackScreen() {
           })
         }
 
+        // Preserve existing auth setup (PIN hash, biometrics choice, avatar) if the
+        // user already has a device identity — this happens when a returning parent
+        // re-authenticates via magic link after their session expired.
+        const existingIdentity = getDeviceIdentity()
         setDeviceIdentity({
           user_id:        result.user.id,
           family_id:      result.user.family_id,
@@ -63,9 +67,11 @@ export default function AuthCallbackScreen() {
           role:           'parent',
           parenting_role: result.user.parenting_role,
           initials:       toInitials(result.user.display_name),
-          registered_at:  new Date().toISOString(),
-          auth_method:    'none',
-          google_picture: result.user.google_picture ?? undefined,
+          registered_at:  existingIdentity?.registered_at ?? new Date().toISOString(),
+          auth_method:    existingIdentity?.auth_method ?? 'none',
+          pin_hash:       existingIdentity?.pin_hash,
+          avatar_id:      existingIdentity?.avatar_id,
+          google_picture: result.user.google_picture ?? existingIdentity?.google_picture ?? undefined,
         })
         // Full browser navigation — tears down React tree so RootGate
         // re-reads mc_device_identity from localStorage on remount.

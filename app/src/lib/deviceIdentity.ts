@@ -36,6 +36,8 @@ export interface DeviceIdentity {
   pin_hash?:      string
   /** Google profile picture URL; undefined for non-Google logins */
   google_picture?: string
+  /** Child avatar ID (e.g. 'bottts:spark') — kept in sync by ChildDashboard */
+  avatar_id?: string
 }
 
 const STORAGE_KEY = 'mc_device_identity'

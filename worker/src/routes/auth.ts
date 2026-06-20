@@ -21,9 +21,9 @@ import type { JwtPayload } from '../lib/jwt.js';
 import { nanoid } from '../lib/nanoid.js';
 import { sha256, computeRecordHash, GENESIS_HASH } from '../lib/hash.js';
 
-const MAGIC_LINK_EXPIRY  = 15 * 60;       // 15 minutes
-const PARENT_JWT_EXPIRY  = 7 * 24 * 3600; // 7 days
-const CHILD_JWT_EXPIRY   = 24 * 3600;     // 24 hours
+const MAGIC_LINK_EXPIRY  = 15 * 60;         // 15 minutes
+const PARENT_JWT_EXPIRY  = 365 * 24 * 3600; // 1 year
+const CHILD_JWT_EXPIRY   = 90 * 24 * 3600;  // 90 days
 
 // ----------------------------------------------------------------
 // POST /auth/register
@@ -854,6 +854,125 @@ export async function handleLeaveFamily(request: Request & { auth?: JwtPayload }
   await env.DB.batch(batch);
 
   return json({ ok: true, action: 'left' });
+}
+
+// ----------------------------------------------------------------
+// GET /auth/family/co-parents
+// Returns the co-parents in the caller's family. Lead-only.
+// ----------------------------------------------------------------
+export async function handleGetCoParents(request: Request & { auth?: JwtPayload }, env: Env): Promise<Response> {
+  const auth = (request as AuthedRequest).auth;
+  if (!auth) return error('Authorisation required', 401);
+  if (auth.role !== 'parent') return error('Only parents can access this', 403);
+
+  const { results } = await env.DB
+    .prepare(`
+      SELECT u.id AS user_id, u.display_name
+      FROM users u
+      JOIN family_roles fr ON fr.user_id = u.id
+      WHERE fr.family_id = ? AND fr.role = 'parent' AND fr.parent_role = 'co_parent'
+    `)
+    .bind(auth.family_id)
+    .all<{ user_id: string; display_name: string }>();
+
+  return json({ co_parents: results });
+}
+
+// ----------------------------------------------------------------
+// DELETE /auth/family/co-parent/:userId
+// Lead removes a co-parent from the family.
+//
+// Effects:
+//   - Anonymises the removed user's PII
+//   - Revokes all their sessions (forces logout on their device)
+//   - Removes their family_roles row
+//   - Resets families.parenting_mode to 'single'
+//   - Voids any pending shared expenses (no second parent to approve them)
+//   - Writes a ledger audit note
+// ----------------------------------------------------------------
+export async function handleRemoveCoParent(request: Request & { auth?: JwtPayload }, env: Env, targetUserId: string): Promise<Response> {
+  const auth = (request as AuthedRequest).auth;
+  if (!auth) return error('Authorisation required', 401);
+
+  const callerId = auth.sub;
+  const familyId = auth.family_id;
+  const ip       = clientIp(request);
+
+  // Lead-only check
+  const callerRole = await env.DB
+    .prepare(`SELECT parent_role FROM family_roles WHERE user_id = ? AND family_id = ? AND role = 'parent'`)
+    .bind(callerId, familyId)
+    .first<{ parent_role: string | null }>();
+  if (!callerRole || callerRole.parent_role !== 'lead') {
+    return error('Only a Lead parent can remove a co-parent.', 403);
+  }
+
+  // Cannot remove yourself via this route
+  if (targetUserId === callerId) return error('Cannot remove yourself — use Leave Family instead.', 400);
+
+  // Verify target is a co-parent in this family
+  const target = await env.DB
+    .prepare(`
+      SELECT u.display_name, fr.parent_role
+      FROM users u
+      JOIN family_roles fr ON fr.user_id = u.id
+      WHERE u.id = ? AND fr.family_id = ? AND fr.role = 'parent'
+    `)
+    .bind(targetUserId, familyId)
+    .first<{ display_name: string; parent_role: string | null }>();
+  if (!target) return error('Co-parent not found in this family.', 404);
+  if (target.parent_role !== 'co_parent') return error('Target user is not a co-parent.', 400);
+
+  // Ledger audit note — hash chain
+  const prevRow = await env.DB
+    .prepare('SELECT id, record_hash FROM ledger WHERE family_id = ? ORDER BY id DESC LIMIT 1')
+    .bind(familyId)
+    .first<{ id: number; record_hash: string }>();
+  const previousHash = prevRow?.record_hash ?? GENESIS_HASH;
+  const newId        = (prevRow?.id ?? 0) + 1;
+  const recordHash   = await computeRecordHash(newId, familyId, '', 0, 'GBP', 'system_note', previousHash);
+  const capturedName = target.display_name;
+
+  await env.DB.batch([
+    // Anonymise removed user's PII
+    env.DB.prepare(`
+      UPDATE users
+      SET display_name = 'Former Co-Parent', email = NULL, email_pending = NULL,
+          password_hash = NULL, pin_hash = NULL
+      WHERE id = ?
+    `).bind(targetUserId),
+
+    // Revoke all their active sessions (next request they make will 401)
+    env.DB.prepare(`UPDATE sessions SET revoked_at = unixepoch() WHERE user_id = ? AND revoked_at IS NULL`)
+      .bind(targetUserId),
+
+    // Remove the family membership
+    env.DB.prepare(`DELETE FROM family_roles WHERE user_id = ? AND family_id = ?`)
+      .bind(targetUserId, familyId),
+
+    // Reset family back to single-parent mode
+    env.DB.prepare(`UPDATE families SET parenting_mode = 'single' WHERE id = ?`)
+      .bind(familyId),
+
+    // Void pending shared expenses — no second parent to approve them
+    env.DB.prepare(`
+      UPDATE shared_expenses SET verification_status = 'voided'
+      WHERE family_id = ? AND verification_status = 'pending'
+    `).bind(familyId),
+
+    // Immutable audit trail
+    env.DB.prepare(`
+      INSERT INTO ledger
+        (id, family_id, child_id, entry_type, amount, currency,
+         description, verification_status, previous_hash, record_hash, ip_address)
+      VALUES (?,?,NULL,'system_note',0,'GBP',?,'verified_auto',?,?,?)
+    `).bind(newId, familyId, `🌿 ${capturedName} has been removed from the orchard.`, previousHash, recordHash, ip),
+  ]);
+
+  // Bust the family config cache so the next GET /api/family reflects single mode
+  await env.CACHE.delete(`family:config:${familyId}`);
+
+  return json({ ok: true });
 }
 
 // ----------------------------------------------------------------
