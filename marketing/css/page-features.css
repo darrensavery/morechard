@@ -688,8 +688,8 @@
     gap: 40px;
     padding: 56px 0;
   }
-  .fp-pair:nth-child(even) .fp-pair-text { order: 0; }
-  .fp-pair:nth-child(even) .fp-pair-visual { order: 0; }
+  .fp-pair:nth-child(even) .fp-pair-text { order: 1; }
+  .fp-pair:nth-child(even) .fp-pair-visual { order: 2; }
   .fp-checklist-grid { grid-template-columns: 1fr; }
   .app-bridge-grid { grid-template-columns: repeat(2, 1fr); }
 }
