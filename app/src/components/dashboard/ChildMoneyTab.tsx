@@ -62,7 +62,7 @@ export function ChildMoneyTab({ familyId, childId, currency }: Props) {
     <div className="space-y-4">
 
       {/* Balance hero */}
-      <div className="bg-[var(--color-surface)] rounded-2xl shadow-sm border-t-[3px] border-t-[var(--brand-primary)] border border-[var(--color-border)] p-4">
+      <div className="bg-[var(--color-surface)] rounded-2xl card-depth border-t-[3px] border-t-[var(--brand-primary)] border border-[var(--color-border)] p-4">
         <div className="text-[12px] font-semibold text-[var(--color-text-muted)] uppercase tracking-wider mb-1">
           Available to spend
         </div>

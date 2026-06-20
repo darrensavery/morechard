@@ -274,7 +274,7 @@ export function EarnTab({ familyId, childId, currency, grovePlans = {}, onToggle
                 <button
                   onClick={() => handleClaim(chore.id)}
                   disabled={claiming === chore.id}
-                  className="shrink-0 h-10 px-4 bg-[var(--brand-primary)] text-white rounded-xl font-bold text-[13px] hover:opacity-90 disabled:opacity-50 active:scale-95 transition-all cursor-pointer"
+                  className="shrink-0 h-10 px-4 bg-[var(--brand-primary)] text-white rounded-xl font-bold text-[13px] hover:opacity-90 disabled:opacity-50 active:scale-95 transition-all cursor-pointer btn-depth"
                 >
                   {claiming === chore.id ? '…' : 'Grab it'}
                 </button>
@@ -524,7 +524,7 @@ function OpenChoreCard({
           <button
             type="button"
             onClick={e => { e.stopPropagation(); onStart() }}
-            className={`shrink-0 h-10 rounded-xl font-bold text-[13px] transition-all active:scale-95 cursor-pointer
+            className={`shrink-0 h-10 rounded-xl font-bold text-[13px] transition-all active:scale-95 cursor-pointer btn-depth
               ${chore.proof_required
                 ? 'px-3 bg-[var(--brand-primary)] text-white hover:opacity-90 flex items-center gap-1.5'
                 : 'px-4 bg-[var(--brand-primary)] text-white hover:opacity-90'

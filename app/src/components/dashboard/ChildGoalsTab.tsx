@@ -98,7 +98,7 @@ export function ChildGoalsTab({ familyId, childId, currency, appView }: Props) {
 
   return (
     <div className="space-y-4">
-      <div className="bg-[var(--color-surface)] rounded-2xl shadow-sm border border-[var(--color-border)] overflow-hidden">
+      <div className="bg-[var(--color-surface)] rounded-2xl card-depth border border-[var(--color-border)] overflow-hidden">
         <div className="px-4 pt-4 pb-3 flex items-center justify-between">
           <h2 className="text-[15px] font-bold text-[var(--color-text)]">🌳 Savings Grove</h2>
           <button
@@ -149,7 +149,7 @@ export function ChildGoalsTab({ familyId, childId, currency, appView }: Props) {
                   <div className="space-y-1">
                     <div className="w-full h-4 bg-[var(--color-surface-alt)] rounded-full overflow-hidden">
                       <div
-                        className="h-full bg-[var(--brand-primary)] rounded-full"
+                        className="h-full bg-[var(--brand-primary)] rounded-full progress-fill-glow"
                         style={{ width: `${goalBarPct}%`, transition: 'width 1.1s cubic-bezier(0.25, 1, 0.5, 1)' }}
                       />
                     </div>

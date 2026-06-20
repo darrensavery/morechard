@@ -361,8 +361,8 @@ export function ChildDashboard() {
 
   // Teen mode uses flatter shadows and sharper borders for a fintech feel
   const cardClass = tone.isChild
-    ? 'bg-[var(--color-surface)] rounded-2xl border border-[var(--color-border)] shadow-sm overflow-hidden'
-    : 'bg-[var(--color-surface)] rounded-xl border border-[var(--color-border)] overflow-hidden'
+    ? 'bg-[var(--color-surface)] rounded-2xl border border-[var(--color-border)] card-depth overflow-hidden'
+    : 'bg-[var(--color-surface)] rounded-xl border border-[var(--color-border)] card-depth overflow-hidden'
 
   return (
     <div className="min-h-svh bg-[var(--color-bg)] flex flex-col">
@@ -569,7 +569,7 @@ export function ChildDashboard() {
                         key={day}
                         onClick={() => setActiveDay(dayNum)}
                         className={`shrink-0 flex flex-col items-center rounded-xl px-2.5 py-2 min-w-[44px] transition-colors duration-100 cursor-pointer
-                          ${isToday ? 'bg-[var(--brand-primary)] text-white' : 'bg-[var(--color-surface-alt)] text-[var(--color-text-muted)] hover:bg-[var(--color-border)]'}`}
+                          ${isToday ? 'bg-[var(--brand-primary)] text-white day-pill-active' : 'bg-[var(--color-surface-alt)] text-[var(--color-text-muted)] hover:bg-[var(--color-border)]'}`}
                       >
                         <span className="text-[11px] font-semibold">{day}</span>
                         <span className={`mt-1.5 rounded-full w-1.5 h-1.5 ${hasChores ? (isToday ? 'bg-white/50' : 'bg-[var(--brand-primary)]') : 'bg-transparent'}`} />
@@ -615,7 +615,7 @@ export function ChildDashboard() {
                     <div className="text-[13px] font-semibold text-[var(--color-text)] truncate mb-1.5">{activeTopGoal.title}</div>
                     <div className="w-full h-2.5 bg-[var(--color-surface-alt)] rounded-full overflow-hidden">
                       <div
-                        className="h-full bg-[var(--brand-primary)] rounded-full"
+                        className="h-full bg-[var(--brand-primary)] rounded-full progress-fill-glow"
                         style={{ width: `${goalBarPct}%`, transition: 'width 1.1s cubic-bezier(0.25, 1, 0.5, 1)' }}
                       />
                     </div>
@@ -761,7 +761,7 @@ function ChoreRow({
           <button
             onClick={onDone}
             disabled={submitting}
-            className={`shrink-0 h-9 bg-[var(--brand-primary)] text-white text-[13px] font-bold ${tone.isChild ? 'rounded-xl' : 'rounded-lg'} hover:opacity-90 disabled:opacity-50 transition-all cursor-pointer active:scale-95 flex items-center gap-1.5 ${chore.proof_required ? 'px-3' : 'px-3.5'}`}
+            className={`shrink-0 h-9 bg-[var(--brand-primary)] text-white text-[13px] font-bold ${tone.isChild ? 'rounded-xl' : 'rounded-lg'} hover:opacity-90 disabled:opacity-50 transition-all cursor-pointer active:scale-95 flex items-center gap-1.5 btn-depth ${chore.proof_required ? 'px-3' : 'px-3.5'}`}
           >
             {submitting ? '…' : chore.proof_required ? <><CameraIconSmall />{tone.doneButton}</> : tone.doneButton}
           </button>
@@ -934,7 +934,7 @@ function _OrchardView({
   return (
     <>
       {/* Balance card */}
-      <div className="bg-[var(--color-surface)] rounded-2xl shadow-sm border-t-[3px] border-t-[var(--brand-primary)] border border-[var(--color-border)] p-4">
+      <div className="bg-[var(--color-surface)] rounded-2xl card-depth border-t-[3px] border-t-[var(--brand-primary)] border border-[var(--color-border)] p-4">
         <div className="text-[12px] font-semibold text-[var(--color-text-muted)] uppercase tracking-wider mb-1">{tone.balance}</div>
         <div className="text-[46px] font-extrabold text-[var(--color-text)] leading-none tracking-tight tabular-nums">
           {balance ? formatCurrency(balance.available, currency) : '£—'}
@@ -1069,7 +1069,7 @@ function _OrchardView({
       )}
 
       {/* ── Savings Grove: Effort-to-Earn Mentor ──────────────────────────── */}
-      <div className="bg-[var(--color-surface)] rounded-2xl shadow-sm border border-[var(--color-border)] overflow-hidden">
+      <div className="bg-[var(--color-surface)] rounded-2xl card-depth border border-[var(--color-border)] overflow-hidden">
         <div className="px-4 pt-4 pb-3 flex items-center justify-between">
           <h2 className="text-[15px] font-bold text-[var(--color-text)]">🌳 Savings Grove</h2>
           <button
@@ -1123,7 +1123,7 @@ function _OrchardView({
                   <div className="space-y-1">
                     <div className="w-full h-4 bg-[var(--color-surface-alt)] rounded-full overflow-hidden">
                       <div
-                        className="h-full bg-[var(--brand-primary)] rounded-full"
+                        className="h-full bg-[var(--brand-primary)] rounded-full progress-fill-glow"
                         style={{ width: `${goalBarPct}%`, transition: 'width 1.1s cubic-bezier(0.25, 1, 0.5, 1)' }}
                       />
                     </div>
