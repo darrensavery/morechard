@@ -1229,7 +1229,7 @@ body.dark .ll-drawer-module.phase2::after {
 /* ── Responsive ── */
 @media (max-width: 960px) {
   .promo-grid { grid-template-columns: 1fr; gap: 48px; }
-  .promo-phone { order: -1; }
+  .promo-phone { order: 1; }
   .promo-phone img { max-width: 280px; }
   .card-grid-3 { grid-template-columns: 1fr; }
   .pricing-grid { grid-template-columns: 1fr; max-width: 400px; margin-left: auto; margin-right: auto; }
@@ -1244,7 +1244,7 @@ body.dark .ll-drawer-module.phase2::after {
 
 @media (max-width: 767px) {
   .promo-grid { grid-template-columns: 1fr; }
-  .promo-phone { position: static; order: -1; margin-bottom: 40px; }
+  .promo-phone { position: static; order: 1; margin-top: 0; margin-bottom: 0; }
 }
 
 @media (max-width: 720px) {
