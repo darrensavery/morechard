@@ -76,7 +76,8 @@ export function ChoresTab({ familyId, child, children }: Props) {
       setArchived(a)
       setSuggestions(s)
       setPlans(p)
-    } finally {
+    } catch { /* silently degrade on transient network errors */ }
+    finally {
       setLoading(false)
     }
   }, [familyId, child.id, weekStart])

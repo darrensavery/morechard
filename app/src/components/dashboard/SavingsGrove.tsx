@@ -73,7 +73,7 @@ export function SavingsGrove({
     }
     if (weeklyAllowancePence > 0) {
       const weeks = Math.ceil(targetPence / weeklyAllowancePence)
-      return `About ${weeks} week${weeks !== 1 ? 's' : ''} of Harvest`
+      return `About ${weeks} week${weeks !== 1 ? 's' : ''} of ${appView === 'CLEAN' ? 'earnings' : 'Harvest'}`
     }
     return null
   }, [targetPence, bestChore, weeklyAllowancePence, currency])
@@ -141,7 +141,7 @@ export function SavingsGrove({
         <form onSubmit={handleSubmit} className="px-5 pb-8 space-y-5">
           {/* Header */}
           <div className="flex items-center justify-between pt-1">
-            <h2 className="text-lg font-bold text-[var(--color-text)]">🌱 Plant a Goal</h2>
+            <h2 className="text-lg font-bold text-[var(--color-text)]">{appView === 'CLEAN' ? 'Add a Goal' : '🌱 Plant a Goal'}</h2>
             <button
               type="button"
               onClick={onClose}
@@ -269,7 +269,9 @@ export function SavingsGrove({
             disabled={saving}
             className="w-full rounded-xl bg-[var(--brand-primary)] text-white font-semibold py-3 text-sm disabled:opacity-60 transition-opacity"
           >
-            {saving ? 'Planting…' : 'Plant this Goal 🌱'}
+            {saving
+              ? (appView === 'CLEAN' ? 'Saving…' : 'Planting…')
+              : (appView === 'CLEAN' ? 'Save this Goal' : 'Plant this Goal 🌱')}
           </button>
         </form>
       </div>

@@ -45,6 +45,15 @@ export function ModuleReader({ slug, childData, completedActs, onActComplete, on
     try {
       await completeLabAct(slug, actNum)
       onActComplete(actNum)
+      const newActs = [...new Set([...completedActs, actNum])]
+      try {
+        localStorage.setItem('mc_lab_act_progress', JSON.stringify({
+          completedActs: newActs,
+          totalActs: 4,
+          newAct: actNum,
+          ts: Date.now(),
+        }))
+      } catch { /* storage unavailable */ }
     } catch { /* optimistic update applied — non-fatal */ }
     finally { setSaving(false) }
   }
