@@ -176,7 +176,7 @@ export function ChildGoalsTab({ familyId, childId, currency, appView }: Props) {
                       <div className="flex items-center gap-2 text-[12px]">
                         <span>📅</span>
                         <span className="text-[var(--color-text-muted)]">Estimated arrival:</span>
-                        <span className="font-semibold text-emerald-600">{arrivalDate}</span>
+                        <span className="font-semibold text-[var(--brand-accent)]">{arrivalDate}</span>
                       </div>
                     )}
                   </div>

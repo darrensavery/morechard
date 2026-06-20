@@ -126,7 +126,7 @@ function StatCard({ label, value, tone }: { label: string; value: string; tone: 
       <p className="text-[11px] font-semibold text-[var(--color-text-muted)] uppercase tracking-wider mb-1">
         {label}
       </p>
-      <p className={`text-[15px] font-extrabold tabular-nums ${tone === 'brand' ? 'text-[var(--brand-primary)]' : 'text-[var(--color-text)]'}`}>
+      <p className={`text-[15px] font-extrabold tabular-nums ${tone === 'brand' ? 'text-[var(--brand-accent)]' : 'text-[var(--color-text)]'}`}>
         {value}
       </p>
     </div>

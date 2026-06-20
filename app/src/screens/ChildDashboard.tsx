@@ -726,7 +726,7 @@ function ChoreRow({
             )}
             <span className="text-[14px] font-semibold text-[var(--color-text)] truncate">{chore.title}</span>
           </div>
-          <p className="text-[12px] text-[var(--color-text-muted)] mt-0.5 tabular-nums">
+          <p className="text-[12px] font-semibold text-[var(--brand-accent)] mt-0.5 tabular-nums">
             {formatCurrency(chore.reward_amount, chore.currency)}
           </p>
           {chore.proof_required ? (
@@ -1151,7 +1151,7 @@ function _OrchardView({
                       <div className="flex items-center gap-2 text-[12px]">
                         <span>📅</span>
                         <span className="text-[var(--color-text-muted)]">Estimated arrival:</span>
-                        <span className="font-semibold text-emerald-600">{arrivalDate}</span>
+                        <span className="font-semibold text-[var(--brand-accent)]">{arrivalDate}</span>
                       </div>
                     )}
                   </div>

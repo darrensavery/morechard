@@ -264,7 +264,7 @@ export function EarnTab({ familyId, childId, currency, grovePlans = {}, onToggle
               <div key={chore.id} className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl px-4 py-3 flex items-center gap-3">
                 <div className="flex-1 min-w-0">
                   <p className="text-[15px] font-semibold text-[var(--color-text)]">{chore.title}</p>
-                  <p className="text-[13px] text-[var(--color-text-muted)] mt-0.5 tabular-nums">
+                  <p className="text-[13px] font-semibold text-[var(--brand-accent)] mt-0.5 tabular-nums">
                     {formatCurrency(chore.reward_amount, currency)}
                   </p>
                   {chore.description && (
@@ -295,7 +295,7 @@ export function EarnTab({ familyId, childId, currency, grovePlans = {}, onToggle
               <div key={c.id} className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl px-4 py-3 flex items-center justify-between opacity-70">
                 <div>
                   <p className="text-[14px] font-semibold text-[var(--color-text)]">{c.chore_title}</p>
-                  <p className="text-[12px] text-[var(--color-text-muted)] mt-0.5 tabular-nums">{formatCurrency(c.reward_amount, c.currency)}</p>
+                  <p className="text-[12px] font-semibold text-[var(--brand-accent)] mt-0.5 tabular-nums">{formatCurrency(c.reward_amount, c.currency)}</p>
                 </div>
                 <span className="text-[11px] font-bold text-[var(--color-text-muted)] bg-[var(--color-surface-alt)] rounded-full px-2.5 py-1">
                   In review…
@@ -391,7 +391,7 @@ function RevisionCard({
       <div className="px-4 pb-3 flex items-center justify-between">
         <div>
           <p className="text-[13px] font-semibold text-[var(--color-text-muted)]">{c.chore_title}</p>
-          <p className="text-[12px] tabular-nums text-[var(--color-text-muted)]">{formatCurrency(c.reward_amount, c.currency)}</p>
+          <p className="text-[12px] font-semibold tabular-nums text-[var(--brand-accent)]">{formatCurrency(c.reward_amount, c.currency)}</p>
         </div>
         {(c.attempt_count ?? 1) > 1 && (
           <span className="text-[10px] font-bold text-amber-700 dark:text-amber-400 bg-amber-200 dark:bg-amber-900/50 rounded-full px-2 py-0.5">
@@ -497,7 +497,7 @@ function OpenChoreCard({
             )}
             <p className="text-[15px] font-semibold text-[var(--color-text)]">{chore.title}</p>
           </div>
-          <p className="text-[13px] text-[var(--color-text-muted)] mt-0.5 tabular-nums">
+          <p className="text-[13px] font-semibold text-[var(--brand-accent)] mt-0.5 tabular-nums">
             {formatCurrency(chore.reward_amount, currency)}
           </p>
           {chore.description && (
