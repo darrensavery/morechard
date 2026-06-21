@@ -117,14 +117,11 @@ export function BadgeAlmanac({ earnedBadgeKeys, progress, appView }: Props) {
 
       {/* ── Section header ─────────────────────────────────── */}
       <div className="flex items-center justify-between mb-4">
-        <h2 className={cn(
-          'text-[13px] font-semibold uppercase tracking-widest',
-          appView === 'CLEAN' ? 'text-white/40' : 'text-emerald-400/60',
-        )}>
+        <h2 className="text-[13px] font-semibold uppercase tracking-widest text-[var(--color-text-muted)]">
           {appView === 'CLEAN' ? 'Trophy Case' : 'Honours Board'}
         </h2>
         {earnedCount > 0 && (
-          <span className="text-[11px] font-semibold text-teal-400/70 tabular-nums">
+          <span className="text-[11px] font-semibold text-[var(--brand-primary)] tabular-nums">
             {earnedCount} / {ALL_BADGE_KEYS.length} earned
           </span>
         )}
@@ -201,9 +198,9 @@ export function BadgeAlmanac({ earnedBadgeKeys, progress, appView }: Props) {
               className={cn(
                 'rounded-2xl p-3 flex flex-col items-center text-center gap-2 transition-all duration-300',
                 earned && 'badge-trophy border border-teal-400/35 shadow-[0_0_16px_rgba(20,184,166,0.18)]',
-                isHot  && 'bg-white/[.055] border border-teal-500/35 shadow-[0_0_8px_rgba(20,184,166,0.09)]',
-                isWarm && 'bg-white/[.04] border border-white/[.08]',
-                isCold && 'bg-white/[.02] border border-white/[.04] opacity-50',
+                isHot  && 'bg-[color-mix(in_srgb,var(--brand-primary)_8%,var(--color-surface))] border border-[var(--brand-primary)]/40 shadow-[0_0_8px_rgba(20,184,166,0.09)]',
+                isWarm && 'bg-[var(--color-surface)] border border-[var(--color-border)]',
+                isCold && 'bg-[var(--color-surface)] border border-[var(--color-border)] opacity-70',
               )}
             >
               {/* ── Icon ── */}
@@ -212,22 +209,21 @@ export function BadgeAlmanac({ earnedBadgeKeys, progress, appView }: Props) {
                   {meta.emoji}
                 </div>
               ) : isHot ? (
-                <div className="w-10 h-10 rounded-full bg-teal-500/10 ring-1 ring-teal-400/30 flex items-center justify-center text-xl opacity-50">
+                <div className="w-10 h-10 rounded-full bg-[color-mix(in_srgb,var(--brand-primary)_12%,transparent)] ring-1 ring-[var(--brand-primary)]/30 flex items-center justify-center text-xl opacity-80">
                   {meta.emoji}
                 </div>
               ) : (
-                <div className="w-10 h-10 rounded-full bg-white/[.04] flex items-center justify-center">
-                  <span className="text-white/15 text-xl">◌</span>
+                <div className="w-10 h-10 rounded-full bg-[var(--color-surface-alt)] flex items-center justify-center">
+                  <span className="text-[var(--color-text-muted)] opacity-40 text-xl">◌</span>
                 </div>
               )}
 
               {/* ── Label ── */}
               <p className={cn(
                 'text-[10px] font-semibold leading-tight',
-                earned ? 'text-emerald-300'  :
-                isHot  ? 'text-white/65'     :
-                isWarm ? 'text-white/38'     :
-                         'text-white/20',
+                earned ? 'text-emerald-300'              :
+                isHot  ? 'text-[var(--color-text)]'      :
+                         'text-[var(--color-text-muted)]',
               )}>
                 {earned ? meta.earnedLabel : label}
               </p>
@@ -240,17 +236,17 @@ export function BadgeAlmanac({ earnedBadgeKeys, progress, appView }: Props) {
               ) : (
                 <>
                   <p className={cn(
-                    'text-[9px] leading-tight',
-                    isHot ? 'text-white/40' : 'text-white/18',
+                    'text-[9px] leading-tight text-[var(--color-text-muted)]',
+                    isHot ? '' : 'opacity-70',
                   )}>
                     {BADGE_NARRATIVE[key].call}
                   </p>
                   {pct > 0 && (
-                    <div className="w-full bg-white/[.06] rounded-full h-1">
+                    <div className="w-full bg-[var(--color-border)] rounded-full h-1">
                       <div
                         className={cn(
                           'h-1 rounded-full transition-all duration-500',
-                          isHot ? 'bg-gradient-to-r from-teal-500 to-emerald-400' : 'bg-teal-500/40',
+                          isHot ? 'bg-gradient-to-r from-teal-500 to-emerald-400' : 'bg-[var(--brand-primary)]/50',
                         )}
                         style={{ width: `${pct}%` }}
                       />
@@ -265,7 +261,7 @@ export function BadgeAlmanac({ earnedBadgeKeys, progress, appView }: Props) {
 
       {/* ── Bottom micro-copy when nothing earned yet ──────── */}
       {earnedCount === 0 && (
-        <p className="text-[11px] text-white/20 text-center mt-4 leading-relaxed">
+        <p className="text-[11px] text-[var(--color-text-muted)] opacity-70 text-center mt-4 leading-relaxed">
           Every chore gets you closer — keep going
         </p>
       )}
