@@ -147,7 +147,10 @@ import {
 import { requireAuth, requireRole, requireFamilyMatch } from './lib/middleware.js';
 import { checkTrialStatus, getTrialStatus } from './lib/trial.js';
 import { handleCreateCheckout, handleStripeWebhook, handleCancelPlan, handleShieldUpgradePrice } from './routes/stripe.js';
-import { handleCreatePromoCode, handleListPromoCodes, handleGetPromoCode } from './routes/admin.js';
+import {
+  handleCreatePromoCode, handleListPromoCodes, handleGetPromoCode,
+  handleListPromotionCandidates, handlePromotePromotionCandidate, handleDismissPromotionCandidate,
+} from './routes/admin.js';
 import { handleExchange } from './routes/exchange.js';
 import {
   handleGenerateInvite,
@@ -172,6 +175,7 @@ import {
   handleMarketRateCron,
 } from './routes/market-rates.js';
 import { runMarketRateAggregation } from './jobs/marketRateAggregation.js';
+import { runSuggestionPromotion } from './jobs/suggestionPromotion.js';
 import { runMarketingEmails } from './cron/marketing-emails.js';
 import { runDemoReset } from './cron/demo-reset.js';
 import { runPassiveUnlockSweep } from './cron/passive-unlocks.js';
@@ -277,6 +281,17 @@ export default Sentry.withSentry(
 
     // ── 4. Weekly market rate aggregation ──────────────────────
     await runMarketRateAggregation(env);
+
+    // ── 4b. Weekly suggestion-promotion sweep ──────────────────
+    // Clusters novel child suggestions, parks any that clear the distinct-family
+    // threshold as pending candidates, and emails the operator a review digest.
+    // Gated to the Monday 03:00 UTC tick so it (and its email) runs once a week.
+    {
+      const d = new Date(now * 1000);
+      if (d.getUTCDay() === 1 && d.getUTCHours() === 3) {
+        await runSuggestionPromotion(env);
+      }
+    }
 
     // ── 5. Marketing re-engagement emails ──────────────────────
     await runMarketingEmails(env);
@@ -428,6 +443,13 @@ async function route(request: Request, env: Env, method: string, path: string): 
   if (path === '/api/admin/promo-codes' && method === 'GET')  return handleListPromoCodes(request, env);
   const promoMatch = path.match(/^\/api\/admin\/promo-codes\/([^/]+)$/);
   if (promoMatch && method === 'GET') return handleGetPromoCode(promoMatch[1], request, env);
+
+  // Admin — chore suggestion promotion review queue
+  if (path === '/api/admin/promotion-candidates' && method === 'GET') return handleListPromotionCandidates(request, env);
+  const promoteMatch = path.match(/^\/api\/admin\/promotion-candidates\/([^/]+)\/promote$/);
+  if (promoteMatch && method === 'POST') return handlePromotePromotionCandidate(promoteMatch[1], request, env);
+  const dismissMatch = path.match(/^\/api\/admin\/promotion-candidates\/([^/]+)\/dismiss$/);
+  if (dismissMatch && method === 'POST') return handleDismissPromotionCandidate(dismissMatch[1], request, env);
 
   // Market rates — CRON health check (no user auth)
   if (path === '/api/market-rates/cron' && method === 'GET') return handleMarketRateCron(request, env);

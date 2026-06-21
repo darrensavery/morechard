@@ -5,10 +5,15 @@
  * POST /api/admin/promo-codes           — create a school promo code in Stripe + D1
  * GET  /api/admin/promo-codes           — list all codes with redemption counts
  * GET  /api/admin/promo-codes/:id       — detail view: all families who redeemed a code
+ *
+ * GET  /api/admin/promotion-candidates           — review queue of popular child suggestions
+ * POST /api/admin/promotion-candidates/:id/promote — add candidate to the market_rates library
+ * POST /api/admin/promotion-candidates/:id/dismiss — reject candidate (never resurfaced)
  */
 
 import { Env } from '../types.js';
 import { json, error } from '../lib/response.js';
+import { nanoid } from '../lib/nanoid.js';
 
 // ----------------------------------------------------------------
 // Auth guard
@@ -160,4 +165,142 @@ export async function handleGetPromoCode(
     .all<{ family_id: string; stripe_session_id: string; redeemed_at: number }>();
 
   return json({ code, redemptions: redemptions.results });
+}
+
+// ----------------------------------------------------------------
+// Promotion candidates — popular child suggestions awaiting review
+// ----------------------------------------------------------------
+
+// Locale → the market_rates median column it seeds.
+const LOCALE_MEDIAN_COLUMN: Record<string, 'uk_median_pence' | 'us_median_cents' | 'pl_median_grosz'> = {
+  'en-GB': 'uk_median_pence',
+  'en-US': 'us_median_cents',
+  'pl':    'pl_median_grosz',
+};
+
+// ----------------------------------------------------------------
+// GET /api/admin/promotion-candidates?status=pending
+// ----------------------------------------------------------------
+export async function handleListPromotionCandidates(
+  request: Request,
+  env: Env,
+): Promise<Response> {
+  const authErr = requireAdmin(request, env);
+  if (authErr) return authErr;
+
+  const status = new URL(request.url).searchParams.get('status') ?? 'pending';
+  if (!['pending', 'promoted', 'dismissed'].includes(status)) return error('Invalid status', 400);
+
+  const rows = await env.DB
+    .prepare(`
+      SELECT id, normalized_key, locale, display_name, category,
+             distinct_families, suggestion_count, median_amount, sample_titles,
+             status, market_rate_id, first_seen_at, last_seen_at, reviewed_at
+      FROM chore_promotion_candidates
+      WHERE status = ?
+      ORDER BY distinct_families DESC, last_seen_at DESC
+    `)
+    .bind(status)
+    .all();
+
+  const candidates = rows.results.map(r => ({
+    ...r,
+    sample_titles: (() => { try { return JSON.parse(r.sample_titles as string); } catch { return []; } })(),
+  }));
+
+  return json({ candidates });
+}
+
+// ----------------------------------------------------------------
+// POST /api/admin/promotion-candidates/:id/promote
+// Body (all optional overrides): { canonical_name, category, median_amount }
+// Inserts the candidate into market_rates as a community-sourced rate.
+// ----------------------------------------------------------------
+export async function handlePromotePromotionCandidate(
+  id: string,
+  request: Request,
+  env: Env,
+): Promise<Response> {
+  const authErr = requireAdmin(request, env);
+  if (authErr) return authErr;
+
+  const cand = await env.DB
+    .prepare('SELECT * FROM chore_promotion_candidates WHERE id = ?')
+    .bind(id)
+    .first<{
+      id: string; locale: string; display_name: string; category: string;
+      distinct_families: number; median_amount: number | null; status: string;
+    }>();
+  if (!cand) return error('Candidate not found', 404);
+  if (cand.status !== 'pending') return error(`Candidate already ${cand.status}`, 409);
+
+  let body: { canonical_name?: unknown; category?: unknown; median_amount?: unknown } = {};
+  try { body = await request.json() as typeof body; } catch { /* body optional */ }
+
+  const canonicalName = typeof body.canonical_name === 'string' && body.canonical_name.trim()
+    ? body.canonical_name.trim() : cand.display_name;
+  const category = typeof body.category === 'string' && body.category.trim()
+    ? body.category.trim() : cand.category;
+  const median = typeof body.median_amount === 'number' && body.median_amount > 0
+    ? Math.round(body.median_amount) : cand.median_amount;
+
+  const medianColumn = LOCALE_MEDIAN_COLUMN[cand.locale];
+  if (!medianColumn) return error(`Unsupported locale ${cand.locale}`, 400);
+
+  // Guard against colliding with an existing library entry (canonical_name is UNIQUE).
+  const existing = await env.DB
+    .prepare('SELECT id FROM market_rates WHERE canonical_name = ?')
+    .bind(canonicalName)
+    .first<{ id: string }>();
+  if (existing) return error(`A market rate named "${canonicalName}" already exists`, 409);
+
+  const rateId = nanoid();
+  const now = Math.floor(Date.now() / 1000);
+  await env.DB
+    .prepare(`
+      INSERT INTO market_rates
+        (id, canonical_name, category, synonyms, ${medianColumn},
+         data_source, sample_count, is_orchard_8, sort_order, created_at, updated_at)
+      VALUES (?,?,?,?,?,'community_median',?,0,99,?,?)
+    `)
+    .bind(rateId, canonicalName, category, '[]', median, cand.distinct_families, now, now)
+    .run();
+
+  await env.DB
+    .prepare(`UPDATE chore_promotion_candidates SET status = 'promoted', market_rate_id = ?, reviewed_at = ?, updated_at = ? WHERE id = ?`)
+    .bind(rateId, now, now, id)
+    .run();
+
+  // Bust the market-rates cache so the new chore appears immediately.
+  await Promise.all(['en-GB', 'en-US', 'pl'].map(l => env.CACHE.delete(`market-rates:${l}`).catch(() => {})));
+
+  return json({ ok: true, market_rate_id: rateId, canonical_name: canonicalName });
+}
+
+// ----------------------------------------------------------------
+// POST /api/admin/promotion-candidates/:id/dismiss
+// Marks the candidate dismissed so the weekly job never resurfaces it.
+// ----------------------------------------------------------------
+export async function handleDismissPromotionCandidate(
+  id: string,
+  request: Request,
+  env: Env,
+): Promise<Response> {
+  const authErr = requireAdmin(request, env);
+  if (authErr) return authErr;
+
+  const cand = await env.DB
+    .prepare('SELECT status FROM chore_promotion_candidates WHERE id = ?')
+    .bind(id)
+    .first<{ status: string }>();
+  if (!cand) return error('Candidate not found', 404);
+  if (cand.status !== 'pending') return error(`Candidate already ${cand.status}`, 409);
+
+  const now = Math.floor(Date.now() / 1000);
+  await env.DB
+    .prepare(`UPDATE chore_promotion_candidates SET status = 'dismissed', reviewed_at = ?, updated_at = ? WHERE id = ?`)
+    .bind(now, now, id)
+    .run();
+
+  return json({ ok: true });
 }
