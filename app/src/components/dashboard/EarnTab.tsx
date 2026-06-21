@@ -468,12 +468,14 @@ const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
 /**
  * A description is only worth showing if it carries real instructions.
- * Guards against junk one-character values like "0", ".", "-" that have
- * occasionally been saved into the field and render as a meaningless line.
+ * A real instruction always contains at least one letter, so values made up
+ * solely of digits/punctuation/whitespace (e.g. "0", "0.0", ".", "-", or a
+ * lone "0" padded with a zero-width char) are treated as junk and hidden.
+ * Uses \p{L} so non-Latin scripts (Polish, etc.) still count as meaningful.
  */
 function meaningfulDescription(desc?: string | null): string | null {
   const trimmed = desc?.trim()
-  if (!trimmed || trimmed.length < 2) return null
+  if (!trimmed || !/\p{L}/u.test(trimmed)) return null
   return trimmed
 }
 
@@ -523,7 +525,7 @@ function OpenChoreCard({
           )}
           {plannedDays.length > 0 && !expanded && (
             <p className="text-[11px] text-[var(--brand-primary)] mt-1">
-              Planned: {plannedDays.map(d => DAY_LABELS[d]).join(', ')}
+              Planned: {plannedDays.map(d => DAY_LABELS[d - 1]).join(', ')}
             </p>
           )}
         </div>
@@ -556,12 +558,14 @@ function OpenChoreCard({
           </p>
           <div className="flex gap-1.5">
             {DAY_LABELS.map((label, i) => {
-              const active = plannedDays.includes(i)
+              // grove plans are 1-indexed (1=Mon … 7=Sun) across the app
+              const dayNum = i + 1
+              const active = plannedDays.includes(dayNum)
               return (
                 <button
                   key={i}
                   type="button"
-                  onClick={() => onTogglePlant(i)}
+                  onClick={() => onTogglePlant(dayNum)}
                   className={`flex-1 py-2 rounded-lg text-[11px] font-bold transition-colors cursor-pointer
                     ${active
                       ? 'bg-[var(--brand-primary)] text-white'

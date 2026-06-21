@@ -82,6 +82,9 @@ function getNextUp(
   for (const key of ALL_BADGE_KEYS) {
     if (earnedSet.has(key)) continue
     const pct = getProgressPct(key, progress)
+    // A badge already at 100% is complete (award pending) — it is not
+    // something to show as "Next up". Only consider in-progress badges.
+    if (pct >= 100) continue
     if (!best || pct > best.pct) best = { key, pct }
   }
   if (!best) return null
@@ -196,7 +199,7 @@ export function BadgeAlmanac({ earnedBadgeKeys, progress, appView }: Props) {
             <div
               key={key}
               className={cn(
-                'rounded-2xl p-3 flex flex-col items-center text-center gap-2 transition-all duration-300',
+                'rounded-2xl p-3 flex flex-col items-center text-center gap-2 transition-all duration-300 h-full',
                 earned && 'badge-trophy border border-teal-400/35 shadow-[0_0_16px_rgba(20,184,166,0.18)]',
                 isHot  && 'bg-[color-mix(in_srgb,var(--brand-primary)_8%,var(--color-surface))] border border-[var(--brand-primary)]/40 shadow-[0_0_8px_rgba(20,184,166,0.09)]',
                 isWarm && 'bg-[var(--color-surface)] border border-[var(--color-border)]',
@@ -214,13 +217,20 @@ export function BadgeAlmanac({ earnedBadgeKeys, progress, appView }: Props) {
                 </div>
               ) : (
                 <div className="w-10 h-10 rounded-full bg-[var(--color-surface-alt)] flex items-center justify-center">
-                  <span className="text-[var(--color-text-muted)] opacity-40 text-xl">◌</span>
+                  <svg
+                    width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+                    className="text-[var(--color-text-muted)] opacity-50"
+                  >
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                  </svg>
                 </div>
               )}
 
               {/* ── Label ── */}
               <p className={cn(
-                'text-[10px] font-semibold leading-tight',
+                'text-[12px] font-semibold leading-tight',
                 earned ? 'text-emerald-300'              :
                 isHot  ? 'text-[var(--color-text)]'      :
                          'text-[var(--color-text-muted)]',
@@ -228,21 +238,24 @@ export function BadgeAlmanac({ earnedBadgeKeys, progress, appView }: Props) {
                 {earned ? meta.earnedLabel : label}
               </p>
 
-              {/* ── Sub-text & progress ── */}
+              {/* ── Sub-text & progress ──
+                  min-h reserves a consistent two-line height so a longer
+                  caption (e.g. "Keep going — 50 chores") doesn't make one
+                  card taller than its row-mates. */}
               {earned ? (
-                <p className="text-[9px] text-teal-400/60 leading-tight font-semibold tracking-wide">
+                <p className="text-[10px] text-teal-400/60 leading-tight font-semibold tracking-wide mt-auto">
                   ✓ Earned
                 </p>
               ) : (
                 <>
                   <p className={cn(
-                    'text-[9px] leading-tight text-[var(--color-text-muted)]',
+                    'text-[11px] leading-tight text-[var(--color-text-muted)] min-h-[2.5em] line-clamp-2',
                     isHot ? '' : 'opacity-70',
                   )}>
                     {BADGE_NARRATIVE[key].call}
                   </p>
                   {pct > 0 && (
-                    <div className="w-full bg-[var(--color-border)] rounded-full h-1">
+                    <div className="w-full bg-[var(--color-border)] rounded-full h-1 mt-auto">
                       <div
                         className={cn(
                           'h-1 rounded-full transition-all duration-500',

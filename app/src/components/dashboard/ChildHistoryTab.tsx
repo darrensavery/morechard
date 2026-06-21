@@ -36,20 +36,22 @@ export function ChildHistoryTab({ familyId, childId, currency, variant }: Props)
   const [openMonths,  setOpenMonths]  = useState<Set<string>>(new Set())
   const [detail,      setDetail]      = useState<Completion | null>(null)
 
-  const load = useCallback(async () => {
-    setLoading(true)
+  // `silent` skips the full-screen loading swap so background polls/refreshes
+  // don't make the summary banner + history flash away and reappear.
+  const load = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true)
     try {
       const r = await getHistory({ family_id: familyId, child_id: childId, limit: 500, offset: 0 })
       setHistory(r.history)
     } catch { /* silently degrade */ }
-    finally { setLoading(false) }
+    finally { if (!silent) setLoading(false) }
   }, [familyId, childId])
 
   useEffect(() => { load() }, [load])
 
   useEffect(() => {
-    const t = setInterval(load, 30_000)
-    const onVisible = () => { if (!document.hidden) load() }
+    const t = setInterval(() => load(true), 30_000)
+    const onVisible = () => { if (!document.hidden) load(true) }
     document.addEventListener('visibilitychange', onVisible)
     return () => { clearInterval(t); document.removeEventListener('visibilitychange', onVisible) }
   }, [load])
