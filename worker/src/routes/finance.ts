@@ -99,37 +99,32 @@ export async function handlePayoutCreate(request: Request, env: Env): Promise<Re
   ).bind(id, family_id as string, child_id as string, auth.sub, amount, currency,
     note ? String(note).trim() : null, now).run();
 
-  // ── First-payday badge ─────────────────────────────────────────────
+  // ── Payday badge (LANDMARK_SAPLING) ────────────────────────────────
+  // Evaluate on every payout, not just the first: getBadgeStats counts the
+  // payout we just inserted, and the threshold check (totalPayouts >= 1)
+  // with the !earned guard awards once and self-heals any earlier miss.
   try {
-    const payoutCount = await env.DB.prepare(
-      `SELECT COUNT(*) AS total FROM payouts WHERE child_id = ?`
-    ).bind(child_id as string).first<{ total: number }>()
-
-    if (payoutCount?.total === 1) {
-      // This was the first payout — check for LANDMARK_SAPLING badge
-      const [stats, streakState] = await Promise.all([
-        getBadgeStats(env.DB, child_id as string),
-        getStreakState(env.DB, child_id as string),
-      ])
-      const newBadges = badgesToAward({
-        earnedBadgeKeys:       stats.earnedBadgeKeys,
-        currentStreak:         streakState.current_streak,
-        longestStreak:         Math.max(streakState.longest_streak, streakState.current_streak),
-        totalApprovedChores:   stats.totalApprovedChores,
-        totalGoalsCompleted:   stats.totalGoalsCompleted,
-        totalSavedPence:       stats.totalSavedPence,
-        totalLessonsCompleted: stats.totalLessonsCompleted,
-        isFirstPayday:         true,
-        isFirstChore:          false,
-      })
-      if (newBadges.length > 0) {
-        await insertBadges(env.DB, child_id as string, newBadges, nanoid)
-      }
+    const [stats, streakState] = await Promise.all([
+      getBadgeStats(env.DB, child_id as string),
+      getStreakState(env.DB, child_id as string),
+    ])
+    const newBadges = badgesToAward({
+      earnedBadgeKeys:       stats.earnedBadgeKeys,
+      currentStreak:         streakState.current_streak,
+      longestStreak:         Math.max(streakState.longest_streak, streakState.current_streak),
+      totalApprovedChores:   stats.totalApprovedChores,
+      totalGoalsCompleted:   stats.totalGoalsCompleted,
+      totalSavedPence:       stats.totalSavedPence,
+      totalLessonsCompleted: stats.totalLessonsCompleted,
+      totalPayouts:          stats.totalPayouts,
+    })
+    if (newBadges.length > 0) {
+      await insertBadges(env.DB, child_id as string, newBadges, nanoid)
     }
   } catch {
     // Badge eval is non-critical
   }
-  // ── End first-payday badge ─────────────────────────────────────────
+  // ── End payday badge ───────────────────────────────────────────────
 
   return json({ id, paid_at: now }, 201);
 }

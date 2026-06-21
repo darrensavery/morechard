@@ -9,14 +9,13 @@ interface BadgeInput {
   totalGoalsCompleted:   number
   totalSavedPence:       number
   totalLessonsCompleted: number
-  isFirstPayday:         boolean
-  isFirstChore:          boolean
+  totalPayouts:          number
 }
 
 export function badgesToAward(input: BadgeInput): BadgeKey[] {
   const { earnedBadgeKeys, longestStreak, totalApprovedChores,
           totalGoalsCompleted, totalSavedPence, totalLessonsCompleted,
-          isFirstPayday, isFirstChore } = input
+          totalPayouts } = input
 
   const earned = new Set(earnedBadgeKeys)
   const toAward: BadgeKey[] = []
@@ -42,8 +41,12 @@ export function badgesToAward(input: BadgeInput): BadgeKey[] {
   check('SCHOLAR_SAPLING', totalLessonsCompleted >= 5)
   check('SCHOLAR_OAK',     totalLessonsCompleted >= 10)
 
-  check('LANDMARK_SEED',    isFirstChore)
-  check('LANDMARK_SAPLING', isFirstPayday)
+  // Landmark milestones are threshold-based (>=1) rather than one-shot
+  // "first time" flags, so a child who passed the milestone before this
+  // logic existed (or whose first event missed evaluation) still gets the
+  // badge on the next evaluation. The `!earned` guard prevents duplicates.
+  check('LANDMARK_SEED',    totalApprovedChores >= 1)
+  check('LANDMARK_SAPLING', totalPayouts >= 1)
   check('LANDMARK_OAK',     longestStreak >= 365)
 
   return toAward
@@ -57,10 +60,11 @@ export interface BadgeStats {
   totalGoalsCompleted:   number
   totalSavedPence:       number
   totalLessonsCompleted: number
+  totalPayouts:          number
 }
 
 export async function getBadgeStats(db: D1Database, childId: string): Promise<BadgeStats> {
-  const [badgeRows, choreCount, goalCount, savedRow, lessonCount] = await Promise.all([
+  const [badgeRows, choreCount, goalCount, savedRow, lessonCount, payoutCount] = await Promise.all([
     db.prepare(`SELECT badge_key FROM child_badges WHERE child_id = ?`)
       .bind(childId).all<{ badge_key: string }>(),
     db.prepare(
@@ -75,6 +79,9 @@ export async function getBadgeStats(db: D1Database, childId: string): Promise<Ba
     db.prepare(
       `SELECT COUNT(*) AS total FROM lesson_completions WHERE child_id = ?`
     ).bind(childId).first<{ total: number }>(),
+    db.prepare(
+      `SELECT COUNT(*) AS total FROM payouts WHERE child_id = ?`
+    ).bind(childId).first<{ total: number }>(),
   ])
 
   return {
@@ -83,6 +90,7 @@ export async function getBadgeStats(db: D1Database, childId: string): Promise<Ba
     totalGoalsCompleted:   goalCount?.total ?? 0,
     totalSavedPence:       savedRow?.total ?? 0,
     totalLessonsCompleted: lessonCount?.total ?? 0,
+    totalPayouts:          payoutCount?.total ?? 0,
   }
 }
 

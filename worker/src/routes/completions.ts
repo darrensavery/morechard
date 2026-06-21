@@ -267,19 +267,17 @@ export async function handleCompletionApprove(
     const effectiveLongestStreak = streakEvent
       ? Math.max(streakEvent.newStreak, streakState.longest_streak)
       : streakState.longest_streak
-    const totalApprovedChores = stats.totalApprovedChores + 1
-    const isFirstChore = totalApprovedChores === 1
-
+    // The completion is already marked 'completed' in the batch above, so
+    // stats.totalApprovedChores already counts it — do NOT add 1 here.
     const newBadges = badgesToAward({
       earnedBadgeKeys:       stats.earnedBadgeKeys,
       currentStreak:         effectiveCurrentStreak,
       longestStreak:         effectiveLongestStreak,
-      totalApprovedChores,
+      totalApprovedChores:   stats.totalApprovedChores,
       totalGoalsCompleted:   stats.totalGoalsCompleted,
       totalSavedPence:       stats.totalSavedPence,
       totalLessonsCompleted: stats.totalLessonsCompleted,
-      isFirstPayday:         false,
-      isFirstChore,
+      totalPayouts:          stats.totalPayouts,
     })
 
     if (newBadges.length > 0) {
@@ -568,19 +566,17 @@ export async function handleApproveAll(request: Request, env: Env): Promise<Resp
       getBadgeStats(env.DB, child_id),
       getStreakState(env.DB, child_id),
     ])
-    const totalApprovedChores = stats.totalApprovedChores + pending.length
-    const isFirstChore = stats.totalApprovedChores === 0 && pending.length >= 1
-
+    // Every pending completion was already marked 'completed' in the loop
+    // above, so stats.totalApprovedChores already counts them — no offset.
     const newBadges = badgesToAward({
       earnedBadgeKeys:       stats.earnedBadgeKeys,
       currentStreak:         finalStreak.current_streak,
       longestStreak:         Math.max(finalStreak.longest_streak, finalStreak.current_streak),
-      totalApprovedChores,
+      totalApprovedChores:   stats.totalApprovedChores,
       totalGoalsCompleted:   stats.totalGoalsCompleted,
       totalSavedPence:       stats.totalSavedPence,
       totalLessonsCompleted: stats.totalLessonsCompleted,
-      isFirstPayday:         false,
-      isFirstChore,
+      totalPayouts:          stats.totalPayouts,
     })
     if (newBadges.length > 0) {
       await insertBadges(env.DB, child_id, newBadges, nanoid)
