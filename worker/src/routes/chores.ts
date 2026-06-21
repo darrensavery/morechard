@@ -15,6 +15,7 @@ import { json, error, clientIp, parseBody } from '../lib/response.js';
 import { nanoid } from '../lib/nanoid.js';
 import { JwtPayload } from '../lib/jwt.js';
 import { computeRecordHash, GENESIS_HASH } from '../lib/hash.js';
+import { planCompletionGeneration, type ExistingCompletion } from './completionGeneration.js';
 
 type AuthedRequest = Request & { auth: JwtPayload };
 
@@ -580,45 +581,49 @@ export async function lazyGenerateCompletions(
   if (activeChores.length === 0) return;
 
   // --- Batch existence check: one query for all active chores ---
-  // Use the earliest periodStart across all active chores as the lower bound.
+  // Fetch every OPEN ('available') row regardless of age (so we can dedupe stale
+  // duplicates) plus any row acted on within the current period (so we don't
+  // regenerate a task the child already submitted/completed this period).
   const earliestPeriodStart = Math.min(...activeChores.map(c => c.periodStart));
   const choreIds = activeChores.map(c => c.id);
   const placeholders = choreIds.map(() => '?').join(',');
 
   const { results: existingRows } = await env.DB.prepare(`
-    SELECT chore_id, submitted_at FROM completions
+    SELECT id, chore_id, status, submitted_at FROM completions
     WHERE child_id = ?
       AND chore_id IN (${placeholders})
       AND status IN ('available','awaiting_review','completed','needs_revision')
-      AND submitted_at >= ?
-  `).bind(childId, ...choreIds, earliestPeriodStart).all<{ chore_id: string; submitted_at: number }>();
+      AND (status = 'available' OR submitted_at >= ?)
+  `).bind(childId, ...choreIds, earliestPeriodStart)
+    .all<ExistingCompletion>();
 
-  // Build a map: chore_id → max submitted_at among covered completions
-  const coveredMap = new Map<string, number>();
-  for (const row of existingRows) {
-    const prev = coveredMap.get(row.chore_id) ?? 0;
-    if (row.submitted_at > prev) coveredMap.set(row.chore_id, row.submitted_at);
+  const { choreIdsToInsert, completionIdsToDelete } =
+    planCompletionGeneration(activeChores, existingRows);
+
+  // --- Retire stale duplicate 'available' rows (self-heals existing data) ---
+  const statements: D1PreparedStatement[] = [];
+  if (completionIdsToDelete.length > 0) {
+    const delPlaceholders = completionIdsToDelete.map(() => '?').join(',');
+    statements.push(
+      env.DB.prepare(
+        `DELETE FROM completions WHERE id IN (${delPlaceholders})`,
+      ).bind(...completionIdsToDelete),
+    );
   }
 
-  // --- Batch insert for chores not yet covered in their period ---
+  // --- Insert a fresh 'available' row for each uncovered chore ---
   const nowEpoch = Math.floor(Date.now() / 1000);
-  const inserts: D1PreparedStatement[] = [];
-
-  for (const { id: choreId, periodStart } of activeChores) {
-    const lastCovered = coveredMap.get(choreId) ?? 0;
-    if (lastCovered >= periodStart) continue; // already covered this period
-
-    const completionId = nanoid();
-    inserts.push(
+  for (const choreId of choreIdsToInsert) {
+    statements.push(
       env.DB.prepare(`
         INSERT INTO completions
           (id, family_id, chore_id, child_id, status, submitted_at)
         VALUES (?,?,?,?,'available',?)
-      `).bind(completionId, familyId, choreId, childId, nowEpoch),
+      `).bind(nanoid(), familyId, choreId, childId, nowEpoch),
     );
   }
 
-  if (inserts.length > 0) {
-    await env.DB.batch(inserts);
+  if (statements.length > 0) {
+    await env.DB.batch(statements);
   }
 }
