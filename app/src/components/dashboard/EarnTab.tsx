@@ -32,6 +32,7 @@ interface Props {
   currency: string
   grovePlans?: Record<string, number[]>
   onTogglePlant?: (chore: Chore, day: number) => void
+  appView?: 'ORCHARD' | 'CLEAN'
 }
 
 interface SubmitState {
@@ -44,7 +45,7 @@ interface SubmitState {
   startedAt: number            // epoch ms — for velocity tracking
 }
 
-export function EarnTab({ familyId, childId, currency, grovePlans = {}, onTogglePlant }: Props) {
+export function EarnTab({ familyId, childId, currency, grovePlans = {}, onTogglePlant, appView = 'ORCHARD' }: Props) {
   const [chores,    setChores]    = useState<Chore[]>([])
   const [openChores, setOpenChores] = useState<Chore[]>([])  // assigned_to='anyone', unclaimed
   const [available, setAvailable] = useState<Completion[]>([])  // status=available
@@ -267,8 +268,8 @@ export function EarnTab({ familyId, childId, currency, grovePlans = {}, onToggle
                   <p className="text-[13px] font-semibold text-[var(--brand-accent)] mt-0.5 tabular-nums">
                     {formatCurrency(chore.reward_amount, currency)}
                   </p>
-                  {chore.description && (
-                    <p className="text-[12px] text-[var(--color-text-muted)] mt-1 leading-relaxed">{chore.description}</p>
+                  {meaningfulDescription(chore.description) && (
+                    <p className="text-[12px] text-[var(--color-text-muted)] mt-1 leading-relaxed">{meaningfulDescription(chore.description)}</p>
                   )}
                 </div>
                 <button
@@ -330,6 +331,7 @@ export function EarnTab({ familyId, childId, currency, grovePlans = {}, onToggle
         familyId={familyId}
         context={null}
         currency={currency}
+        appView={appView}
       />
     </div>
   )
@@ -464,6 +466,17 @@ interface OpenChoreCardProps {
 
 const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
+/**
+ * A description is only worth showing if it carries real instructions.
+ * Guards against junk one-character values like "0", ".", "-" that have
+ * occasionally been saved into the field and render as a meaningless line.
+ */
+function meaningfulDescription(desc?: string | null): string | null {
+  const trimmed = desc?.trim()
+  if (!trimmed || trimmed.length < 2) return null
+  return trimmed
+}
+
 function OpenChoreCard({
   chore, currency, isActive, stage, note, error,
   plannedDays, onTogglePlant,
@@ -500,8 +513,8 @@ function OpenChoreCard({
           <p className="text-[13px] font-semibold text-[var(--brand-accent)] mt-0.5 tabular-nums">
             {formatCurrency(chore.reward_amount, currency)}
           </p>
-          {chore.description && (
-            <p className="text-[12px] text-[var(--color-text-muted)] mt-1 leading-relaxed">{chore.description}</p>
+          {meaningfulDescription(chore.description) && (
+            <p className="text-[12px] text-[var(--color-text-muted)] mt-1 leading-relaxed">{meaningfulDescription(chore.description)}</p>
           )}
           {chore.proof_required && (
             <p className="text-[11px] text-[var(--color-text-muted)] mt-1 flex items-center gap-1">

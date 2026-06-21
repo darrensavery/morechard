@@ -1,7 +1,7 @@
 // app/src/components/dashboard/ChoreGuideSheet.tsx
 import { useState, useMemo, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { useMarketRates } from '../../hooks/useMarketRates';
+import { useMarketRates, fuzzyMatch } from '../../hooks/useMarketRates';
 import { useAndroidBack } from '../../hooks/useAndroidBack';
 import { createSuggestion, suggestChore, getSuggestions } from '../../lib/api';
 import type { MarketRate, Suggestion } from '../../lib/api';
@@ -14,13 +14,48 @@ interface NewChoreForm {
   reason: string;
 }
 
-const TIER_ORDER = ['oaks', 'saplings', 'seeds', 'discoverable'] as const;
-const TIER_HEADINGS: Record<string, string> = {
-  oaks:         '🌳 Great Oaks',
-  saplings:     '🌿 Growing Saplings',
-  seeds:        '🌱 Small Seeds',
-  discoverable: '🔍 Discoverable',
-};
+// ── Filter + sort (mirrors the parent Rate Guide so the two stay consistent) ──
+type SortKey = 'alpha' | 'category' | 'price_asc' | 'price_desc' | 'popularity';
+
+const SORT_OPTIONS: { value: SortKey; label: string }[] = [
+  { value: 'alpha',      label: 'A–Z'      },
+  { value: 'category',   label: 'Category' },
+  { value: 'price_asc',  label: 'Price ↑'  },
+  { value: 'price_desc', label: 'Price ↓'  },
+  { value: 'popularity', label: 'Popular'  },
+];
+
+function sortRates(rates: MarketRate[], sort: SortKey): MarketRate[] {
+  const sorted = [...rates];
+  switch (sort) {
+    case 'alpha':
+      return sorted.sort((a, b) => a.canonical_name.localeCompare(b.canonical_name));
+    case 'category':
+      return sorted.sort((a, b) =>
+        a.category.localeCompare(b.category) || a.canonical_name.localeCompare(b.canonical_name)
+      );
+    case 'price_asc':
+      return sorted.sort((a, b) => (a.median_amount ?? 0) - (b.median_amount ?? 0));
+    case 'price_desc':
+      return sorted.sort((a, b) => (b.median_amount ?? 0) - (a.median_amount ?? 0));
+    case 'popularity':
+      return sorted.sort((a, b) => b.sample_count - a.sample_count);
+  }
+}
+
+const CATEGORIES: { label: string; icon: string }[] = [
+  { label: 'All',               icon: '✦'  },
+  { label: 'Outdoor Work',      icon: '🌿' },
+  { label: 'Cleaning',          icon: '🧹' },
+  { label: 'Kitchen',           icon: '🍽' },
+  { label: 'Laundry',           icon: '👕' },
+  { label: 'Tidying',           icon: '📦' },
+  { label: 'Garden',            icon: '🌱' },
+  { label: 'Pets',              icon: '🐾' },
+  { label: 'Errands',           icon: '🛒' },
+  { label: 'Learning & Skills', icon: '📚' },
+  { label: 'Good Habits',       icon: '⭐' },
+];
 
 function formatAmount(amount: number | null, symbol: string): string {
   if (amount == null) return '—';
@@ -35,13 +70,21 @@ interface Props {
   /** Optional: module slug passed when navigating from a Learning Lab module */
   context?: string | null;
   currency?: string;
+  /** Child's app view — gates orchard metaphors out of CLEAN mode */
+  appView?: 'ORCHARD' | 'CLEAN';
 }
 
-export function ChoreGuideSheet({ open, onClose, familyId, context = null, currency = 'GBP' }: Props) {
+export function ChoreGuideSheet({ open, onClose, familyId, context = null, currency = 'GBP', appView = 'ORCHARD' }: Props) {
   const { rates, loading, error } = useMarketRates(currency);
 
   const symbol      = currencySymbol(currency);
   const regionLabel = currency === 'PLN' ? 'Poland' : currency === 'USD' ? 'the US' : 'your area';
+  const isOrchard   = appView !== 'CLEAN';
+
+  // List filter / sort state
+  const [search,   setSearch]   = useState('');
+  const [category, setCategory] = useState('All');
+  const [sort,     setSort]     = useState<SortKey>('alpha');
 
   // List-level state
   const [suggested, setSuggested] = useState<string | null>(null);
@@ -62,6 +105,14 @@ export function ChoreGuideSheet({ open, onClose, familyId, context = null, curre
     }).catch(() => { /* degrade silently */ });
   }, [open, familyId]);
 
+  // Lock body scroll while open so the page behind can't be dragged (iOS rubber-banding)
+  useEffect(() => {
+    if (!open) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = prev; };
+  }, [open]);
+
   // New chore suggestion state (child context only)
   const [newChoreOpen, setNewChoreOpen] = useState(false);
   const [newChore, setNewChore] = useState<NewChoreForm>({ title: '', amount: '', dueDate: '', reason: '' });
@@ -77,7 +128,7 @@ export function ChoreGuideSheet({ open, onClose, familyId, context = null, curre
 
   useAndroidBack(open && !editRate && !newChoreOpen, onClose);
   useAndroidBack(!!editRate, () => { setEditRate(null); setEditError(null); });
-  useAndroidBack(newChoreOpen && !editRate, () => setNewChoreOpen(false));
+  useAndroidBack(newChoreOpen && !editRate, () => { setNewChoreOpen(false); setNewChoreError(null); });
 
   async function handleNewChoreSuggest() {
     if (!familyId) return;
@@ -105,12 +156,14 @@ export function ChoreGuideSheet({ open, onClose, familyId, context = null, curre
     }
   }
 
-  const grouped = useMemo(() => {
-    const map: Record<string, MarketRate[]> = {};
-    for (const tier of TIER_ORDER) map[tier] = [];
-    for (const rate of rates) map[rate.value_tier]?.push(rate);
-    return map;
-  }, [rates]);
+  const filtered: MarketRate[] = useMemo(() => {
+    const base = rates.filter(r => {
+      const matchesCategory = category === 'All' || r.category === category;
+      const matchesSearch   = fuzzyMatch(r, search);
+      return matchesCategory && matchesSearch;
+    });
+    return sortRates(base, sort);
+  }, [rates, search, category, sort]);
 
   function openEdit(rate: MarketRate) {
     setEditRate(rate);
@@ -158,14 +211,20 @@ export function ChoreGuideSheet({ open, onClose, familyId, context = null, curre
 
   if (!open) return null;
 
+  const noResults = !loading && !error && filtered.length === 0 && search.length > 0;
+
   // Success state
   if (success) {
     return createPortal(
       <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-[var(--color-bg)] px-8 text-center">
-        <p className="text-5xl mb-4">🌳</p>
-        <h2 className="text-xl font-semibold text-[--color-text] mb-2">Proposal sent!</h2>
+        <p className="text-5xl mb-4">{isOrchard ? '🌳' : '✅'}</p>
+        <h2 className="text-xl font-semibold text-[--color-text] mb-2">
+          {isOrchard ? 'Proposal sent!' : 'Suggestion sent!'}
+        </h2>
         <p className="text-sm text-[--color-text-muted] mb-8">
-          Your parent will see that you're ready to grow some Great Oaks.
+          {isOrchard
+            ? "Your parent will see that you're ready to grow some Great Oaks."
+            : 'Your parent will review it and add it to your tasks if they approve.'}
         </p>
         <button
           onClick={() => { setSuccess(false); onClose(); }}
@@ -179,56 +238,123 @@ export function ChoreGuideSheet({ open, onClose, familyId, context = null, curre
   }
 
   return createPortal(
-    <div className="fixed inset-0 z-[100] flex flex-col bg-[var(--color-bg)]">
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 pt-6 pb-3 border-b border-[--color-border]">
-        <h2 className="text-lg font-semibold text-[--color-text]">Chore Guide</h2>
-        <button onClick={onClose} className="w-8 h-8 rounded-lg border border-[var(--color-border)] flex items-center justify-center text-[var(--color-text-muted)] hover:bg-[var(--color-surface-alt)] cursor-pointer" aria-label="Close">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
-        </button>
+    <div className="fixed inset-0 z-[100] flex flex-col bg-[var(--color-bg)] overflow-hidden overscroll-none">
+      {/* ── Sticky top: header + search + category pills ───────────── */}
+      <div className="shrink-0 border-b border-[--color-border] px-4 pt-6 pb-0">
+        <div className="flex items-center justify-between mb-3">
+          <div>
+            <h2 className="text-lg font-semibold text-[--color-text]">Chore Guide</h2>
+            <p className="text-[11px] text-[var(--color-text-muted)] mt-0.5">What other families pay</p>
+          </div>
+          <button onClick={onClose} className="w-8 h-8 rounded-lg border border-[var(--color-border)] flex items-center justify-center text-[var(--color-text-muted)] hover:bg-[var(--color-surface-alt)] cursor-pointer" aria-label="Close">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+          </button>
+        </div>
+
+        {/* Search */}
+        <div className="mb-3">
+          <input
+            type="search"
+            placeholder="Search chores…"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="w-full rounded-xl border border-[var(--color-border)] bg-white dark:bg-[var(--color-surface)] px-3.5 py-2.5 text-[14px] text-[var(--color-text)] placeholder:text-[var(--color-text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] transition shadow-sm"
+          />
+        </div>
+
+        {/* Category pills */}
+        <div
+          className="flex gap-2 pb-3 overflow-x-auto"
+          style={{ scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch', touchAction: 'pan-x' }}
+        >
+          {CATEGORIES.map(cat => (
+            <button
+              key={cat.label}
+              onClick={() => setCategory(cat.label)}
+              className={`shrink-0 flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12px] font-semibold border transition-colors cursor-pointer whitespace-nowrap ${
+                category === cat.label
+                  ? 'bg-[var(--brand-primary)] text-white border-[var(--brand-primary)]'
+                  : 'bg-[var(--color-surface-alt)] text-[var(--color-text-muted)] border-[var(--color-border)] hover:bg-[color-mix(in_srgb,var(--color-surface-alt)_85%,var(--color-text)_15%)] hover:text-[var(--color-text)]'
+              }`}
+            >
+              <span className="text-[11px] leading-none">{cat.icon}</span>
+              {cat.label}
+            </button>
+          ))}
+        </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-4 pb-8">
+      {/* ── Scrollable list ───────────────────────────────────────── */}
+      <div className="flex-1 overflow-y-auto overscroll-contain px-4 pb-8" style={{ touchAction: 'pan-y' }}>
         {loading && <p className="py-8 text-center text-sm text-[--color-text-muted]">Loading…</p>}
         {error   && <p className="py-8 text-center text-sm text-red-500">{error}</p>}
-        {!loading && !error && TIER_ORDER.map(tier => {
-          const tierRates = grouped[tier];
-          if (!tierRates.length) return null;
-          return (
-            <div key={tier} className="mt-6">
-              <h3 className="text-sm font-bold text-[--color-text-muted] uppercase tracking-wider mb-3">
-                {TIER_HEADINGS[tier]}
-              </h3>
-              {tierRates.map(rate => (
-                <div
-                  key={rate.id}
-                  className="flex items-center justify-between py-3 border-b border-[--color-border] last:border-0"
-                >
-                  <div className="flex-1 min-w-0 mr-3">
-                    <p className="text-sm font-medium text-[--color-text] truncate">{rate.canonical_name}</p>
-                    {!rate.median_is_local && (
-                      <p className="text-xs text-amber-600 mt-0.5">
-                        We're still learning what this is worth in {regionLabel} — you could be the first!
-                      </p>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-3 shrink-0">
-                    <span className="text-sm font-semibold tabular-nums text-[--color-text]">
-                      {formatAmount(rate.median_amount, symbol)}
-                    </span>
-                    <button
-                      disabled={suggested === rate.id}
-                      onClick={() => openEdit(rate)}
-                      className="rounded-lg bg-[--brand-primary] text-[--color-text-on-brand] px-3 py-1.5 text-xs font-semibold disabled:opacity-50 transition-opacity cursor-pointer"
-                    >
-                      {suggested === rate.id ? '✓' : 'Suggest'}
-                    </button>
-                  </div>
-                </div>
-              ))}
+
+        {noResults && (
+          <div className="py-12 flex flex-col items-center gap-3 px-6 text-center">
+            <p className="text-[14px] text-[var(--color-text-muted)]">No chores found for "{search}"</p>
+            {familyId && (
+              <button
+                onClick={() => { setNewChore(f => ({ ...f, title: search })); setSearch(''); setNewChoreOpen(true); }}
+                className="px-4 py-2 rounded-xl border border-[var(--brand-primary)] text-[var(--brand-primary)] text-[13px] font-semibold hover:bg-[color-mix(in_srgb,var(--brand-primary)_8%,transparent)] transition cursor-pointer"
+              >
+                Suggest "{search}" instead
+              </button>
+            )}
+          </div>
+        )}
+
+        {!loading && !error && filtered.length > 0 && (
+          <>
+            {/* Sort control */}
+            <div className="flex items-center justify-end gap-1.5 pt-3 pb-2">
+              <span className="text-[11px] text-[var(--color-text-muted)] font-medium shrink-0">Sort:</span>
+              <div className="flex gap-1 flex-wrap justify-end">
+                {SORT_OPTIONS.map(opt => (
+                  <button
+                    key={opt.value}
+                    onClick={() => setSort(opt.value)}
+                    className={`px-2 py-1 rounded-md text-[11px] font-semibold transition-colors cursor-pointer
+                      ${sort === opt.value
+                        ? 'bg-[var(--brand-primary)] text-white'
+                        : 'bg-[var(--color-surface-alt)] text-[var(--color-text-muted)] hover:bg-[color-mix(in_srgb,var(--color-surface-alt)_70%,var(--color-border))] hover:text-[var(--color-text)]'
+                      }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
             </div>
-          );
-        })}
+
+            {filtered.map(rate => (
+              <div
+                key={rate.id}
+                className="flex items-center justify-between py-3 border-b border-[--color-border] last:border-0"
+              >
+                <div className="flex-1 min-w-0 mr-3">
+                  <p className="text-sm font-medium text-[--color-text] truncate">{rate.canonical_name}</p>
+                  <p className="text-[11px] text-[--color-text-muted] mt-0.5">{rate.category}</p>
+                  {!rate.median_is_local && (
+                    <p className="text-xs text-amber-700 dark:text-amber-400 mt-0.5">
+                      We're still learning what this is worth in {regionLabel} — you could be the first!
+                    </p>
+                  )}
+                </div>
+                <div className="flex items-center gap-3 shrink-0">
+                  <span className="text-sm font-semibold tabular-nums text-[--color-text]">
+                    {formatAmount(rate.median_amount, symbol)}
+                  </span>
+                  <button
+                    disabled={suggested === rate.id}
+                    onClick={() => openEdit(rate)}
+                    className="h-7 px-2.5 rounded-lg bg-[color-mix(in_srgb,var(--brand-primary)_10%,transparent)] border border-[color-mix(in_srgb,var(--brand-primary)_30%,transparent)] text-[var(--brand-primary)] text-[11px] font-bold hover:bg-[color-mix(in_srgb,var(--brand-primary)_18%,transparent)] disabled:opacity-50 transition cursor-pointer"
+                  >
+                    {suggested === rate.id ? '✓ Sent' : 'Suggest'}
+                  </button>
+                </div>
+              </div>
+            ))}
+          </>
+        )}
 
         {/* My suggestions — child context only */}
         {familyId && !loading && !error && mySuggestions.length > 0 && (
@@ -253,9 +379,9 @@ export function ChoreGuideSheet({ open, onClose, familyId, context = null, curre
                         </p>
                       </div>
                       <span className={`shrink-0 text-[10px] font-bold rounded-full px-2 py-0.5 ${
-                        isPending  ? 'bg-amber-500/15 text-amber-300' :
-                        isApproved ? 'bg-green-500/15 text-green-400' :
-                                     'bg-red-500/15 text-red-400'
+                        isPending  ? 'bg-amber-500/15 text-amber-700 dark:text-amber-300' :
+                        isApproved ? 'bg-green-500/15 text-green-700 dark:text-green-400' :
+                                     'bg-red-500/15 text-red-700 dark:text-red-400'
                       }`}>
                         {isPending ? 'Waiting' : isApproved ? 'Approved ✓' : 'Declined'}
                       </span>
@@ -266,7 +392,9 @@ export function ChoreGuideSheet({ open, onClose, familyId, context = null, curre
                       </p>
                     )}
                     {isApproved && (
-                      <p className="text-[11px] text-green-400 mt-1.5">Added to your chores! 🌱</p>
+                      <p className="text-[11px] text-green-700 dark:text-green-400 mt-1.5">
+                        Added to your chores! {isOrchard ? '🌱' : ''}
+                      </p>
                     )}
                   </div>
                 );
@@ -277,101 +405,111 @@ export function ChoreGuideSheet({ open, onClose, familyId, context = null, curre
 
         {/* Suggest a new chore — child context only */}
         {familyId && !loading && !error && (
-          <div className="mt-6 border-t border-[--color-border] pt-6">
-            {!newChoreOpen ? (
-              <div className="text-center">
-                <p className="text-[13px] text-[--color-text-muted] mb-3">
-                  Don't see the chore you want to do?
-                </p>
-                <button
-                  onClick={() => setNewChoreOpen(true)}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-[var(--brand-primary)] text-[var(--brand-primary)] text-[13px] font-semibold hover:bg-[color-mix(in_srgb,var(--brand-primary)_8%,transparent)] transition-colors cursor-pointer"
-                >
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M12 5v14M5 12h14"/>
-                  </svg>
-                  Suggest a new chore
-                </button>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <div>
-                  <p className="text-[13px] font-bold text-[--color-text] mb-0.5">Suggest a new chore</p>
-                  <p className="text-[12px] text-[--color-text-muted]">Tell your parent what you'd like to do and how much it should pay.</p>
-                </div>
-                {newChoreError && <p className="text-[13px] text-red-600">{newChoreError}</p>}
-                <div>
-                  <label className="text-[12px] font-semibold text-[var(--color-text-muted)] block mb-1.5">
-                    Chore name <span className="text-red-400">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="e.g. Clean the bathroom"
-                    value={newChore.title}
-                    onChange={e => setNewChore(f => ({ ...f, title: e.target.value }))}
-                    className="w-full border border-[var(--color-border)] rounded-xl px-3.5 py-2.5 text-[14px] bg-[var(--color-surface)] text-[var(--color-text)] placeholder:text-[var(--color-text-muted)]/60 focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]"
-                  />
-                </div>
-                <div>
-                  <label className="text-[12px] font-semibold text-[var(--color-text-muted)] block mb-1.5">
-                    How much should it pay? <span className="text-red-400">*</span>
-                  </label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[14px] text-[var(--color-text-muted)]">{symbol}</span>
-                    <input
-                      type="number"
-                      min="0.01"
-                      step="0.01"
-                      placeholder="0.00"
-                      value={newChore.amount}
-                      onChange={e => setNewChore(f => ({ ...f, amount: e.target.value }))}
-                      className="w-full border border-[var(--color-border)] rounded-xl pl-7 pr-3 py-2.5 text-[14px] font-semibold bg-[var(--color-surface)] text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label className="text-[12px] font-semibold text-[var(--color-text-muted)] block mb-1.5">
-                    When do you want to do it by? <span className="font-normal">(optional)</span>
-                  </label>
-                  <input
-                    type="date"
-                    value={newChore.dueDate}
-                    onChange={e => setNewChore(f => ({ ...f, dueDate: e.target.value }))}
-                    className="w-full border border-[var(--color-border)] rounded-xl px-3.5 py-2.5 text-[13px] bg-[var(--color-surface)] text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]"
-                  />
-                </div>
-                <div>
-                  <label className="text-[12px] font-semibold text-[var(--color-text-muted)] block mb-1.5">
-                    Why should this be a chore? <span className="font-normal">(optional)</span>
-                  </label>
-                  <textarea
-                    rows={2}
-                    placeholder="e.g. I could do this every Saturday morning"
-                    value={newChore.reason}
-                    onChange={e => setNewChore(f => ({ ...f, reason: e.target.value }))}
-                    className="w-full border border-[var(--color-border)] rounded-xl px-3.5 py-2.5 text-[13px] resize-none bg-[var(--color-surface)] text-[var(--color-text)] placeholder:text-[var(--color-text-muted)]/60 focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]"
-                  />
-                </div>
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => { setNewChoreOpen(false); setNewChoreError(null); }}
-                    className="flex-1 border border-[var(--color-border)] rounded-xl py-2.5 text-[13px] font-semibold text-[var(--color-text-muted)] hover:bg-[var(--color-surface-alt)] cursor-pointer"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleNewChoreSuggest}
-                    disabled={newChoreBusy}
-                    className="flex-1 bg-[var(--brand-primary)] text-white rounded-xl py-2.5 text-[13px] font-bold hover:opacity-90 disabled:opacity-50 cursor-pointer active:scale-[0.98] transition-all"
-                  >
-                    {newChoreBusy ? 'Sending…' : 'Send to parent →'}
-                  </button>
-                </div>
-              </div>
-            )}
+          <div className="mt-6 border-t border-[--color-border] pt-6 text-center">
+            <p className="text-[13px] text-[--color-text-muted] mb-3">
+              Don't see the chore you want to do?
+            </p>
+            <button
+              onClick={() => setNewChoreOpen(true)}
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-[var(--brand-primary)] text-[var(--brand-primary)] text-[13px] font-semibold hover:bg-[color-mix(in_srgb,var(--brand-primary)_8%,transparent)] transition-colors cursor-pointer"
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 5v14M5 12h14"/>
+              </svg>
+              Suggest a new chore
+            </button>
           </div>
         )}
       </div>
+
+      {/* ── Suggest-a-new-chore bottom sheet (modal) ──────────────── */}
+      {newChoreOpen && (
+        <div className="absolute inset-0 z-20 flex flex-col justify-end">
+          <div className="absolute inset-0 bg-black/40" onClick={() => { setNewChoreOpen(false); setNewChoreError(null); }} />
+          <div className="relative bg-[var(--color-surface)] rounded-t-2xl px-5 pt-2 pb-8 max-h-[88vh] overflow-y-auto overscroll-contain">
+            {/* Drag handle */}
+            <div className="flex justify-center pt-2 pb-1">
+              <div className="w-10 h-1 rounded-full bg-[var(--color-border)]" />
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <p className="text-[15px] font-bold text-[--color-text]">Suggest a new chore</p>
+                <p className="text-[12px] text-[--color-text-muted] mt-0.5">Tell your parent what you'd like to do and how much it should pay.</p>
+              </div>
+              {newChoreError && <p className="text-[13px] text-red-600">{newChoreError}</p>}
+              <div>
+                <label className="text-[12px] font-semibold text-[var(--color-text-muted)] block mb-1.5">
+                  Chore name <span className="text-red-400">*</span>
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Clean the bathroom"
+                  value={newChore.title}
+                  onChange={e => setNewChore(f => ({ ...f, title: e.target.value }))}
+                  className="w-full border border-[var(--color-border)] rounded-xl px-3.5 py-2.5 text-[14px] bg-[var(--color-surface)] text-[var(--color-text)] placeholder:text-[var(--color-text-muted)]/60 focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]"
+                />
+              </div>
+              <div>
+                <label className="text-[12px] font-semibold text-[var(--color-text-muted)] block mb-1.5">
+                  How much should it pay? <span className="text-red-400">*</span>
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[14px] text-[var(--color-text-muted)]">{symbol}</span>
+                  <input
+                    type="number"
+                    inputMode="decimal"
+                    min="0.01"
+                    step="0.01"
+                    placeholder="0.00"
+                    value={newChore.amount}
+                    onChange={e => setNewChore(f => ({ ...f, amount: e.target.value }))}
+                    className="w-full border border-[var(--color-border)] rounded-xl pl-7 pr-3 py-2.5 text-[14px] font-semibold bg-[var(--color-surface)] text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="text-[12px] font-semibold text-[var(--color-text-muted)] block mb-1.5">
+                  When do you want to do it by? <span className="font-normal">(optional)</span>
+                </label>
+                <input
+                  type="date"
+                  value={newChore.dueDate}
+                  onChange={e => setNewChore(f => ({ ...f, dueDate: e.target.value }))}
+                  className="w-full border border-[var(--color-border)] rounded-xl px-3.5 py-2.5 text-[13px] bg-[var(--color-surface)] text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]"
+                />
+              </div>
+              <div>
+                <label className="text-[12px] font-semibold text-[var(--color-text-muted)] block mb-1.5">
+                  Why should this be a chore? <span className="font-normal">(optional)</span>
+                </label>
+                <textarea
+                  rows={2}
+                  placeholder="e.g. I could do this every Saturday morning"
+                  value={newChore.reason}
+                  onChange={e => setNewChore(f => ({ ...f, reason: e.target.value }))}
+                  className="w-full border border-[var(--color-border)] rounded-xl px-3.5 py-2.5 text-[13px] resize-none bg-[var(--color-surface)] text-[var(--color-text)] placeholder:text-[var(--color-text-muted)]/60 focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]"
+                />
+              </div>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => { setNewChoreOpen(false); setNewChoreError(null); }}
+                  className="flex-1 border border-[var(--color-border)] rounded-xl py-2.5 text-[13px] font-semibold text-[var(--color-text-muted)] hover:bg-[var(--color-surface-alt)] cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleNewChoreSuggest}
+                  disabled={newChoreBusy}
+                  className="flex-1 bg-[var(--brand-primary)] text-white rounded-xl py-2.5 text-[13px] font-bold hover:opacity-90 disabled:opacity-50 cursor-pointer active:scale-[0.98] transition-all"
+                >
+                  {newChoreBusy ? 'Sending…' : 'Send to parent →'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Amount-edit bottom sheet */}
       {editRate && (
@@ -404,6 +542,7 @@ export function ChoreGuideSheet({ open, onClose, familyId, context = null, curre
                 </span>
                 <input
                   type="number"
+                  inputMode="decimal"
                   min="0.01"
                   step="0.01"
                   autoFocus

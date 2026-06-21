@@ -632,7 +632,7 @@ export function ChildDashboard() {
               </div>
             )}
 
-            <EarnTab familyId={familyId} childId={userId} currency={chores[0]?.currency ?? 'GBP'} grovePlans={grovePlans} onTogglePlant={togglePlant} />
+            <EarnTab familyId={familyId} childId={userId} currency={chores[0]?.currency ?? 'GBP'} grovePlans={grovePlans} onTogglePlant={togglePlant} appView={appView} />
             <ChildHistoryTab familyId={familyId} childId={userId} currency={currency} variant="chore" />
 
             {/* Badges & streaks */}
