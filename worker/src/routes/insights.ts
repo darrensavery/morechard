@@ -388,6 +388,7 @@ export async function handleInsights(request: Request, env: Env): Promise<Respon
         childName,
         honorific,
         familyCtx,
+        familyId: family_id,
         jarSignals,
         weeksOfHistory,
       });
@@ -776,6 +777,7 @@ interface BriefingInput {
   childName:              string;   // first name only, used for formal Polish address
   honorific:              string;   // 'Pan' | 'Pani' | 'Młody Ekspercie'
   familyCtx:              FamilyContext;
+  familyId:               string;
   jarSignals:             JarSignals | null;
   weeksOfHistory:         number;
 }
@@ -1298,15 +1300,26 @@ async function generateBriefing(env: Env, childId: string, input: BriefingInput)
     honorific:         input.honorific,
   });
 
-  // Signal 9: readiness nudge fires when jars are off + balance has been building 3+ weeks
+  // Signal 8 / Signal 9: fires when jars are OFF
   let jarParagraph = '';
   if (input.jarSignals) {
     if (input.jarSignals.enabled) {
       jarParagraph = buildJarBriefingParagraph(input.jarSignals);
     } else {
+      // Signal 8: auto-allocation was previously on but turned off ≥3 weeks ago
+      if (input.jarSignals.auto_off_weeks >= 3) {
+        jarParagraph = buildJarBriefingParagraph(input.jarSignals);
+      }
+      // Signal 9: readiness nudge — jars never on, balance building 3+ weeks, no give requests ever
       const hasBuiltBalance = input.availableBalancePence > 500 && input.weeksOfHistory >= 3;
-      if (hasBuiltBalance) {
-        jarParagraph = buildJarReadinessNudge(input.jarSignals);
+      if (hasBuiltBalance && input.jarSignals.auto_off_weeks < 3) {
+        const giveRequestsRow = await env.DB.prepare(
+          `SELECT COUNT(*) as cnt FROM give_requests WHERE child_id=? AND family_id=?`
+        ).bind(childId, input.familyId).first<{ cnt: number }>().catch(() => ({ cnt: 0 }));
+        const hasGiveRequests = (giveRequestsRow?.cnt ?? 0) > 0;
+        if (!hasGiveRequests) {
+          jarParagraph = buildJarReadinessNudge(input.jarSignals);
+        }
       }
     }
   }
@@ -1410,8 +1423,9 @@ function buildJarBriefingParagraph(s: {
   if (s.manual_move_count >= 4) lines.push(`NOTE: ${s.manual_move_count} manual jar moves this week — possible indecision or gaming.`);
   // Priority 6
   if (s.give_pct === 0 && s.weeks_at_current_deviation >= 4) lines.push(`NOTE: Give jar set to 0% for 4+ weeks. Mention gently — autonomy is respected.`);
-  // Priority 8: disengagement (distinct from never having enabled)
-  if (!s.enabled && s.auto_off_weeks >= 3 && s.auto_off_weeks < 99) {
+  // Priority 8: disengagement — handled in the jars-off path in generateBriefing; fires here
+  // only when jars are disabled and auto_off_weeks >= 3 (called from the outer else branch).
+  if (!s.enabled && s.auto_off_weeks >= 3) {
     lines.push(`⚠ HABIT DISENGAGEMENT: Child turned off auto-allocation ${s.auto_off_weeks} weeks ago and has not re-enabled it.`);
   }
   // Priority 10 (positive)
@@ -1421,7 +1435,8 @@ function buildJarBriefingParagraph(s: {
   // (requires cross-week spend velocity data not available in JarSignals)
 
   if (lines.length === 1) lines.push('No jar behaviour signals this week.');
-  return lines.join('\n');
+  const topLines = lines.slice(0, 3); // max 3 signals per briefing (header + 2 signal lines)
+  return topLines.join('\n');
 }
 
 function buildJarReadinessNudge(_s: { enabled: boolean; deviation_score: number }): string {
