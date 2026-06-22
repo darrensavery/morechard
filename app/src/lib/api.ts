@@ -621,9 +621,93 @@ export interface BalanceSummary {
   paid_out: number; spent: number; available: number;
   streak?: BalanceStreak
   pending_celebrations?: string[]
+  jars?: { enabled: boolean; spend?: number; save?: number; give?: number };
 }
 export async function getBalance(family_id: string, child_id: string): Promise<BalanceSummary> {
   return request(`/api/balance?family_id=${family_id}&child_id=${child_id}`);
+}
+
+// ----------------------------------------------------------------
+// Jars
+// ----------------------------------------------------------------
+export interface JarConfig {
+  enabled: number;
+  spend_pct: number;
+  save_pct: number;
+  give_pct: number;
+  updated_at: number;
+}
+
+export interface JarBalances {
+  enabled: boolean;
+  spend: number;
+  save: number;
+  give: number;
+  save_earmarked: number;
+  save_unallocated: number;
+}
+
+export interface JarMovement {
+  id: number;
+  jar: 'spend' | 'save' | 'give';
+  delta: number;
+  earmark_pence: number | null;
+  kind: string;
+  ref_id: string | null;
+  goal_id: number | null;
+  note: string | null;
+  created_at: number;
+}
+
+export interface GiveRequest {
+  id: number;
+  family_id: string;
+  child_id: string;
+  child_name?: string;
+  cause: string;
+  amount: number;
+  currency: string;
+  status: 'requested' | 'fulfilled' | 'declined';
+  requested_at: number;
+  fulfilled_at: number | null;
+  parent_note: string | null;
+}
+
+export async function getJars(family_id: string, child_id: string): Promise<{ config: JarConfig; balances: JarBalances }> {
+  return request(`/api/jars?family_id=${family_id}&child_id=${child_id}`);
+}
+
+export async function putJarConfig(body: {
+  family_id: string; child_id: string;
+  enabled?: number; spend_pct?: number; save_pct?: number; give_pct?: number;
+  initial_seed?: { spend: number; save: number; give: number };
+}): Promise<{ ok: boolean; balances: JarBalances }> {
+  return request('/api/jars/config', { method: 'PUT', body: JSON.stringify(body) });
+}
+
+export async function postJarMove(body: {
+  family_id: string; child_id: string;
+  from_jar: 'spend' | 'save' | 'give'; to_jar: 'spend' | 'save' | 'give'; amount: number;
+}): Promise<{ ok: boolean; balances: JarBalances }> {
+  return request('/api/jars/move', { method: 'POST', body: JSON.stringify(body) });
+}
+
+export async function getJarMovements(family_id: string, child_id: string, limit = 20): Promise<{ movements: JarMovement[] }> {
+  return request(`/api/jars/movements?family_id=${family_id}&child_id=${child_id}&limit=${limit}`);
+}
+
+export async function postGiveRequest(body: {
+  family_id: string; child_id: string; cause: string; amount: number;
+}): Promise<{ ok: boolean; id: number }> {
+  return request('/api/give-requests', { method: 'POST', body: JSON.stringify(body) });
+}
+
+export async function getGiveRequests(family_id: string, status = 'requested'): Promise<{ give_requests: GiveRequest[] }> {
+  return request(`/api/give-requests?family_id=${family_id}&status=${status}`);
+}
+
+export async function patchGiveRequest(id: number, action: 'fulfil' | 'decline', parent_note?: string): Promise<{ ok: boolean; status: string }> {
+  return request(`/api/give-requests/${id}`, { method: 'PATCH', body: JSON.stringify({ action, parent_note }) });
 }
 
 // ----------------------------------------------------------------
