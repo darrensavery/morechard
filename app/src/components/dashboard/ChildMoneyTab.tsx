@@ -205,15 +205,12 @@ export function ChildMoneyTab({ familyId, childId, currency }: Props) {
         />
       )}
 
-      {showWizard && pendingConfig && (
+      {showWizard && (
         <JarOnboardingWizard
           availableBalance={balance?.available ?? 0}
           currency={currency}
           familyId={familyId}
           childId={childId}
-          spendPct={pendingConfig.spend}
-          savePct={pendingConfig.save}
-          givePct={pendingConfig.give}
           onComplete={(b) => { setJarBalances(b); setShowWizard(false); load(true); }}
           onCancel={() => setShowWizard(false)}
         />

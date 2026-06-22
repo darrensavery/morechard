@@ -9,9 +9,6 @@ interface Props {
   currency: string;
   familyId: string;
   childId: string;
-  spendPct: number;
-  savePct: number;
-  givePct: number; // from settings selection
   onComplete: (balances: JarBalances) => void;
   onCancel: () => void;
 }
@@ -22,17 +19,17 @@ function fmt(pence: number, currency: string) {
 
 export function JarOnboardingWizard({
   availableBalance, currency, familyId, childId,
-  spendPct, savePct, givePct,
   onComplete, onCancel,
 }: Props) {
-  // Pre-fill from chosen percentages
-  const defaultSpend = Math.floor(availableBalance * spendPct / 100);
-  const defaultSave  = Math.floor(availableBalance * savePct  / 100);
+  // Default equal split across all three jars
+  const defaultSpend = Math.floor(availableBalance / 3);
+  const defaultSave  = Math.floor(availableBalance / 3);
   const defaultGive  = availableBalance - defaultSpend - defaultSave;
 
   const [spend, setSpend]   = useState(defaultSpend);
   const [save, setSave]     = useState(defaultSave);
   const [saving, setSaving] = useState(false);
+  const [error, setError]   = useState<string | null>(null);
 
   // Give is always the remainder so the total stays locked to availableBalance
   const giveComputed = availableBalance - spend - save;
@@ -50,17 +47,27 @@ export function JarOnboardingWizard({
   async function handleConfirm() {
     if (giveComputed < 0) return;
     setSaving(true);
+    setError(null);
     try {
+      // Derive percentages from entered amounts
+      const total = spend + save + giveComputed;
+      const spend_pct = Math.round((spend / total) * 100);
+      const save_pct = Math.round((save / total) * 100);
+      const give_pct = 100 - spend_pct - save_pct; // remainder to Give
+
       const { balances } = await putJarConfig({
         family_id: familyId,
         child_id: childId,
         enabled: 1,
-        spend_pct: spendPct,
-        save_pct: savePct,
-        give_pct: givePct,
+        spend_pct,
+        save_pct,
+        give_pct,
         initial_seed: { spend, save, give: Math.max(0, giveComputed) },
       });
       onComplete(balances);
+    } catch (err) {
+      setError('Something went wrong. Please try again.');
+      console.error('Jar config error:', err);
     } finally {
       setSaving(false);
     }
@@ -143,19 +150,30 @@ export function JarOnboardingWizard({
         </div>
       </div>
 
-      {/* Running total */}
-      <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 13, marginBottom: 24 }}>
-        Total: {fmt(spend + save + Math.max(0, giveComputed), currency)}
+      {/* Remaining counter */}
+      <div style={{
+        color: giveComputed === 0 ? '#10b981' : '#f59e0b',
+        fontSize: 13,
+        marginBottom: 24,
+      }}>
+        Remaining: {fmt(Math.max(0, giveComputed), currency)}
       </div>
+
+      {error && (
+        <div style={{ color: '#f87171', fontSize: 13, marginBottom: 16, padding: 12, background: 'rgba(248, 113, 113, 0.1)', borderRadius: 8 }}>
+          {error}
+        </div>
+      )}
 
       <button
         onClick={handleConfirm}
-        disabled={saving || giveComputed < 0}
+        disabled={saving || giveComputed !== 0}
         style={{
           padding: 16, borderRadius: 14, background: '#0d9488',
           color: '#fff', border: 'none', fontSize: 16, fontWeight: 700,
-          cursor: 'pointer', marginBottom: 12,
-          opacity: giveComputed < 0 ? 0.5 : 1,
+          cursor: giveComputed !== 0 ? 'not-allowed' : 'pointer',
+          marginBottom: 12,
+          opacity: giveComputed !== 0 ? 0.5 : 1,
         }}
       >
         {saving ? 'Setting up…' : 'Start splitting my money'}
