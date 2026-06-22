@@ -82,6 +82,8 @@ export function JarDetailSheet({
         amount,
       });
       onBalanceChange(updated);
+      const fresh = await getJarMovements(familyId, childId, 20);
+      setMovements(fresh.movements.filter(m => m.jar === jar).slice(0, 5));
       setShowMove(false);
       setMoveAmt('');
       setMoveErr('');

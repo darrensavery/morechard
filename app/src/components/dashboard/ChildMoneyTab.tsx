@@ -146,7 +146,7 @@ export function ChildMoneyTab({ familyId, childId, currency }: Props) {
           familyId={familyId}
           childId={childId}
           onClose={() => setActiveJar(null)}
-          onBalanceChange={(updated) => { setJarBalances(updated); setActiveJar(null); }}
+          onBalanceChange={(updated) => { setJarBalances(updated); }}
           onGiveRequest={() => { setActiveJar(null); setShowGiveRequest(true); }}
           onViewGoals={() => { setActiveJar(null); /* Task 13: switch to goals tab */ }}
         />
