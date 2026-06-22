@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback } from 'react'
-import type { BalanceSummary, Goal, SpendingRecord } from '../../lib/api'
-import { getBalance, getGoals, getSpending, formatCurrency } from '../../lib/api'
+import type { BalanceSummary, Goal, SpendingRecord, JarBalances } from '../../lib/api'
+import { getBalance, getGoals, getSpending, getJars, formatCurrency } from '../../lib/api'
 import { spendCategoryHeading } from '../../lib/spendCategories'
 import { ChildHistoryTab } from './ChildHistoryTab'
 import { SpendGuideSheet } from './SpendGuideSheet'
+import { JarCard } from './JarCard'
 
 interface Props {
   familyId: string
@@ -18,11 +19,13 @@ function fmtDate(epochSec: number): string {
 }
 
 export function ChildMoneyTab({ familyId, childId, currency }: Props) {
-  const [balance,  setBalance]  = useState<BalanceSummary | null>(null)
-  const [goals,    setGoals]    = useState<Goal[]>([])
-  const [spending, setSpending] = useState<SpendingRecord[]>([])
-  const [loading,  setLoading]  = useState(true)
-  const [logOpen,  setLogOpen]  = useState(false)
+  const [balance,     setBalance]     = useState<BalanceSummary | null>(null)
+  const [goals,       setGoals]       = useState<Goal[]>([])
+  const [spending,    setSpending]    = useState<SpendingRecord[]>([])
+  const [loading,     setLoading]     = useState(true)
+  const [logOpen,     setLogOpen]     = useState(false)
+  const [jarBalances, setJarBalances] = useState<JarBalances | null>(null)
+  const [activeJar,   setActiveJar]   = useState<'spend' | 'save' | 'give' | null>(null)
 
   // `silent` skips the loading swap so background polls refresh data in place
   // without flashing the balance hero back to "£—" every 30s.
@@ -39,6 +42,11 @@ export function ChildMoneyTab({ familyId, childId, currency }: Props) {
       setSpending(s)
     } catch { /* silently degrade */ }
     finally { setLoading(false) }
+    // Jars load independently — failure must not affect the main money view
+    getJars(familyId, childId).then(({ balances }) => {
+      if (balances.enabled) setJarBalances(balances)
+      else setJarBalances(null)
+    }).catch(() => {})
   }, [familyId, childId])
 
   useEffect(() => { load() }, [load])
@@ -64,23 +72,31 @@ export function ChildMoneyTab({ familyId, childId, currency }: Props) {
   return (
     <div className="space-y-4">
 
-      {/* Balance hero */}
-      <div className="bg-[var(--color-surface)] rounded-2xl card-depth border-t-[3px] border-t-[var(--brand-primary)] border border-[var(--color-border)] p-4">
-        <div className="text-[12px] font-semibold text-[var(--color-text-muted)] uppercase tracking-wider mb-1">
-          Available to spend
+      {/* Balance hero — replaced by jar cards when jars are enabled */}
+      {jarBalances?.enabled ? (
+        <div className="flex gap-2.5">
+          <JarCard jar="spend" balances={jarBalances} currency={currency} onClick={setActiveJar} />
+          <JarCard jar="save"  balances={jarBalances} currency={currency} onClick={setActiveJar} />
+          <JarCard jar="give"  balances={jarBalances} currency={currency} onClick={setActiveJar} />
         </div>
-        <div className="text-[46px] font-extrabold text-[var(--color-text)] leading-none tracking-tight tabular-nums">
-          {loading || !balance ? `${symbol}—` : formatCurrency(balance.available, currency)}
+      ) : (
+        <div className="bg-[var(--color-surface)] rounded-2xl card-depth border-t-[3px] border-t-[var(--brand-primary)] border border-[var(--color-border)] p-4">
+          <div className="text-[12px] font-semibold text-[var(--color-text-muted)] uppercase tracking-wider mb-1">
+            Available to spend
+          </div>
+          <div className="text-[46px] font-extrabold text-[var(--color-text)] leading-none tracking-tight tabular-nums">
+            {loading || !balance ? `${symbol}—` : formatCurrency(balance.available, currency)}
+          </div>
+          {(balance?.pending ?? 0) > 0 && (
+            <p className="text-[13px] text-[var(--color-text-muted)] mt-2">
+              Pending approval:{' '}
+              <strong className="text-amber-500 tabular-nums">
+                {formatCurrency(balance!.pending, currency)}
+              </strong>
+            </p>
+          )}
         </div>
-        {(balance?.pending ?? 0) > 0 && (
-          <p className="text-[13px] text-[var(--color-text-muted)] mt-2">
-            Pending approval:{' '}
-            <strong className="text-amber-500 tabular-nums">
-              {formatCurrency(balance!.pending, currency)}
-            </strong>
-          </p>
-        )}
-      </div>
+      )}
 
       {/* Stat cards */}
       <div className="grid grid-cols-3 gap-2.5">
