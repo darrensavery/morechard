@@ -25,6 +25,7 @@ import { json, error } from '../lib/response.js';
 import { JwtPayload } from '../lib/jwt.js';
 import { captureAiGeneration } from '../lib/posthog.js';
 import { getFamilyContext } from '../lib/intelligence.js';
+import { computeJarSignals, JarSignals } from '../lib/jar-balance.js';
 
 type AuthedRequest = Request & { auth: JwtPayload };
 
@@ -258,6 +259,34 @@ export async function handleInsights(request: Request, env: Env): Promise<Respon
       total_earned_pence:   number;
     }>();
 
+  // Jar signals for this week
+  const jarSignals = await computeJarSignals(env.DB, effectiveChildId, family_id, now).catch(() => null);
+
+  // weeks_at_current_deviation and positive_streak_weeks from snapshot history
+  let weeksAtCurrentDeviation = 0;
+  let positiveStreakWeeks = 0;
+  if (jarSignals) {
+    const snapHistory = await env.DB
+      .prepare(`SELECT jar_snapshot FROM insight_snapshots WHERE child_id=? AND snapshot_date!=? ORDER BY snapshot_date DESC LIMIT 8`)
+      .bind(effectiveChildId, getIsoWeekKey(new Date()))
+      .all<{ jar_snapshot: string | null }>();
+
+    for (const snap of snapHistory.results) {
+      if (!snap.jar_snapshot) break;
+      const prev = JSON.parse(snap.jar_snapshot) as { deviation_score?: number };
+      if ((prev.deviation_score ?? 100) > 25) weeksAtCurrentDeviation++;
+      else break;
+    }
+    for (const snap of snapHistory.results) {
+      if (!snap.jar_snapshot) break;
+      const prev = JSON.parse(snap.jar_snapshot) as { deviation_score?: number };
+      if ((prev.deviation_score ?? 100) <= 25) positiveStreakWeeks++;
+      else break;
+    }
+    jarSignals.weeks_at_current_deviation = weeksAtCurrentDeviation;
+    jarSignals.positive_streak_weeks = positiveStreakWeeks;
+  }
+
   // Upsert today's snapshot if none exists for the current ISO week.
   const weekKey = getIsoWeekKey(new Date()); // e.g. '2026-W15'
 
@@ -272,8 +301,8 @@ export async function handleInsights(request: Request, env: Env): Promise<Respon
     await env.DB.prepare(`
       INSERT OR IGNORE INTO insight_snapshots
         (child_id, family_id, snapshot_date, consistency_score, responsibility_score,
-         planning_horizon, total_earned_pence)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
+         planning_horizon, total_earned_pence, jar_snapshot)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `).bind(
       effectiveChildId,
       family_id,
@@ -282,6 +311,7 @@ export async function handleInsights(request: Request, env: Env): Promise<Respon
       firstTimePassRate,
       planningHorizon,
       lifetimeEarned,
+      jarSignals ? JSON.stringify(jarSignals) : null,
     ).run();
   }
 
@@ -358,6 +388,8 @@ export async function handleInsights(request: Request, env: Env): Promise<Respon
         childName,
         honorific,
         familyCtx,
+        jarSignals,
+        weeksOfHistory,
       });
 
       // Persist to D1 so the next call within this week is instant.
@@ -744,6 +776,8 @@ interface BriefingInput {
   childName:              string;   // first name only, used for formal Polish address
   honorific:              string;   // 'Pan' | 'Pani' | 'Młody Ekspercie'
   familyCtx:              FamilyContext;
+  jarSignals:             JarSignals | null;
+  weeksOfHistory:         number;
 }
 
 function buildInsightsFamilyBlock(familyCtx: FamilyContext, childName: string, locale: 'en' | 'pl'): string {
@@ -1264,9 +1298,22 @@ async function generateBriefing(env: Env, childId: string, input: BriefingInput)
     honorific:         input.honorific,
   });
 
+  // Signal 9: readiness nudge fires when jars are off + balance has been building 3+ weeks
+  let jarParagraph = '';
+  if (input.jarSignals) {
+    if (input.jarSignals.enabled) {
+      jarParagraph = buildJarBriefingParagraph(input.jarSignals);
+    } else {
+      const hasBuiltBalance = input.availableBalancePence > 500 && input.weeksOfHistory >= 3;
+      if (hasBuiltBalance) {
+        jarParagraph = buildJarReadinessNudge(input.jarSignals);
+      }
+    }
+  }
+
   const userPrompt = input.locale === 'pl'
-    ? `Przeanalizuj te tygodniowe dane finansowego zachowania dziecka i zwróć briefing JSON:\n\n${userMessage}`
-    : `Analyse this child's weekly financial behaviour data and return the JSON briefing:\n\n${userMessage}`;
+    ? `Przeanalizuj te tygodniowe dane finansowego zachowania dziecka i zwróć briefing JSON:\n\n${userMessage}${jarParagraph ? `\n\n${jarParagraph}` : ''}`
+    : `Analyse this child's weekly financial behaviour data and return the JSON briefing:\n\n${userMessage}${jarParagraph ? `\n\n${jarParagraph}` : ''}`;
 
   const messages = [
     { role: 'system', content: systemPrompt },
@@ -1340,4 +1387,44 @@ async function generateBriefing(env: Env, childId: string, input: BriefingInput)
 
     return buildRuleBasedBriefing(input);
   }
+}
+
+// ── Jar Briefing Helpers ──────────────────────────────────────────────────────
+
+function buildJarBriefingParagraph(s: {
+  save_raids: number; give_balance_age_days: number; weeks_at_current_deviation: number;
+  auto_off_weeks: number; manual_move_count: number; give_pct: number;
+  deviation_score: number; positive_streak_weeks: number; spend_pct: number; save_pct: number;
+  enabled: boolean;
+}): string {
+  const lines: string[] = ['JAR ALLOCATION DATA (Spend/Save/Give feature):'];
+  // Priority 1
+  if (s.save_raids >= 2) lines.push(`⚠ SAVE-JAR RAIDING: ${s.save_raids} moves from Save to Spend this week. Child's savings goal may be at risk.`);
+  // Priority 2
+  if (s.give_balance_age_days >= 21) lines.push(`⚠ GIVE-JAR STAGNATION: Give balance has sat untouched for ${s.give_balance_age_days} days. Child may need a prompt to follow through on giving.`);
+  // Priority 3
+  if (s.weeks_at_current_deviation >= 3 && s.deviation_score > 25) lines.push(`⚠ PERSISTENT DEVIATION: Allocation has been more than 25 points from the ideal 70/20/10 split for ${s.weeks_at_current_deviation} consecutive weeks.`);
+  // Priority 4
+  if (s.auto_off_weeks >= 2) lines.push(`⚠ AUTO-ALLOCATION DORMANT: Auto-split has been off for ${s.auto_off_weeks} weeks. The habit may be lapsing.`);
+  // Priority 5
+  if (s.manual_move_count >= 4) lines.push(`NOTE: ${s.manual_move_count} manual jar moves this week — possible indecision or gaming.`);
+  // Priority 6
+  if (s.give_pct === 0 && s.weeks_at_current_deviation >= 4) lines.push(`NOTE: Give jar set to 0% for 4+ weeks. Mention gently — autonomy is respected.`);
+  // Priority 8: disengagement (distinct from never having enabled)
+  if (!s.enabled && s.auto_off_weeks >= 3 && s.auto_off_weeks < 99) {
+    lines.push(`⚠ HABIT DISENGAGEMENT: Child turned off auto-allocation ${s.auto_off_weeks} weeks ago and has not re-enabled it.`);
+  }
+  // Priority 10 (positive)
+  if (s.positive_streak_weeks >= 3) lines.push(`✓ POSITIVE STREAK: On-target 70/20/10 split maintained for ${s.positive_streak_weeks} consecutive weeks — celebrate this.`);
+
+  // Priority 7: impulse/hoarding — complex condition, omitted per spec note
+  // (requires cross-week spend velocity data not available in JarSignals)
+
+  if (lines.length === 1) lines.push('No jar behaviour signals this week.');
+  return lines.join('\n');
+}
+
+function buildJarReadinessNudge(_s: { enabled: boolean; deviation_score: number }): string {
+  // Signal 9: fires when jars are OFF and balance has been building (checked in insights route)
+  return 'JAR READINESS NUDGE: This child has been earning consistently but has not yet enabled the Spend/Save/Give jar split. This might be a good week to suggest it — let them choose their own percentages.';
 }
