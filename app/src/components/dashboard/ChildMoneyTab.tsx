@@ -1,11 +1,13 @@
 import { useState, useEffect, useCallback } from 'react'
-import type { BalanceSummary, Goal, SpendingRecord, JarBalances } from '../../lib/api'
+import type { BalanceSummary, Goal, SpendingRecord, JarBalances, JarConfig } from '../../lib/api'
 import { getBalance, getGoals, getSpending, getJars, formatCurrency } from '../../lib/api'
 import { spendCategoryHeading } from '../../lib/spendCategories'
 import { ChildHistoryTab } from './ChildHistoryTab'
 import { SpendGuideSheet } from './SpendGuideSheet'
 import { JarCard } from './JarCard'
 import { JarDetailSheet } from './JarDetailSheet'
+import { JarSettingsSheet } from './JarSettingsSheet'
+import { JarOnboardingWizard } from './JarOnboardingWizard'
 
 interface Props {
   familyId: string
@@ -24,10 +26,14 @@ export function ChildMoneyTab({ familyId, childId, currency }: Props) {
   const [goals,       setGoals]       = useState<Goal[]>([])
   const [spending,    setSpending]    = useState<SpendingRecord[]>([])
   const [loading,     setLoading]     = useState(true)
-  const [logOpen,       setLogOpen]       = useState(false)
-  const [jarBalances,   setJarBalances]   = useState<JarBalances | null>(null)
-  const [activeJar,     setActiveJar]     = useState<'spend' | 'save' | 'give' | null>(null)
-  const [showGiveRequest, setShowGiveRequest] = useState(false)
+  const [logOpen,          setLogOpen]          = useState(false)
+  const [jarBalances,      setJarBalances]      = useState<JarBalances | null>(null)
+  const [jarConfig,        setJarConfig]        = useState<JarConfig | null>(null)
+  const [activeJar,        setActiveJar]        = useState<'spend' | 'save' | 'give' | null>(null)
+  const [showGiveRequest,  setShowGiveRequest]  = useState(false)
+  const [showSettings,     setShowSettings]     = useState(false)
+  const [showWizard,       setShowWizard]       = useState(false)
+  const [pendingConfig,    setPendingConfig]     = useState<{ spend: number; save: number; give: number } | null>(null)
 
   // `silent` skips the loading swap so background polls refresh data in place
   // without flashing the balance hero back to "£—" every 30s.
@@ -45,7 +51,8 @@ export function ChildMoneyTab({ familyId, childId, currency }: Props) {
     } catch { /* silently degrade */ }
     finally { setLoading(false) }
     // Jars load independently — failure must not affect the main money view
-    getJars(familyId, childId).then(({ balances }) => {
+    getJars(familyId, childId).then(({ config, balances }) => {
+      setJarConfig(config)
       if (balances.enabled) setJarBalances(balances)
       else setJarBalances(null)
     }).catch(() => {})
@@ -76,15 +83,46 @@ export function ChildMoneyTab({ familyId, childId, currency }: Props) {
 
       {/* Balance hero — replaced by jar cards when jars are enabled */}
       {jarBalances?.enabled ? (
-        <div className="flex gap-2.5">
-          <JarCard jar="spend" balances={jarBalances} currency={currency} onClick={setActiveJar} />
-          <JarCard jar="save"  balances={jarBalances} currency={currency} onClick={setActiveJar} />
-          <JarCard jar="give"  balances={jarBalances} currency={currency} onClick={setActiveJar} />
+        <div>
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[12px] font-semibold text-[var(--color-text-muted)] uppercase tracking-wider">My jars</span>
+            <button
+              type="button"
+              onClick={() => setShowSettings(true)}
+              className="p-1.5 rounded-lg hover:bg-[var(--color-surface-alt)] transition-colors cursor-pointer"
+              aria-label="Jar settings"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--color-text-muted)]">
+                <circle cx="12" cy="12" r="3"/>
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+              </svg>
+            </button>
+          </div>
+          <div className="flex gap-2.5">
+            <JarCard jar="spend" balances={jarBalances} currency={currency} onClick={setActiveJar} />
+            <JarCard jar="save"  balances={jarBalances} currency={currency} onClick={setActiveJar} />
+            <JarCard jar="give"  balances={jarBalances} currency={currency} onClick={setActiveJar} />
+          </div>
         </div>
       ) : (
         <div className="bg-[var(--color-surface)] rounded-2xl card-depth border-t-[3px] border-t-[var(--brand-primary)] border border-[var(--color-border)] p-4">
-          <div className="text-[12px] font-semibold text-[var(--color-text-muted)] uppercase tracking-wider mb-1">
-            Available to spend
+          <div className="flex items-center justify-between mb-1">
+            <div className="text-[12px] font-semibold text-[var(--color-text-muted)] uppercase tracking-wider">
+              Available to spend
+            </div>
+            {jarConfig && (
+              <button
+                type="button"
+                onClick={() => setShowSettings(true)}
+                className="p-1.5 rounded-lg hover:bg-[var(--color-surface-alt)] transition-colors cursor-pointer"
+                aria-label="Set up jars"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--color-text-muted)]">
+                  <circle cx="12" cy="12" r="3"/>
+                  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                </svg>
+              </button>
+            )}
           </div>
           <div className="text-[46px] font-extrabold text-[var(--color-text)] leading-none tracking-tight tabular-nums">
             {loading || !balance ? `${symbol}—` : formatCurrency(balance.available, currency)}
@@ -149,6 +187,35 @@ export function ChildMoneyTab({ familyId, childId, currency }: Props) {
           onBalanceChange={(updated) => { setJarBalances(updated); }}
           onGiveRequest={() => { setActiveJar(null); setShowGiveRequest(true); }}
           onViewGoals={() => { setActiveJar(null); /* Task 13: switch to goals tab */ }}
+        />
+      )}
+
+      {showSettings && jarConfig && (
+        <JarSettingsSheet
+          config={jarConfig}
+          familyId={familyId}
+          childId={childId}
+          onClose={() => setShowSettings(false)}
+          onSaved={(b) => { setJarBalances(b); setShowSettings(false); load(true); }}
+          onFirstEnable={() => {
+            setPendingConfig({ spend: jarConfig.spend_pct, save: jarConfig.save_pct, give: jarConfig.give_pct });
+            setShowSettings(false);
+            setShowWizard(true);
+          }}
+        />
+      )}
+
+      {showWizard && pendingConfig && (
+        <JarOnboardingWizard
+          availableBalance={balance?.available ?? 0}
+          currency={currency}
+          familyId={familyId}
+          childId={childId}
+          spendPct={pendingConfig.spend}
+          savePct={pendingConfig.save}
+          givePct={pendingConfig.give}
+          onComplete={(b) => { setJarBalances(b); setShowWizard(false); load(true); }}
+          onCancel={() => setShowWizard(false)}
         />
       )}
     </div>

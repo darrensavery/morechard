@@ -1,0 +1,176 @@
+import { useState } from 'react';
+import { putJarConfig, type JarBalances } from '../../lib/api';
+import { SpendJarIcon } from '../icons/SpendJarIcon';
+import { SaveJarIcon  } from '../icons/SaveJarIcon';
+import { GiveJarIcon  } from '../icons/GiveJarIcon';
+
+interface Props {
+  availableBalance: number; // pence — current total to seed
+  currency: string;
+  familyId: string;
+  childId: string;
+  spendPct: number;
+  savePct: number;
+  givePct: number; // from settings selection
+  onComplete: (balances: JarBalances) => void;
+  onCancel: () => void;
+}
+
+function fmt(pence: number, currency: string) {
+  return new Intl.NumberFormat('en-GB', { style: 'currency', currency }).format(pence / 100);
+}
+
+export function JarOnboardingWizard({
+  availableBalance, currency, familyId, childId,
+  spendPct, savePct, givePct,
+  onComplete, onCancel,
+}: Props) {
+  // Pre-fill from chosen percentages
+  const defaultSpend = Math.floor(availableBalance * spendPct / 100);
+  const defaultSave  = Math.floor(availableBalance * savePct  / 100);
+  const defaultGive  = availableBalance - defaultSpend - defaultSave;
+
+  const [spend, setSpend]   = useState(defaultSpend);
+  const [save, setSave]     = useState(defaultSave);
+  const [saving, setSaving] = useState(false);
+
+  // Give is always the remainder so the total stays locked to availableBalance
+  const giveComputed = availableBalance - spend - save;
+
+  function setSpendAdj(v: number) {
+    const clamped = Math.min(Math.max(0, v), availableBalance - save);
+    setSpend(clamped);
+  }
+
+  function setSaveAdj(v: number) {
+    const clamped = Math.min(Math.max(0, v), availableBalance - spend);
+    setSave(clamped);
+  }
+
+  async function handleConfirm() {
+    if (giveComputed < 0) return;
+    setSaving(true);
+    try {
+      const { balances } = await putJarConfig({
+        family_id: familyId,
+        child_id: childId,
+        enabled: 1,
+        spend_pct: spendPct,
+        save_pct: savePct,
+        give_pct: givePct,
+        initial_seed: { spend, save, give: Math.max(0, giveComputed) },
+      });
+      onComplete(balances);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, zIndex: 300,
+      background: '#0f1a14', display: 'flex', flexDirection: 'column',
+      padding: '40px 20px', fontFamily: 'Manrope',
+    }}>
+      <div style={{ fontSize: 22, fontWeight: 700, color: '#fff', marginBottom: 8 }}>
+        Split your money
+      </div>
+      <div style={{ fontSize: 15, color: 'rgba(255,255,255,0.5)', marginBottom: 32 }}>
+        You have {fmt(availableBalance, currency)} — how do you want to split it across your jars?
+      </div>
+
+      {/* Spend input */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 20 }}>
+        <SpendJarIcon size={32} />
+        <div style={{ flex: 1 }}>
+          <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: 13, textTransform: 'capitalize', marginBottom: 4 }}>
+            Spend
+          </div>
+          <input
+            type="number"
+            min="0"
+            step="1"
+            value={(spend / 100).toFixed(2)}
+            onChange={e => setSpendAdj(Math.round(parseFloat(e.target.value || '0') * 100))}
+            style={{
+              width: '100%', padding: '10px 12px', borderRadius: 10,
+              background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)',
+              color: '#fff', fontSize: 16, fontVariantNumeric: 'tabular-nums',
+            }}
+          />
+        </div>
+      </div>
+
+      {/* Save input */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 20 }}>
+        <SaveJarIcon size={32} />
+        <div style={{ flex: 1 }}>
+          <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: 13, textTransform: 'capitalize', marginBottom: 4 }}>
+            Save
+          </div>
+          <input
+            type="number"
+            min="0"
+            step="1"
+            value={(save / 100).toFixed(2)}
+            onChange={e => setSaveAdj(Math.round(parseFloat(e.target.value || '0') * 100))}
+            style={{
+              width: '100%', padding: '10px 12px', borderRadius: 10,
+              background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)',
+              color: '#fff', fontSize: 16, fontVariantNumeric: 'tabular-nums',
+            }}
+          />
+        </div>
+      </div>
+
+      {/* Give — read-only remainder */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 20 }}>
+        <GiveJarIcon size={32} />
+        <div style={{ flex: 1 }}>
+          <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: 13, textTransform: 'capitalize', marginBottom: 4 }}>
+            Give
+          </div>
+          <div style={{
+            padding: '10px 12px', borderRadius: 10,
+            background: 'rgba(255,255,255,0.03)',
+            color: giveComputed < 0 ? '#f87171' : 'rgba(255,255,255,0.4)',
+            fontSize: 16, fontVariantNumeric: 'tabular-nums',
+          }}>
+            {giveComputed < 0
+              ? 'Overspent — reduce Spend or Save'
+              : `${fmt(giveComputed, currency)} (remainder)`}
+          </div>
+        </div>
+      </div>
+
+      {/* Running total */}
+      <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 13, marginBottom: 24 }}>
+        Total: {fmt(spend + save + Math.max(0, giveComputed), currency)}
+      </div>
+
+      <button
+        onClick={handleConfirm}
+        disabled={saving || giveComputed < 0}
+        style={{
+          padding: 16, borderRadius: 14, background: '#0d9488',
+          color: '#fff', border: 'none', fontSize: 16, fontWeight: 700,
+          cursor: 'pointer', marginBottom: 12,
+          opacity: giveComputed < 0 ? 0.5 : 1,
+        }}
+      >
+        {saving ? 'Setting up…' : 'Start splitting my money'}
+      </button>
+
+      <button
+        onClick={onCancel}
+        style={{
+          padding: 14, borderRadius: 14, background: 'none',
+          color: 'rgba(255,255,255,0.4)', border: 'none',
+          fontSize: 15, cursor: 'pointer',
+        }}
+      >
+        Cancel
+      </button>
+    </div>
+  );
+}
