@@ -172,7 +172,7 @@ export async function handleFamilyUpdate(request: Request, env: Env): Promise<Re
   const values: unknown[] = [];
 
   if ('base_currency' in body) {
-    if (!['GBP','PLN'].includes(body.base_currency as string)) return error('Invalid base_currency');
+    if (!['GBP','PLN','USD'].includes(body.base_currency as string)) return error('Invalid base_currency');
     updates.push('base_currency = ?'); values.push(body.base_currency);
   }
   if ('parenting_mode' in body) {

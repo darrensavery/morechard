@@ -460,9 +460,13 @@ export async function handleInsights(request: Request, env: Env): Promise<Respon
     'M13':  { title: 'Stocks & Shares',              pillar: 'INVESTING_FUTURE',  level: 4, actMins: [2,8,10,5]  },
     'M14':  { title: 'Inflation',                    pillar: 'INVESTING_FUTURE',  level: 2, actMins: [1,5,6,3]   },
     'M15':  { title: 'Risk & Diversification',       pillar: 'INVESTING_FUTURE',  level: 4, actMins: [2,7,10,4]  },
+    'M16':  { title: 'Insurance & Protection',       pillar: 'INVESTING_FUTURE',  level: 3, actMins: [2,6,6,4]   },
     'M17':  { title: 'Digital vs Physical Currency', pillar: 'SOCIETY_WELLBEING', level: 2, actMins: [1,4,5,3]   },
     'M18':  { title: 'Money & Mental Health',        pillar: 'SOCIETY_WELLBEING', level: 3, actMins: [1,5,5,4]   },
     'M18b': { title: 'Social Comparison',            pillar: 'SOCIETY_WELLBEING', level: 3, actMins: [1,4,6,3]   },
+    'M19':  { title: 'Pensions & The Long Game',     pillar: 'INVESTING_FUTURE',  level: 4, actMins: [2,7,10,4]  },
+    'M20':  { title: 'Gambling & Loot Boxes',        pillar: 'SOCIETY_WELLBEING', level: 3, actMins: [2,6,7,4]   },
+    'M21':  { title: 'Consumer Rights & Contracts',  pillar: 'SPENDING_CHOICES',  level: 3, actMins: [2,6,6,4]   },
   };
 
   // Legacy slug→M mapping (old chat-based unlocks)

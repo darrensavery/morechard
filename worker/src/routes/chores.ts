@@ -130,7 +130,7 @@ export async function handleChoreList(request: Request, env: Env): Promise<Respo
     return json({ chores: results });
   }
 
-  // Children can only see their own chores
+  // Children can only see their own chores (or 'everyone' broadcast chores)
   const effectiveChildId = auth.role === 'child' ? auth.sub : (child_id ?? null);
 
   let stmt;
@@ -140,7 +140,7 @@ export async function handleChoreList(request: Request, env: Env): Promise<Respo
        FROM chores c
        LEFT JOIN users u ON u.id = c.assigned_to
        JOIN users p ON p.id = c.created_by
-       WHERE c.family_id = ? AND c.assigned_to = ? AND c.archived = ?
+       WHERE c.family_id = ? AND (c.assigned_to = ? OR c.assigned_to = 'everyone') AND c.archived = ?
        ORDER BY c.is_priority DESC, c.due_date ASC, c.created_at DESC`
     ).bind(family_id, effectiveChildId, archived);
   } else {
@@ -220,7 +220,7 @@ export async function handleChoreUpdate(request: Request, env: Env, id: string):
         if (!Number.isInteger(body[key]) || (body[key] as number) <= 0)
           return error('reward_amount must be a positive integer');
       }
-      if (key === 'currency' && !['GBP','PLN'].includes(body[key] as string))
+      if (key === 'currency' && !['GBP','PLN','USD'].includes(body[key] as string))
         return error('Invalid currency');
       if (key === 'frequency' && !VALID_FREQUENCIES.includes(body[key] as string))
         return error('Invalid frequency');
@@ -358,7 +358,8 @@ export async function handleChoreSubmit(request: Request, env: Env, id: string):
 
   if (!chore) return error('Chore not found', 404);
   if (chore.family_id !== auth.family_id) return error('Forbidden', 403);
-  if (chore.assigned_to !== auth.sub) return error('This chore is not assigned to you', 403);
+  if (chore.assigned_to !== auth.sub && chore.assigned_to !== 'everyone')
+    return error('This chore is not assigned to you', 403);
   if (chore.archived) return error('This chore has been archived');
 
   // Flash deadline check
@@ -415,6 +416,8 @@ export async function handleChoreSubmit(request: Request, env: Env, id: string):
     );
 
     const completionId = nanoid();
+    // verified_auto entries carry a 48h dispute window, same as manual-approve path
+    const disputeBefore = now + 172800;
 
     await env.DB.batch([
       // Write completion as already completed
@@ -429,8 +432,8 @@ export async function handleChoreSubmit(request: Request, env: Env, id: string):
         INSERT INTO ledger
           (id, family_id, child_id, chore_id, entry_type, amount, currency,
            description, verification_status, authorised_by, verified_at, verified_by,
-           previous_hash, record_hash, ip_address)
-        VALUES (?,?,?,?,'credit',?,?,?,'verified_auto',?,?,?,?,?,?)
+           previous_hash, record_hash, ip_address, dispute_before)
+        VALUES (?,?,?,?,'credit',?,?,?,'verified_auto',?,?,?,?,?,?,?)
       `).bind(
         newLedgerId,
         chore.family_id, auth.sub, id,
@@ -438,6 +441,7 @@ export async function handleChoreSubmit(request: Request, env: Env, id: string):
         `Auto-approved: ${chore.title}`,
         auth.sub, now, auth.sub,
         previousHash, recordHash, ip,
+        disputeBefore,
       ),
     ]);
 

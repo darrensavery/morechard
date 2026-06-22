@@ -719,12 +719,13 @@ export async function getFamilyContext(
       .bind(familyId)
       .all<{ display_name: string }>(),
 
-    // 3. Child names + IDs
+    // 3. Child names + IDs — role lives in family_roles, not users
     db
       .prepare(`
-        SELECT id, display_name FROM users
-        WHERE  family_id = ? AND role = 'child'
-        ORDER  BY created_at ASC
+        SELECT u.id, u.display_name FROM users u
+        JOIN   family_roles fr ON fr.user_id = u.id
+        WHERE  fr.family_id = ? AND fr.role = 'child'
+        ORDER  BY u.created_at ASC
       `)
       .bind(familyId)
       .all<{ id: string; display_name: string }>(),

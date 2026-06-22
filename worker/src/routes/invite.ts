@@ -16,7 +16,7 @@ import { AuthedRequest } from './auth.js';
 
 const INVITE_TTL = 72 * 60 * 60; // 72 hours in seconds
 const CHILD_JWT_EXPIRY = 90 * 24 * 3600;  // 90 days — children have no re-auth mechanism
-const PARENT_JWT_EXPIRY = 7 * 24 * 3600;
+const PARENT_JWT_EXPIRY = 365 * 24 * 3600;
 
 // ── Generates a cryptographically random 6-char uppercase code ──────────────
 function generateCode(): string {
@@ -314,7 +314,7 @@ export async function handleAddChild(request: Request, env: Env): Promise<Respon
   // If a non-zero opening balance is provided, record it as an immutable ledger entry.
   // Done after the batch so the child row exists before the FK reference.
   if (opening_balance_pence > 0) {
-    const { computeRecordHash, GENESIS_HASH } = await import('../lib/hash.js');
+    const { computeRecordHash, fetchAndVerifyChainTip } = await import('../lib/hash.js');
 
     const family = await env.DB
       .prepare('SELECT base_currency, verify_mode FROM families WHERE id = ?')
@@ -325,14 +325,7 @@ export async function handleAddChild(request: Request, env: Env): Promise<Respon
     const verificationStatus = family?.verify_mode === 'standard' ? 'verified_manual' : 'verified_auto';
     const ip                 = clientIp(request);
 
-    const prevRow = await env.DB
-      .prepare('SELECT id, record_hash FROM ledger WHERE family_id = ? ORDER BY id DESC LIMIT 1')
-      .bind(caller.family_id)
-      .first<{ id: number; record_hash: string }>();
-
-    const previousHash = prevRow?.record_hash ?? GENESIS_HASH;
-
-    const newId = (prevRow?.id ?? 0) + 1;
+    const { previousHash, newId } = await fetchAndVerifyChainTip(env.DB, caller.family_id);
 
     const recordHash = await computeRecordHash(
       newId, caller.family_id, childId,

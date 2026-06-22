@@ -923,6 +923,14 @@ export async function handleRemoveCoParent(request: Request & { auth?: JwtPayloa
   if (!target) return error('Co-parent not found in this family.', 404);
   if (target.parent_role !== 'co_parent') return error('Target user is not a co-parent.', 400);
 
+  // Check whether other co-parents will remain after removal so we know whether
+  // to revert parenting_mode and void shared expenses.
+  const remainingCoParents = await env.DB
+    .prepare(`SELECT COUNT(*) AS cnt FROM family_roles WHERE family_id = ? AND role = 'parent' AND parent_role = 'co_parent' AND user_id != ?`)
+    .bind(familyId, targetUserId)
+    .first<{ cnt: number }>();
+  const isLastCoParent = (remainingCoParents?.cnt ?? 0) === 0;
+
   // Ledger audit note — hash chain
   const prevRow = await env.DB
     .prepare('SELECT id, record_hash FROM ledger WHERE family_id = ? ORDER BY id DESC LIMIT 1')
@@ -933,7 +941,7 @@ export async function handleRemoveCoParent(request: Request & { auth?: JwtPayloa
   const recordHash   = await computeRecordHash(newId, familyId, '', 0, 'GBP', 'system_note', previousHash);
   const capturedName = target.display_name;
 
-  await env.DB.batch([
+  const batch = [
     // Anonymise removed user's PII
     env.DB.prepare(`
       UPDATE users
@@ -950,16 +958,6 @@ export async function handleRemoveCoParent(request: Request & { auth?: JwtPayloa
     env.DB.prepare(`DELETE FROM family_roles WHERE user_id = ? AND family_id = ?`)
       .bind(targetUserId, familyId),
 
-    // Reset family back to single-parent mode
-    env.DB.prepare(`UPDATE families SET parenting_mode = 'single' WHERE id = ?`)
-      .bind(familyId),
-
-    // Void pending shared expenses — no second parent to approve them
-    env.DB.prepare(`
-      UPDATE shared_expenses SET verification_status = 'voided'
-      WHERE family_id = ? AND verification_status = 'pending'
-    `).bind(familyId),
-
     // Immutable audit trail
     env.DB.prepare(`
       INSERT INTO ledger
@@ -967,10 +965,26 @@ export async function handleRemoveCoParent(request: Request & { auth?: JwtPayloa
          description, verification_status, previous_hash, record_hash, ip_address)
       VALUES (?,?,NULL,'system_note',0,'GBP',?,'verified_auto',?,?,?)
     `).bind(newId, familyId, `🌿 ${capturedName} has been removed from the orchard.`, previousHash, recordHash, ip),
-  ]);
+  ];
 
-  // Bust the family config cache so the next GET /api/family reflects single mode
-  await env.CACHE.delete(`family:config:${familyId}`);
+  if (isLastCoParent) {
+    // No co-parents remain — revert to single-parent mode and void shared expenses
+    batch.push(
+      env.DB.prepare(`UPDATE families SET parenting_mode = 'single' WHERE id = ?`).bind(familyId),
+      env.DB.prepare(`
+        UPDATE shared_expenses SET verification_status = 'voided'
+        WHERE family_id = ? AND verification_status = 'pending'
+      `).bind(familyId),
+    );
+  }
+
+  await env.DB.batch(batch);
+
+  // Bust both caches — config (parenting_mode) and children list (parent list changes)
+  await Promise.all([
+    env.CACHE.delete(`family:config:${familyId}`),
+    env.CACHE.delete(`family:children:${familyId}`),
+  ]);
 
   return json({ ok: true });
 }

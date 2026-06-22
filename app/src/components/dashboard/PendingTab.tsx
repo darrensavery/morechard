@@ -140,8 +140,10 @@ export function PendingTab({ familyId, child, onCountChange }: Props) {
     }
   }
 
-  // Totals for the modal
-  const approveAllTotal = completions.reduce((s, c) => s + c.reward_amount, 0)
+  // Totals for the modal — multi-currency guard
+  const uniqueCurrencies = [...new Set(completions.map(c => c.currency))]
+  const isMixedCurrency  = uniqueCurrencies.length > 1
+  const approveAllTotal    = isMixedCurrency ? 0 : completions.reduce((s, c) => s + c.reward_amount, 0)
   const approveAllCurrency = completions[0]?.currency ?? 'GBP'
 
   if (loading) return <div className="py-10 text-center text-[14px] text-[var(--color-text-muted)]">Loading…</div>
@@ -202,9 +204,12 @@ export function PendingTab({ familyId, child, onCountChange }: Props) {
                 Confirm payment
               </p>
               <p className="text-[13px] text-[var(--color-text-muted)] mt-1 leading-relaxed">
-                You are about to pay out <strong className="text-[var(--color-text)]">{completions.length} task{completions.length !== 1 ? 's' : ''}</strong> totalling{' '}
-                <strong className="text-[var(--brand-primary)]">{formatCurrency(approveAllTotal, approveAllCurrency)}</strong>.
-                Have you verified that these tasks meet the agreed standard?
+                You are about to pay out <strong className="text-[var(--color-text)]">{completions.length} task{completions.length !== 1 ? 's' : ''}</strong>
+                {isMixedCurrency
+                  ? <> across <strong className="text-[var(--color-text)]">multiple currencies</strong> (see totals below).</>
+                  : <> totalling <strong className="text-[var(--brand-primary)]">{formatCurrency(approveAllTotal, approveAllCurrency)}</strong>.</>
+                }
+                {' '}Have you verified that these tasks meet the agreed standard?
               </p>
             </div>
 
@@ -240,7 +245,7 @@ export function PendingTab({ familyId, child, onCountChange }: Props) {
       )}
       {toast && <Toast message={toast} />}
 
-      {toast && pendingToastAction && (
+      {pendingToastAction && (
         <button
           type="button"
           onClick={() => {
