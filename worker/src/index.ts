@@ -190,6 +190,8 @@ import {
 } from './routes/referrals.js';
 import { handleConsentPost, handleConsentGet, handleAnalyticsConsentPost, handleAnalyticsEffectiveGet } from './routes/consent.js';
 import { handlePublicInterest } from './routes/public-interest.js';
+import { handleGetJars, handlePutJarConfig, handlePostJarMove, handleGetJarMovements } from './routes/jars.js';
+import { handlePostGiveRequest, handleGetGiveRequests, handlePatchGiveRequest } from './routes/give-requests.js';
 import { json, error } from './lib/response.js';
 import { JwtPayload } from './lib/jwt.js';
 import {
@@ -569,6 +571,16 @@ async function route(request: Request, env: Env, method: string, path: string): 
 
   // Balance — any role
   if (path === '/api/balance'   && method === 'GET')  return withAuth(request, auth, env, handleBalance);
+
+  // Jars — child configures own; parent/child can read
+  const giveReqMatch = path.match(/^\/api\/give-requests\/(\d+)$/);
+  if (path === '/api/jars'            && method === 'GET')   return withAuth(request, auth, env, handleGetJars);
+  if (path === '/api/jars/config'     && method === 'PUT')   return withAuth(request, auth, env, handlePutJarConfig);
+  if (path === '/api/jars/move'       && method === 'POST')  return withAuth(request, auth, env, handlePostJarMove);
+  if (path === '/api/jars/movements'  && method === 'GET')   return withAuth(request, auth, env, handleGetJarMovements);
+  if (path === '/api/give-requests'   && method === 'POST')  return withAuth(request, auth, env, handlePostGiveRequest);
+  if (path === '/api/give-requests'   && method === 'GET')   return withAuth(request, auth, env, handleGetGiveRequests);
+  if (giveReqMatch && method === 'PATCH') return withAuth(request, auth, env, (req, e) => handlePatchGiveRequest(req, e, giveReqMatch[1]));
 
   // Insights — parent or child (child sees own data only, enforced in handler)
   if (path === '/api/insights'  && method === 'GET')  return withAuth(request, auth, env, handleInsights);
