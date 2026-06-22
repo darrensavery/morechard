@@ -16,7 +16,7 @@ database_name = "morechard-dev"
 # IMPORTANT: this is the DEV database — wrangler dev uses this environment by default.
 # Create it once with: wrangler d1 create morechard-dev
 # Replace the placeholder below with the real ID from that command output.
-database_id = "REPLACE_WITH_DEV_DATABASE_ID"
+database_id = "a6f9fe7d-7e6c-4176-8654-b9d6c83e5cba"
 
 [ai]
 binding = "AI"
