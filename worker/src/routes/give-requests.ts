@@ -1,0 +1,130 @@
+import { Env } from '../types.js';
+import { json, error } from '../lib/response.js';
+import { JwtPayload } from '../lib/jwt.js';
+import { getJarBalances } from '../lib/jar-balance.js';
+
+type AuthedRequest = Request & { auth: JwtPayload };
+
+// ----------------------------------------------------------------
+// POST /api/give-requests
+// Body: { family_id, child_id, cause, amount }
+// Child only. Reserves Give jar balance.
+// ----------------------------------------------------------------
+export async function handlePostGiveRequest(request: Request, env: Env): Promise<Response> {
+  const auth = (request as AuthedRequest).auth;
+  if (auth.role !== 'child') return error('Only children can submit give requests', 403);
+
+  const body = await request.json<{
+    family_id: string; child_id: string; cause: string; amount: number;
+  }>();
+  const { family_id, child_id, cause, amount } = body;
+  if (!family_id || !child_id || !cause || !amount) return error('Missing required fields', 400);
+  if (family_id !== auth.family_id || child_id !== auth.sub) return error('Forbidden', 403);
+  if (cause.trim().length === 0 || cause.length > 60) return error('Cause must be 1–60 characters', 400);
+  if (amount <= 0) return error('Amount must be positive', 400);
+
+  // Verify Give jar has sufficient balance
+  const balances = await getJarBalances(env.DB, family_id, child_id);
+  if (!balances.enabled) return error('Jars are not enabled', 400);
+
+  // Subtract already-requested (pending) amounts from Give balance
+  const pendingRow = await env.DB
+    .prepare(`SELECT COALESCE(SUM(amount),0) AS total FROM give_requests WHERE child_id=? AND status='requested'`)
+    .bind(child_id)
+    .first<{ total: number }>();
+  const availableGive = balances.give - (pendingRow?.total ?? 0);
+  if (availableGive < amount) return error('Insufficient Give jar balance', 400);
+
+  const now = Math.floor(Date.now() / 1000);
+  const currencyRow = await env.DB
+    .prepare('SELECT base_currency FROM families WHERE id=?')
+    .bind(family_id)
+    .first<{ base_currency: string }>();
+  const currency = currencyRow?.base_currency ?? 'GBP';
+
+  // Atomic: insert give_request + reserve give_request jar_movement
+  const result = await env.DB
+    .prepare(`INSERT INTO give_requests (family_id,child_id,cause,amount,currency,status,requested_at) VALUES (?,?,?,?,?,'requested',?) RETURNING id`)
+    .bind(family_id, child_id, cause.trim(), amount, currency, now)
+    .first<{ id: number }>();
+
+  await env.DB
+    .prepare(`INSERT INTO jar_movements (family_id,child_id,jar,delta,kind,ref_id,created_at) VALUES (?,?,'give',?,'give_request',?,?)`)
+    .bind(family_id, child_id, -amount, String(result!.id), now)
+    .run();
+
+  return json({ ok: true, id: result!.id }, 201);
+}
+
+// ----------------------------------------------------------------
+// GET /api/give-requests?family_id=&status=requested
+// Parent only — lists pending give requests for all children.
+// ----------------------------------------------------------------
+export async function handleGetGiveRequests(request: Request, env: Env): Promise<Response> {
+  const auth = (request as AuthedRequest).auth;
+  if (auth.role !== 'parent') return error('Parents only', 403);
+
+  const url       = new URL(request.url);
+  const family_id = url.searchParams.get('family_id');
+  const status    = url.searchParams.get('status') ?? 'requested';
+  if (!family_id) return error('family_id required');
+  if (family_id !== auth.family_id) return error('Forbidden', 403);
+
+  const rows = await env.DB
+    .prepare(`
+      SELECT gr.*, u.display_name AS child_name
+      FROM give_requests gr
+      JOIN users u ON u.id = gr.child_id
+      WHERE gr.family_id=? AND gr.status=?
+      ORDER BY gr.requested_at DESC
+    `)
+    .bind(family_id, status)
+    .all();
+
+  return json({ give_requests: rows.results });
+}
+
+// ----------------------------------------------------------------
+// PATCH /api/give-requests/:id
+// Body: { action: 'fulfil' | 'decline', parent_note? }
+// Parent only.
+// ----------------------------------------------------------------
+export async function handlePatchGiveRequest(
+  request: Request,
+  env: Env,
+  id: string,
+): Promise<Response> {
+  const auth = (request as AuthedRequest).auth;
+  if (auth.role !== 'parent') return error('Parents only', 403);
+
+  const body = await request.json<{ action: 'fulfil' | 'decline'; parent_note?: string }>();
+  if (!body.action) return error('action required', 400);
+
+  const req = await env.DB
+    .prepare('SELECT * FROM give_requests WHERE id=?')
+    .bind(id)
+    .first<{ id: number; family_id: string; child_id: string; amount: number; status: string }>();
+
+  if (!req) return error('Give request not found', 404);
+  if (req.family_id !== auth.family_id) return error('Forbidden', 403);
+  if (req.status !== 'requested') return error('Request already resolved', 400);
+
+  const now  = Math.floor(Date.now() / 1000);
+  const newStatus = body.action === 'fulfil' ? 'fulfilled' : 'declined';
+
+  await env.DB.batch([
+    env.DB.prepare(`UPDATE give_requests SET status=?,fulfilled_at=?,parent_note=? WHERE id=?`)
+      .bind(newStatus, now, body.parent_note ?? null, id),
+    // If declined: restore Give jar balance
+    ...(body.action === 'decline' ? [
+      env.DB.prepare(`INSERT INTO jar_movements (family_id,child_id,jar,delta,kind,ref_id,created_at) VALUES (?,?,'give',?,'give_declined',?,?)`)
+        .bind(req.family_id, req.child_id, req.amount, id, now),
+    ] : [
+      // If fulfilled: record finalisation (delta=0, just an audit event)
+      env.DB.prepare(`INSERT INTO jar_movements (family_id,child_id,jar,delta,kind,ref_id,created_at) VALUES (?,?,'give',0,'give_fulfilled',?,?)`)
+        .bind(req.family_id, req.child_id, id, now),
+    ]),
+  ]);
+
+  return json({ ok: true, status: newStatus });
+}
