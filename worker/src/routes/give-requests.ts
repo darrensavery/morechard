@@ -80,16 +80,27 @@ export async function handleGetGiveRequests(request: Request, env: Env): Promise
   if (!family_id) return error('family_id required', 400);
   if (family_id !== auth.family_id) return error('Forbidden', 403);
 
-  const rows = await env.DB
-    .prepare(`
-      SELECT gr.*, u.display_name AS child_name
-      FROM give_requests gr
-      JOIN users u ON u.id = gr.child_id
-      WHERE gr.family_id=? AND gr.status=?
-      ORDER BY gr.requested_at DESC
-    `)
-    .bind(family_id, status)
-    .all();
+  const rows = status === 'all'
+    ? await env.DB
+        .prepare(`
+          SELECT gr.*, u.display_name AS child_name
+          FROM give_requests gr
+          JOIN users u ON u.id = gr.child_id
+          WHERE gr.family_id=?
+          ORDER BY gr.requested_at DESC
+        `)
+        .bind(family_id)
+        .all()
+    : await env.DB
+        .prepare(`
+          SELECT gr.*, u.display_name AS child_name
+          FROM give_requests gr
+          JOIN users u ON u.id = gr.child_id
+          WHERE gr.family_id=? AND gr.status=?
+          ORDER BY gr.requested_at DESC
+        `)
+        .bind(family_id, status)
+        .all();
 
   return json({ give_requests: rows.results });
 }

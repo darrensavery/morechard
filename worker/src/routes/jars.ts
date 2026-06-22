@@ -76,6 +76,37 @@ export async function handlePutJarConfig(request: Request, env: Env): Promise<Re
   if (isFirstEnable && body.initial_seed) {
     const { spend, save, give } = body.initial_seed;
     if (spend < 0 || save < 0 || give < 0) return error('Seed amounts must be non-negative', 400);
+
+    // Server-side validation: seed total must equal the child's actual available balance
+    // (same formula as GET /api/balance)
+    const [earnedRow, reversalsRow, payoutsRow, spentRow] = await Promise.all([
+      env.DB.prepare(
+        `SELECT COALESCE(SUM(amount), 0) AS total FROM ledger
+         WHERE family_id = ? AND child_id = ? AND entry_type = 'credit'
+         AND verification_status IN ('verified_auto','verified_manual')`
+      ).bind(family_id, child_id).first<{ total: number }>(),
+      env.DB.prepare(
+        `SELECT COALESCE(SUM(amount), 0) AS total FROM ledger
+         WHERE family_id = ? AND child_id = ? AND entry_type IN ('reversal','payment')
+         AND verification_status IN ('verified_auto','verified_manual')`
+      ).bind(family_id, child_id).first<{ total: number }>(),
+      env.DB.prepare(
+        `SELECT COALESCE(SUM(amount), 0) AS total FROM payouts
+         WHERE family_id = ? AND child_id = ?`
+      ).bind(family_id, child_id).first<{ total: number }>(),
+      env.DB.prepare(
+        `SELECT COALESCE(SUM(amount), 0) AS total FROM spending
+         WHERE family_id = ? AND child_id = ?`
+      ).bind(family_id, child_id).first<{ total: number }>(),
+    ]);
+    const actualAvailable = Math.max(0,
+      (earnedRow?.total ?? 0) - (reversalsRow?.total ?? 0) - (payoutsRow?.total ?? 0) - (spentRow?.total ?? 0)
+    );
+    const seedTotal = spend + save + give;
+    if (Math.abs(seedTotal - actualAvailable) > 1) {
+      return error('Seed amounts must equal available balance', 422);
+    }
+
     for (const [jar, amount] of [['spend', spend], ['save', save], ['give', give]] as const) {
       if (amount > 0) {
         ops.push(env.DB.prepare(`

@@ -21,9 +21,9 @@ export function JarOnboardingWizard({
   availableBalance, currency, familyId, childId,
   onComplete, onCancel,
 }: Props) {
-  // Default equal split across all three jars
-  const defaultSpend = Math.floor(availableBalance / 3);
-  const defaultSave  = Math.floor(availableBalance / 3);
+  // Default split: 70% Spend / 20% Save / 10% Give (spec 70/20/10)
+  const defaultSpend = Math.round(availableBalance * 0.7);
+  const defaultSave  = Math.round(availableBalance * 0.2);
 
   const [spend, setSpend]   = useState(defaultSpend);
   const [save, setSave]     = useState(defaultSave);

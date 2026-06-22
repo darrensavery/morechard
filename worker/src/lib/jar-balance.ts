@@ -117,21 +117,21 @@ export async function computeJarSignals(
 
   // Manual moves this week
   const movesRow = await db
-    .prepare(`SELECT COUNT(*) AS cnt FROM jar_movements WHERE child_id = ? AND kind = 'manual_move' AND created_at >= ?`)
-    .bind(childId, oneWeekAgo)
+    .prepare(`SELECT COUNT(*) AS cnt FROM jar_movements WHERE family_id = ? AND child_id = ? AND kind = 'manual_move' AND created_at >= ?`)
+    .bind(familyId, childId, oneWeekAgo)
     .first<{ cnt: number }>();
 
   // Save-raids this week (Save→Spend manual moves = negative delta on save, positive on spend in same pair)
   // We detect by looking for manual_move rows on jar='save' with negative delta in the last 7 days
   const raidsRow = await db
-    .prepare(`SELECT COUNT(*) AS cnt FROM jar_movements WHERE child_id = ? AND kind = 'manual_move' AND jar = 'save' AND delta < 0 AND created_at >= ?`)
-    .bind(childId, oneWeekAgo)
+    .prepare(`SELECT COUNT(*) AS cnt FROM jar_movements WHERE family_id = ? AND child_id = ? AND kind = 'manual_move' AND jar = 'save' AND delta < 0 AND created_at >= ?`)
+    .bind(familyId, childId, oneWeekAgo)
     .first<{ cnt: number }>();
 
   // Give balance age: how long since Give jar was last drawn down
   const lastGiveOut = await db
-    .prepare(`SELECT MAX(created_at) AS last FROM jar_movements WHERE child_id = ? AND jar = 'give' AND delta < 0`)
-    .bind(childId)
+    .prepare(`SELECT MAX(created_at) AS last FROM jar_movements WHERE family_id = ? AND child_id = ? AND jar = 'give' AND delta < 0`)
+    .bind(familyId, childId)
     .first<{ last: number | null }>();
   const giveBalanceAgeDays = lastGiveOut?.last
     ? Math.floor((now - lastGiveOut.last) / 86400)
@@ -140,8 +140,8 @@ export async function computeJarSignals(
   // Auto-off weeks: count ISO weeks in last 8 weeks with no allocation movements
   // (simplified: weeks since last allocation movement / 7)
   const lastAlloc = await db
-    .prepare(`SELECT MAX(created_at) AS last FROM jar_movements WHERE child_id = ? AND kind = 'allocation'`)
-    .bind(childId)
+    .prepare(`SELECT MAX(created_at) AS last FROM jar_movements WHERE family_id = ? AND child_id = ? AND kind = 'allocation'`)
+    .bind(familyId, childId)
     .first<{ last: number | null }>();
   const autoOffWeeks = !config.enabled
     ? 0
