@@ -65,7 +65,7 @@ export function GiveRequestSheet({ giveBalance, currency, familyId, childId, onC
 
             <label style={{ display: 'block', color: 'rgba(255,255,255,0.6)', fontSize: 13, marginBottom: 6 }}>Amount</label>
             <input
-              type="number" min="0.01" step="0.01" placeholder="0.00"
+              type="number" min="0.01" max={giveBalance / 100} step="0.01" placeholder="0.00"
               value={amt} onChange={e => setAmt(e.target.value)}
               style={{ width: '100%', padding: '12px', borderRadius: 10, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', fontSize: 15, marginBottom: 20, boxSizing: 'border-box' }}
             />
