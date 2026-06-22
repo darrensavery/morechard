@@ -75,7 +75,7 @@ export async function handlePutJarConfig(request: Request, env: Env): Promise<Re
   // First enable: write enable_seed movements from wizard split
   if (isFirstEnable && body.initial_seed) {
     const { spend, save, give } = body.initial_seed;
-    if (spend + save + give < 0) return error('Seed amounts cannot be negative', 400);
+    if (spend < 0 || save < 0 || give < 0) return error('Seed amounts must be non-negative', 400);
     for (const [jar, amount] of [['spend', spend], ['save', save], ['give', give]] as const) {
       if (amount > 0) {
         ops.push(env.DB.prepare(`
@@ -115,6 +115,7 @@ export async function handlePostJarMove(request: Request, env: Env): Promise<Res
   if (!['spend','save','give'].includes(from_jar) || !['spend','save','give'].includes(to_jar))
     return error('Invalid jar name', 400);
   if (amount <= 0) return error('Amount must be positive', 400);
+  if (!Number.isInteger(amount)) return error('Amount must be a whole number of pence', 400);
 
   // Server-side balance check
   const balances = await getJarBalances(env.DB, family_id, child_id);
