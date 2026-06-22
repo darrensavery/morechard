@@ -50,6 +50,7 @@ export async function getJarConfig(
 
 export async function getGoalEarmarked(
   db: D1Database,
+  familyId: string,
   childId: string,
 ): Promise<number> {
   const earmarkRow = await db
@@ -59,10 +60,10 @@ export async function getGoalEarmarked(
         - COALESCE(SUM(CASE WHEN kind='goal_deallocate' THEN earmark_pence ELSE 0 END), 0)
         AS net_earmarked
       FROM jar_movements
-      WHERE child_id = ? AND kind IN ('goal_allocate','goal_deallocate')
-        AND goal_id IN (SELECT id FROM goals WHERE child_id = ? AND status = 'ACTIVE')
+      WHERE family_id = ? AND child_id = ? AND kind IN ('goal_allocate','goal_deallocate')
+        AND goal_id IN (SELECT id FROM goals WHERE family_id = ? AND child_id = ? AND status = 'ACTIVE')
     `)
-    .bind(childId, childId)
+    .bind(familyId, childId, familyId, childId)
     .first<{ net_earmarked: number }>();
 
   return Math.max(0, earmarkRow?.net_earmarked ?? 0);
@@ -93,7 +94,7 @@ export async function getJarBalances(
   const totals: Record<string, number> = { spend: 0, save: 0, give: 0 };
   for (const r of rows.results) totals[r.jar] = r.total ?? 0;
 
-  const saveEarmarked = await getGoalEarmarked(db, childId);
+  const saveEarmarked = await getGoalEarmarked(db, familyId, childId);
 
   return {
     enabled:          true,
@@ -142,7 +143,7 @@ export async function computeJarSignals(
     .prepare(`SELECT MAX(created_at) AS last FROM jar_movements WHERE child_id = ? AND kind = 'allocation'`)
     .bind(childId)
     .first<{ last: number | null }>();
-  const autoOffWeeks = config.enabled
+  const autoOffWeeks = !config.enabled
     ? 0
     : lastAlloc?.last
       ? Math.floor((now - lastAlloc.last) / (7 * 86400))
