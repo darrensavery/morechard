@@ -217,7 +217,15 @@ export function ChoreGuideSheet({ open, onClose, familyId, context = null, curre
   if (success) {
     return createPortal(
       <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-[var(--color-bg)] px-8 text-center">
-        <p className="text-5xl mb-4">{isOrchard ? '🌳' : '✅'}</p>
+        {isOrchard ? (
+          <p className="text-5xl mb-4">🌳</p>
+        ) : (
+          <div className="w-16 h-16 rounded-full bg-[var(--brand-primary)]/15 flex items-center justify-center mb-4">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--brand-primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+          </div>
+        )}
         <h2 className="text-xl font-semibold text-[--color-text] mb-2">
           {isOrchard ? 'Proposal sent!' : 'Suggestion sent!'}
         </h2>
@@ -228,7 +236,7 @@ export function ChoreGuideSheet({ open, onClose, familyId, context = null, curre
         </p>
         <button
           onClick={() => { setSuccess(false); onClose(); }}
-          className="rounded-xl bg-[--brand-primary] text-[--color-text-on-brand] px-6 py-3 text-sm font-semibold"
+          className="rounded-full bg-[var(--brand-primary)] text-[--color-text-on-brand] px-8 py-3 text-sm font-semibold"
         >
           Done
         </button>

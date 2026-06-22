@@ -142,20 +142,20 @@ export function BadgeAlmanac({ earnedBadgeKeys, progress, appView }: Props) {
             {/* Icon with pulse ring when hot */}
             <div className={cn(
               'w-12 h-12 rounded-full flex-shrink-0 flex items-center justify-center text-2xl',
-              'bg-teal-500/10',
-              nextUp.pct >= 60 ? 'ring-2 ring-teal-400/50 badge-ring-pulse' : 'ring-1 ring-teal-500/20',
+              'bg-teal-500/20',
+              nextUp.pct >= 60 ? 'ring-2 ring-teal-400/60 badge-ring-pulse' : 'ring-2 ring-teal-400/40',
             )}>
               {BADGE_META[nextUp.key].emoji}
             </div>
 
             <div className="flex-1 min-w-0">
-              <p className="text-[10px] font-bold text-teal-400/70 uppercase tracking-wider mb-0.5">
+              <p className="text-[10px] font-bold text-teal-300/90 uppercase tracking-wider mb-0.5">
                 Next up
               </p>
-              <p className="text-[13px] font-bold text-white/90 leading-tight">
+              <p className="text-[13px] font-bold text-white leading-tight">
                 {BADGE_META[nextUp.key][appView === 'CLEAN' ? 'label' : 'orchardLabel']}
               </p>
-              <p className="text-[11px] text-white/45 mt-0.5 leading-tight">
+              <p className="text-[11px] text-white/70 mt-0.5 leading-tight">
                 {BADGE_NARRATIVE[nextUp.key].call}
               </p>
             </div>
@@ -165,7 +165,7 @@ export function BadgeAlmanac({ earnedBadgeKeys, progress, appView }: Props) {
                 {nextUp.pct}%
               </p>
               {nextUp.remaining && (
-                <p className="text-[9px] text-white/30 mt-0.5 leading-tight max-w-[72px] text-right">
+                <p className="text-[9px] text-white/60 mt-0.5 leading-tight max-w-[72px] text-right">
                   {nextUp.remaining} to go
                 </p>
               )}
