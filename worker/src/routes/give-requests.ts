@@ -42,18 +42,28 @@ export async function handlePostGiveRequest(request: Request, env: Env): Promise
     .first<{ base_currency: string }>();
   const currency = currencyRow?.base_currency ?? 'GBP';
 
-  // Atomic: insert give_request + reserve give_request jar_movement
-  const result = await env.DB
-    .prepare(`INSERT INTO give_requests (family_id,child_id,cause,amount,currency,status,requested_at) VALUES (?,?,?,?,?,'requested',?) RETURNING id`)
-    .bind(family_id, child_id, cause.trim(), amount, currency, now)
-    .first<{ id: number }>();
+  // Atomic batch: both inserts execute or neither does.
+  // ref_id on jar_movement is set via give_requests.jar_movement_id after the batch.
+  const [giveReqResult, movResult] = await env.DB.batch([
+    env.DB.prepare(
+      `INSERT INTO give_requests (family_id,child_id,cause,amount,currency,status,requested_at)
+       VALUES (?,?,?,?,?,'requested',?) RETURNING id`
+    ).bind(family_id, child_id, cause.trim(), amount, currency, now),
+    env.DB.prepare(
+      `INSERT INTO jar_movements (family_id,child_id,jar,delta,kind,ref_id,created_at)
+       VALUES (?,?,'give',?,'give_request',NULL,?)`
+    ).bind(family_id, child_id, -amount, now),
+  ]);
 
-  await env.DB
-    .prepare(`INSERT INTO jar_movements (family_id,child_id,jar,delta,kind,ref_id,created_at) VALUES (?,?,'give',?,'give_request',?,?)`)
-    .bind(family_id, child_id, -amount, String(result!.id), now)
-    .run();
+  const giveReqId = (giveReqResult.results[0] as any).id as number;
+  const movId = movResult.meta.last_row_id;
 
-  return json({ ok: true, id: result!.id }, 201);
+  // Link give_request → jar_movement (non-critical, convenience only)
+  await env.DB.prepare(
+    `UPDATE give_requests SET jar_movement_id=? WHERE id=?`
+  ).bind(movId, giveReqId).run();
+
+  return json({ ok: true, id: giveReqId }, 201);
 }
 
 // ----------------------------------------------------------------
@@ -67,7 +77,7 @@ export async function handleGetGiveRequests(request: Request, env: Env): Promise
   const url       = new URL(request.url);
   const family_id = url.searchParams.get('family_id');
   const status    = url.searchParams.get('status') ?? 'requested';
-  if (!family_id) return error('family_id required');
+  if (!family_id) return error('family_id required', 400);
   if (family_id !== auth.family_id) return error('Forbidden', 403);
 
   const rows = await env.DB
