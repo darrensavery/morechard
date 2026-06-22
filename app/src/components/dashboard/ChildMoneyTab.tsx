@@ -8,6 +8,7 @@ import { JarCard } from './JarCard'
 import { JarDetailSheet } from './JarDetailSheet'
 import { JarSettingsSheet } from './JarSettingsSheet'
 import { JarOnboardingWizard } from './JarOnboardingWizard'
+import { GiveRequestSheet } from './GiveRequestSheet'
 
 interface Props {
   familyId: string
@@ -202,6 +203,17 @@ export function ChildMoneyTab({ familyId, childId, currency }: Props) {
             setShowSettings(false);
             setShowWizard(true);
           }}
+        />
+      )}
+
+      {showGiveRequest && jarBalances && (
+        <GiveRequestSheet
+          giveBalance={jarBalances.give}
+          currency={currency}
+          familyId={familyId}
+          childId={childId}
+          onClose={() => setShowGiveRequest(false)}
+          onSubmitted={() => { setShowGiveRequest(false); load(true); }}
         />
       )}
 

@@ -18,6 +18,7 @@ import { FullLogo } from '../components/ui/Logo'
 import { PaymentBridgeSheet } from '../components/payment/PaymentBridgeSheet'
 import { DemoBanner } from '../components/demo/DemoBanner'
 import { DemoUpsellCard } from '../components/demo/DemoUpsellCard'
+import { GiveRequestsPanel } from '../components/dashboard/GiveRequestsPanel'
 
 // Offline signal SVG
 function OfflineIcon() {
@@ -416,7 +417,10 @@ export function ParentDashboard() {
         {!childrenLoaded ? null : activeChild ? (
           <>
             <div className={tab === 'chores'   ? 'tab-panel' : 'tab-panel hidden'}><ChoresTab       familyId={familyId} child={activeChild} children={children} /></div>
-            <div className={tab === 'activity' ? 'tab-panel' : 'tab-panel hidden'}><ActivityTab     familyId={familyId} child={activeChild} childCount={children.length} onCountChange={count => setPendingByChild(prev => ({ ...prev, [activeChild.id]: count }))} unpaidRow={unpaid.find(u => u.child_id === activeChild.id) ?? null} onOpenBridge={() => { const row = unpaid.find(u => u.child_id === activeChild.id); if (row) openBridgeForChild(activeChild, row) }} onAfterPayout={refreshUnpaid} /></div>
+            <div className={tab === 'activity' ? 'tab-panel' : 'tab-panel hidden'}>
+              <GiveRequestsPanel familyId={familyId} />
+              <ActivityTab familyId={familyId} child={activeChild} childCount={children.length} onCountChange={count => setPendingByChild(prev => ({ ...prev, [activeChild.id]: count }))} unpaidRow={unpaid.find(u => u.child_id === activeChild.id) ?? null} onOpenBridge={() => { const row = unpaid.find(u => u.child_id === activeChild.id); if (row) openBridgeForChild(activeChild, row) }} onAfterPayout={refreshUnpaid} />
+            </div>
             <div className={tab === 'pool'     ? 'tab-panel' : 'tab-panel hidden'}>
               <PoolTab
                 familyId={familyId}
