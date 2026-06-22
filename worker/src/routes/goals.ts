@@ -229,29 +229,29 @@ export async function handleGoalPurchase(request: Request, env: Env, id: string)
     'Goal reached — item purchased', id, now,
   ).run();
 
-  // Mark goal as REACHED
-  await env.DB
-    .prepare(`UPDATE goals SET status = 'REACHED', updated_at = ? WHERE id = ?`)
-    .bind(now, id).run();
-
-  // Draw from Save jar when jars enabled
-  try {
-    const jarCfg = await getJarConfig(env.DB, goal.family_id, goal.child_id);
-    if (jarCfg.enabled) {
-      const balances = await getJarBalances(env.DB, goal.family_id, goal.child_id);
-      // Backend guard: log if Save jar can't cover the purchase
-      if (balances.save < goal.target_amount) {
-        console.warn('[goal_purchase] Save jar insufficient; purchase allowed but jar balance may go negative');
-      }
-      const jarNow = Math.floor(Date.now() / 1000);
-      await env.DB
-        .prepare(`INSERT INTO jar_movements (family_id,child_id,jar,delta,kind,goal_id,created_at) VALUES (?,?,'save',?,'goal_purchase',?,?)`)
-        .bind(goal.family_id, goal.child_id, -goal.target_amount, id, jarNow)
-        .run();
+  // Draw from Save jar when jars enabled — must succeed atomically with goal status update
+  const jarCfg = await getJarConfig(env.DB, goal.family_id, goal.child_id);
+  if (jarCfg.enabled) {
+    const balances = await getJarBalances(env.DB, goal.family_id, goal.child_id);
+    if (balances.save < goal.target_amount) {
+      return error('Insufficient Save jar balance', 422);
     }
-  } catch (e) {
-    console.error('[goal_purchase] non-critical:', e);
   }
+
+  // Atomically mark goal REACHED + debit Save jar (both succeed or both fail)
+  const batchStatements = [
+    env.DB.prepare(`UPDATE goals SET status = 'REACHED', updated_at = ? WHERE id = ? AND family_id = ?`)
+      .bind(now, id, goal.family_id),
+  ];
+  if (jarCfg.enabled) {
+    batchStatements.push(
+      env.DB.prepare(
+        `INSERT INTO jar_movements (family_id, child_id, jar, delta, kind, goal_id, created_at)
+         VALUES (?, ?, 'save', ?, 'goal_purchase', ?, ?)`
+      ).bind(goal.family_id, goal.child_id, -goal.target_amount, id, now)
+    );
+  }
+  await env.DB.batch(batchStatements);
 
   // Lab trigger — fire-and-forget
   evaluateOnGoalPurchase(env.DB, goal.child_id).catch(() => {})
