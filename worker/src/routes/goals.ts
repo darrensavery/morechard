@@ -20,6 +20,7 @@ import {
   evaluateOnGoalCancel,
   evaluateOnGoalPurchase,
 } from '../lib/labTriggers.js';
+import { getJarConfig, getJarBalances } from '../lib/jar-balance.js';
 
 type AuthedRequest = Request & { auth: JwtPayload };
 
@@ -139,14 +140,28 @@ export async function handleGoalUpdate(request: Request, env: Env, id: string): 
 export async function handleGoalDelete(request: Request, env: Env, id: string): Promise<Response> {
   const auth = (request as AuthedRequest).auth;
   const goal = await env.DB
-    .prepare('SELECT family_id, child_id, created_at FROM goals WHERE id = ?')
-    .bind(id).first<{ family_id: string; child_id: string; created_at: number }>();
+    .prepare('SELECT family_id, child_id, created_at, current_saved_pence FROM goals WHERE id = ?')
+    .bind(id).first<{ family_id: string; child_id: string; created_at: number; current_saved_pence: number }>();
   if (!goal) return error('Goal not found', 404);
   if (goal.family_id !== auth.family_id) return error('Forbidden', 403);
 
   await env.DB
     .prepare('UPDATE goals SET archived = 1, updated_at = ? WHERE id = ?')
     .bind(Math.floor(Date.now() / 1000), id).run();
+
+  // Deallocate earmarked Save balance back to unallocated when goal is archived
+  try {
+    const jarCfg = await getJarConfig(env.DB, goal.family_id, goal.child_id);
+    if (jarCfg.enabled && goal.current_saved_pence > 0) {
+      const now = Math.floor(Date.now() / 1000);
+      await env.DB
+        .prepare(`INSERT INTO jar_movements (family_id,child_id,jar,delta,earmark_pence,kind,goal_id,created_at) VALUES (?,?,'save',0,?,'goal_deallocate',?,?)`)
+        .bind(goal.family_id, goal.child_id, goal.current_saved_pence, id, now)
+        .run();
+    }
+  } catch (e) {
+    console.error('[goal_deallocate] non-critical:', e);
+  }
 
   // Lab trigger — fire-and-forget
   evaluateOnGoalCancel(env.DB, goal.child_id, goal.created_at).catch(() => {})
@@ -219,6 +234,25 @@ export async function handleGoalPurchase(request: Request, env: Env, id: string)
     .prepare(`UPDATE goals SET status = 'REACHED', updated_at = ? WHERE id = ?`)
     .bind(now, id).run();
 
+  // Draw from Save jar when jars enabled
+  try {
+    const jarCfg = await getJarConfig(env.DB, goal.family_id, goal.child_id);
+    if (jarCfg.enabled) {
+      const balances = await getJarBalances(env.DB, goal.family_id, goal.child_id);
+      // Backend guard: log if Save jar can't cover the purchase
+      if (balances.save < goal.target_amount) {
+        console.warn('[goal_purchase] Save jar insufficient; purchase allowed but jar balance may go negative');
+      }
+      const jarNow = Math.floor(Date.now() / 1000);
+      await env.DB
+        .prepare(`INSERT INTO jar_movements (family_id,child_id,jar,delta,kind,goal_id,created_at) VALUES (?,?,'save',?,'goal_purchase',?,?)`)
+        .bind(goal.family_id, goal.child_id, -goal.target_amount, id, jarNow)
+        .run();
+    }
+  } catch (e) {
+    console.error('[goal_purchase] non-critical:', e);
+  }
+
   // Lab trigger — fire-and-forget
   evaluateOnGoalPurchase(env.DB, goal.child_id).catch(() => {})
 
@@ -242,7 +276,7 @@ export async function handleGoalContribute(request: Request, env: Env, id: strin
 
   const goal = await env.DB
     .prepare('SELECT * FROM goals WHERE id = ? AND archived = 0')
-    .bind(id).first<{ family_id: string; status: string }>();
+    .bind(id).first<{ family_id: string; child_id: string; status: string }>();
   if (!goal) return error('Goal not found', 404);
   if (goal.family_id !== auth.family_id) return error('Forbidden', 403);
   if (goal.status === 'REACHED') return error('Goal already reached', 409);
@@ -255,6 +289,20 @@ export async function handleGoalContribute(request: Request, env: Env, id: strin
         updated_at = ?
     WHERE id = ?
   `).bind(amount_pence, amount_pence, now, id).run();
+
+  // Write goal_allocate movement if jars are enabled
+  try {
+    const jarCfg = await getJarConfig(env.DB, goal.family_id, goal.child_id);
+    if (jarCfg.enabled) {
+      const jarNow = Math.floor(Date.now() / 1000);
+      await env.DB
+        .prepare(`INSERT INTO jar_movements (family_id,child_id,jar,delta,earmark_pence,kind,goal_id,created_at) VALUES (?,?,'save',0,?,'goal_allocate',?,?)`)
+        .bind(goal.family_id, goal.child_id, amount_pence, id, jarNow)
+        .run();
+    }
+  } catch (e) {
+    console.error('[goal_allocate] non-critical:', e);
+  }
 
   const updated = await env.DB.prepare('SELECT * FROM goals WHERE id = ?').bind(id).first();
   return json(updated);
