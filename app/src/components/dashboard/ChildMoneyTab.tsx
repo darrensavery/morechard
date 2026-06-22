@@ -24,8 +24,10 @@ export function ChildMoneyTab({ familyId, childId, currency }: Props) {
   const [loading,  setLoading]  = useState(true)
   const [logOpen,  setLogOpen]  = useState(false)
 
-  const load = useCallback(async () => {
-    setLoading(true)
+  // `silent` skips the loading swap so background polls refresh data in place
+  // without flashing the balance hero back to "£—" every 30s.
+  const load = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true)
     try {
       const [b, g, s] = await Promise.all([
         getBalance(familyId, childId),
@@ -42,8 +44,8 @@ export function ChildMoneyTab({ familyId, childId, currency }: Props) {
   useEffect(() => { load() }, [load])
 
   useEffect(() => {
-    const t = setInterval(load, 30_000)
-    const onVisible = () => { if (!document.hidden) load() }
+    const t = setInterval(() => load(true), 30_000)
+    const onVisible = () => { if (!document.hidden) load(true) }
     document.addEventListener('visibilitychange', onVisible)
     return () => { clearInterval(t); document.removeEventListener('visibilitychange', onVisible) }
   }, [load])

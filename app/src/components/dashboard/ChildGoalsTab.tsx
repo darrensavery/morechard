@@ -21,8 +21,11 @@ export function ChildGoalsTab({ familyId, childId, currency, appView }: Props) {
   const [goalBarPct, setGoalBarPct] = useState(0)
   const barTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  const load = useCallback(async () => {
-    setLoading(true)
+  // `silent` skips the loading swap AND the bar reset-to-zero animation, so
+  // background polls update data in place rather than visibly "refreshing"
+  // (the progress bar would otherwise snap to 0 and re-fill every 30s).
+  const load = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true)
     try {
       const [b, g, c] = await Promise.all([
         getBalance(familyId, childId),
@@ -35,11 +38,16 @@ export function ChildGoalsTab({ familyId, childId, currency, appView }: Props) {
       const top = g.filter(x => x.status === 'ACTIVE' || !x.status)[0]
       if (top) {
         const eff = effectiveTarget(top)
-        if (barTimer.current) clearTimeout(barTimer.current)
-        setGoalBarPct(0)
-        barTimer.current = setTimeout(() => {
-          setGoalBarPct(Math.min(100, Math.round(((b.available ?? 0) / eff) * 100)))
-        }, 80)
+        const pct = Math.min(100, Math.round(((b.available ?? 0) / eff) * 100))
+        if (silent) {
+          // Update in place — CSS transition handles any change smoothly.
+          setGoalBarPct(pct)
+        } else {
+          // Initial / user-triggered load: play the fill-from-zero animation.
+          if (barTimer.current) clearTimeout(barTimer.current)
+          setGoalBarPct(0)
+          barTimer.current = setTimeout(() => setGoalBarPct(pct), 80)
+        }
       }
     } catch { /* silently degrade */ }
     finally { setLoading(false) }
@@ -48,8 +56,8 @@ export function ChildGoalsTab({ familyId, childId, currency, appView }: Props) {
   useEffect(() => { load() }, [load])
 
   useEffect(() => {
-    const t = setInterval(load, 30_000)
-    const onVisible = () => { if (!document.hidden) load() }
+    const t = setInterval(() => load(true), 30_000)
+    const onVisible = () => { if (!document.hidden) load(true) }
     document.addEventListener('visibilitychange', onVisible)
     return () => { clearInterval(t); document.removeEventListener('visibilitychange', onVisible) }
   }, [load])
