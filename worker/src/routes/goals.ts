@@ -218,7 +218,16 @@ export async function handleGoalPurchase(request: Request, env: Env, id: string)
   const now = Math.floor(Date.now() / 1000);
   const spendId = nanoid();
 
-  // Insert spending record to deduct balance
+  // Draw from Save jar when jars enabled — check BEFORE inserting spending record
+  const jarCfg = await getJarConfig(env.DB, goal.family_id, goal.child_id);
+  if (jarCfg.enabled) {
+    const balances = await getJarBalances(env.DB, goal.family_id, goal.child_id);
+    if (balances.save < goal.target_amount) {
+      return error('Insufficient Save jar balance', 422);
+    }
+  }
+
+  // Insert spending record to deduct balance (only after jar guard passes)
   await env.DB.prepare(`
     INSERT INTO spending (id, family_id, child_id, title, amount, currency, note, goal_id, spent_at)
     VALUES (?,?,?,?,?,?,?,?,?)
@@ -228,15 +237,6 @@ export async function handleGoalPurchase(request: Request, env: Env, id: string)
     goal.target_amount, goal.currency,
     'Goal reached — item purchased', id, now,
   ).run();
-
-  // Draw from Save jar when jars enabled — must succeed atomically with goal status update
-  const jarCfg = await getJarConfig(env.DB, goal.family_id, goal.child_id);
-  if (jarCfg.enabled) {
-    const balances = await getJarBalances(env.DB, goal.family_id, goal.child_id);
-    if (balances.save < goal.target_amount) {
-      return error('Insufficient Save jar balance', 422);
-    }
-  }
 
   // Atomically mark goal REACHED + debit Save jar (both succeed or both fail)
   const batchStatements = [
