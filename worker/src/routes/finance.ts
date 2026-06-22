@@ -22,6 +22,7 @@ import { computeRecordHash, GENESIS_HASH } from '../lib/hash.js';
 import { JwtPayload } from '../lib/jwt.js';
 import { getStreakState, buildMissEvent, saveStreakEvent, hadScheduledChores, todayUTC, previousDay } from '../lib/streaks.js';
 import { getBadgeStats, badgesToAward, insertBadges } from '../lib/badges.js';
+import { getJarConfig, getJarBalances } from '../lib/jar-balance.js';
 
 type AuthedRequest = Request & { auth: JwtPayload };
 
@@ -438,6 +439,12 @@ export async function handleBalance(request: Request, env: Env): Promise<Respons
   }
   // ── End gamification ────────────────────────────────────────────────
 
+  // Jar balances — only computed when jars are enabled
+  const jarConfig   = await getJarConfig(env.DB, family_id, child_id);
+  const jarBalances = jarConfig.enabled
+    ? await getJarBalances(env.DB, family_id, child_id)
+    : null;
+
   return json({
     earned:       earnedTotal,
     pending:      pendingTotal,
@@ -452,5 +459,6 @@ export async function handleBalance(request: Request, env: Env): Promise<Respons
       last_kept_date:  currentStreakData.last_kept_date,
     },
     pending_celebrations: pendingCelebrations,
+    jars: jarBalances ?? { enabled: false },
   });
 }

@@ -27,6 +27,7 @@ import { getStreakState, buildStreakEvent, saveStreakEvent, allScheduledChoresDo
 import { getBadgeStats, badgesToAward, insertBadges } from '../lib/badges.js';
 import { evaluateOnChoreApproval, evaluatePassive } from '../lib/labTriggers.js';
 import { nanoid } from '../lib/nanoid.js';
+import { getJarConfig } from '../lib/jar-balance.js';
 
 type AuthedRequest = Request & { auth: JwtPayload };
 
@@ -239,6 +240,38 @@ export async function handleCompletionApprove(
       (ledger_id, from_status, to_status, actor_id, ip_address)
     VALUES (?,?,?,?,?)
   `).bind(newLedgerId, 'pending', verificationStatus, auth.sub, ip).run();
+
+  // ── Jar allocation hook ────────────────────────────────────────────────────
+  // Emit allocation jar_movements if the child has jars enabled.
+  // Runs outside the ledger batch — non-critical, never blocks the approval.
+  try {
+    const jarCfg = await getJarConfig(env.DB, comp.family_id, comp.child_id);
+    if (jarCfg.enabled) {
+      const credit   = comp.reward_amount;
+      const saveAmt  = Math.floor(credit * jarCfg.save_pct  / 100);
+      const giveAmt  = Math.floor(credit * jarCfg.give_pct  / 100);
+      // Remainder always goes to Spend (per spec)
+      const spendFinal = credit - saveAmt - giveAmt;
+
+      const allocations: [string, number][] = [
+        ['spend', spendFinal],
+        ['save',  saveAmt],
+        ['give',  giveAmt],
+      ];
+
+      await env.DB.batch(
+        allocations.map(([jar, amt]) =>
+          env.DB.prepare(`
+            INSERT INTO jar_movements (family_id,child_id,jar,delta,kind,ref_id,created_at)
+            VALUES (?,?,?,?,'allocation',?,?)
+          `).bind(comp.family_id, comp.child_id, jar, amt, String(newLedgerId), now)
+        )
+      );
+    }
+  } catch (e) {
+    console.error('[jar allocation] non-critical failure:', e);
+  }
+  // ── End jar allocation hook ────────────────────────────────────────────────
 
   // ── Gamification hook ──────────────────────────────────────────────
   try {
