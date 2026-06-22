@@ -48,29 +48,37 @@ CREATE TABLE jar_config (
 ```
 
 #### `jar_movements`
-Append-only event log. A jar's balance = `SUM(delta)` for that jar. Never updated or deleted.
+Append-only event log. **`jar_movements` is the single source of truth for all jar balances** — including goal-earmarked amounts within Save. A jar's balance = `SUM(delta)` for that jar. Never updated or deleted.
+
+`goal_id` links goal-related movements so the Save jar's unallocated vs. goal-earmarked breakdown is derivable from this table alone — the `goals` table is no longer involved in balance computation.
 
 ```sql
 CREATE TABLE jar_movements (
   id          INTEGER PRIMARY KEY AUTOINCREMENT,
-  family_id   TEXT NOT NULL,
-  child_id    TEXT NOT NULL,
+  family_id   TEXT NOT NULL REFERENCES families(id),
+  child_id    TEXT NOT NULL REFERENCES users(id),
   jar         TEXT NOT NULL CHECK(jar IN ('spend','save','give')),
   delta       INTEGER NOT NULL,                  -- signed pence; negative = outflow
   kind        TEXT NOT NULL CHECK(kind IN (
-                'allocation',     -- auto-split on chore approval
-                'enable_seed',    -- one-off: existing balance seeded into Spend on first enable
-                'manual_move',    -- child moves money between jars
-                'spend',          -- purchase draws from Spend jar
-                'give_request',   -- child requests a gift (reserves Give balance)
-                'give_fulfilled', -- parent confirms donation (finalises)
-                'give_declined',  -- parent declines (balance restored)
-                'goal_purchase'   -- goal purchase draws from Save jar
+                'allocation',      -- auto-split on chore approval
+                'enable_seed',     -- one-off initial split wizard on first enable
+                'manual_move',     -- child moves money between jars
+                'spend',           -- purchase draws from Spend jar
+                'give_request',    -- child requests a gift (reserves Give balance)
+                'give_fulfilled',  -- parent confirms donation (finalises)
+                'give_declined',   -- parent declines (balance restored)
+                'goal_allocate',   -- child earmarks Save balance toward a specific goal
+                'goal_deallocate', -- goal archived/deleted; earmarked amount returns to unallocated Save
+                'goal_purchase'    -- goal purchased; draws from Save (replaces goal_allocate movements)
               )),
-  ref_id      TEXT,               -- FK to ledger row / goal / spending / give_request as applicable
-  note        TEXT,               -- optional (parent fulfillment message etc.)
+  ref_id      TEXT,               -- FK to ledger row / spending / give_request as applicable
+  goal_id     INTEGER REFERENCES goals(id),  -- set for goal_allocate / goal_deallocate / goal_purchase
+  note        TEXT,               -- optional (parent fulfillment message, etc.)
   created_at  INTEGER NOT NULL
 );
+
+-- Performance index — balance computation requires SUM(delta) per jar on every read
+CREATE INDEX idx_jar_movements_child_jar ON jar_movements(family_id, child_id, jar);
 
 -- Immutability triggers (mirrors ledger pattern)
 CREATE TRIGGER jar_movements_no_update BEFORE UPDATE ON jar_movements
@@ -102,6 +110,8 @@ CREATE TABLE give_requests (
 ### Schema Invariant
 
 **SUM of all three jar balances for a child = `available` from `GET /api/balance`.** Jars partition the available balance; they never create or destroy money. The balance API remains authoritative.
+
+`jar_movements` is the single source of truth for jar balances — including which portion of Save is earmarked for which goal. The `goals` table records goal metadata and target amounts; it is not used in balance computation.
 
 ### `insight_snapshots` Extension
 
@@ -136,9 +146,11 @@ Add a `jar_snapshot` JSON column to the existing `insight_snapshots` table (migr
 - Only fires when `jar_config.enabled = 1`.
 - When jars are off, earnings remain as a single available balance (existing behaviour).
 
-### First enable — seed movement
-- On toggle-on, the worker writes a single `enable_seed` movement putting the **entire current available balance into Spend**.
-- Pre-jar earnings are never retroactively split — they become Spend by definition, which is honest (the child spent them freely before).
+### First enable — onboarding wizard
+- On toggle-on, the app presents a one-off **initial split wizard** rather than silently seeding 100% into Spend.
+- The wizard shows the child's current available balance and three steppers (pre-filled at 70/20/10). The child adjusts and confirms.
+- The worker validates the split sums to 100%, then writes three `enable_seed` `jar_movements` rows (one per jar) reflecting the chosen initial allocation.
+- This turns the first-enable moment into an active, exciting habit-forming step rather than a silent system action — and avoids disappointing a child who has been mentally treating their balance as savings.
 
 ### Percentage changes
 - Must sum to 100; any jar may be 0.
@@ -154,13 +166,19 @@ Add a `jar_snapshot` JSON column to the existing `insight_snapshots` table (migr
 
 ### Spending
 - A spend (existing `spending` table) draws from the **Spend jar** by default (appends a `spend` jar_movement).
-- If the Spend jar balance would go negative, the child is prompted: "Your Spend jar is short — move money from Save or Give first?" They must explicitly move before spending. No silent cross-jar cascade.
+- If the Spend jar balance would go negative, the child is prompted in the UI: "Your Spend jar is short — move money from Save or Give first?" They must explicitly move before the spend is submitted.
+- **The backend enforces this independently:** the worker recomputes `SUM(jar_movements.delta WHERE jar='spend')` at spend time and rejects the transaction with a 400 if it would result in a negative balance. Frontend prompting is UX; backend validation is the integrity guarantee. This eliminates the race condition between balance check, UI prompt, and concurrent ledger adjustments.
 
 ### Save → Goals relationship
-- `goals.current_saved_pence` is a sub-allocation **within** the Save jar.
-- Save jar balance = unallocated save pence + Σ `current_saved_pence` across active goals.
-- Adding money to a goal reallocates within Save (no jar_movement needed — goal table update is the record).
-- Purchasing a goal writes a `goal_purchase` jar_movement drawing the purchase amount from Save.
+`jar_movements` is the sole source of truth — the `goals` table records metadata only.
+
+- **Earmarking toward a goal:** child allocates Save balance to a specific goal → worker writes a `goal_allocate` movement (negative delta on Save for the earmarked amount is **not** how this works — earmarking is a tagging, not a debit). Actually: `goal_allocate` writes a `delta = 0` tagging row (it's a label, not a movement of funds). Save jar total is unchanged; the breakdown "unallocated vs. per-goal" is derived by grouping `goal_allocate` rows by `goal_id`.
+
+  > **Simpler model:** track goal-earmarked amounts via `goal_id`-tagged rows rather than net deltas. The unallocated Save balance = `SUM(delta WHERE jar='save')` − `SUM(goal_allocate.amount WHERE goal active)`. Implementation to confirm exact approach during plan phase — the key constraint is that `jar_movements` alone must be sufficient to derive all figures.
+
+- **Goal archived/deleted:** worker writes a `goal_deallocate` movement, releasing the earmarked amount back to unallocated Save.
+- **Purchasing a goal:** worker writes a `goal_purchase` movement (negative delta on Save equal to the purchase amount). The Save jar balance decreases; the goal is marked REACHED.
+- `goals.current_saved_pence` is retained for display purposes (progress bars, effort preview) but is not used in balance computation.
 
 ### Give flow
 1. Child taps "Make a gift" in Give Jar Detail.
@@ -271,7 +289,7 @@ Ordered by priority in the briefing prompt (most actionable first):
 | 4 | **Auto-allocation dormancy** | `auto_off_weeks` ≥ 2 | Re-engage habit |
 | 5 | **Jar-hopping churn** | `manual_move_count` ≥ 4 in a week | Indecision/gaming |
 | 6 | **Give = 0% for ≥4 weeks** | `give_pct = 0` sustained | Gentle (autonomy respected) |
-| 7 | **Spend impulse / hoarding** | Spend jar drained within 48h of every payout, OR never touched in 4 weeks | Pattern observation |
+| 7 | **Spend impulse / hoarding** | Spend jar drained within 48h of every payout (impulse); OR Spend jar untouched for 4 weeks **and** earning was active in the same period — suppressed during school holidays or zero-earning weeks (hoarding) | Pattern observation |
 | 8 | **Auto-allocation disengagement** | Turned off and not re-enabled for ≥3 weeks (distinct from never turned on) | Re-engage |
 | 9 | **Readiness nudge** (jars off) | Jars never enabled + `available` > 500p for ≥3 weeks + no give requests ever | Suggest enabling |
 | 10 | **Positive reinforcement** | On-target split ≥3 weeks, first gift fulfilled, goal funded from Save, positive streak | Celebrate — essential |
