@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import type { BalanceSummary, Goal, SpendingRecord } from '../../lib/api'
 import { getBalance, getGoals, getSpending, formatCurrency } from '../../lib/api'
+import { spendCategoryHeading } from '../../lib/spendCategories'
 import { ChildHistoryTab } from './ChildHistoryTab'
 import { SpendGuideSheet } from './SpendGuideSheet'
 
@@ -170,10 +171,13 @@ function SpendingHistory({ spending, currency }: { spending: SpendingRecord[]; c
                 <p className="text-[14px] font-semibold text-[var(--color-text)] truncate">
                   {record.title}
                 </p>
-                <p className="text-[11px] text-[var(--color-text-muted)] mt-0.5">
+                <p className="text-[11px] text-[var(--color-text-muted)] mt-0.5 flex items-center gap-1.5 flex-wrap">
+                  <span className="rounded-full bg-[var(--color-surface-alt)] px-1.5 py-0.5 text-[10px] font-semibold text-[var(--color-text-muted)]">
+                    {spendCategoryHeading(record.category)}
+                  </span>
                   {fmtDate(record.spent_at)}
                   {record.note && (
-                    <span className="ml-1.5 italic">· {record.note}</span>
+                    <span className="italic">· {record.note}</span>
                   )}
                 </p>
               </div>

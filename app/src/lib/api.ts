@@ -722,7 +722,7 @@ export async function rejectSuggestion(id: string, rejectionNote: string): Promi
 export async function getSpending(family_id: string, child_id: string) {
   return request<{ spending: SpendingRecord[] }>(`/api/spending?family_id=${family_id}&child_id=${child_id}`);
 }
-export async function logSpend(body: { family_id: string; title: string; amount: number; currency: string; note?: string; goal_id?: string }) {
+export async function logSpend(body: { family_id: string; title: string; amount: number; currency: string; note?: string; goal_id?: string; category?: string }) {
   return request('/api/spending', { method: 'POST', body: JSON.stringify(body) });
 }
 export async function getPayouts(family_id: string, child_id: string) {
@@ -738,7 +738,7 @@ export async function getSubscriptions(family_id: string, child_id: string) {
   return request<{ subscriptions: Subscription[] }>(`/api/subscriptions?family_id=${family_id}&child_id=${child_id}`);
 }
 
-export interface SpendingRecord { id: string; title: string; amount: number; currency: string; note: string | null; spent_at: number }
+export interface SpendingRecord { id: string; title: string; amount: number; currency: string; note: string | null; category: string | null; spent_at: number }
 export interface PayoutRecord { id: string; amount: number; currency: string; note: string | null; paid_at: number; paid_by_name: string }
 export interface Subscription { id: string; title: string; category: string; amount: number; currency: string; frequency: string; start_date: string }
 

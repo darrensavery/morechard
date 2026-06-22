@@ -35,24 +35,32 @@ export async function handleSpendingCreate(request: Request, env: Env): Promise<
   const body = await parseBody(request);
   if (!body) return error('Invalid JSON');
 
-  const { family_id, title, amount, currency, note, goal_id } = body;
+  const { family_id, title, amount, currency, note, goal_id, category } = body;
   if (!family_id || family_id !== auth.family_id) return error('Forbidden', 403);
   if (!title || typeof title !== 'string') return error('title required');
   if (!Number.isInteger(amount) || (amount as number) <= 0)
     return error('amount must be a positive integer');
   if (!currency || !['GBP','USD','PLN'].includes(currency as string)) return error('Invalid currency');
 
+  // Spend category — keep this whitelist in sync with the Spend Guide taxonomy.
+  // Unknown / missing values normalise to 'other' so over-time analytics stay clean.
+  const SPEND_CATEGORIES = [
+    'food','games','entertainment','clothes','stationery',
+    'toys','tech','books','gifts','other',
+  ];
+  const cat = SPEND_CATEGORIES.includes(category as string) ? (category as string) : 'other';
+
   const id  = nanoid();
   const now = Math.floor(Date.now() / 1000);
 
   await env.DB.prepare(`
-    INSERT INTO spending (id, family_id, child_id, title, amount, currency, note, goal_id, spent_at)
-    VALUES (?,?,?,?,?,?,?,?,?)
+    INSERT INTO spending (id, family_id, child_id, title, amount, currency, note, goal_id, category, spent_at)
+    VALUES (?,?,?,?,?,?,?,?,?,?)
   `).bind(
     id, family_id as string, auth.sub,
     (title as string).trim(), amount, currency,
     note ? String(note).trim() : null,
-    goal_id ?? null, now,
+    goal_id ?? null, cat, now,
   ).run();
 
   return json({ id, spent_at: now }, 201);
