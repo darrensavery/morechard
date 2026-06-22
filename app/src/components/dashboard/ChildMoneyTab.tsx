@@ -34,7 +34,7 @@ export function ChildMoneyTab({ familyId, childId, currency }: Props) {
   const [showGiveRequest,  setShowGiveRequest]  = useState(false)
   const [showSettings,     setShowSettings]     = useState(false)
   const [showWizard,       setShowWizard]       = useState(false)
-  const [pendingConfig,    setPendingConfig]     = useState<{ spend: number; save: number; give: number } | null>(null)
+  const [_pendingConfig,   setPendingConfig]     = useState<{ spend: number; save: number; give: number } | null>(null)
 
   // `silent` skips the loading swap so background polls refresh data in place
   // without flashing the balance hero back to "£—" every 30s.

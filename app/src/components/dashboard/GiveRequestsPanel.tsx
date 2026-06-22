@@ -42,7 +42,7 @@ export function GiveRequestsPanel({ familyId }: Props) {
         <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', marginBottom: 12, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
           Gift requests
         </div>
-        <div style={{ rounded: 12, border: '1px solid rgba(255,255,255,0.1)', padding: 16, textAlign: 'center', color: 'rgba(255,255,255,0.4)', fontSize: 14 }}>
+        <div style={{ borderRadius: 12, border: '1px solid rgba(255,255,255,0.1)', padding: 16, textAlign: 'center', color: 'rgba(255,255,255,0.4)', fontSize: 14 }}>
           No gift requests yet
         </div>
       </div>

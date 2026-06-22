@@ -24,7 +24,6 @@ export function JarOnboardingWizard({
   // Default equal split across all three jars
   const defaultSpend = Math.floor(availableBalance / 3);
   const defaultSave  = Math.floor(availableBalance / 3);
-  const defaultGive  = availableBalance - defaultSpend - defaultSave;
 
   const [spend, setSpend]   = useState(defaultSpend);
   const [save, setSave]     = useState(defaultSave);
