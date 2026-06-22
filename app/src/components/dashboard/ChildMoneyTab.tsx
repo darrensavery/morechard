@@ -5,6 +5,7 @@ import { spendCategoryHeading } from '../../lib/spendCategories'
 import { ChildHistoryTab } from './ChildHistoryTab'
 import { SpendGuideSheet } from './SpendGuideSheet'
 import { JarCard } from './JarCard'
+import { JarDetailSheet } from './JarDetailSheet'
 
 interface Props {
   familyId: string
@@ -23,9 +24,10 @@ export function ChildMoneyTab({ familyId, childId, currency }: Props) {
   const [goals,       setGoals]       = useState<Goal[]>([])
   const [spending,    setSpending]    = useState<SpendingRecord[]>([])
   const [loading,     setLoading]     = useState(true)
-  const [logOpen,     setLogOpen]     = useState(false)
-  const [jarBalances, setJarBalances] = useState<JarBalances | null>(null)
-  const [activeJar,   setActiveJar]   = useState<'spend' | 'save' | 'give' | null>(null)
+  const [logOpen,       setLogOpen]       = useState(false)
+  const [jarBalances,   setJarBalances]   = useState<JarBalances | null>(null)
+  const [activeJar,     setActiveJar]     = useState<'spend' | 'save' | 'give' | null>(null)
+  const [showGiveRequest, setShowGiveRequest] = useState(false)
 
   // `silent` skips the loading swap so background polls refresh data in place
   // without flashing the balance hero back to "£—" every 30s.
@@ -135,6 +137,20 @@ export function ChildMoneyTab({ familyId, childId, currency }: Props) {
         onClose={() => setLogOpen(false)}
         onSaved={handleSaved}
       />
+
+      {activeJar && jarBalances && (
+        <JarDetailSheet
+          jar={activeJar}
+          balances={jarBalances}
+          currency={currency}
+          familyId={familyId}
+          childId={childId}
+          onClose={() => setActiveJar(null)}
+          onBalanceChange={(updated) => { setJarBalances(updated); setActiveJar(null); }}
+          onGiveRequest={() => { setActiveJar(null); setShowGiveRequest(true); }}
+          onViewGoals={() => { setActiveJar(null); /* Task 13: switch to goals tab */ }}
+        />
+      )}
     </div>
   )
 }
