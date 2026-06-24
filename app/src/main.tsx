@@ -21,6 +21,19 @@ createRoot(document.getElementById('root')!).render(
   </StrictMode>,
 )
 
+// Prefetch the two most likely first-render route chunks so the Suspense
+// boundary resolves instantly for both new users (LandingGate) and returning
+// users (LockScreen).
+const prefetchRoutes = () => {
+  import('./screens/LandingGate')
+  import('./screens/LockScreen')
+}
+if ('requestIdleCallback' in window) {
+  (window as Window & typeof globalThis & { requestIdleCallback: (cb: () => void) => void }).requestIdleCallback(prefetchRoutes)
+} else {
+  setTimeout(prefetchRoutes, 100)
+}
+
 // Defer Sentry until the browser is idle so it does not block first paint.
 // Errors that occur before the idle callback (~100–200 ms after first render)
 // won't be captured, which is an acceptable trade-off.
