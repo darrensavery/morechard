@@ -14,6 +14,7 @@ import { getCoParents, removeCoParent } from '../../../lib/api'
 import { AvatarSVG } from '../../../lib/avatars'
 import { Toast, SettingsRow, SectionCard, SectionHeader, ReadOnlyBadge } from '../shared'
 import { ChildProfileSettings } from './ChildProfileSettings'
+import { GovernanceConsentBanner } from './GovernanceConsentBanner'
 import { useTone } from '../../../lib/useTone'
 
 // ── Props ─────────────────────────────────────────────────────────────────────
@@ -24,6 +25,8 @@ interface Props {
   appViewBusy:       string | null
   growthSettings:    Record<string, ChildGrowthSettings>
   growthBusy:        string | null
+  familyId:          string
+  userId:            string
   isLead:            boolean
   hasCoParent:       boolean
   sharedExpenseThreshold:       number
@@ -53,7 +56,7 @@ interface Props {
 
 export function FamilySettings({
   children, appViews, appViewBusy, growthSettings, growthBusy,
-  isLead, hasCoParent,
+  familyId, userId, isLead, hasCoParent,
   sharedExpenseThreshold, sharedExpenseSplitBp, savingSharedExpense,
   toast, onBack, onComingSoon,
   onAddChild, onAppViewToggle, onGrowthUpdate, onRenameChild, onPinResetSuccess, onGenerateInvite,
@@ -501,6 +504,7 @@ export function FamilySettings({
 
       {/* Partner / Co-parenting */}
       <div>
+        {hasCoParent && <GovernanceConsentBanner familyId={familyId} userId={userId} />}
         <p className="text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wide px-1 mb-2">
           {hasCoParent ? 'Co-parenting' : 'Partner'}
         </p>

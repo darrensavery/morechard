@@ -61,6 +61,12 @@ export async function handlePutJarConfig(request: Request, env: Env): Promise<Re
   const existing = await getJarConfig(env.DB, family_id, child_id);
   const isFirstEnable = !existing.enabled && enabled === 1;
 
+  // BUG-034 fix: require initial_seed on first enable so jar balances are always
+  // seeded from the child's existing available balance via the wizard.
+  if (isFirstEnable && !body.initial_seed) {
+    return error('initial_seed required when enabling jars for the first time', 400);
+  }
+
   const ops: ReturnType<typeof env.DB.prepare>[] = [
     env.DB.prepare(`
       INSERT INTO jar_config (family_id, child_id, enabled, spend_pct, save_pct, give_pct, updated_at)
@@ -151,7 +157,9 @@ export async function handlePostJarMove(request: Request, env: Env): Promise<Res
   // Server-side balance check
   const balances = await getJarBalances(env.DB, family_id, child_id);
   if (!balances.enabled) return error('Jars are not enabled for this child', 400);
-  const sourceBalance = balances[from_jar];
+  // BUG-035 fix: when moving FROM Save, check only the unallocated portion — the
+  // earmarked amount belongs to active goals and must not be moved out.
+  const sourceBalance = from_jar === 'save' ? balances.save_unallocated : balances[from_jar];
   if (sourceBalance < amount) return error(`Insufficient balance in ${from_jar} jar`, 400);
 
   const now = Math.floor(Date.now() / 1000);

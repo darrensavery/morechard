@@ -69,8 +69,15 @@ export function ParentDashboard() {
   const [children,   setChildren]   = useState<ChildRecord[]>([])
   const [activeChild, setActiveChild] = useState<ChildRecord | null>(null)
   const [childrenLoaded, setChildrenLoaded] = useState(false)
-  const [pendingByChild, setPendingByChild] = useState<Record<string, number>>({})
-  const pendingCount = activeChild ? (pendingByChild[activeChild.id] ?? 0) : 0
+  const [pendingByChild,    setPendingByChild]    = useState<Record<string, number>>({})
+  const [pendingGiveCount,  setPendingGiveCount]  = useState(0)
+  // Badge = chore submissions across all children + pending give requests
+  const pendingCount = Object.values(pendingByChild).reduce((sum, n) => sum + n, 0) + pendingGiveCount
+  const siblingsWithPending = activeChild
+    ? Object.entries(pendingByChild)
+        .filter(([id, n]) => id !== activeChild.id && n > 0)
+        .map(([id]) => children.find(c => c.id === id)?.display_name ?? id)
+    : []
   const [online,       setOnline]       = useState(navigator.onLine)
   const [parentingMode, setParentingMode] = useState<'single' | 'co-parenting'>('single')
   const [trialStatus,  setTrialStatus]  = useState<TrialStatus | null>(null)
@@ -188,22 +195,27 @@ export function ParentDashboard() {
     return () => { window.removeEventListener('online', on); window.removeEventListener('offline', off) }
   }, [])
 
-  // Poll pending counts for all children — pauses when the tab is hidden
+  // Poll pending counts for all children — pauses when the tab is hidden.
+  // Skip the active child when the Activity tab is open — ActivityTab owns that poll
+  // and calls onCountChange to keep pendingByChild in sync, avoiding a double-fetch.
   useEffect(() => {
     if (!familyId || children.length === 0) return
     const load = () => {
       if (document.hidden) return
+      const activeTabIsActivity = tab === 'activity'
       Promise.allSettled(
-        children.map(child =>
-          getCompletions({ family_id: familyId, child_id: child.id, status: 'awaiting_review' })
-            .then(r => ({ id: child.id, count: r.completions.length }))
-        )
+        children
+          .filter(child => !(activeTabIsActivity && child.id === activeChild?.id))
+          .map(child =>
+            getCompletions({ family_id: familyId, child_id: child.id, status: 'awaiting_review' })
+              .then(r => ({ id: child.id, count: r.completions.length }))
+          )
       ).then(results => {
         const map: Record<string, number> = {}
         for (const result of results) {
           if (result.status === 'fulfilled') map[result.value.id] = result.value.count
         }
-        setPendingByChild(map)
+        setPendingByChild(prev => ({ ...prev, ...map }))
       })
     }
     load()
@@ -211,7 +223,7 @@ export function ParentDashboard() {
     const onVisible = () => { if (!document.hidden) load() }
     document.addEventListener('visibilitychange', onVisible)
     return () => { clearInterval(t); document.removeEventListener('visibilitychange', onVisible) }
-  }, [familyId, children])
+  }, [familyId, children, tab, activeChild?.id])
 
   const TABS = useMemo(() => [
     { id: 'chores'   as Tab, label: 'Chores' },
@@ -418,8 +430,8 @@ export function ParentDashboard() {
           <>
             <div className={tab === 'chores'   ? 'tab-panel' : 'tab-panel hidden'}><ChoresTab       familyId={familyId} child={activeChild} children={children} /></div>
             <div className={tab === 'activity' ? 'tab-panel' : 'tab-panel hidden'}>
-              <GiveRequestsPanel familyId={familyId} />
-              <ActivityTab familyId={familyId} child={activeChild} childCount={children.length} onCountChange={count => setPendingByChild(prev => ({ ...prev, [activeChild.id]: count }))} unpaidRow={unpaid.find(u => u.child_id === activeChild.id) ?? null} onOpenBridge={() => { const row = unpaid.find(u => u.child_id === activeChild.id); if (row) openBridgeForChild(activeChild, row) }} onAfterPayout={refreshUnpaid} />
+              <GiveRequestsPanel familyId={familyId} onCountChange={setPendingGiveCount} />
+              <ActivityTab familyId={familyId} child={activeChild} childCount={children.length} onCountChange={count => setPendingByChild(prev => ({ ...prev, [activeChild.id]: count }))} unpaidRow={unpaid.find(u => u.child_id === activeChild.id) ?? null} onOpenBridge={() => { const row = unpaid.find(u => u.child_id === activeChild.id); if (row) openBridgeForChild(activeChild, row) }} onAfterPayout={refreshUnpaid} siblingsWithPending={siblingsWithPending} />
             </div>
             <div className={tab === 'pool'     ? 'tab-panel' : 'tab-panel hidden'}>
               <PoolTab

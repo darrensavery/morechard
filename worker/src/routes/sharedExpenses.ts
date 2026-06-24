@@ -421,5 +421,9 @@ export async function handleUpdateFamilySettings(req: AuthedRequest, env: Env): 
     .bind(...values)
     .run();
 
+  // BUG-038 fix: invalidate family config cache so GET /api/family returns the
+  // updated threshold and split immediately (cache TTL is 1 hour).
+  await env.CACHE.delete(`family:config:${req.auth.family_id}`);
+
   return jsonOk({ updated: true });
 }

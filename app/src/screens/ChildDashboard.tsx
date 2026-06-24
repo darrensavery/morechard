@@ -4,7 +4,7 @@ import { X } from 'lucide-react'
 import { updateDeviceIdentity } from '../lib/deviceIdentity'
 import {
   getChores, submitChore, uploadProof, getBalance, getGoals,
-  getCompletions, getSettings, updateSettings, getFamilyId, getUserId,
+  getCompletions, getSettings, updateSettings, getMyLockStatus, getFamilyId, getUserId,
   formatCurrency, purchaseGoal, effectiveTarget,
   apiUrl, authHeaders,
 } from '../lib/api'
@@ -127,6 +127,8 @@ export function ChildDashboard() {
   const [savingAvatar,     setSavingAvatar]      = useState(false)
   const [showGrove,        setShowGrove]         = useState(false)
   const [weeklyAllowancePence, setWeeklyAllowancePence] = useState(0)
+  const [earningsMode, setEarningsMode] = useState<'ALLOWANCE' | 'CHORES' | 'HYBRID'>('CHORES')
+  const [allowanceAmountPence, setAllowanceAmountPence] = useState(0)
   const [currency, setCurrency] = useState('GBP')
   const [_purchasing,  setPurchasing]   = useState<string | null>(null)
   const [goalBarPct, setGoalBarPct] = useState(0)   // starts at 0 so the CSS transition has room to grow
@@ -154,18 +156,21 @@ export function ChildDashboard() {
   const [submitErr,     setSubmitErr]     = useState<string | null>(null)
   const [proofChoreId,  setProofChoreId]  = useState<string | null>(null)
   const proofFileRef = useRef<HTMLInputElement>(null)
+  const [lockedUntil, setLockedUntil] = useState<number | null>(null)
 
   const load = useCallback(async (silent = false) => {
     if (!familyId || !userId) { navigate('/lock'); return }
     if (!silent) setLoading(true)
     try {
-      const [c, b, g, p, s] = await Promise.all([
+      const [c, b, g, p, s, lockStatus] = await Promise.all([
         getChores({ family_id: familyId, child_id: userId }).then(r => r.chores),
         getBalance(familyId, userId),
         getGoals(familyId, userId).then(r => r.goals.filter(g => !g.archived)),
         getCompletions({ family_id: familyId, child_id: userId, status: 'awaiting_review' }).then(r => r.completions),
         getSettings(),
+        getMyLockStatus().catch(() => ({ locked: false, locked_until: null })),
       ])
+      setLockedUntil(lockStatus.locked_until)
       setChores(c)
       if (c.length > 0) setCurrency(c[0].currency)
       setBalance(b)
@@ -187,14 +192,22 @@ export function ChildDashboard() {
         ).length
         setLabUnread(unread)
       } catch { /* non-critical — badge silently absent */ }
-      // Estimate weekly allowance as sum of all weekly/daily chore rewards
-      const weekly = c.reduce((sum, chore) => {
+      // Estimate weekly income: chore rewards + fixed allowance (ALLOWANCE/HYBRID)
+      const choreWeekly = c.reduce((sum, chore) => {
         if (chore.frequency === 'weekly') return sum + chore.reward_amount
         if (chore.frequency === 'daily')  return sum + chore.reward_amount * 5
         if (chore.frequency === 'school_days') return sum + chore.reward_amount * 5
         return sum
       }, 0)
-      setWeeklyAllowancePence(weekly)
+      const em = (s.earnings_mode ?? 'CHORES') as 'ALLOWANCE' | 'CHORES' | 'HYBRID'
+      const aa = s.allowance_amount ?? 0
+      const af = (s.allowance_frequency ?? 'WEEKLY') as 'WEEKLY' | 'BI_WEEKLY' | 'MONTHLY'
+      const allowanceWeekly = (em === 'ALLOWANCE' || em === 'HYBRID')
+        ? (af === 'WEEKLY' ? aa : af === 'BI_WEEKLY' ? Math.round(aa / 2) : Math.round(aa / 4))
+        : 0
+      setWeeklyAllowancePence(choreWeekly + allowanceWeekly)
+      setEarningsMode(em)
+      setAllowanceAmountPence(aa)
       // Keep localStorage in sync so the anti-flicker script and ThemeProvider
       // both see the latest value on the next cold start.
       try { localStorage.setItem('mc_app_view', av) } catch { /* ignore */ }
@@ -203,12 +216,16 @@ export function ChildDashboard() {
       setSubmitted(pendingChoreIds)
       // Animate goal bar after a short delay so transition plays from 0
       const topGoal = g[0]
-      if (topGoal && b.available > 0) {
-        if (goalBarTimer.current) clearTimeout(goalBarTimer.current)
-        setGoalBarPct(0)
-        goalBarTimer.current = setTimeout(() => {
-          setGoalBarPct(Math.min(100, Math.round((b.available / topGoal.target_amount) * 100)))
-        }, 80)
+      if (topGoal) {
+        // BUG-026 fix: when jars are enabled the purchase draws from Save jar only.
+        const progressBalance = (b.jars?.enabled && b.jars.save != null) ? b.jars.save : b.available
+        if (progressBalance > 0) {
+          if (goalBarTimer.current) clearTimeout(goalBarTimer.current)
+          setGoalBarPct(0)
+          goalBarTimer.current = setTimeout(() => {
+            setGoalBarPct(Math.min(100, Math.round((progressBalance / topGoal.target_amount) * 100)))
+          }, 80)
+        }
       }
     } catch {
       navigate('/lock')
@@ -380,6 +397,16 @@ export function ChildDashboard() {
           onComplete={() => setActiveCelebration(null)}
         />
       ) : null}
+      {/* Account lock banner — shown when a parent has temporarily restricted this account */}
+      {lockedUntil && lockedUntil > Date.now() / 1000 && (
+        <div className="bg-amber-500/15 border-b border-amber-400/30 px-4 py-2.5 text-center">
+          <p className="text-[13px] font-semibold text-amber-700 dark:text-amber-300">
+            Your account is paused by a parent until{' '}
+            {new Date(lockedUntil * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}.
+            You can still view everything, but earning is on hold.
+          </p>
+        </div>
+      )}
       {/* Header */}
       <header className="safe-top sticky top-0 z-10 glass-header">
         <div className="max-w-[560px] mx-auto px-3.5 py-3 flex items-center justify-between">
@@ -620,7 +647,7 @@ export function ChildDashboard() {
               </div>
             )}
 
-            <EarnTab familyId={familyId} childId={userId} currency={chores[0]?.currency ?? 'GBP'} grovePlans={grovePlans} onTogglePlant={togglePlant} appView={appView} />
+            <EarnTab familyId={familyId} childId={userId} currency={chores[0]?.currency ?? 'GBP'} grovePlans={grovePlans} onTogglePlant={togglePlant} appView={appView} earningsMode={earningsMode} allowanceAmountPence={allowanceAmountPence} />
             <ChildHistoryTab familyId={familyId} childId={userId} currency={currency} variant="chore" />
 
             {/* Badges & streaks */}

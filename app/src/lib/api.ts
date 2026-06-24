@@ -111,6 +111,12 @@ async function request<T>(path: string, options: RequestInit = {}, _retries = 2,
     throw new Error('Trial expired');
   }
 
+  // Account locked by parent — throw with a recognisable code so UI can show a lock state
+  if (res.status === 423) {
+    const msg = (data as Record<string, unknown>).error as string ?? 'Account temporarily restricted';
+    throw Object.assign(new Error(msg), { code: 'ACCOUNT_LOCKED' });
+  }
+
   if (!res.ok) {
     throw new Error((data as Record<string, unknown>).error as string ?? `HTTP ${res.status}`);
   }
@@ -313,8 +319,15 @@ export async function getChildren(): Promise<{ children: ChildRecord[] }> {
 // ----------------------------------------------------------------
 // Settings
 // ----------------------------------------------------------------
-export async function getSettings(): Promise<{ avatar_id: string; theme: string; locale: string; app_view: string }> {
+export async function getSettings(): Promise<{
+  avatar_id: string; theme: string; locale: string; app_view: string;
+  earnings_mode: string; allowance_amount: number; allowance_frequency: string;
+}> {
   return request('/api/settings');
+}
+
+export async function getMyLockStatus(): Promise<{ locked: boolean; locked_until: number | null }> {
+  return request('/api/account-lock/me');
 }
 
 export async function updateSettings(body: { avatar_id?: string; theme?: string; locale?: string }): Promise<void> {
@@ -708,6 +721,39 @@ export async function getGiveRequests(family_id: string, status = 'requested'): 
 
 export async function patchGiveRequest(id: number, action: 'fulfil' | 'decline', parent_note?: string): Promise<{ ok: boolean; status: string }> {
   return request(`/api/give-requests/${id}`, { method: 'PATCH', body: JSON.stringify({ action, parent_note }) });
+}
+
+// ----------------------------------------------------------------
+// Governance — mutual consent handshake for verify_mode changes
+// ----------------------------------------------------------------
+export interface GovernanceLogRow {
+  id:           number;
+  family_id:    string;
+  requested_by: string;
+  old_mode:     string;
+  new_mode:     string;
+  status:       'pending' | 'confirmed' | 'rejected' | 'expired';
+  requested_at: number;
+  expires_at:   number;
+  confirmed_by: string | null;
+  confirmed_at: number | null;
+  action_taken: string;
+}
+
+export async function getGovernanceLog(familyId: string): Promise<{ log: GovernanceLogRow[] }> {
+  return request(`/api/governance?family_id=${encodeURIComponent(familyId)}`);
+}
+
+export async function requestGovernanceChange(newMode: 'amicable' | 'standard'): Promise<{ governance_request_id: number; expires_at: number }> {
+  return request('/api/governance/request', { method: 'POST', body: JSON.stringify({ new_mode: newMode }) });
+}
+
+export async function confirmGovernanceRequest(id: number): Promise<{ status: string; new_mode: string }> {
+  return request(`/api/governance/${id}/confirm`, { method: 'POST' });
+}
+
+export async function rejectGovernanceRequest(id: number): Promise<{ status: string }> {
+  return request(`/api/governance/${id}/reject`, { method: 'POST' });
 }
 
 // ----------------------------------------------------------------

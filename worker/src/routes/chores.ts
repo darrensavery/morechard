@@ -16,6 +16,10 @@ import { nanoid } from '../lib/nanoid.js';
 import { JwtPayload } from '../lib/jwt.js';
 import { computeRecordHash, GENESIS_HASH } from '../lib/hash.js';
 import { planCompletionGeneration, type ExistingCompletion } from './completionGeneration.js';
+import { getJarConfig } from '../lib/jar-balance.js';
+import { getStreakState, buildStreakEvent, saveStreakEvent, allScheduledChoresDone } from '../lib/streaks.js';
+import { getBadgeStats, badgesToAward, insertBadges } from '../lib/badges.js';
+import { evaluateOnChoreApproval, evaluatePassive } from '../lib/labTriggers.js';
 
 type AuthedRequest = Request & { auth: JwtPayload };
 
@@ -60,9 +64,10 @@ export async function handleChoreCreate(request: Request, env: Env): Promise<Res
     return error(`frequency must be one of: ${VALID_FREQUENCIES.join(', ')}`);
 
   // proof_required and auto_approve are mutually exclusive:
-  // auto_approve implicitly means no proof needed.
+  // auto_approve cannot bypass a photo-evidence requirement.
   const proofRequired = proof_required ? 1 : 0;
   const autoApprove   = auto_approve   ? 1 : 0;
+  if (proofRequired && autoApprove) return error('proof_required and auto_approve are mutually exclusive');
 
   // 'anyone' and 'everyone' are sentinel values — skip child lookup.
   // Any other value must be a real child in this family.
@@ -119,12 +124,14 @@ export async function handleChoreList(request: Request, env: Env): Promise<Respo
   if (family_id !== auth.family_id) return error('Forbidden', 403);
 
   // Sentinel filter: return only open (unclaimed) chores
+  // BUG-030 fix: exclude expired flash chores so children can't claim tasks they cannot submit.
   if (assigned_to === 'anyone') {
     const { results } = await env.DB.prepare(
       `SELECT c.*, NULL as child_name, p.display_name as parent_name
        FROM chores c
        LEFT JOIN users p ON p.id = c.created_by
        WHERE c.family_id = ? AND c.assigned_to = 'anyone' AND c.archived = 0
+         AND (c.is_flash = 0 OR c.flash_deadline IS NULL OR c.flash_deadline > datetime('now'))
        ORDER BY c.is_priority DESC, c.created_at DESC`
     ).bind(family_id).all();
     return json({ chores: results });
@@ -135,12 +142,16 @@ export async function handleChoreList(request: Request, env: Env): Promise<Respo
 
   let stmt;
   if (effectiveChildId) {
+    // BUG-031 fix: exclude expired flash chores from child view — child can't submit
+    // them, so showing them causes confusing "deadline has passed" 409 errors.
+    // Parent view (effectiveChildId=null) still returns all chores for management.
     stmt = env.DB.prepare(
       `SELECT c.*, u.display_name as child_name, p.display_name as parent_name
        FROM chores c
        LEFT JOIN users u ON u.id = c.assigned_to
        JOIN users p ON p.id = c.created_by
        WHERE c.family_id = ? AND (c.assigned_to = ? OR c.assigned_to = 'everyone') AND c.archived = ?
+         AND (c.is_flash = 0 OR c.flash_deadline IS NULL OR c.flash_deadline > datetime('now'))
        ORDER BY c.is_priority DESC, c.due_date ASC, c.created_at DESC`
     ).bind(family_id, effectiveChildId, archived);
   } else {
@@ -231,6 +242,20 @@ export async function handleChoreUpdate(request: Request, env: Env, id: string):
 
   if (updates.length === 0) return error('No valid fields to update');
 
+  // Enforce mutual exclusion — resolve against the current DB values if only
+  // one flag is being changed in this update.
+  const updatingProof   = 'proof_required' in body;
+  const updatingApprove = 'auto_approve' in body;
+  if (updatingProof || updatingApprove) {
+    const current = await env.DB
+      .prepare('SELECT proof_required, auto_approve FROM chores WHERE id = ?')
+      .bind(id)
+      .first<{ proof_required: number; auto_approve: number }>();
+    const effectiveProof   = updatingProof   ? (body.proof_required ? 1 : 0) : (current?.proof_required ?? 0);
+    const effectiveApprove = updatingApprove ? (body.auto_approve   ? 1 : 0) : (current?.auto_approve   ?? 0);
+    if (effectiveProof && effectiveApprove) return error('proof_required and auto_approve are mutually exclusive');
+  }
+
   updates.push('updated_at = ?');
   values.push(Math.floor(Date.now() / 1000));
   values.push(id);
@@ -297,14 +322,17 @@ export async function handleChoreClaim(request: Request, env: Env, id: string): 
   if (auth.role !== 'child') return error('Only children can claim chores', 403);
 
   const chore = await env.DB
-    .prepare('SELECT id, family_id, assigned_to, archived FROM chores WHERE id = ?')
+    .prepare('SELECT id, family_id, assigned_to, archived, is_flash, flash_deadline FROM chores WHERE id = ?')
     .bind(id)
-    .first<{ id: string; family_id: string; assigned_to: string; archived: number }>();
+    .first<{ id: string; family_id: string; assigned_to: string; archived: number; is_flash: number; flash_deadline: string | null }>();
 
   if (!chore)                              return error('Chore not found', 404);
   if (chore.family_id !== auth.family_id)  return error('Forbidden', 403);
   if (chore.archived)                      return error('This chore has been removed');
   if (chore.assigned_to !== 'anyone')      return error('This chore is no longer available to claim', 409);
+  // BUG-031 secondary fix: reject claim of already-expired flash chore (e.g. stale client cache)
+  if (chore.is_flash && chore.flash_deadline && new Date(chore.flash_deadline).getTime() < Date.now())
+    return error('Flash job deadline has passed', 409);
 
   // Atomic UPDATE: only touches the row if assigned_to is still 'anyone'.
   // D1 executes this as a single statement so concurrent claims are safe.
@@ -318,6 +346,18 @@ export async function handleChoreClaim(request: Request, env: Env, id: string): 
     // Another child claimed it in the same moment
     return error('Someone else just claimed this task — check back for more!', 409);
   }
+
+  // BUG-022 + BUG-023 fix: insert the 'available' completion immediately so
+  // getCompletions (which runs in parallel with getChores on the child dashboard)
+  // sees the row without depending on lazy-gen timing. Also covers as_needed /
+  // quarterly chores which lazy gen intentionally skips.
+  const now = Math.floor(Date.now() / 1000);
+  await env.DB
+    .prepare(`INSERT OR IGNORE INTO completions
+              (id, family_id, chore_id, child_id, status, submitted_at)
+              VALUES (?,?,?,?,'available',?)`)
+    .bind(nanoid(), auth.family_id, id, auth.sub, now)
+    .run();
 
   const updated = await env.DB.prepare('SELECT * FROM chores WHERE id = ?').bind(id).first();
   return json(updated);
@@ -416,10 +456,14 @@ export async function handleChoreSubmit(request: Request, env: Env, id: string):
     );
 
     const completionId = nanoid();
-    // verified_auto entries carry a 48h dispute window, same as manual-approve path
     const disputeBefore = now + 172800;
 
     await env.DB.batch([
+      // BUG-013 fix: consume any dangling lazy-gen 'available' or 'needs_revision' slot
+      // to prevent the child from double-earning on subsequent days within the same period.
+      env.DB.prepare(`DELETE FROM completions WHERE chore_id = ? AND child_id = ? AND status IN ('available','needs_revision')`)
+        .bind(id, auth.sub),
+
       // Write completion as already completed
       env.DB.prepare(`
         INSERT INTO completions
@@ -445,6 +489,77 @@ export async function handleChoreSubmit(request: Request, env: Env, id: string):
       ),
     ]);
 
+    // BUG-010 fix: audit log (same as handleCompletionApprove)
+    await env.DB.prepare(`
+      INSERT INTO ledger_status_log (ledger_id, from_status, to_status, actor_id, ip_address)
+      VALUES (?,?,?,?,?)
+    `).bind(newLedgerId, 'pending', 'verified_auto', auth.sub, ip).run();
+
+    // BUG-011 fix: jar allocation — non-critical, never blocks the response
+    try {
+      const jarCfg = await getJarConfig(env.DB, chore.family_id, auth.sub);
+      if (jarCfg.enabled) {
+        const saveAmt    = Math.floor(chore.reward_amount * jarCfg.save_pct / 100);
+        const giveAmt    = Math.floor(chore.reward_amount * jarCfg.give_pct / 100);
+        const spendFinal = chore.reward_amount - saveAmt - giveAmt;
+        const allocations: [string, number][] = [
+          ['spend', spendFinal], ['save', saveAmt], ['give', giveAmt],
+        ];
+        await env.DB.batch(
+          allocations.map(([jar, amt]) =>
+            env.DB.prepare(`
+              INSERT INTO jar_movements (family_id,child_id,jar,delta,kind,ref_id,created_at)
+              VALUES (?,?,?,?,'allocation',?,?)
+            `).bind(chore.family_id, auth.sub, jar, amt, String(newLedgerId), now)
+          )
+        );
+      }
+    } catch (e) {
+      console.error('[auto_approve jar allocation] non-critical failure:', e);
+    }
+
+    // BUG-012 fix: gamification — streaks, badges, lab triggers
+    const pendingCelebrations: string[] = [];
+    try {
+      const date = new Date(now * 1000).toISOString().slice(0, 10);
+      const [allDone, streakState] = await Promise.all([
+        allScheduledChoresDone(env.DB, auth.sub, date),
+        getStreakState(env.DB, auth.sub),
+      ]);
+      const streakEvent = buildStreakEvent({ allChoresDone: allDone, date, state: streakState });
+      if (streakEvent) {
+        await saveStreakEvent(env.DB, auth.sub, streakEvent, date);
+        const { previousStreak, newStreak } = streakEvent;
+        if      (newStreak === 3)  pendingCelebrations.push(`STREAK_3:${previousStreak}:${newStreak}`);
+        else if (newStreak === 7)  pendingCelebrations.push(`STREAK_7:${previousStreak}:${newStreak}`);
+        else if (newStreak === 14) pendingCelebrations.push(`STREAK_14:${previousStreak}:${newStreak}`);
+        else if (newStreak === 30) pendingCelebrations.push(`STREAK_30:${previousStreak}:${newStreak}`);
+      }
+      const stats = await getBadgeStats(env.DB, auth.sub);
+      const effectiveCurrentStreak = streakEvent ? streakEvent.newStreak : streakState.current_streak;
+      const effectiveLongestStreak = streakEvent
+        ? Math.max(streakEvent.newStreak, streakState.longest_streak)
+        : streakState.longest_streak;
+      const newBadges = badgesToAward({
+        earnedBadgeKeys:       stats.earnedBadgeKeys,
+        currentStreak:         effectiveCurrentStreak,
+        longestStreak:         effectiveLongestStreak,
+        totalApprovedChores:   stats.totalApprovedChores,
+        totalGoalsCompleted:   stats.totalGoalsCompleted,
+        totalSavedPence:       stats.totalSavedPence,
+        totalLessonsCompleted: stats.totalLessonsCompleted,
+        totalPayouts:          stats.totalPayouts,
+      });
+      if (newBadges.length > 0) {
+        await insertBadges(env.DB, auth.sub, newBadges, nanoid);
+        for (const key of newBadges) pendingCelebrations.push(`BADGE_${key}`);
+      }
+      evaluateOnChoreApproval(env.DB, auth.sub).catch(() => {});
+      evaluatePassive(env.DB, auth.sub).catch(() => {});
+    } catch (e) {
+      console.error('[auto_approve gamification] non-critical failure:', e);
+    }
+
     return json({
       id: completionId,
       chore_id: id,
@@ -455,6 +570,7 @@ export async function handleChoreSubmit(request: Request, env: Env, id: string):
       ledger_id: newLedgerId,
       submitted_at: now,
       auto_approved: true,
+      pending_celebrations: pendingCelebrations,
     }, 201);
   }
 
@@ -556,6 +672,13 @@ export async function lazyGenerateCompletions(
     now.getFullYear(), now.getMonth(), 1,
   ).getTime() / 1000);
 
+  // Fortnightly (bi_weekly) period: find the start of the current 2-week block
+  // anchored to a known reference Monday (Mon 5 Jan 1970 = epoch second 345600).
+  const EPOCH_MONDAY = 345600;
+  const WEEK_SEC     = 7 * 24 * 3600;
+  const weekIndex    = Math.floor((weekStart - EPOCH_MONDAY) / WEEK_SEC);
+  const biWeeklyStart = EPOCH_MONDAY + Math.floor(weekIndex / 2) * 2 * WEEK_SEC;
+
   const SKIP = new Set(['as_needed', 'quarterly']);
   const SCHOOL_DAYS = new Set([1, 2, 3, 4, 5]); // Mon–Fri
 
@@ -575,7 +698,8 @@ export async function lazyGenerateCompletions(
 
     const periodStart =
       chore.frequency === 'daily' || chore.frequency === 'school_days' ? dayStart :
-      chore.frequency === 'weekly' || chore.frequency === 'bi_weekly'  ? weekStart :
+      chore.frequency === 'weekly'                                       ? weekStart :
+      chore.frequency === 'bi_weekly'                                    ? biWeeklyStart :
       chore.frequency === 'monthly'                                      ? monthStart :
       weekStart;
 

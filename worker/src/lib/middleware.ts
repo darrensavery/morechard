@@ -47,6 +47,25 @@ export async function requireAuth(request: Request, env: Env): Promise<JwtPayloa
     return error('This family has been deleted.', 403);
   }
 
+  // Block locked children from all write operations.
+  // GET/HEAD/OPTIONS are read-only and remain accessible so the child can still
+  // view their balance and goals; only state-mutating requests are blocked.
+  const isWrite = !['GET', 'HEAD', 'OPTIONS'].includes(request.method);
+  if (payload.role === 'child' && isWrite && !payload.demo_user_type) {
+    const now = Math.floor(Date.now() / 1000);
+    const lock = await env.DB
+      .prepare('SELECT locked_until FROM account_locks WHERE user_id = ? AND locked_until > ?')
+      .bind(payload.sub, now)
+      .first<{ locked_until: number }>();
+    if (lock) {
+      const minutesLeft = Math.ceil((lock.locked_until - now) / 60);
+      return error(
+        `Your account is temporarily restricted by a parent. Try again in ${minutesLeft} minute${minutesLeft !== 1 ? 's' : ''}.`,
+        423,
+      );
+    }
+  }
+
   return payload;
 }
 

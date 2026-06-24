@@ -21,19 +21,17 @@ export async function handlePostGiveRequest(request: Request, env: Env): Promise
   if (!family_id || !child_id || !cause || !amount) return error('Missing required fields', 400);
   if (family_id !== auth.family_id || child_id !== auth.sub) return error('Forbidden', 403);
   if (cause.trim().length === 0 || cause.length > 60) return error('Cause must be 1–60 characters', 400);
-  if (amount <= 0) return error('Amount must be positive', 400);
+  // BUG-039 fix: require integer pence — floats are silently truncated by SQLite,
+  // which creates a mismatch between the stored amount and the jar debit.
+  if (!Number.isInteger(amount) || amount <= 0) return error('Amount must be a positive integer (pence)', 400);
 
-  // Verify Give jar has sufficient balance
+  // Verify Give jar has sufficient balance.
+  // jar_movements already records a -amount debit at submission time (atomic batch below),
+  // so balances.give is the post-debit available balance. No secondary pendingRow subtraction
+  // is needed — it would double-count and block valid requests.
   const balances = await getJarBalances(env.DB, family_id, child_id);
   if (!balances.enabled) return error('Jars are not enabled', 400);
-
-  // Subtract already-requested (pending) amounts from Give balance
-  const pendingRow = await env.DB
-    .prepare(`SELECT COALESCE(SUM(amount),0) AS total FROM give_requests WHERE child_id=? AND status='requested'`)
-    .bind(child_id)
-    .first<{ total: number }>();
-  const availableGive = balances.give - (pendingRow?.total ?? 0);
-  if (availableGive < amount) return error('Insufficient Give jar balance', 400);
+  if (balances.give < amount) return error('Insufficient Give jar balance', 400);
 
   const now = Math.floor(Date.now() / 1000);
   const currencyRow = await env.DB

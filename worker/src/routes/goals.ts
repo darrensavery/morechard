@@ -218,7 +218,7 @@ export async function handleGoalPurchase(request: Request, env: Env, id: string)
   const now = Math.floor(Date.now() / 1000);
   const spendId = nanoid();
 
-  // Draw from Save jar when jars enabled — check BEFORE inserting spending record
+  // Draw from Save jar when jars enabled — check BEFORE any writes
   const jarCfg = await getJarConfig(env.DB, goal.family_id, goal.child_id);
   if (jarCfg.enabled) {
     const balances = await getJarBalances(env.DB, goal.family_id, goal.child_id);
@@ -227,21 +227,13 @@ export async function handleGoalPurchase(request: Request, env: Env, id: string)
     }
   }
 
-  // Insert spending record to deduct balance (only after jar guard passes)
-  await env.DB.prepare(`
-    INSERT INTO spending (id, family_id, child_id, title, amount, currency, note, goal_id, spent_at)
-    VALUES (?,?,?,?,?,?,?,?,?)
-  `).bind(
-    spendId, goal.family_id, goal.child_id,
-    `Purchased: ${goal.title}`,
-    goal.target_amount, goal.currency,
-    'Goal reached — item purchased', id, now,
-  ).run();
-
-  // Atomically mark goal REACHED + debit Save jar (both succeed or both fail)
+  // BUG-028 fix: include spending INSERT in the batch so goal REACHED + jar debit
+  // + spending record are all atomic — no orphaned spend on partial failure.
   const batchStatements = [
     env.DB.prepare(`UPDATE goals SET status = 'REACHED', updated_at = ? WHERE id = ? AND family_id = ?`)
       .bind(now, id, goal.family_id),
+    env.DB.prepare(`INSERT INTO spending (id, family_id, child_id, title, amount, currency, note, goal_id, spent_at) VALUES (?,?,?,?,?,?,?,?,?)`)
+      .bind(spendId, goal.family_id, goal.child_id, `Purchased: ${goal.title}`, goal.target_amount, goal.currency, 'Goal reached — item purchased', id, now),
   ];
   if (jarCfg.enabled) {
     batchStatements.push(
@@ -290,14 +282,16 @@ export async function handleGoalContribute(request: Request, env: Env, id: strin
     WHERE id = ?
   `).bind(amount_pence, amount_pence, now, id).run();
 
-  // Write goal_allocate movement if jars are enabled
+  // BUG-027 fix: use delta=amount_pence so the parent's gift actually enters the
+  // Save jar (SUM(delta) balance). delta=0 was earmark-only — purchase guard
+  // (balances.save < target_amount) would then fail even with a full contribution.
   try {
     const jarCfg = await getJarConfig(env.DB, goal.family_id, goal.child_id);
     if (jarCfg.enabled) {
       const jarNow = Math.floor(Date.now() / 1000);
       await env.DB
-        .prepare(`INSERT INTO jar_movements (family_id,child_id,jar,delta,earmark_pence,kind,goal_id,created_at) VALUES (?,?,'save',0,?,'goal_allocate',?,?)`)
-        .bind(goal.family_id, goal.child_id, amount_pence, id, jarNow)
+        .prepare(`INSERT INTO jar_movements (family_id,child_id,jar,delta,earmark_pence,kind,goal_id,created_at) VALUES (?,?,'save',?,?,'goal_allocate',?,?)`)
+        .bind(goal.family_id, goal.child_id, amount_pence, amount_pence, id, jarNow)
         .run();
     }
   } catch (e) {

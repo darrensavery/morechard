@@ -101,7 +101,7 @@ import {
   handleSettingsGet, handleSettingsUpdate,
   handleFamilyGet, handleFamilyUpdate,
   handleChildrenList,
-  handleAccountLock, handleAccountUnlock,
+  handleAccountLock, handleAccountUnlock, handleAccountLockStatusMe,
   handleParentMessageSet, handleParentMessageGet,
   handleChildGrowthGet, handleChildGrowthUpdate,
   handleChildRename, handleChildLoginHistory,
@@ -720,6 +720,7 @@ async function route(request: Request, env: Env, method: string, path: string): 
 
   // Account lock/unlock
   if (path === '/api/account-lock' && method === 'POST') return withAuth(request, auth, env, handleAccountLock);
+  if (path === '/api/account-lock/me' && method === 'GET') return withAuth(request, auth, env, handleAccountLockStatusMe);
   const unlockMatch = path.match(/^\/api\/account-lock\/([^/]+)$/);
   if (unlockMatch && method === 'DELETE') return withAuth(request, auth, env, (req, e) => handleAccountUnlock(req, e, unlockMatch[1]));
 
@@ -813,16 +814,16 @@ async function route(request: Request, env: Env, method: string, path: string): 
     return json({ payments: rows.results });
   }
 
-  // Governance
-  if (path === '/api/governance/request' && method === 'POST') return handleGovernanceRequest(request, env);
-  if (path === '/api/governance/expire'  && method === 'POST') return handleGovernanceExpire(request, env);
-  if (path === '/api/governance'         && method === 'GET')  return handleGovernanceGet(request, env);
+  // Governance — mutual consent handshake for verify_mode changes
+  if (path === '/api/governance/request' && method === 'POST') return withAuth(request, auth, env, handleGovernanceRequest);
+  if (path === '/api/governance/expire'  && method === 'POST') return handleGovernanceExpire(request, env); // cron/admin, no auth needed
+  if (path === '/api/governance'         && method === 'GET')  return withAuth(request, auth, env, handleGovernanceGet);
 
   const govActionMatch = path.match(/^\/api\/governance\/(\d+)\/(confirm|reject)$/);
   if (govActionMatch && method === 'POST') {
     const [, id, action] = govActionMatch;
-    if (action === 'confirm') return handleGovernanceConfirm(request, env, id);
-    if (action === 'reject')  return handleGovernanceReject(request, env, id);
+    if (action === 'confirm') return withAuth(request, auth, env, (req, e) => handleGovernanceConfirm(req, e, id));
+    if (action === 'reject')  return withAuth(request, auth, env, (req, e) => handleGovernanceReject(req, e, id));
   }
 
   // ── Security / PIN ────────────────────────────────────────────────

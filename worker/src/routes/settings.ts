@@ -35,7 +35,13 @@ export async function handleSettingsGet(request: Request, env: Env): Promise<Res
   if (cached) return new Response(cached, { headers: { 'Content-Type': 'application/json' } });
 
   const settings = await env.DB
-    .prepare('SELECT user_id, avatar_id, theme, locale, app_view FROM user_settings WHERE user_id = ?')
+    .prepare(`
+      SELECT us.user_id, us.avatar_id, us.theme, us.locale, us.app_view,
+             u.earnings_mode, u.allowance_amount, u.allowance_frequency
+      FROM user_settings us
+      JOIN users u ON u.id = us.user_id
+      WHERE us.user_id = ?
+    `)
     .bind(targetId).first();
 
   if (!settings) {
@@ -44,7 +50,16 @@ export async function handleSettingsGet(request: Request, env: Env): Promise<Res
       .prepare(`INSERT INTO user_settings (user_id, avatar_id, theme, locale, app_view, updated_at)
                 VALUES (?,?,?,?,'ORCHARD',?) ON CONFLICT(user_id) DO NOTHING`)
       .bind(targetId, 'bottts:spark', 'system', 'en', now).run();
-    return json({ user_id: targetId, avatar_id: 'bottts:spark', theme: 'system', locale: 'en', app_view: 'ORCHARD' });
+    const userRow = await env.DB
+      .prepare('SELECT earnings_mode, allowance_amount, allowance_frequency FROM users WHERE id = ?')
+      .bind(targetId)
+      .first<{ earnings_mode: string; allowance_amount: number; allowance_frequency: string }>();
+    return json({
+      user_id: targetId, avatar_id: 'bottts:spark', theme: 'system', locale: 'en', app_view: 'ORCHARD',
+      earnings_mode: userRow?.earnings_mode ?? 'CHORES',
+      allowance_amount: userRow?.allowance_amount ?? 0,
+      allowance_frequency: userRow?.allowance_frequency ?? 'WEEKLY',
+    });
   }
 
   const body = JSON.stringify(settings);
@@ -180,6 +195,19 @@ export async function handleFamilyUpdate(request: Request, env: Env): Promise<Re
     updates.push('parenting_mode = ?'); values.push(body.parenting_mode);
   }
   if ('verify_mode' in body) {
+    // BUG-019 fix: verify_mode changes in co-parenting mode require mutual consent
+    // via POST /api/governance/request — direct update is blocked to prevent one
+    // parent unilaterally changing the approval model without the other's consent.
+    const family = await env.DB
+      .prepare('SELECT parenting_mode FROM families WHERE id = ?')
+      .bind(auth.family_id)
+      .first<{ parenting_mode: string }>();
+    if (family?.parenting_mode === 'co-parenting') {
+      return error(
+        'verify_mode changes require mutual consent in co-parenting mode — use POST /api/governance/request',
+        403,
+      );
+    }
     if (!['amicable','standard'].includes(body.verify_mode as string)) return error('Invalid verify_mode');
     updates.push('verify_mode = ?'); values.push(body.verify_mode);
   }
@@ -435,6 +463,11 @@ export async function handleChildGrowthUpdate(
   await env.DB.prepare(`UPDATE users SET ${updates.join(', ')} WHERE id = ?`)
     .bind(...values).run();
 
+  // BUG-036 fix: invalidate the child's settings cache — handleSettingsGet JOINs
+  // the users table, so stale earnings_mode/allowance_amount would persist for 60s
+  // without this delete.
+  await env.CACHE.delete(`user:settings:${childId}`);
+
   return json({ ok: true });
 }
 
@@ -610,4 +643,22 @@ export async function handleChildLoginHistory(
   });
 
   return json({ logins });
+}
+
+// ----------------------------------------------------------------
+// GET /api/account-lock/me
+// Child-facing: returns the caller's own active lock (if any).
+// Safe to call even when locked — it is a GET so middleware permits it.
+// ----------------------------------------------------------------
+export async function handleAccountLockStatusMe(request: Request, env: Env): Promise<Response> {
+  const auth = (request as AuthedRequest).auth;
+  if (auth.role !== 'child') return json({ locked: false, locked_until: null });
+
+  const now = Math.floor(Date.now() / 1000);
+  const lock = await env.DB
+    .prepare('SELECT locked_until FROM account_locks WHERE user_id = ? AND locked_until > ?')
+    .bind(auth.sub, now)
+    .first<{ locked_until: number }>();
+
+  return json({ locked: lock !== null, locked_until: lock?.locked_until ?? null });
 }

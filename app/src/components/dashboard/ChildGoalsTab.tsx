@@ -38,7 +38,10 @@ export function ChildGoalsTab({ familyId, childId, currency, appView }: Props) {
       const top = g.filter(x => x.status === 'ACTIVE' || !x.status)[0]
       if (top) {
         const eff = effectiveTarget(top)
-        const pct = Math.min(100, Math.round(((b.available ?? 0) / eff) * 100))
+        // BUG-026 fix: when jars are enabled the purchase draws from the Save jar,
+        // so progress should show Save balance — not total available (which includes Spend/Give).
+        const progressBalance = (b.jars?.enabled && b.jars.save != null) ? b.jars.save : (b.available ?? 0)
+        const pct = Math.min(100, Math.round((progressBalance / eff) * 100))
         if (silent) {
           // Update in place — CSS transition handles any change smoothly.
           setGoalBarPct(pct)

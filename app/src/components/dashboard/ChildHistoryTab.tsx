@@ -4,10 +4,11 @@ import { getHistory, formatCurrency } from '../../lib/api'
 import { ChoreDetailSheet } from './HistoryTab'
 
 const STATUS_STYLES: Record<string, { label: string; bg: string; text: string }> = {
-  completed:       { label: 'Approved',   bg: 'bg-green-100',  text: 'text-green-700'  },
-  awaiting_review: { label: 'In review',  bg: 'bg-amber-100',  text: 'text-amber-700'  },
-  needs_revision:  { label: 'Needs redo', bg: 'bg-red-100',    text: 'text-red-700'    },
-  pending:         { label: 'Pending',    bg: 'bg-amber-100',  text: 'text-amber-700'  },
+  completed:       { label: 'Approved',     bg: 'bg-green-100',  text: 'text-green-700'  },
+  awaiting_review: { label: 'In review',    bg: 'bg-amber-100',  text: 'text-amber-700'  },
+  needs_revision:  { label: 'Needs redo',   bg: 'bg-red-100',    text: 'text-red-700'    },
+  rejected:        { label: 'Not approved', bg: 'bg-gray-100',   text: 'text-gray-500'   },
+  pending:         { label: 'Pending',      bg: 'bg-amber-100',  text: 'text-amber-700'  },
 }
 
 type Variant = 'chore' | 'money'

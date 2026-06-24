@@ -135,6 +135,35 @@ export async function handlePayoutCreate(request: Request, env: Env): Promise<Re
   }
   // ── End payday badge ───────────────────────────────────────────────
 
+  // BUG-032 fix: debit jar_movements proportionally when jars are enabled,
+  // so getJarBalances stays in sync with handleBalance after a payout.
+  try {
+    const jarCfg = await getJarConfig(env.DB, family_id as string, child_id as string);
+    if (jarCfg.enabled) {
+      const amt = amount as number;
+      const spendDebit = Math.round(amt * jarCfg.spend_pct / 100);
+      const saveDebit  = Math.round(amt * jarCfg.save_pct  / 100);
+      const giveDebit  = amt - spendDebit - saveDebit;
+      const debits: [string, number][] = [
+        ['spend', spendDebit],
+        ['save',  saveDebit],
+        ['give',  giveDebit],
+      ].filter(([, v]) => (v as number) > 0) as [string, number][];
+      if (debits.length > 0) {
+        await env.DB.batch(
+          debits.map(([jar, debit]) =>
+            env.DB.prepare(
+              `INSERT INTO jar_movements (family_id,child_id,jar,delta,kind,ref_id,created_at)
+               VALUES (?,?,?,?,'payout',?,?)`
+            ).bind(family_id, child_id, jar, -debit, id, now)
+          )
+        );
+      }
+    }
+  } catch {
+    // Jar debit is non-critical — payout already recorded
+  }
+
   return json({ id, paid_at: now }, 201);
 }
 
@@ -216,6 +245,35 @@ export async function handleBonusCreate(request: Request, env: Env): Promise<Res
     `).bind(bonusId, family_id as string, child_id as string, auth.sub,
       amount, currency, (reason as string).trim(), newLedgerId, now),
   ]);
+
+  // BUG-033 fix: allocate jar_movements proportionally when jars are enabled,
+  // matching what handleCompletionApprove does for chore approvals.
+  try {
+    const jarCfg = await getJarConfig(env.DB, family_id as string, child_id as string);
+    if (jarCfg.enabled) {
+      const amt = amount as number;
+      const spendAmt = Math.round(amt * jarCfg.spend_pct / 100);
+      const saveAmt  = Math.round(amt * jarCfg.save_pct  / 100);
+      const giveAmt  = amt - spendAmt - saveAmt;
+      const allocations: [string, number][] = [
+        ['spend', spendAmt],
+        ['save',  saveAmt],
+        ['give',  giveAmt],
+      ].filter(([, v]) => (v as number) > 0) as [string, number][];
+      if (allocations.length > 0) {
+        await env.DB.batch(
+          allocations.map(([jar, alloc]) =>
+            env.DB.prepare(
+              `INSERT INTO jar_movements (family_id,child_id,jar,delta,kind,ref_id,created_at)
+               VALUES (?,?,?,?,'allocation',?,?)`
+            ).bind(family_id, child_id, jar, alloc, String(newLedgerId), now)
+          )
+        );
+      }
+    }
+  } catch {
+    // Jar allocation is non-critical — bonus already recorded
+  }
 
   return json({ id: bonusId, ledger_id: newLedgerId, record_hash: recordHash }, 201);
 }

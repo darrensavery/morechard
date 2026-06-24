@@ -33,6 +33,8 @@ interface Props {
   grovePlans?: Record<string, number[]>
   onTogglePlant?: (chore: Chore, day: number) => void
   appView?: 'ORCHARD' | 'CLEAN'
+  earningsMode?: 'ALLOWANCE' | 'CHORES' | 'HYBRID'
+  allowanceAmountPence?: number
 }
 
 interface SubmitState {
@@ -45,7 +47,7 @@ interface SubmitState {
   startedAt: number            // epoch ms — for velocity tracking
 }
 
-export function EarnTab({ familyId, childId, currency, grovePlans = {}, onTogglePlant, appView = 'ORCHARD' }: Props) {
+export function EarnTab({ familyId, childId, currency, grovePlans = {}, onTogglePlant, appView = 'ORCHARD', earningsMode = 'CHORES', allowanceAmountPence = 0 }: Props) {
   const [chores,    setChores]    = useState<Chore[]>([])
   const [openChores, setOpenChores] = useState<Chore[]>([])  // assigned_to='anyone', unclaimed
   const [available, setAvailable] = useState<Completion[]>([])  // status=available
@@ -83,9 +85,12 @@ export function EarnTab({ familyId, childId, currency, grovePlans = {}, onToggle
     setClaimError(null)
     try {
       await claimChore(choreId)
-      await load()
     } catch (err: unknown) {
       setClaimError((err as Error).message)
+    } finally {
+      // BUG-024: always reload — removes the stale card on 409 (claimed by sibling)
+      // BUG-025: always reset claiming state even if load() fails silently
+      await load()
       setClaiming(null)
     }
   }
@@ -175,19 +180,46 @@ export function EarnTab({ familyId, childId, currency, grovePlans = {}, onToggle
   return (
     <div className="space-y-6">
 
-      {/* ── CHORE GUIDE button ─────────────────────────────────────── */}
-      <div className="flex justify-end">
-        <button
-          type="button"
-          onClick={() => setChoreGuideOpen(true)}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[var(--brand-primary)] text-[var(--brand-primary)] text-[12px] font-semibold hover:bg-[color-mix(in_srgb,var(--brand-primary)_8%,transparent)] transition-colors cursor-pointer"
-        >
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/>
-          </svg>
-          Chore Guide
-        </button>
-      </div>
+      {/* ── ALLOWANCE NOTICE — shown when parent has set an allowance ── */}
+      {(earningsMode === 'ALLOWANCE' || earningsMode === 'HYBRID') && allowanceAmountPence > 0 && (
+        <div className="rounded-xl bg-[color-mix(in_srgb,var(--brand-accent)_10%,transparent)] border border-[var(--brand-accent)]/40 px-4 py-3.5 flex items-center gap-3">
+          <span className="text-xl shrink-0">💰</span>
+          <div className="min-w-0">
+            <p className="text-[13px] font-bold text-[var(--color-text)]">
+              {earningsMode === 'ALLOWANCE' ? 'Your pocket money' : 'Weekly allowance'}
+            </p>
+            <p className="text-[12px] text-[var(--color-text-muted)] leading-snug">
+              {earningsMode === 'ALLOWANCE'
+                ? `Your parent sends you ${formatCurrency(allowanceAmountPence, currency)} automatically — no chores needed!`
+                : `You also get ${formatCurrency(allowanceAmountPence, currency)} added automatically each week.`
+              }
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* ── ALLOWANCE-ONLY empty state — hide chore UI entirely ─────── */}
+      {earningsMode === 'ALLOWANCE' && !hasAnything && (
+        <div className="py-10 text-center text-[14px] text-[var(--color-text-muted)]">
+          Your parent handles your pocket money — nothing to submit here.
+        </div>
+      )}
+
+      {/* ── CHORE GUIDE button — only shown when chores are relevant ── */}
+      {earningsMode !== 'ALLOWANCE' && (
+        <div className="flex justify-end">
+          <button
+            type="button"
+            onClick={() => setChoreGuideOpen(true)}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[var(--brand-primary)] text-[var(--brand-primary)] text-[12px] font-semibold hover:bg-[color-mix(in_srgb,var(--brand-primary)_8%,transparent)] transition-colors cursor-pointer"
+          >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/>
+            </svg>
+            Chore Guide
+          </button>
+        </div>
+      )}
 
       {/* ── NEEDS REVISION — top priority ─────────────────────────── */}
       {revisions.length > 0 && (
@@ -262,14 +294,22 @@ export function EarnTab({ familyId, childId, currency, grovePlans = {}, onToggle
           )}
           <div className="space-y-2.5">
             {openChores.map(chore => (
-              <div key={chore.id} className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl px-4 py-3 flex items-center gap-3">
+              <div key={chore.id} className={`bg-[var(--color-surface)] border rounded-xl px-4 py-3 flex items-center gap-3 ${chore.is_flash ? 'border-l-4 border-l-red-500 border-[var(--color-border)]' : 'border-[var(--color-border)]'}`}>
                 <div className="flex-1 min-w-0">
-                  <p className="text-[15px] font-semibold text-[var(--color-text)]">{chore.title}</p>
+                  <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
+                    {!!chore.is_flash && <span className="text-[10px] font-bold text-red-600 bg-red-100 rounded px-1.5 py-0.5">FLASH</span>}
+                    <p className="text-[15px] font-semibold text-[var(--color-text)]">{chore.title}</p>
+                  </div>
                   <p className="text-[13px] font-semibold text-[var(--brand-accent)] mt-0.5 tabular-nums">
                     {formatCurrency(chore.reward_amount, currency)}
                   </p>
                   {meaningfulDescription(chore.description) && (
                     <p className="text-[12px] text-[var(--color-text-muted)] mt-1 leading-relaxed">{meaningfulDescription(chore.description)}</p>
+                  )}
+                  {!!chore.is_flash && chore.flash_deadline && (
+                    <p className="text-[11px] font-bold text-red-600 mt-1">
+                      ⏱ Due by {new Date(chore.flash_deadline).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </p>
                   )}
                 </div>
                 <button
@@ -517,6 +557,11 @@ function OpenChoreCard({
           </p>
           {meaningfulDescription(chore.description) && (
             <p className="text-[12px] text-[var(--color-text-muted)] mt-1 leading-relaxed">{meaningfulDescription(chore.description)}</p>
+          )}
+          {!!chore.is_flash && chore.flash_deadline && (
+            <p className="text-[11px] font-bold text-red-600 mt-1">
+              ⏱ Due by {new Date(chore.flash_deadline).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            </p>
           )}
           {chore.proof_required && (
             <p className="text-[11px] text-[var(--color-text-muted)] mt-1 flex items-center gap-1">

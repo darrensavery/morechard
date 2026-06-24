@@ -23,15 +23,17 @@ interface Props {
   onAfterPayout?: () => void
   /** Reserved for next iteration — real goal progress data */
   goalProgress?: { goalName: string; choresRemaining: number } | null
+  /** Names of other children who have submissions waiting — drives the cross-child notice */
+  siblingsWithPending?: string[]
 }
 
 const LIMIT = 500
 
 const STATUS_STYLES: Record<string, { label: string; bg: string; text: string }> = {
-  approved:   { label: 'Approved',   bg: 'bg-green-100',  text: 'text-green-700' },
-  pending:    { label: 'Pending',    bg: 'bg-amber-100',  text: 'text-amber-700' },
-  rejected:   { label: 'Rejected',  bg: 'bg-red-100',    text: 'text-red-700' },
-  suggestion: { label: 'Suggestion', bg: 'bg-blue-100',   text: 'text-blue-700' },
+  completed:       { label: 'Approved',   bg: 'bg-green-100',  text: 'text-green-700' },
+  awaiting_review: { label: 'Pending',    bg: 'bg-amber-100',  text: 'text-amber-700' },
+  needs_revision:  { label: 'Needs redo', bg: 'bg-amber-100',  text: 'text-amber-700' },
+  rejected:        { label: 'Rejected',   bg: 'bg-red-100',    text: 'text-red-700' },
 }
 
 function MiniSheet({ onClose, children }: { onClose: () => void; children: React.ReactNode }) {
@@ -52,7 +54,7 @@ function MiniSheet({ onClose, children }: { onClose: () => void; children: React
   )
 }
 
-export function ActivityTab({ familyId, child, childCount, onCountChange, unpaidRow, onOpenBridge, onAfterPayout, goalProgress }: Props) {
+export function ActivityTab({ familyId, child, childCount, onCountChange, unpaidRow, onOpenBridge, onAfterPayout, goalProgress, siblingsWithPending = [] }: Props) {
   // ── Pending completions (absorbed from PendingTab) ───────────────────────────
   const { locale } = useLocale()
   const familyCurrency = locale === 'en-US' ? 'USD' : locale === 'pl' ? 'PLN' : 'GBP'
@@ -253,6 +255,16 @@ export function ActivityTab({ familyId, child, childCount, onCountChange, unpaid
           + Bonus
         </button>
       </div>
+
+      {/* ── Cross-child pending notice ────────────────────────────────────────── */}
+      {siblingsWithPending.length > 0 && (
+        <div className="rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/40 px-3.5 py-2.5 flex items-center gap-2.5">
+          <span className="text-amber-500 text-base shrink-0">⏳</span>
+          <p className="text-[12px] text-amber-800 dark:text-amber-300 leading-snug">
+            <strong>{siblingsWithPending.join(' & ')}</strong> also {siblingsWithPending.length === 1 ? 'has' : 'have'} submissions waiting — switch child to review.
+          </p>
+        </div>
+      )}
 
       {/* ── Pending approvals section (conditional) ──────────────────────────── */}
       {!pendingLoading && completions.length > 0 && (

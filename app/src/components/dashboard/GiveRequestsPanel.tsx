@@ -1,7 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { getGiveRequests, patchGiveRequest, type GiveRequest } from '../../lib/api';
 
-interface Props { familyId: string }
+interface Props {
+  familyId:      string;
+  onCountChange?: (n: number) => void;
+}
 
 function fmt(pence: number, currency: string) {
   return new Intl.NumberFormat('en-GB', { style: 'currency', currency }).format(pence / 100);
@@ -11,29 +14,43 @@ function fmtDate(epochSec: number) {
   return new Date(epochSec * 1000).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
 }
 
-export function GiveRequestsPanel({ familyId }: Props) {
+export function GiveRequestsPanel({ familyId, onCountChange }: Props) {
   const [requests,    setRequests]    = useState<GiveRequest[]>([]);
   const [history,     setHistory]     = useState<GiveRequest[]>([]);
   const [noteMap,     setNoteMap]     = useState<Record<number, string>>({});
   const [historyOpen, setHistoryOpen] = useState(false);
   const [busy,        setBusy]        = useState<number | null>(null);
+  const onCountChangeRef              = useRef(onCountChange);
+  useEffect(() => { onCountChangeRef.current = onCountChange; }, [onCountChange]);
 
   function refresh() {
-    getGiveRequests(familyId, 'requested').then(({ give_requests }) => setRequests(give_requests)).catch(() => {});
+    getGiveRequests(familyId, 'requested').then(({ give_requests }) => {
+      setRequests(give_requests);
+      onCountChangeRef.current?.(give_requests.length);
+    }).catch(() => {});
     getGiveRequests(familyId, 'all').then(({ give_requests }) =>
       setHistory(give_requests.filter(r => r.status !== 'requested'))
     ).catch(() => {});
   }
 
-  useEffect(() => { refresh(); }, [familyId]);
+  useEffect(() => {
+    refresh();
+    const t = setInterval(() => refresh(), 30_000);
+    return () => clearInterval(t);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [familyId]);
 
   async function resolve(id: number, action: 'fulfil' | 'decline') {
     setBusy(id);
     try {
       await patchGiveRequest(id, action, noteMap[id]);
-      refresh();
     } catch { /* non-fatal */ }
-    finally { setBusy(null); }
+    finally {
+      // BUG-043 fix: always refresh in finally so a failed PATCH (co-parent beat us,
+      // network error) still removes the stale card rather than leaving it frozen.
+      setBusy(null);
+      refresh();
+    }
   }
 
   if (requests.length === 0 && history.length === 0) {
