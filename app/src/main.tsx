@@ -8,43 +8,54 @@ if (!Array.prototype.at) {
 
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import * as Sentry from '@sentry/react'
-import { initAnalytics, replayAllowed } from './lib/analytics'
+import { initAnalytics } from './lib/analytics'
 import './index.css'
 import App from './App.tsx'
 
 initAnalytics()
 
-// Session replay is non-essential and never runs for children — only attach the
-// replay integration when consent allows it. Error monitoring stays always-on.
-const allowReplay = replayAllowed()
-
-const SENSITIVE_FIELDS = new Set(['password', 'pin', 'token', 'secret', 'authorization', 'jwt', 'api_key', 'apikey']);
-
-Sentry.init({
-  // Replace with your real DSN from sentry.io — safe to leave empty in dev
-  dsn: import.meta.env.VITE_SENTRY_DSN ?? '',
-  environment: import.meta.env.MODE,
-  // Only send errors in production to keep dev noise-free
-  enabled: import.meta.env.PROD,
-  tracesSampleRate: 0.2,
-  replaysOnErrorSampleRate: allowReplay ? 1.0 : 0,
-  integrations: [
-    Sentry.browserTracingIntegration(),
-    ...(allowReplay ? [Sentry.replayIntegration({ maskAllText: true, blockAllMedia: true })] : []),
-  ],
-  beforeSend(event) {
-    if (event.extra) {
-      for (const key of Object.keys(event.extra)) {
-        if (SENSITIVE_FIELDS.has(key.toLowerCase())) delete event.extra[key];
-      }
-    }
-    return event;
-  },
-})
-
+// Render the app immediately — no blocking on Sentry
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <App />
   </StrictMode>,
 )
+
+// Defer Sentry until the browser is idle so it does not block first paint.
+// Errors that occur before the idle callback (~100–200 ms after first render)
+// won't be captured, which is an acceptable trade-off.
+if (import.meta.env.PROD) {
+  const initSentry = async () => {
+    const [Sentry, { replayAllowed }] = await Promise.all([
+      import('@sentry/react'),
+      import('./lib/analytics'),
+    ])
+    const allowReplay = replayAllowed()
+    const SENSITIVE_FIELDS = new Set(['password', 'pin', 'token', 'secret', 'authorization', 'jwt', 'api_key', 'apikey'])
+    Sentry.init({
+      dsn: import.meta.env.VITE_SENTRY_DSN ?? '',
+      environment: import.meta.env.MODE,
+      enabled: true,
+      tracesSampleRate: 0.2,
+      replaysOnErrorSampleRate: allowReplay ? 1.0 : 0,
+      integrations: [
+        Sentry.browserTracingIntegration(),
+        ...(allowReplay ? [Sentry.replayIntegration({ maskAllText: true, blockAllMedia: true })] : []),
+      ],
+      beforeSend(event) {
+        if (event.extra) {
+          for (const key of Object.keys(event.extra)) {
+            if (SENSITIVE_FIELDS.has(key.toLowerCase())) delete event.extra[key]
+          }
+        }
+        return event
+      },
+    })
+  }
+
+  if ('requestIdleCallback' in window) {
+    (window as Window & typeof globalThis & { requestIdleCallback: (cb: () => void) => void }).requestIdleCallback(initSentry)
+  } else {
+    setTimeout(initSentry, 200)
+  }
+}

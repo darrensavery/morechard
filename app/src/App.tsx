@@ -1,16 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate, useSearchParams } from 'react-router-dom'
-import { FullLogo } from './components/ui/Logo'
-import { useState, useEffect } from 'react'
+import { lazy, Suspense, useState, useEffect } from 'react'
 import { ThemeProvider } from './lib/theme'
-import { RegistrationShell } from './components/registration/RegistrationShell'
-import { WelcomeOrchardScreen } from './components/registration/WelcomeOrchardScreen'
-import { LandingGate } from './screens/LandingGate'
-import { LockScreen } from './screens/LockScreen'
-import { ParentDashboard } from './screens/ParentDashboard'
-import { ChildDashboard } from './screens/ChildDashboard'
-import { JoinFamilyScreen } from './screens/JoinFamilyScreen'
-import LoginScreen from './screens/LoginScreen'
-import AuthCallbackScreen from './screens/AuthCallbackScreen'
 import { getDeviceIdentity, setDeviceIdentity, toInitials, hashPin } from './lib/deviceIdentity'
 import { LocaleProvider } from './lib/locale'
 import { analytics, track, applyInheritedChildConsent } from './lib/analytics'
@@ -19,11 +9,24 @@ import { AppUrlListener } from './components/AppUrlListener'
 import { AndroidBackController } from './components/AndroidBackController'
 import { AppAutoLock } from './components/AppAutoLock'
 import { FreshdeskWidget } from './components/FreshdeskWidget'
-import { PaywallScreen } from './screens/PaywallScreen'
-import { PaymentSuccessScreen } from './screens/PaymentSuccessScreen'
-import DemoRegisterScreen from './components/demo/DemoRegisterScreen'
-import { VerifyLedgerHashScreen } from './screens/VerifyLedgerHashScreen'
-import * as Sentry from '@sentry/react'
+// Sentry is deferred via requestIdleCallback in main.tsx — import lazily here too
+// so vendor-sentry stays out of the initial module graph
+async function getSentry() { return import('@sentry/react') }
+
+const FullLogo             = lazy(() => import('./components/ui/Logo').then(m => ({ default: m.FullLogo })))
+const RegistrationShell    = lazy(() => import('./components/registration/RegistrationShell').then(m => ({ default: m.RegistrationShell })))
+const WelcomeOrchardScreen = lazy(() => import('./components/registration/WelcomeOrchardScreen').then(m => ({ default: m.WelcomeOrchardScreen })))
+const LandingGate          = lazy(() => import('./screens/LandingGate').then(m => ({ default: m.LandingGate })))
+const ParentDashboard      = lazy(() => import('./screens/ParentDashboard').then(m => ({ default: m.ParentDashboard })))
+const ChildDashboard       = lazy(() => import('./screens/ChildDashboard').then(m => ({ default: m.ChildDashboard })))
+const JoinFamilyScreen     = lazy(() => import('./screens/JoinFamilyScreen').then(m => ({ default: m.JoinFamilyScreen })))
+const LoginScreen          = lazy(() => import('./screens/LoginScreen'))
+const AuthCallbackScreen   = lazy(() => import('./screens/AuthCallbackScreen'))
+const PaywallScreen        = lazy(() => import('./screens/PaywallScreen').then(m => ({ default: m.PaywallScreen })))
+const PaymentSuccessScreen = lazy(() => import('./screens/PaymentSuccessScreen').then(m => ({ default: m.PaymentSuccessScreen })))
+const DemoRegisterScreen   = lazy(() => import('./components/demo/DemoRegisterScreen'))
+const VerifyLedgerHashScreen = lazy(() => import('./screens/VerifyLedgerHashScreen').then(m => ({ default: m.VerifyLedgerHashScreen })))
+const LockScreen             = lazy(() => import('./screens/LockScreen').then(m => ({ default: m.LockScreen })))
 
 /**
  * MagicLinkVerifyScreen — handles /auth/verify?token=...
@@ -110,7 +113,7 @@ function MagicLinkVerifyScreen() {
       registered_at:  new Date().toISOString(),
       auth_method:    'none',
     })
-    Sentry.setUser({ id: identity.user_id })
+    getSentry().then(S => S.setUser({ id: identity.user_id }))
     analytics.identify(identity.user_id, { role: 'parent', family_id: identity.family_id })
     track.registrationCompleted({ auth_method: 'none', parenting_mode: 'unknown', currency: 'unknown' })
     window.location.href = '/parent'
@@ -131,7 +134,7 @@ function MagicLinkVerifyScreen() {
     return (
       <div className="min-h-svh flex items-center justify-center bg-[var(--color-bg)] px-5">
         <div className="max-w-sm w-full text-center space-y-5">
-          <FullLogo iconSize={26} />
+          <Suspense fallback={null}><FullLogo iconSize={26} /></Suspense>
           <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] px-6 py-7 space-y-3 shadow-sm">
             <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-amber-500/10">
               <svg className="h-6 w-6 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -164,7 +167,7 @@ function MagicLinkVerifyScreen() {
         <div className="max-w-md mx-auto px-5 pt-4 pb-3 space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
-              <FullLogo iconSize={26} />
+              <Suspense fallback={null}><FullLogo iconSize={26} /></Suspense>
             </div>
             <div className="text-right">
               <span className="text-[11px] font-semibold text-[var(--color-text-muted)] uppercase tracking-wider">
@@ -181,10 +184,12 @@ function MagicLinkVerifyScreen() {
         </div>
       </header>
       <main className="flex-1 px-5 py-8 max-w-md mx-auto w-full">
-        <WelcomeOrchardScreen
-          displayName={identity?.display_name}
-          onDone={handleWelcomeDone}
-        />
+        <Suspense fallback={<SuspenseFallback />}>
+          <WelcomeOrchardScreen
+            displayName={identity?.display_name}
+            onDone={handleWelcomeDone}
+          />
+        </Suspense>
       </main>
       <footer className="px-5 py-4 text-center border-t border-[var(--color-border)]">
         <p className="text-[11px] text-[var(--color-text-muted)] tracking-wide">Your data is private and secure</p>
@@ -212,6 +217,14 @@ function RequireSession({ children }: { children: React.ReactNode }) {
   return <>{children}</>
 }
 
+function SuspenseFallback() {
+  return (
+    <div className="min-h-svh flex items-center justify-center bg-[var(--color-bg)]">
+      <span className="h-8 w-8 animate-spin rounded-full border-2 border-[var(--brand-primary)] border-t-transparent" />
+    </div>
+  )
+}
+
 export default function App() {
   async function handleRegistrationComplete(
     familyId: string,
@@ -233,8 +246,7 @@ export default function App() {
       auth_method:    authMethod ?? 'none',
       pin_hash,
     })
-    Sentry.setUser({ id: userId })
-    Sentry.setTag('auth_method', authMethod ?? 'none')
+    getSentry().then(S => { S.setUser({ id: userId }); S.setTag('auth_method', authMethod ?? 'none') })
     analytics.identify(userId, { role: 'parent', family_id: familyId })
     track.registrationCompleted({
       auth_method:     authMethod ?? 'none',
@@ -281,32 +293,34 @@ export default function App() {
       <AndroidBackController />
       <AppAutoLock />
       <FreshdeskWidget />
-      <Routes>
-        <Route path="/"         element={<RootGate />} />
-        <Route path="/lock"     element={<LockScreen />} />
-        <Route path="/join"     element={<JoinFamilyScreen />} />
-        <Route
-          path="/register"
-          element={
-            <RegistrationShell
-              onComplete={(familyId, token, displayName, userId, authMethod, pin) =>
-                handleRegistrationComplete(familyId, token, displayName, userId, authMethod, pin)
-              }
-            />
-          }
-        />
-        <Route path="/auth/verify"    element={<MagicLinkVerifyScreen />} />
-        <Route path="/auth/login"    element={<LoginScreen />} />
-        <Route path="/demo-register" element={<DemoRegisterScreen />} />
-        <Route path="/auth/callback" element={<AuthCallbackScreen />} />
-        <Route path="/paywall"          element={<PaywallScreen />} />
-        <Route path="/payment-success"  element={<PaymentSuccessScreen />} />
-        <Route path="/verify"        element={<VerifyLedgerHashScreen />} />
-        <Route path="/verify/:hash" element={<VerifyLedgerHashScreen />} />
-        <Route path="/parent" element={<RequireSession><ParentDashboard /></RequireSession>} />
-        <Route path="/child"  element={<RequireSession><ChildDashboard /></RequireSession>} />
-        <Route path="*"       element={<Navigate to="/" replace />} />
-      </Routes>
+      <Suspense fallback={<SuspenseFallback />}>
+        <Routes>
+          <Route path="/"         element={<RootGate />} />
+          <Route path="/lock"     element={<LockScreen />} />
+          <Route path="/join"     element={<JoinFamilyScreen />} />
+          <Route
+            path="/register"
+            element={
+              <RegistrationShell
+                onComplete={(familyId, token, displayName, userId, authMethod, pin) =>
+                  handleRegistrationComplete(familyId, token, displayName, userId, authMethod, pin)
+                }
+              />
+            }
+          />
+          <Route path="/auth/verify"    element={<MagicLinkVerifyScreen />} />
+          <Route path="/auth/login"    element={<LoginScreen />} />
+          <Route path="/demo-register" element={<DemoRegisterScreen />} />
+          <Route path="/auth/callback" element={<AuthCallbackScreen />} />
+          <Route path="/paywall"          element={<PaywallScreen />} />
+          <Route path="/payment-success"  element={<PaymentSuccessScreen />} />
+          <Route path="/verify"        element={<VerifyLedgerHashScreen />} />
+          <Route path="/verify/:hash" element={<VerifyLedgerHashScreen />} />
+          <Route path="/parent" element={<RequireSession><ParentDashboard /></RequireSession>} />
+          <Route path="/child"  element={<RequireSession><ChildDashboard /></RequireSession>} />
+          <Route path="*"       element={<Navigate to="/" replace />} />
+        </Routes>
+      </Suspense>
     </BrowserRouter>
     </ThemeProvider>
     </LocaleProvider>
