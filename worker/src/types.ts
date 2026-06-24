@@ -5,6 +5,8 @@ export interface Env {
   RECEIPTS: R2Bucket;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   AI: any; // Cloudflare Workers AI binding (@cloudflare/workers-types Ai)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  BROWSER: any; // Cloudflare Browser Rendering binding (@cloudflare/puppeteer)
   ENVIRONMENT: string;
   JWT_SECRET: string;
   RESEND_API_KEY: string;

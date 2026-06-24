@@ -1,17 +1,20 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
-import type { BalanceSummary, Goal, Chore } from '../../lib/api'
+import type { BalanceSummary, Goal, Chore, ChildNudge } from '../../lib/api'
 import { getBalance, getGoals, getChores, purchaseGoal, formatCurrency, effectiveTarget } from '../../lib/api'
+import { ChildNudgeBanner } from '../child/ChildNudgeBanner'
 import { GrowingTree } from '../ui/GrowingTree'
 import { SavingsGrove } from './SavingsGrove'
 
 interface Props {
-  familyId: string
-  childId:  string
-  currency: string
-  appView:  'ORCHARD' | 'CLEAN'
+  familyId:        string
+  childId:         string
+  currency:        string
+  appView:         'ORCHARD' | 'CLEAN'
+  nudge?:          ChildNudge | null
+  onNudgeDismiss?: () => void
 }
 
-export function ChildGoalsTab({ familyId, childId, currency, appView }: Props) {
+export function ChildGoalsTab({ familyId, childId, currency, appView, nudge, onNudgeDismiss }: Props) {
   const [balance,  setBalance]  = useState<BalanceSummary | null>(null)
   const [goals,    setGoals]    = useState<Goal[]>([])
   const [chores,   setChores]   = useState<Chore[]>([])
@@ -109,6 +112,11 @@ export function ChildGoalsTab({ familyId, childId, currency, appView }: Props) {
 
   return (
     <div className="space-y-4">
+      {/* AI Mentor goals nudge */}
+      {nudge && onNudgeDismiss && (
+        <ChildNudgeBanner nudge={nudge} appView={appView} onDismiss={onNudgeDismiss} />
+      )}
+
       <div className="bg-[var(--color-surface)] rounded-2xl card-depth border border-[var(--color-border)] overflow-hidden">
         <div className="px-4 pt-4 pb-3 flex items-center justify-between">
           <h2 className="text-[15px] font-bold text-[var(--color-text)]">{appView === 'CLEAN' ? 'My Goals' : '🌳 Savings Grove'}</h2>

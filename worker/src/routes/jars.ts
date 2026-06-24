@@ -2,6 +2,7 @@ import { Env } from '../types.js';
 import { json, error } from '../lib/response.js';
 import { JwtPayload } from '../lib/jwt.js';
 import { getJarConfig, getJarBalances } from '../lib/jar-balance.js';
+import { generateChildNudge, generateOnceChildNudge } from './child-nudges.js';
 
 type AuthedRequest = Request & { auth: JwtPayload };
 
@@ -124,6 +125,12 @@ export async function handlePutJarConfig(request: Request, env: Env): Promise<Re
   }
 
   await env.DB.batch(ops);
+
+  // Give jar first enabled — welcome nudge for Pillar 5 (once ever)
+  if (isFirstEnable && give_pct > 0) {
+    generateOnceChildNudge(env.DB, child_id, family_id, 'give_jar_activated').catch(() => {})
+  }
+
   const balances = await getJarBalances(env.DB, family_id, child_id);
   return json({ ok: true, balances });
 }
@@ -169,6 +176,11 @@ export async function handlePostJarMove(request: Request, env: Env): Promise<Res
     env.DB.prepare(`INSERT INTO jar_movements (family_id,child_id,jar,delta,kind,created_at) VALUES (?,?,?,?,'manual_move',?)`)
       .bind(family_id, child_id, to_jar, amount, now),
   ]);
+
+  // Child nudge — honest reflection when savings are raided for spending
+  if (from_jar === 'save' && to_jar === 'spend') {
+    generateChildNudge(env.DB, child_id, family_id, 'jar_raid').catch(() => {})
+  }
 
   const updated = await getJarBalances(env.DB, family_id, child_id);
   return json({ ok: true, balances: updated });

@@ -191,6 +191,7 @@ import {
 import { handleConsentPost, handleConsentGet, handleAnalyticsConsentPost, handleAnalyticsEffectiveGet } from './routes/consent.js';
 import { handlePublicInterest } from './routes/public-interest.js';
 import { handleGetJars, handlePutJarConfig, handlePostJarMove, handleGetJarMovements } from './routes/jars.js';
+import { handleGetChildNudges, handleDismissChildNudge, runChildNudgeBackgroundChecks } from './routes/child-nudges.js';
 import { handlePostGiveRequest, handleGetGiveRequests, handlePatchGiveRequest } from './routes/give-requests.js';
 import { json, error } from './lib/response.js';
 import { JwtPayload } from './lib/jwt.js';
@@ -314,6 +315,16 @@ export default Sentry.withSentry(
     // ── 8. Review feedback email digest ────────────────────────
     if (new Date(now * 1000).getUTCHours() === 7) {
       await handleFeedbackDigest(env);
+    }
+
+    // ── 9. Child nudge background checks (Sunday 20:00 UTC) ────
+    // Pattern-based nudges: low consistency, spend-heavy, goal at risk,
+    // give jar stagnant, Pillar 5 (high balance + no giving), etc.
+    {
+      const d = new Date(now * 1000);
+      if (d.getUTCDay() === 0 && d.getUTCHours() === 20) {
+        await runChildNudgeBackgroundChecks(env);
+      }
     }
   },
 } satisfies ExportedHandler<Env>,
@@ -584,6 +595,10 @@ async function route(request: Request, env: Env, method: string, path: string): 
 
   // Insights — parent or child (child sees own data only, enforced in handler)
   if (path === '/api/insights'  && method === 'GET')  return withAuth(request, auth, env, handleInsights);
+
+  // Child nudges — AI Mentor inline coaching cards
+  if (path === '/api/child-nudges'         && method === 'GET')  return withAuth(request, auth, env, handleGetChildNudges);
+  if (path === '/api/child-nudges/dismiss' && method === 'POST') return withAuth(request, auth, env, handleDismissChildNudge);
 
   // Streaks — child or parent (child restricted to own data, enforced in handler)
   const streaksMatch = path.match(/^\/api\/streaks\/([^/]+)$/)

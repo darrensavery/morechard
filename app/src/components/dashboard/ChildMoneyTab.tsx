@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
-import type { BalanceSummary, Goal, SpendingRecord, JarBalances, JarConfig } from '../../lib/api'
+import type { BalanceSummary, Goal, SpendingRecord, JarBalances, JarConfig, ChildNudge } from '../../lib/api'
 import { getBalance, getGoals, getSpending, getJars, formatCurrency } from '../../lib/api'
+import { ChildNudgeBanner } from '../child/ChildNudgeBanner'
 import { spendCategoryHeading } from '../../lib/spendCategories'
 import { ChildHistoryTab } from './ChildHistoryTab'
 import { SpendGuideSheet } from './SpendGuideSheet'
@@ -11,9 +12,12 @@ import { JarOnboardingWizard } from './JarOnboardingWizard'
 import { GiveRequestSheet } from './GiveRequestSheet'
 
 interface Props {
-  familyId: string
-  childId:  string
-  currency: string
+  familyId:       string
+  childId:        string
+  currency:       string
+  appView:        'ORCHARD' | 'CLEAN'
+  nudge?:         ChildNudge | null
+  onNudgeDismiss?: () => void
 }
 
 function fmtDate(epochSec: number): string {
@@ -22,7 +26,7 @@ function fmtDate(epochSec: number): string {
   })
 }
 
-export function ChildMoneyTab({ familyId, childId, currency }: Props) {
+export function ChildMoneyTab({ familyId, childId, currency, appView, nudge, onNudgeDismiss }: Props) {
   const [balance,     setBalance]     = useState<BalanceSummary | null>(null)
   const [goals,       setGoals]       = useState<Goal[]>([])
   const [spending,    setSpending]    = useState<SpendingRecord[]>([])
@@ -81,6 +85,11 @@ export function ChildMoneyTab({ familyId, childId, currency }: Props) {
 
   return (
     <div className="space-y-4">
+
+      {/* AI Mentor money nudge */}
+      {nudge && onNudgeDismiss && (
+        <ChildNudgeBanner nudge={nudge} appView={appView} onDismiss={onNudgeDismiss} />
+      )}
 
       {/* Balance hero — replaced by jar cards when jars are enabled */}
       {jarBalances?.enabled ? (

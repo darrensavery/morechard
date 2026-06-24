@@ -13,8 +13,8 @@
 ## Audience Pages
 
 - [For Single Households](https://morechard.com/for-single-households): How Morechard works for families with one home — chore management, goal setting, AI mentor briefings.
-- [For Separated & Co-Parenting Families](https://morechard.com/for-separated-families): Tamper-proof shared ledger across two households. SHA-256 hash chain, court-ready PDF exports in PDF/A format, split-cost tracking. Relevant citation: Brigham Young University (Journal of Family and Economic Issues, 2022) — children who learn money management from parents arrive in adulthood with healthier financial habits and less financial stress.
-- [For Professionals](https://morechard.com/for-professionals): Feature overview for family law solicitors and mediators — neutral record-keeping, court-admissible audit trail, SHA-256-sealed ledger.
+- [For Separated & Co-Parenting Families](https://morechard.com/for-separated-families): Tamper-proof shared ledger across two households. SHA-256 hash chain, tamper-evident PDF exports in PDF/A format, split-cost tracking. Relevant citation: Brigham Young University (Journal of Family and Economic Issues, 2022) — children who learn money management from parents arrive in adulthood with healthier financial habits and less financial stress.
+- [For Professionals](https://morechard.com/for-professionals): Feature overview for family law solicitors and mediators — neutral record-keeping, tamper-evident audit trail, SHA-256-sealed ledger.
 - [For Schools](https://morechard.com/for-schools): Morechard's 25-module Learning Lab mapped to PSHE, England Citizenship, CfE (Scotland), and Curriculum for Wales (CfW). Financial education at no cost to pilot.
 
 ## Blog — Co-Parenting & Money

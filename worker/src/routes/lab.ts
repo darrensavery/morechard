@@ -7,6 +7,16 @@ import { json, error } from '../lib/response.js'
 import { nanoid } from '../lib/nanoid.js'
 import type { JwtPayload } from '../lib/jwt.js'
 import { evaluatePassive } from '../lib/labTriggers.js'
+import { generateOnceChildNudge } from './child-nudges.js'
+
+// Maps Learning Lab module slugs to real-data reinforcement nudge trigger types.
+// Fires once ever after the child completes any act of a reinforceable module,
+// tying the lesson directly back to data visible on their dashboard.
+const LAB_REINFORCEMENT: Record<string, string> = {
+  M9b: 'lab_reinforced_M9b',
+  M11: 'lab_reinforced_M11',
+  M14: 'lab_reinforced_M14',
+}
 
 type AuthedRequest = Request & { auth: JwtPayload }
 
@@ -162,6 +172,12 @@ export async function handleLabActComplete(
     `INSERT OR IGNORE INTO module_act_progress (id, child_id, module_slug, act_num, completed_at)
      VALUES (?, ?, ?, ?, ?)`
   ).bind(nanoid(), childId, slug, actNum, now).run()
+
+  // Reinforcement nudge — ties the lesson back to the child's real data on their dashboard
+  const reinforceTrigger = LAB_REINFORCEMENT[slug]
+  if (reinforceTrigger) {
+    generateOnceChildNudge(env.DB, childId, auth.family_id, reinforceTrigger).catch(() => {})
+  }
 
   return json({ ok: true })
 }

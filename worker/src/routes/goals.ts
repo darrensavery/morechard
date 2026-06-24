@@ -21,6 +21,7 @@ import {
   evaluateOnGoalPurchase,
 } from '../lib/labTriggers.js';
 import { getJarConfig, getJarBalances } from '../lib/jar-balance.js';
+import { generateChildNudge, generateOnceChildNudge } from './child-nudges.js';
 
 type AuthedRequest = Request & { auth: JwtPayload };
 
@@ -100,6 +101,22 @@ export async function handleGoalCreate(request: Request, env: Env): Promise<Resp
 
   // Lab triggers — fire-and-forget
   evaluateOnGoalCreate(env.DB, child_id as string, (category as string) ?? 'other', (deadline as string | null) ?? null).catch(() => {})
+
+  // Child nudge — encourage the child for setting a new goal
+  generateChildNudge(env.DB, child_id as string, auth.family_id, 'goal_created').catch(() => {})
+
+  // Gaming goal — digital currency awareness (once ever)
+  if (String(category ?? 'other') === 'gaming') {
+    generateOnceChildNudge(env.DB, child_id as string, auth.family_id, 'gaming_goal_created').catch(() => {})
+  }
+
+  // Portfolio milestone — fire once when child reaches 3+ active goals
+  const postCreateCount = await env.DB
+    .prepare(`SELECT COUNT(*) AS cnt FROM goals WHERE child_id=? AND archived=0 AND status='ACTIVE'`)
+    .bind(child_id).first<{ cnt: number }>()
+  if ((postCreateCount?.cnt ?? 0) >= 3) {
+    generateOnceChildNudge(env.DB, child_id as string, auth.family_id, 'multi_goal_portfolio').catch(() => {})
+  }
 
   return json(goal, 201);
 }
@@ -247,6 +264,9 @@ export async function handleGoalPurchase(request: Request, env: Env, id: string)
 
   // Lab trigger — fire-and-forget
   evaluateOnGoalPurchase(env.DB, goal.child_id).catch(() => {})
+
+  // Child nudge — celebrate the goal being reached
+  generateChildNudge(env.DB, goal.child_id, goal.family_id, 'goal_funded').catch(() => {})
 
   return json({ ok: true, spend_id: spendId });
 }

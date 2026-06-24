@@ -21,6 +21,9 @@ database_id = "a6f9fe7d-7e6c-4176-8654-b9d6c83e5cba"
 [ai]
 binding = "AI"
 
+[browser]
+binding = "BROWSER"
+
 [[r2_buckets]]
 binding = "EVIDENCE"
 bucket_name = "morechard-evidence"
@@ -90,3 +93,6 @@ bucket_name = "morechard-receipts"
 
 [env.production.ai]
 binding = "AI"
+
+[env.production.browser]
+binding = "BROWSER"

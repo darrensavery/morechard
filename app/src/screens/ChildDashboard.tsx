@@ -6,9 +6,10 @@ import {
   getChores, submitChore, uploadProof, getBalance, getGoals,
   getCompletions, getSettings, updateSettings, getMyLockStatus, getFamilyId, getUserId,
   formatCurrency, purchaseGoal, effectiveTarget,
-  apiUrl, authHeaders,
+  apiUrl, authHeaders, getChildNudges,
 } from '../lib/api'
-import type { Chore, BalanceSummary, Goal, Completion } from '../lib/api'
+import type { Chore, BalanceSummary, Goal, Completion, ChildNudge } from '../lib/api'
+import { ChildNudgeBanner } from '../components/child/ChildNudgeBanner'
 import { useAppView } from '../lib/useTone'
 import { ThemePicker } from '../lib/theme'
 import { AvatarSVG, AVATAR_CATEGORIES, avatarsForCategory } from '../lib/avatars'
@@ -143,6 +144,13 @@ export function ChildDashboard() {
     total_saved_pence:     number
   } | null>(null)
 
+  // AI Mentor nudges — one per screen context, fetched once on mount
+  const [childNudges, setChildNudges] = useState<{
+    earn:  ChildNudge | null
+    money: ChildNudge | null
+    goals: ChildNudge | null
+  }>({ earn: null, money: null, goals: null })
+
   // Per-chore submission state
   const [childTab,      setChildTab]      = useState<'chores' | 'money' | 'goals' | 'lab'>('chores')
   const [labUnread,     setLabUnread]     = useState(0)
@@ -255,6 +263,14 @@ export function ChildDashboard() {
       })
       .catch(() => { /* non-critical — badges silently absent */ })
   }, [userId]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Fetch AI Mentor nudges on mount — one request covers all three screen contexts
+  useEffect(() => {
+    if (!userId) return
+    getChildNudges(userId)
+      .then(r => setChildNudges(r.nudges))
+      .catch(() => { /* non-critical — nudges silently absent */ })
+  }, [userId])
 
   // Drain the celebration queue whenever balance data changes
   useEffect(() => {
@@ -567,6 +583,15 @@ export function ChildDashboard() {
       <main className="flex-1 max-w-[560px] mx-auto w-full px-3.5 py-4 flex flex-col gap-4">
         <div className={childTab === 'chores' ? 'tab-panel' : 'tab-panel hidden'}>
           <div className="space-y-4">
+            {/* AI Mentor earn nudge — dismisses itself when the X is tapped */}
+            {childNudges.earn && (
+              <ChildNudgeBanner
+                nudge={childNudges.earn}
+                appView={appView}
+                onDismiss={() => setChildNudges(n => ({ ...n, earn: null }))}
+              />
+            )}
+
             {/* Weekly day planner */}
             {!loading && (
               <div className={cardClass}>
@@ -666,8 +691,26 @@ export function ChildDashboard() {
             )}
           </div>
         </div>
-        <div className={childTab === 'money' ? 'tab-panel' : 'tab-panel hidden'}><ChildMoneyTab familyId={familyId} childId={userId} currency={currency} /></div>
-        <div className={childTab === 'goals' ? 'tab-panel' : 'tab-panel hidden'}><ChildGoalsTab familyId={familyId} childId={userId} currency={currency} appView={appView} /></div>
+        <div className={childTab === 'money' ? 'tab-panel' : 'tab-panel hidden'}>
+          <ChildMoneyTab
+            familyId={familyId}
+            childId={userId}
+            currency={currency}
+            appView={appView}
+            nudge={childNudges.money}
+            onNudgeDismiss={() => setChildNudges(n => ({ ...n, money: null }))}
+          />
+        </div>
+        <div className={childTab === 'goals' ? 'tab-panel' : 'tab-panel hidden'}>
+          <ChildGoalsTab
+            familyId={familyId}
+            childId={userId}
+            currency={currency}
+            appView={appView}
+            nudge={childNudges.goals}
+            onNudgeDismiss={() => setChildNudges(n => ({ ...n, goals: null }))}
+          />
+        </div>
         <div className={childTab === 'lab'   ? 'tab-panel' : 'tab-panel hidden'}><LabTab appView={appView} /></div>
 
       </main>

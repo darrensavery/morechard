@@ -1281,3 +1281,39 @@ export async function voidExpense(expenseId: number, body: {
 }): Promise<{ voided_id: number; replacement_id: number | null }> {
   return request(`/api/shared-expenses/${expenseId}/void`, { method: 'POST', body: JSON.stringify(body) });
 }
+
+// ----------------------------------------------------------------
+// Child Nudges — AI Mentor inline coaching cards
+// ----------------------------------------------------------------
+
+export interface ChildNudge {
+  id:             number;
+  trigger_type:   string;
+  screen_context: string;
+  orchard_text:   string;
+  clean_text:     string;
+  pillar:         string;
+  tone:           'encouraging' | 'celebratory' | 'honest' | 'accountability';
+  source:         'rule_based' | 'ai';
+  parent_summary: string;
+  created_at:     number;
+}
+
+export interface ChildNudgesResponse {
+  nudges: {
+    earn:  ChildNudge | null;
+    money: ChildNudge | null;
+    goals: ChildNudge | null;
+  };
+}
+
+export async function getChildNudges(childId: string): Promise<ChildNudgesResponse> {
+  return request(`/api/child-nudges?child_id=${childId}`);
+}
+
+export async function dismissChildNudge(nudgeId: number): Promise<{ ok: boolean }> {
+  return request('/api/child-nudges/dismiss', {
+    method: 'POST',
+    body: JSON.stringify({ nudge_id: nudgeId }),
+  });
+}

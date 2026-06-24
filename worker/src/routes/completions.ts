@@ -27,7 +27,8 @@ import { getStreakState, buildStreakEvent, saveStreakEvent, allScheduledChoresDo
 import { getBadgeStats, badgesToAward, insertBadges } from '../lib/badges.js';
 import { evaluateOnChoreApproval, evaluatePassive } from '../lib/labTriggers.js';
 import { nanoid } from '../lib/nanoid.js';
-import { getJarConfig } from '../lib/jar-balance.js';
+import { getJarConfig } from '../lib/jar-balance.js'
+import { generateChildNudge, generateOnceChildNudge } from './child-nudges.js';
 
 type AuthedRequest = Request & { auth: JwtPayload };
 
@@ -292,6 +293,11 @@ export async function handleCompletionApprove(
       else if (newStreak === 7)  pendingCelebrations.push(`STREAK_7:${previousStreak}:${newStreak}`)
       else if (newStreak === 14) pendingCelebrations.push(`STREAK_14:${previousStreak}:${newStreak}`)
       else if (newStreak === 30) pendingCelebrations.push(`STREAK_30:${previousStreak}:${newStreak}`)
+
+      // Child nudge — milestone streaks get a personalised coaching card
+      if (newStreak === 3 || newStreak === 7 || newStreak === 14) {
+        generateChildNudge(env.DB, childId, comp.family_id, `streak_${newStreak}`).catch(() => {})
+      }
     }
 
     // Badge evaluation runs on every approval
@@ -321,6 +327,23 @@ export async function handleCompletionApprove(
     // Lab triggers — fire-and-forget, non-blocking
     evaluateOnChoreApproval(env.DB, comp.child_id).catch(() => {})
     evaluatePassive(env.DB, comp.child_id).catch(() => {})
+
+    // First-ever task completion nudge
+    const firstTaskRow = await env.DB
+      .prepare(`SELECT COUNT(*) AS cnt FROM completions WHERE child_id = ? AND status = 'completed'`)
+      .bind(childId).first<{ cnt: number }>()
+    if ((firstTaskRow?.cnt ?? 0) === 1) {
+      generateChildNudge(env.DB, childId, comp.family_id, 'first_task_complete').catch(() => {})
+    }
+
+    // Cumulative earnings milestone nudges (£20 / £50 / £100)
+    const lifetimeRow = await env.DB
+      .prepare(`SELECT COALESCE(SUM(amount),0) AS total FROM ledger WHERE child_id=? AND entry_type='credit' AND verification_status!='reversed'`)
+      .bind(childId).first<{ total: number }>()
+    const lifetimeEarnings = lifetimeRow?.total ?? 0
+    if (lifetimeEarnings >= 2000)  generateOnceChildNudge(env.DB, childId, comp.family_id, 'earnings_milestone_20').catch(() => {})
+    if (lifetimeEarnings >= 5000)  generateOnceChildNudge(env.DB, childId, comp.family_id, 'earnings_milestone_50').catch(() => {})
+    if (lifetimeEarnings >= 10000) generateOnceChildNudge(env.DB, childId, comp.family_id, 'earnings_milestone_100').catch(() => {})
 
     // ── Review prompt eligibility check ───────────────────────────
     let showReviewPrompt = false
@@ -430,9 +453,9 @@ export async function handleCompletionReject(
   const parent_notes = body?.parent_notes ? String(body.parent_notes).trim() : null;
 
   const comp = await env.DB
-    .prepare('SELECT id, family_id, status FROM completions WHERE id = ?')
+    .prepare('SELECT id, family_id, child_id, status FROM completions WHERE id = ?')
     .bind(completionId)
-    .first<{ id: string; family_id: string; status: string }>();
+    .first<{ id: string; family_id: string; child_id: string; status: string }>();
 
   if (!comp) return error('Completion not found', 404);
   if (comp.family_id !== auth.family_id) return error('Forbidden', 403);
@@ -446,6 +469,9 @@ export async function handleCompletionReject(
               WHERE id = ?`)
     .bind(parent_notes, now, auth.sub, completionId)
     .run();
+
+  // Child nudge — honest feedback prompt after rejection
+  generateChildNudge(env.DB, comp.child_id, comp.family_id, 'task_rejected').catch(() => {})
 
   return json({ ok: true, parent_notes });
 }

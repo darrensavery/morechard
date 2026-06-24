@@ -15,7 +15,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { AnimatePresence } from 'framer-motion'
 import type { ChildRecord, InsightsData, MentorBriefing } from '../../lib/api'
-import { getInsights, formatCurrency } from '../../lib/api'
+import { getInsights, formatCurrency, getChildNudges } from '../../lib/api'
 import { useAndroidBack } from '../../hooks/useAndroidBack'
 import { PremiumShell, MentorAvatar, ProBadge, injectPremiumStyles } from '../ui/PremiumShell'
 import { SparklineCard } from './SparklineCard'
@@ -106,6 +106,18 @@ function InsightsDashboard({
   data, child, currency, period,
 }: { data: InsightsData; child: ChildRecord; currency: string; period: 'week' | 'month' | 'all' }) {
   const [expandedMetric, setExpandedMetric] = useState<'responsibility' | 'consistency' | 'savings' | null>(null)
+  const [childNudgeSummary, setChildNudgeSummary] = useState<string | null>(null)
+  const childFirstName = child.display_name.split(' ')[0]
+
+  useEffect(() => {
+    getChildNudges(child.id)
+      .then(r => {
+        const all = [r.nudges.earn, r.nudges.money, r.nudges.goals].filter(Boolean)
+        const recent = all.sort((a, b) => b!.created_at - a!.created_at)[0]
+        setChildNudgeSummary(recent?.parent_summary ?? null)
+      })
+      .catch(() => {})
+  }, [child.id])
 
   return (
     <div className="space-y-4">
@@ -179,7 +191,28 @@ function InsightsDashboard({
         setExpandedMetric(candidates[0][0])
       }} />
 
-      {/* 5. Learning Lab section (paid add-on only) */}
+      {/* 5. Child nudge summary — what the AI sent to the child this week */}
+      {childNudgeSummary && (
+        <div
+          className="flex items-start gap-2.5 px-3.5 py-2.5 rounded-xl"
+          style={{ background: 'rgba(13,148,136,0.07)', border: '1px solid rgba(13,148,136,0.15)' }}
+        >
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
+               stroke="#0d9488" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+               className="shrink-0 mt-0.5">
+            <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10z"/>
+            <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/>
+          </svg>
+          <p className="text-[11px] leading-relaxed" style={{ color: '#6b9e87' }}>
+            <span className="font-semibold" style={{ color: '#0d9488' }}>
+              Sent to {childFirstName} this week:
+            </span>{' '}
+            {childNudgeSummary}
+          </p>
+        </div>
+      )}
+
+      {/* 6. Learning Lab section (paid add-on only) */}
       {data.learning_lab_enabled && (
         <LabSection
           childName={child.display_name.split(' ')[0]}

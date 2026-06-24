@@ -1,6 +1,6 @@
 /**
  * Shared Learning Lab curriculum — single source of truth.
- * 20 modules across 6 pillars. Matches 08-learning-lab.md exactly.
+ * 25 modules across 6 pillars (21 original + 4 gap-closure). Matches docs/learning-lab-curriculum-mapping.md.
  * Import in LabSection (parent Insights view) and LabTab (child view).
  */
 

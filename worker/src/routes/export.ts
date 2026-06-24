@@ -22,6 +22,7 @@
  * in client-side state.
  */
 
+import puppeteer from '@cloudflare/puppeteer';
 import { Env } from '../types.js';
 import { error } from '../lib/response.js';
 import { sha256 } from '../lib/hash.js';
@@ -283,11 +284,43 @@ export async function handleExportPdf(request: Request, env: Env): Promise<Respo
     });
   }
 
+  const filename = `morechard-${tier}-report-${family_id}-${exportTs}`;
+
+  // Render HTML → PDF via Cloudflare Browser Rendering.
+  // Falls back to an HTML download if the BROWSER binding is unavailable
+  // (e.g. during local `wrangler dev` without --remote).
+  if (env.BROWSER) {
+    let browser: Awaited<ReturnType<typeof puppeteer.launch>> | null = null;
+    try {
+      browser = await puppeteer.launch(env.BROWSER);
+      const page = await browser.newPage();
+      await page.setContent(html, { waitUntil: 'networkidle0' });
+      const pdf = await page.pdf({
+        format: 'A4',
+        printBackground: true,
+        margin: { top: '16mm', bottom: '16mm', left: '14mm', right: '14mm' },
+      });
+      return new Response(pdf, {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/pdf',
+          'Content-Disposition': `attachment; filename="${filename}.pdf"`,
+        },
+      });
+    } catch (err) {
+      // Log but don't crash — fall through to HTML fallback below.
+      console.error('PDF render failed, falling back to HTML:', err);
+    } finally {
+      await browser?.close();
+    }
+  }
+
+  // HTML fallback (local dev or browser render failure).
   return new Response(html, {
     status: 200,
     headers: {
       'Content-Type': 'text/html; charset=utf-8',
-      'Content-Disposition': `inline; filename="morechard-${tier}-report-${family_id}-${Date.now()}.html"`,
+      'Content-Disposition': `attachment; filename="${filename}.html"`,
     },
   });
 }
