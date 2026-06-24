@@ -202,10 +202,13 @@ function generatePricingCards(pricing) {
 
 function buildHomepageHeadExtras(pricing) {
   const offers = Object.values(pricing).map(p =>
-    `      { "@type": "Offer", "name": ${JSON.stringify(p.name)}, "price": ${JSON.stringify(p.price_whole + p.price_dec)}, "priceCurrency": "GBP" }`
+    `      { "@type": "Offer", "name": ${JSON.stringify(p.name)}, "price": ${JSON.stringify(p.price_whole + p.price_dec)}, "priceCurrency": "GBP", "availability": "https://schema.org/PreOrder", "url": "https://morechard.com/pricing" }`
   ).join(',\n');
 
   return `
+  <!-- Canonical -->
+  <link rel="canonical" href="{{CANONICAL}}" />
+
   <!-- Open Graph -->
   <meta property="og:type" content="website" />
   <meta property="og:url" content="{{CANONICAL}}" />
@@ -231,14 +234,36 @@ function buildHomepageHeadExtras(pricing) {
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
-    "@type": "Organization",
+    "@type": "WebSite",
+    "@id": "https://morechard.com/#website",
     "name": "Morechard",
     "url": "https://morechard.com",
-    "logo": "https://morechard.com/favicon.svg",
+    "inLanguage": "en-GB",
+    "publisher": { "@id": "https://morechard.com/#organization" }
+  }
+  <\/script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "@id": "https://morechard.com/#organization",
+    "name": "Morechard",
+    "url": "https://morechard.com",
+    "logo": {
+      "@type": "ImageObject",
+      "@id": "https://morechard.com/#logo",
+      "url": "https://morechard.com/logo-512.png",
+      "width": 512,
+      "height": 512,
+      "caption": "Morechard"
+    },
+    "image": { "@id": "https://morechard.com/#logo" },
+    "description": "Morechard is a pocket money and chore tracker app for families, including separated and co-parenting households. Real financial literacy built in.",
+    "email": "hello@morechard.com",
     "contactPoint": {
       "@type": "ContactPoint",
       "email": "hello@morechard.com",
-      "contactType": "customer support"
+      "contactType": "customer service"
     }
   }
   <\/script>
@@ -246,10 +271,13 @@ function buildHomepageHeadExtras(pricing) {
   {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
+    "@id": "https://morechard.com/#app",
     "name": "Morechard",
+    "url": "https://morechard.com",
     "operatingSystem": "iOS, Android",
     "applicationCategory": "FinanceApplication",
     "description": "A chore tracker and pocket money app for families, including separated and co-parenting households. Real financial literacy built in.",
+    "publisher": { "@id": "https://morechard.com/#organization" },
     "offers": [
 ${offers}
     ]
@@ -561,7 +589,7 @@ function buildBlog(headCommon, navHtml, footerHtml, hash) {
     '  <link rel="preload" as="image" href="/Images/morechard-blog-header_16_9.webp" type="image/webp" media="(min-width: 901px)" />\n' +
     '  <script type="application/ld+json">' + hubSchema + '<\/script>';
   write(path.join(DIST, 'blog', 'index.html'),
-    fullPage('Blog', 'Practical guides on pocket money, chores, and raising financially confident children.',
+    fullPage('Pocket Money, Chores & Financial Literacy', 'Practical guides on pocket money, chores, and raising financially confident children — written for UK parents and co-parents navigating family finances.',
       'https://morechard.com/blog/', hubHead, hubBody));
   console.log('[build] ✓ blog/index.html');
 
@@ -652,7 +680,7 @@ function buildBlog(headCommon, navHtml, footerHtml, hash) {
       headline: spoke.title,
       description: spoke.description,
       author: { '@type': 'Person', name: spoke.author || 'Darren Savery' },
-      publisher: { '@type': 'Organization', name: 'Morechard', logo: { '@type': 'ImageObject', url: 'https://morechard.com/favicon.svg' } },
+      publisher: { '@type': 'Organization', name: 'Morechard', logo: { '@type': 'ImageObject', url: 'https://morechard.com/logo-512.png', width: 512, height: 512 } },
       datePublished: spoke.datePublished,
       dateModified: spoke.dateModified || spoke.datePublished,
       url: spokeCanonical,
@@ -896,7 +924,7 @@ ${scripts}
   }
 
   // 7. Copy static assets
-  const COPY_FILES = ['_headers', '_redirects', 'sitemap.xml', 'robots.txt'];
+  const COPY_FILES = ['_headers', '_redirects', 'sitemap.xml', 'robots.txt', 'llms.txt'];
   for (const f of COPY_FILES) {
     const src = path.join(ROOT, f);
     if (fs.existsSync(src)) {

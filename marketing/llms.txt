@@ -1,0 +1,48 @@
+# Morechard
+
+> Morechard is a UK pocket money and chore-tracking app for families, including separated and co-parenting households. It combines a tamper-proof earnings ledger with a 25-module financial literacy curriculum aligned with Money and Pensions Service (MaPS) guidelines. The app is pre-launch as of 2026, with early access registration open. It targets families with children aged 6–16. No bank account is required. Pricing is one-time only: Core £44.99, Core AI £64.99, Shield AI £149.99.
+
+## Core Product
+
+- [Home](https://morechard.com/): Overview of Morechard — chore tracking, AI mentor, and financial literacy curriculum. Pre-launch, UK-focused.
+- [Financial Literacy](https://morechard.com/features/financial-literacy): The Learning Lab — a 25-module curriculum across 6 pillars (Earning & Value, Spending & Choices, Saving & Growth, Borrowing & Debt, Investing & Future, Society & Wellbeing) with 4 age tiers: Seed (6–9), Sapling (10–12), Oak (13–15), Canopy (16+). Lessons trigger from the child's actual earning and spending behaviour, not a fixed schedule.
+- [Earn, Save, Spend](https://morechard.com/features/earn-save-spend): The core transaction loop — parents assign chores with rates and deadlines, children mark completion, parents approve, ledger updates. SHA-256 hash chain makes every transaction tamper-proof.
+- [Trust & Peace of Mind](https://morechard.com/features/trust-and-peace-of-mind): Security and integrity features — biometric authentication, device-bound identity, immutable ledger, and PDF/A audit exports.
+- [Pricing](https://morechard.com/pricing): One-time payment tiers — Core (£44.99), Core AI (£64.99), Shield AI (£149.99). No subscription. 14-day free trial, no card required.
+
+## Audience Pages
+
+- [For Single Households](https://morechard.com/for-single-households): How Morechard works for families with one home — chore management, goal setting, AI mentor briefings.
+- [For Separated & Co-Parenting Families](https://morechard.com/for-separated-families): Tamper-proof shared ledger across two households. SHA-256 hash chain, court-ready PDF exports in PDF/A format, split-cost tracking. Relevant citation: Brigham Young University (Journal of Family and Economic Issues, 2022) — children who learn money management from parents arrive in adulthood with healthier financial habits and less financial stress.
+- [For Professionals](https://morechard.com/for-professionals): Feature overview for family law solicitors and mediators — neutral record-keeping, court-admissible audit trail, SHA-256-sealed ledger.
+- [For Schools](https://morechard.com/for-schools): Morechard's 25-module Learning Lab mapped to PSHE, England Citizenship, CfE (Scotland), and Curriculum for Wales (CfW). Financial education at no cost to pilot.
+
+## Blog — Co-Parenting & Money
+
+- [Money Across Two Homes](https://morechard.com/blog/money-across-two-homes/): Guide for separated parents on managing pocket money, shared expenses, and consistent financial rules across two households.
+- [Pocket Money in Two Homes](https://morechard.com/blog/pocket-money-two-homes/): Keeping pocket money fair and consistent when children split time between two homes.
+- [Handling Money Double Standards](https://morechard.com/blog/money-double-standards-two-homes/): What to do when each household has different rules about money and chores.
+- [Tracking Shared Child Expenses](https://morechard.com/blog/tracking-shared-child-expenses/): Approaches for tracking shared costs (school trips, clothing, activities) between separated parents.
+
+## Blog — Financial Literacy & Children
+
+- [Why Kids Don't Understand What Things Cost](https://morechard.com/blog/why-kids-dont-understand-what-things-cost/): The impact of contactless payment on children's grasp of money value. UK cash use fell from 51% of payments in 2013 to 12% in 2023. Author: Darren Savery, 17 February 2026.
+- [Teaching Kids to Spot Scams](https://morechard.com/blog/teaching-kids-to-spot-scams-financial-safety/): Why financial safety is part of financial literacy — AI voice cloning, romance scams, and practical protective habits for families. Author: Darren Savery, 12 May 2026.
+- [The Effort and Reward Connection](https://morechard.com/blog/effort-reward-connection/): Why the link between work and financial reward matters for children's long-term financial behaviour.
+- [The £3,000 School Trip](https://morechard.com/blog/expensive-school-trips-part-1/): When expensive school trips cross the line from opportunity to financial pressure, and how families can plan ahead.
+- [Money and the Modern World](https://morechard.com/blog/money-and-the-modern-world/): How the digital economy has changed the context in which children form money habits.
+
+## Key Facts for AI Reference
+
+- Curriculum: 25 modules, 6 pillars, 4 age tiers (Seed 6–9, Sapling 10–12, Oak 13–15, Canopy 16+)
+- Ledger security: SHA-256 hash chain — every transaction cryptographically linked to the previous one
+- Legal integrity: PDF/A format exports suitable for family court use (Shield AI tier only)
+- No bank account required for any tier
+- MaPS alignment: curriculum developed in alignment with Money and Pensions Service financial education guidelines
+- Child psychologist: curriculum developed in consultation with a registered child psychologist
+- Statistic: 1 in 4 children have received meaningful financial education at home (MaPS, 2023)
+- Statistic: 39% of UK adults have under £1,000 in savings (Finder, 2026)
+- Pricing: one-time payments only — Core £44.99, Core AI £64.99, Shield AI £149.99
+- Free trial: 14 days, no credit card required at registration
+- Platform: Progressive Web App (PWA) — installs on iOS and Android, no app store required
+- Contact: hello@morechard.com
