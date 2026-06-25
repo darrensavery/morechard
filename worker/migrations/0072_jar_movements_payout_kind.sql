@@ -26,9 +26,12 @@ INSERT INTO jar_movements_v2 SELECT * FROM jar_movements;
 DROP TABLE jar_movements;
 ALTER TABLE jar_movements_v2 RENAME TO jar_movements;
 
+-- D1 does not always drop indexes when the parent table is dropped; be explicit.
+DROP INDEX IF EXISTS idx_jar_movements_child_jar;
 CREATE INDEX idx_jar_movements_child_jar
   ON jar_movements(family_id, child_id, jar);
 
+DROP INDEX IF EXISTS idx_jar_movements_goal;
 CREATE INDEX idx_jar_movements_goal
   ON jar_movements(goal_id) WHERE goal_id IS NOT NULL;
 

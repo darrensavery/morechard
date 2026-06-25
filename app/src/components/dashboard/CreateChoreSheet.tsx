@@ -9,6 +9,7 @@ import { currencySymbol } from '../../lib/locale'
 import { useMarketRates, fuzzyMatch } from '../../hooks/useMarketRates'
 import { useAndroidBack } from '../../hooks/useAndroidBack'
 import { useDragToClose } from '../../hooks/useDragToClose'
+import { RateGuideSheet } from './RateGuideSheet'
 
 interface Props {
   familyId: string
@@ -107,9 +108,10 @@ export function CreateChoreSheet({
       ...(initialRewardAmount !== undefined ? { reward_amount: (initialRewardAmount / 100).toFixed(2) } : {}),
     }
   })
-  const [saving,   setSaving]   = useState(false)
-  const [error,    setError]    = useState<string | null>(null)
-  const [showDesc, setShowDesc] = useState(false)
+  const [saving,       setSaving]       = useState(false)
+  const [error,        setError]        = useState<string | null>(null)
+  const [showDesc,     setShowDesc]     = useState(false)
+  const [rateGuideOpen, setRateGuideOpen] = useState(false)
   // Conflict message: shown when parent tries to enable Auto-pay while Photo Proof is on
   const [conflictMsg, setConflictMsg] = useState(false)
   // Tooltip visibility for Skip Approval card
@@ -295,7 +297,7 @@ export function CreateChoreSheet({
       : null
   )
 
-  return (
+  return (<>
     <div className="fixed inset-0 z-50 flex flex-col justify-end" role="dialog" aria-modal="true">
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
 
@@ -388,9 +390,23 @@ export function CreateChoreSheet({
 
           {/* ── Quick Pick tile grid ─────────────────────────────── */}
           <div>
-            <p className="text-[10px] font-bold text-[var(--color-text-muted)] uppercase tracking-widest mb-2">
-              Quick Pick
-            </p>
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-[10px] font-bold text-[var(--color-text-muted)] uppercase tracking-widest">
+                Quick Pick
+              </p>
+              {!isEditMode && (
+                <button
+                  type="button"
+                  onClick={() => setRateGuideOpen(true)}
+                  className="inline-flex items-center gap-1 text-[11px] font-semibold text-[var(--brand-primary)] hover:opacity-80 transition-opacity cursor-pointer"
+                >
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/>
+                  </svg>
+                  Check Going Rates
+                </button>
+              )}
+            </div>
             {ratesLoading ? (
               <div className="py-3 text-center text-xs text-[var(--color-text-muted)]">Loading…</div>
             ) : ratesError ? (
@@ -697,6 +713,20 @@ export function CreateChoreSheet({
 
       </div>
     </div>
+
+    {rateGuideOpen && (
+      <RateGuideSheet
+        open={rateGuideOpen}
+        onClose={() => setRateGuideOpen(false)}
+        currency={currency}
+        onUse={(title, amount) => {
+          setField('title', title)
+          setField('reward_amount', (amount / 100).toFixed(2))
+          setRateGuideOpen(false)
+        }}
+      />
+    )}
+  </>
   )
 }
 

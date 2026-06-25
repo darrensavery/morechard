@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS insight_snapshots (
   responsibility_score  INTEGER,           -- first_time_pass_rate proxy, 0–100 | NULL
   planning_horizon      INTEGER,           -- 0–100 | NULL
   total_earned_pence    INTEGER NOT NULL DEFAULT 0,
+  jar_snapshot          TEXT,                -- JSON snapshot of jar balances at time of briefing
   created_at            INTEGER NOT NULL DEFAULT (unixepoch())
 );
 

@@ -17,16 +17,16 @@ CREATE TABLE IF NOT EXISTS jar_movements (
   created_at     INTEGER NOT NULL
 );
 
-CREATE INDEX idx_jar_movements_child_jar
+CREATE INDEX IF NOT EXISTS idx_jar_movements_child_jar
   ON jar_movements(family_id, child_id, jar);
 
-CREATE INDEX idx_jar_movements_goal
+CREATE INDEX IF NOT EXISTS idx_jar_movements_goal
   ON jar_movements(goal_id) WHERE goal_id IS NOT NULL;
 
-CREATE TRIGGER jar_movements_no_update
+CREATE TRIGGER IF NOT EXISTS jar_movements_no_update
   BEFORE UPDATE ON jar_movements
 BEGIN SELECT RAISE(ABORT,'jar_movements rows are immutable.'); END;
 
-CREATE TRIGGER jar_movements_no_delete
+CREATE TRIGGER IF NOT EXISTS jar_movements_no_delete
   BEFORE DELETE ON jar_movements
 BEGIN SELECT RAISE(ABORT,'jar_movements rows are immutable.'); END;

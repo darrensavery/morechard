@@ -205,22 +205,6 @@ export function EarnTab({ familyId, childId, currency, grovePlans = {}, onToggle
         </div>
       )}
 
-      {/* ── CHORE GUIDE button — only shown when chores are relevant ── */}
-      {earningsMode !== 'ALLOWANCE' && (
-        <div className="flex justify-end">
-          <button
-            type="button"
-            onClick={() => setChoreGuideOpen(true)}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[var(--brand-primary)] text-[var(--brand-primary)] text-[12px] font-semibold hover:bg-[color-mix(in_srgb,var(--brand-primary)_8%,transparent)] transition-colors cursor-pointer"
-          >
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/>
-            </svg>
-            Chore Guide
-          </button>
-        </div>
-      )}
-
       {/* ── NEEDS REVISION — top priority ─────────────────────────── */}
       {revisions.length > 0 && (
         <section>
@@ -353,6 +337,17 @@ export function EarnTab({ familyId, childId, currency, grovePlans = {}, onToggle
           <p className="text-[15px] font-bold text-[var(--color-text)]">No tasks yet</p>
           <p className="text-[13px] text-[var(--color-text-muted)] mt-1">Ask your parent to add some tasks for you.</p>
         </div>
+      )}
+
+      {/* ── SUGGEST A CHORE — bottom CTA, mirrors parent's "+ Add chore" ── */}
+      {earningsMode !== 'ALLOWANCE' && (
+        <button
+          type="button"
+          onClick={() => setChoreGuideOpen(true)}
+          className="w-full border-2 border-dashed border-[var(--color-border)] rounded-xl py-3.5 text-[14px] font-semibold text-[var(--color-text-muted)] hover:border-[var(--brand-primary)] hover:text-[var(--brand-primary)] transition-colors cursor-pointer"
+        >
+          + Suggest a chore
+        </button>
       )}
 
       {/* Hidden file input for camera capture */}

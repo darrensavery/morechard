@@ -6,7 +6,6 @@ import {
   formatCurrency, getMondayISO,
 } from '../../lib/api'
 import { CreateChoreSheet } from './CreateChoreSheet'
-import { RateGuideSheet } from './RateGuideSheet'
 import { PremiumShell, MentorAvatar, ProBadge, injectPremiumStyles } from '../ui/PremiumShell'
 import { Button } from '../ui/button'
 import { useLocale } from '../../lib/locale'
@@ -39,8 +38,6 @@ export function ChoresTab({ familyId, child, children }: Props) {
   const [loading, setLoading]         = useState(true)
   const [showSheet, setShowSheet]         = useState(false)
   const [showArchived, setShowArchived]   = useState(false)
-  const [rateGuideOpen, setRateGuideOpen] = useState(false)
-  const [preFill, setPreFill]             = useState<{ title: string; reward_amount: number } | null>(null)
   const [editingChore, setEditingChore]   = useState<Chore | null>(null)
   const [expandedId, setExpandedId]       = useState<string | null>(null)
   const [toast, setToast]                 = useState<{ choreId: string; title: string } | null>(null)
@@ -370,20 +367,6 @@ export function ChoresTab({ familyId, child, children }: Props) {
         </div>
       )}
 
-      {/* Check Going Rates — ghost button */}
-      <div className="flex justify-end mb-2">
-        <button
-          type="button"
-          onClick={() => setRateGuideOpen(true)}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[var(--brand-primary)] text-[var(--brand-primary)] text-[12px] font-semibold hover:bg-[color-mix(in_srgb,var(--brand-primary)_8%,transparent)] transition-colors cursor-pointer"
-        >
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/>
-          </svg>
-          Check Going Rates
-        </button>
-      </div>
-
       {/* Active chores */}
       {chores.length === 0 ? (
         <EmptyChoresState childName={child.display_name} onAdd={() => setShowSheet(true)} />
@@ -417,10 +400,8 @@ export function ChoresTab({ familyId, child, children }: Props) {
           familyId={familyId}
           children={children}
           currency={CURRENCY}
-          initialTitle={preFill?.title}
-          initialRewardAmount={preFill?.reward_amount}
-          onCreated={() => { setShowSheet(false); setPreFill(null); load() }}
-          onClose={() => { setShowSheet(false); setPreFill(null) }}
+          onCreated={() => { setShowSheet(false); load() }}
+          onClose={() => setShowSheet(false)}
         />
       )}
 
@@ -463,18 +444,6 @@ export function ChoresTab({ familyId, child, children }: Props) {
           )}
         </div>
       )}
-      {/* Rate Guide Sheet */}
-      <RateGuideSheet
-        open={rateGuideOpen}
-        onClose={() => setRateGuideOpen(false)}
-        currency={CURRENCY}
-        onUse={(title, amount) => {
-          setPreFill({ title, reward_amount: amount })
-          setRateGuideOpen(false)
-          setShowSheet(true)
-        }}
-      />
-
       {/* Archive undo toast */}
       <div
         className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-4 py-3 rounded-2xl bg-[var(--color-text)] text-[var(--color-surface)] text-[13px] font-medium shadow-xl transition-all duration-300 ${toast ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'}`}
@@ -592,7 +561,7 @@ function EmptyChoresState({ childName, onAdd }: { childName: string; onAdd: () =
             <p className="text-[10px] font-black uppercase tracking-widest" style={{ color: 'rgba(255,255,255,0.35)' }}>Get started</p>
             {[
               `Add 2–3 small daily chores so I can spot ${childName}'s consistency patterns.`,
-              'Try "Check Going Rates" above to set fair rewards instantly.',
+              'Try "Check Going Rates" in the new chore form to set fair rewards instantly.',
               `Plan the week once a chore is added — so ${childName} knows what's expected.`,
             ].map((text, i) => (
               <div key={i} className="flex items-start gap-3">
@@ -651,16 +620,14 @@ function ChoreCard({ chore, plans, expanded, onToggle, onArchive, onEdit, onTogg
     ? '1px solid rgba(217,119,6,0.30)'
     : '1px solid var(--color-border)'
 
-  const isNeutral = !isOverdue && !chore.is_flash && !chore.is_priority
   const shadowStyle = {
     border: borderColor,
-    transition: 'box-shadow 200ms ease, background-color 200ms ease',
+    transition: 'box-shadow 200ms ease',
     boxShadow: hovered
       ? 'var(--shadow-card-hover)'
       : (isOverdue || chore.is_flash)
       ? 'var(--shadow-card-urgent)'
       : 'var(--shadow-card)',
-    ...(isNeutral && hovered ? { backgroundColor: 'var(--color-surface-alt)' } : {}),
   }
 
   return (
@@ -685,13 +652,35 @@ function ChoreCard({ chore, plans, expanded, onToggle, onArchive, onEdit, onTogg
           <ChoreIcon title={chore.title} size={18} />
         </div>
 
-        {/* Title + mini dots */}
+        {/* Title + metadata */}
         <div className="flex-1 text-left min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             {!!chore.is_flash && <span className="text-[11px] font-bold text-red-600 bg-red-100 rounded px-1.5 py-0.5">FLASH</span>}
             {!!chore.is_priority && !chore.is_flash && <span className="text-[11px] font-bold text-amber-600 bg-amber-100 rounded px-1.5 py-0.5">PRIORITY</span>}
             <span className="text-[15px] font-semibold text-[var(--color-text)]">{chore.title}</span>
+            {!expanded && !!chore.description && (
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--color-text-muted)] opacity-50 shrink-0" title="Has instructions">
+                <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/>
+                <line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>
+              </svg>
+            )}
           </div>
+          {/* Frequency / due date — below title so all cards stay the same height */}
+          {(chore.frequency !== 'as_needed' && chore.frequency !== 'one-off') || dueDateObj ? (
+            <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+              {chore.frequency !== 'as_needed' && chore.frequency !== 'one-off' && (
+                <span className="text-[10px] text-[var(--color-text-muted)] flex items-center gap-0.5">
+                  <RecurringIcon />
+                  {FREQUENCY_OPTIONS.find(o => o.value === chore.frequency)?.label ?? chore.frequency}
+                </span>
+              )}
+              {dueDateObj && (
+                <span className={`text-[10px] font-semibold ${isOverdue ? 'text-red-500' : 'text-[var(--color-text-muted)]'}`}>
+                  Due {dueDateObj.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+                </span>
+              )}
+            </div>
+          ) : null}
           {/* Mini read-only schedule dots */}
           {plannedDays.length > 0 && !expanded && (
             <MiniScheduleDots plannedDays={plannedDays} />
@@ -703,17 +692,6 @@ function ChoreCard({ chore, plans, expanded, onToggle, onArchive, onEdit, onTogg
           <span className="text-[14px] font-bold text-[var(--color-text)] tabular-nums">
             {formatCurrency(chore.reward_amount, chore.currency)}
           </span>
-          {chore.frequency !== 'as_needed' && chore.frequency !== 'one-off' && (
-            <span className="text-[10px] text-[var(--color-text-muted)] flex items-center gap-0.5">
-              <RecurringIcon />
-              {FREQUENCY_OPTIONS.find(o => o.value === chore.frequency)?.label ?? chore.frequency}
-            </span>
-          )}
-          {dueDateObj && (
-            <span className={`text-[10px] font-semibold flex items-center gap-0.5 ${isOverdue ? 'text-red-500' : 'text-[var(--color-text-muted)]'}`}>
-              Due {dueDateObj.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
-            </span>
-          )}
           {/* Chevron */}
           <svg
             width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"

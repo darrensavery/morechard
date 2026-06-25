@@ -152,7 +152,7 @@ export function ChildDashboard() {
   }>({ earn: null, money: null, goals: null })
 
   // Per-chore submission state
-  const [childTab,      setChildTab]      = useState<'chores' | 'money' | 'goals' | 'lab'>('chores')
+  const [childTab,      setChildTab]      = useState<'home' | 'chores' | 'money' | 'goals' | 'lab'>('home')
   const [labUnread,     setLabUnread]     = useState(0)
   const tabBarRef = useRef<HTMLDivElement>(null)
   const tabRefs   = useRef<(HTMLButtonElement | null)[]>([])
@@ -294,7 +294,7 @@ export function ChildDashboard() {
   useEffect(() => () => { if (goalBarTimer.current) clearTimeout(goalBarTimer.current) }, [])
 
   // Sliding tab indicator — mirrors parent portal pattern
-  const CHILD_TABS = ['chores', 'money', 'goals', 'lab'] as const
+  const CHILD_TABS = ['home', 'chores', 'money', 'goals', 'lab'] as const
   useEffect(() => {
     const idx = CHILD_TABS.indexOf(childTab)
     const btn = tabRefs.current[idx]
@@ -323,7 +323,6 @@ export function ChildDashboard() {
     saveGrovePlans(userId, updated)
   }
 
-  // @ts-ignore TS6133 — used by _OrchardView (kept for future use)
   function _isPlanted(chore: Chore): boolean {
     const days = effectiveDays(chore, grovePlans)
     return days.length > 0
@@ -364,7 +363,6 @@ export function ChildDashboard() {
 
   // ── Goal purchase ──────────────────────────────────────────────────────────
 
-  // @ts-ignore TS6133 — used by _OrchardView (kept for future use)
   async function _handlePurchase(goalId: string) {
     setPurchasing(goalId)
     try {
@@ -381,7 +379,6 @@ export function ChildDashboard() {
     [chores, grovePlans, activeDay],
   )
 
-  // @ts-ignore TS6133 — used by _OrchardView (kept for future use)
   const _unplannedChores = useMemo(
     () => chores.filter(c => effectiveDays(c, grovePlans).length === 0),
     [chores, grovePlans],
@@ -455,7 +452,7 @@ export function ChildDashboard() {
 
         {/* Tab bar */}
         <div ref={tabBarRef} className="max-w-[560px] mx-auto border-t border-[var(--color-border)] flex relative">
-          {([['chores', 'Chores'], ['money', 'Money'], ['goals', 'Goals'], ['lab', 'Learn']] as const).map(([id, label], i) => (
+          {([['home', 'Home'], ['chores', 'Chores'], ['money', 'Money'], ['goals', 'Goals'], ['lab', 'Learn']] as const).map(([id, label], i) => (
             <button
               key={id}
               ref={el => { tabRefs.current[i] = el }}
@@ -581,6 +578,62 @@ export function ChildDashboard() {
       )}
 
       <main className="flex-1 max-w-[560px] mx-auto w-full px-3.5 py-4 flex flex-col gap-4">
+        {childTab === 'home' && (
+          tone.isChild ? (
+            <OrchardView
+              balance={balance}
+              appView={appView}
+              chores={chores}
+              pending={_pending}
+              goals={goals}
+              tone={tone}
+              activeDay={activeDay}
+              setActiveDay={setActiveDay}
+              grovePlans={grovePlans}
+              dayChores={dayChores}
+              unplannedChores={_unplannedChores}
+              activeTopGoal={activeTopGoal}
+              goalBarPct={goalBarPct}
+              submitted={submitted}
+              submitting={submitting}
+              purchasing={_purchasing}
+              noteChore={noteChore}
+              noteText={noteText}
+              submitErr={submitErr}
+              cardClass={cardClass}
+              currency={currency}
+              weeklyAllowancePence={weeklyAllowancePence}
+              isPlanted={_isPlanted}
+              togglePlant={togglePlant}
+              handleDone={handleDone}
+              handlePurchase={_handlePurchase}
+              setNoteChore={setNoteChore}
+              setNoteText={setNoteText}
+              onPlantGoal={() => setShowGrove(true)}
+              onDoneWithProof={startProofCapture}
+            />
+          ) : (
+            <ProfessionalView
+              balance={balance}
+              appView={appView}
+              chores={chores}
+              pending={_pending}
+              goals={goals}
+              tone={tone}
+              currency={currency}
+              submitted={submitted}
+              submitting={submitting}
+              noteChore={noteChore}
+              noteText={noteText}
+              submitErr={submitErr}
+              handleDone={handleDone}
+              setNoteChore={setNoteChore}
+              setNoteText={setNoteText}
+              onDoneWithProof={startProofCapture}
+            />
+          )
+        )}
+
         <div className={childTab === 'chores' ? 'tab-panel' : 'tab-panel hidden'}>
           <div className="space-y-4">
             {/* AI Mentor earn nudge — dismisses itself when the X is tapped */}
@@ -960,8 +1013,7 @@ interface OrchardViewProps {
   onDoneWithProof: (choreId: string) => void
 }
 
-// @ts-ignore TS6133 — kept for future use, not yet wired into ChildDashboard JSX
-function _OrchardView({
+function OrchardView({
   balance, appView, chores, pending, goals, tone,
   activeDay, setActiveDay, grovePlans, dayChores, unplannedChores,
   activeTopGoal, goalBarPct, submitted, submitting, purchasing,
@@ -1281,7 +1333,7 @@ interface ProfessionalViewProps {
 }
 
 // @ts-ignore TS6133 — kept for future use, not yet wired into ChildDashboard JSX
-function _ProfessionalView({
+function ProfessionalView({
   balance, appView, chores, pending, goals,
   tone, currency, submitted, submitting,
   noteChore, noteText, submitErr,
