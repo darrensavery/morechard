@@ -426,7 +426,7 @@ export function ParentDashboard() {
 
       {/* Content */}
       <main className="flex-1 max-w-[560px] mx-auto w-full px-3.5 py-4">
-        {!childrenLoaded ? null : activeChild ? (
+        {!childrenLoaded ? <DashboardSkeleton /> : activeChild ? (
           <>
             <div className={tab === 'chores'   ? 'tab-panel' : 'tab-panel hidden'}><ChoresTab       familyId={familyId} child={activeChild} children={children} /></div>
             <div className={tab === 'activity' ? 'tab-panel' : 'tab-panel hidden'}>
@@ -539,6 +539,17 @@ export function ParentDashboard() {
             onPaid={() => { refreshUnpaid(); setBridgeCtx(null) }}
           />
         )}
+    </div>
+  )
+}
+
+function DashboardSkeleton() {
+  return (
+    <div className="space-y-3 animate-pulse" aria-hidden="true">
+      <div className="h-[72px] rounded-2xl bg-[var(--color-surface-alt)]" />
+      <div className="h-[72px] rounded-2xl bg-[var(--color-surface-alt)]" />
+      <div className="h-[72px] rounded-2xl bg-[var(--color-surface-alt)]" />
+      <div className="h-[72px] rounded-2xl bg-[var(--color-surface-alt)]" />
     </div>
   )
 }

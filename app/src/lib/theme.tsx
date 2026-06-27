@@ -6,10 +6,6 @@
  * Syncs to the API ('theme' column in user_settings) when a user is logged in.
  * Applies 'data-theme' on <html> so CSS variable overrides take effect globally.
  *
- * Teen-mode synergy:
- *   If the user is in teen/mature view and has never explicitly set a theme,
- *   we treat 'system' as 'dark' for their initial resolved colour.
- *   Once they consciously pick a theme we respect that choice.
  */
 
 import {
@@ -63,11 +59,10 @@ function systemPrefersDark(): boolean {
   } catch { return false }
 }
 
-function resolve(preference: ThemePreference, isClean: boolean): ResolvedTheme {
+function resolve(preference: ThemePreference): ResolvedTheme {
   if (preference === 'dark') return 'dark'
   if (preference === 'light') return 'light'
-  // system: CLEAN-view users default to dark; everyone else follows the device
-  return (systemPrefersDark() || isClean) ? 'dark' : 'light'
+  return systemPrefersDark() ? 'dark' : 'light'
 }
 
 function applyToDOM(resolved: ResolvedTheme) {
@@ -89,41 +84,34 @@ function applyToDOM(resolved: ResolvedTheme) {
 
 interface ThemeProviderProps {
   children: ReactNode
-  /**
-   * Pass the logged-in user's app_view value when known.
-   * Used to bias 'system' → 'dark' for the CLEAN (mature) view.
-   */
-  appView?: string
 }
 
-export function ThemeProvider({ children, appView = 'ORCHARD' }: ThemeProviderProps) {
-  const isClean = appView === 'CLEAN'
-
+export function ThemeProvider({ children }: ThemeProviderProps) {
   const [preference, setPreferenceState] = useState<ThemePreference>(readStoredPreference)
   const [resolved,   setResolved]        = useState<ResolvedTheme>(() =>
-    resolve(readStoredPreference(), isClean)
+    resolve(readStoredPreference())
   )
 
   // Apply immediately on mount (the anti-flicker script may have already done
   // this, but we keep React and the DOM in sync regardless).
   useEffect(() => {
-    const r = resolve(preference, isClean)
+    const r = resolve(preference)
     setResolved(r)
     applyToDOM(r)
-  }, [preference, isClean])
+  }, [preference])
 
   // Listen for OS-level changes when preference is 'system'
   useEffect(() => {
     if (preference !== 'system') return
     const mq = window.matchMedia('(prefers-color-scheme: dark)')
     const handler = () => {
-      const r = resolve('system', isClean)
+      const r = resolve('system')
       setResolved(r)
       applyToDOM(r)
     }
     mq.addEventListener('change', handler)
     return () => mq.removeEventListener('change', handler)
-  }, [preference, isClean])
+  }, [preference])
 
   const setTheme = useCallback((t: ThemePreference) => {
     setPreferenceState(t)
