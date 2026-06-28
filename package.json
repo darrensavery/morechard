@@ -2,7 +2,21 @@
   "scripts": {
     "build": "cd app && npm install && npm run build",
     "dev": "concurrently --kill-others --names \"worker,app\" --prefix-colors \"cyan,green\" \"cd worker && npm run dev\" \"cd app && npm run dev\"",
-    "loadtest": "node scripts/loadtest.mjs"
+    "loadtest": "node scripts/loadtest.mjs",
+    "seed:reset": "cd worker && wrangler d1 execute morechard-dev --file=dev/seeds/_reset.sql",
+    "seed:base": "cd worker && wrangler d1 execute morechard-dev --file=dev/seeds/_base.sql",
+    "seed:m2": "cd worker && wrangler d1 execute morechard-dev --file=dev/seeds/state-m2.sql",
+    "seed:m8": "cd worker && wrangler d1 execute morechard-dev --file=dev/seeds/state-m8.sql",
+    "seed:m11": "cd worker && wrangler d1 execute morechard-dev --file=dev/seeds/state-m11.sql",
+    "seed:m13": "cd worker && wrangler d1 execute morechard-dev --file=dev/seeds/state-m13.sql",
+    "seed:m14": "cd worker && wrangler d1 execute morechard-dev --file=dev/seeds/state-m14.sql",
+    "seed:m16": "cd worker && wrangler d1 execute morechard-dev --file=dev/seeds/state-m16.sql",
+    "seed:m19": "cd worker && wrangler d1 execute morechard-dev --file=dev/seeds/state-m19.sql",
+    "seed:m3b": "cd worker && wrangler d1 execute morechard-dev --file=dev/seeds/state-m3b.sql",
+    "seed:streak7": "cd worker && wrangler d1 execute morechard-dev --file=dev/seeds/state-streak-7.sql",
+    "seed:streak30": "cd worker && wrangler d1 execute morechard-dev --file=dev/seeds/state-streak-30.sql",
+    "seed:gaming": "cd worker && wrangler d1 execute morechard-dev --file=dev/seeds/state-gaming-goals.sql",
+    "seed:goals": "cd worker && wrangler d1 execute morechard-dev --file=dev/seeds/state-multi-goals.sql"
   },
   "devDependencies": {
     "concurrently": "^9.2.1",
