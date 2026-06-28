@@ -23,78 +23,151 @@
 <!-- BODY_START -->
 <main class="prose-page container">
   <h1>Privacy Policy</h1>
-  <p class="prose-meta">Transparent Data Management – Version 1.3 (UK, US, PL)</p>
+  <p class="prose-meta">Transparent Data Management – Version 1.4 (UK, US, PL)</p>
 
   <div class="prose-tldr">
     <h2>The Short Version</h2>
     <ul>
-      <li><strong>Children:</strong> Nicknames only. We don't want or store real names of minors.</li>
-      <li><strong>The Stack:</strong> We use premium tools like Cloudflare, PostHog, and Sentry to stay secure.</li>
-      <li><strong>Selling Data:</strong> Never. We sell subscriptions. You are the customer, not the product.</li>
+      <li><strong>Children:</strong> Nicknames only. We minimise children's data by design and never require legal names or dates of birth for child profiles.</li>
+      <li><strong>The Stack:</strong> We use premium tools like Cloudflare, PostHog, and Sentry to stay secure. Some are US-based; transfers are protected by Standard Contractual Clauses.</li>
+      <li><strong>Selling Data:</strong> Never. We sell software licences. You are the customer, not the product.</li>
       <li><strong>Cookies:</strong> Only analytics cookies, and only if you accept them. Decline anytime.</li>
-      <li><strong>Erasure:</strong> Delete your account, and we purge your data after 30 days.</li>
+      <li><strong>Erasure:</strong> Delete your account and we purge your personal identifiers after 30 days. Anonymised ledger records are retained solely to preserve hash-chain integrity — they cannot be linked back to you.</li>
     </ul>
   </div>
 
-  <h2>1. The "Nicknames Only" Policy</h2>
-  <p>Privacy starts with not giving away what isn't needed.</p>
+  <h2>1. Who Is Responsible for Your Data</h2>
+  <p>The data controller is <strong>Darren Savery</strong>, trading as Morechard (sole trader).</p>
+  <p>
+    Postal address: 331 Finchampstead Road, Wokingham, Berkshire, RG40 3JT, United Kingdom<br>
+    Email: <a href="mailto:support@morechard.com">support@morechard.com</a>
+  </p>
+
+  <h2>2. The "Nicknames Only" Policy</h2>
+  <p>Privacy starts with not collecting what isn't needed.</p>
   <ul>
-    <li><strong>Parents:</strong> We use your Google account info (name and email) for identity and billing.</li>
-    <li><strong>Children:</strong> We explicitly request that you use nicknames for your children's profiles. Morechard does not require, and asks you not to provide, legal names or dates of birth for minors.</li>
+    <li><strong>Parents:</strong> We use your Google account name and email for identity and billing.</li>
+    <li><strong>Children:</strong> We explicitly request that you use nicknames for your children's profiles. Morechard does not require, and asks you not to provide, legal names or dates of birth for child profiles. A nickname combined with household and behavioural records is still personal data about a child — we process it in minimised form, on the parent's authority.</li>
   </ul>
 
-  <h2>2. Why We Process Your Data</h2>
-  <p>We process your data purely to provide the Morechard experience: maintaining your family ledger, securing your login, and ensuring your chores and rewards are synced across your devices.</p>
+  <h2>3. Why We Process Your Data</h2>
+  <p>We process your data to provide and improve the Morechard service. For each purpose, the lawful basis under UK GDPR Article 6 is stated below.</p>
+  <ul>
+    <li>
+      <strong>Core service</strong> — creating your family account, syncing chores and rewards, maintaining the family ledger.<br>
+      Basis: <em>Contract</em> (Art. 6(1)(b)) — necessary to perform the service you signed up for.
+    </li>
+    <li>
+      <strong>Analytics cookies on the public website</strong><br>
+      Basis: <em>Consent</em> (Art. 6(1)(a)) — you explicitly accept via our cookie banner. You may withdraw at any time.
+    </li>
+    <li>
+      <strong>30-day soft-delete window after account deletion</strong> — retained to allow co-parents to intervene against unauthorised deletion.<br>
+      Basis: <em>Legitimate interests</em> (Art. 6(1)(f)) — protecting co-parents from irreversible data loss. A Legitimate Interests Assessment (LIA) is on file.
+    </li>
+    <li>
+      <strong>Crash and error reporting via Sentry</strong><br>
+      Basis: <em>Legitimate interests</em> (Art. 6(1)(f)) — keeping the service secure and operational.
+    </li>
+    <li>
+      <strong>Transactional emails</strong> — trial reminders, security alerts.<br>
+      Basis: <em>Contract</em> (Art. 6(1)(b)) — communications necessary to deliver the service.
+    </li>
+  </ul>
 
-  <h2>3. Our Third-Party Service Providers</h2>
-  <p>We use a carefully selected set of service providers to keep Morechard fast and safe. We only share the minimum data necessary for each tool to work.</p>
+  <h2>4. Our Service Providers &amp; International Transfers</h2>
+  <p>We use a carefully selected set of service providers and share only the minimum data necessary for each to function. Several are based in the US; where that is the case, transfers from the UK are protected by the relevant mechanism noted below.</p>
 
   <h3>Infrastructure &amp; Security</h3>
   <ul>
-    <li><strong>Cloudflare:</strong> Our primary host and database provider. They ensure the app is fast and protected from attacks.</li>
-    <li><strong>GitHub:</strong> Used to manage our source code and deployment.</li>
+    <li><strong>Cloudflare (US):</strong> Primary host and database provider. Transfer mechanism: EU Standard Contractual Clauses with UK Addendum (IDTA).</li>
+    <li><strong>GitHub (US):</strong> Source code and deployment management. Transfer mechanism: EU SCCs with UK Addendum.</li>
   </ul>
 
   <h3>Analytics &amp; Reliability</h3>
   <ul>
-    <li><strong>PostHog:</strong> Helps us see which features are useful. On our website it only runs after you accept cookies &mdash; see our <a href="#cookies">cookie notice</a> below for exactly what it stores.</li>
-    <li><strong>Sentry:</strong> Our crash-reporting tool. If the app errors, Sentry sends us a report so we can fix it quickly.</li>
+    <li><strong>PostHog (US/EU):</strong> Product analytics. On the public website, PostHog only runs after you accept cookies. Transfer mechanism where US processing occurs: EU SCCs with UK Addendum.</li>
+    <li><strong>Sentry (US):</strong> Crash and error reporting. Receives diagnostic data when the app errors. Transfer mechanism: EU SCCs with UK Addendum.</li>
   </ul>
 
   <h3>Communication &amp; Payments</h3>
   <ul>
-    <li><strong>Google:</strong> Used for secure "one-tap" authentication.</li>
-    <li><strong>Resend:</strong> The service that sends your transactional emails (trial reminders, password alerts).</li>
-    <li><strong>Paddle:</strong> Our Merchant of Record who handles all payments. We never store your full credit card details on our own servers.</li>
+    <li><strong>Google (US):</strong> Secure "one-tap" authentication. Transfer mechanism: EU SCCs with UK Addendum.</li>
+    <li><strong>Resend (US):</strong> Transactional email delivery. Transfer mechanism: EU SCCs with UK Addendum.</li>
+    <li><strong>Paddle (UK):</strong> Merchant of Record handling all payments. UK-based — no international transfer. We never store full payment card details on our own servers.</li>
   </ul>
 
-  <h2>4. Children's Privacy (COPPA &amp; GDPR-K)</h2>
-  <p>Morechard is designed for parents to use with their children. We do not knowingly collect personal data from anyone under 13 (US) or 16 (UK/PL). The parent acts as the primary user and provides consent by creating child profiles using nicknames.</p>
+  <h2>5. Children's Privacy (COPPA, GDPR-K &amp; the Children's Code)</h2>
+  <p>Morechard is designed for parents to use alongside their children. Because children's personal data is involved, this service falls within the scope of the <strong>ICO's Age Appropriate Design Code (Children's Code)</strong>. We apply the Code's 15 standards by design — including high-privacy defaults, data minimisation, no behavioural nudging, and no session recording on child profiles.</p>
 
-  <h2>5. Data Retention &amp; The Soft-Delete</h2>
-  <p>When you delete your account, we trigger a 30-day "Soft-Delete" window. Your data is hidden immediately but stored for 30 days to prevent accidental loss or to allow co-parents to intervene if a deletion was unauthorised. After 30 days, personal identifiers are permanently purged from our active systems.</p>
+  <h3>Lawful basis for processing children's data</h3>
+  <p>Child profiles are created and managed by a parent. The parent acts as the responsible adult and provides consent on the child's behalf, in accordance with UK GDPR, GDPR-K, and COPPA. We process children's data in minimised form (nicknames, no dates of birth or legal names) on the parent's authority.</p>
 
-  <h2>6. Your Rights (UK, US, PL)</h2>
-  <p>You have the right to access your data, correct it, or move it (via our CSV Export). To exercise your right to be forgotten or any other privacy rights, email <a href="mailto:support@morechard.com">support@morechard.com</a>. We will respond within the legal timeframe (usually 30 days).</p>
+  <h3>Age thresholds by jurisdiction</h3>
+  <ul>
+    <li><strong>United Kingdom:</strong> The UK age of digital consent for information society services is <strong>13</strong>. Children under 13 may only use the service under direct parental account management.</li>
+    <li><strong>Poland:</strong> The age of digital consent is <strong>16</strong>. Children under 16 require verifiable parental consent.</li>
+    <li><strong>United States (COPPA):</strong> We do not knowingly collect personal information from children under <strong>13</strong> without verified parental consent.</li>
+  </ul>
 
-  <h2>7. Security &amp; The Sovereign Ledger</h2>
-  <p>We use cryptographic hashing to ensure the integrity of your family ledger. This technical seal ensures your records cannot be tampered with. We treat your family data with the same respect and security we apply to our own.</p>
+  <h3>DPIA</h3>
+  <p>Processing children's data under the Children's Code makes a Data Protection Impact Assessment (DPIA) mandatory. A DPIA for Morechard is in progress and will be completed before any material change to how we process children's data.</p>
 
-  <h2 id="cookies">8. Cookies &amp; Similar Technologies</h2>
+  <h2>6. Data Retention</h2>
+
+  <h3>Active accounts</h3>
+  <p>We retain your personal data for as long as your account is active. You may request a copy or deletion at any time — see Section 7.</p>
+
+  <h3>Deletion and the 30-day soft-delete window</h3>
+  <p>When you delete your account, a 30-day window begins. Your data is hidden immediately but retained for 30 days to prevent accidental loss and to allow co-parents to intervene if a deletion was unauthorised. After 30 days, personal identifiers — name, email, authentication hashes — are permanently purged from our active systems.</p>
+
+  <h3>The family ledger</h3>
+  <p>Anonymised ledger transaction records (amounts, timestamps, chore identifiers) are retained after account deletion to preserve the cryptographic hash-chain integrity of the ledger. See Section 8 for how this interacts with your right to erasure. These records are stripped of all personal identifiers before retention and cannot be linked back to you.</p>
+
+  <h3>Backups</h3>
+  <p>Database backups are retained for up to 30 days, encrypted at rest, and then overwritten in rotation. Any personal data purged from active systems is not restored from backups.</p>
+
+  <h2>7. Your Rights</h2>
+  <p>Under UK GDPR you have the right to:</p>
+  <ul>
+    <li><strong>Access</strong> a copy of your personal data.</li>
+    <li><strong>Correct</strong> inaccurate data.</li>
+    <li><strong>Port</strong> your data — available via our CSV Export.</li>
+    <li><strong>Erase</strong> your data — see Section 6 for how erasure interacts with the family ledger.</li>
+    <li><strong>Object</strong> to processing based on legitimate interests.</li>
+    <li><strong>Withdraw consent</strong> at any time where consent is the lawful basis (e.g. analytics cookies) — this does not affect the lawfulness of processing before withdrawal.</li>
+  </ul>
+  <p>To exercise any right, email <a href="mailto:support@morechard.com">support@morechard.com</a>. We will respond within one calendar month.</p>
+
+  <h3>Right to complain to a supervisory authority</h3>
+  <p>If you believe we have not handled your data lawfully, you have the right to lodge a complaint with the relevant data protection authority:</p>
+  <ul>
+    <li><strong>UK:</strong> <a href="https://ico.org.uk/make-a-complaint/" rel="noopener noreferrer">Information Commissioner's Office (ICO)</a></li>
+    <li><strong>Poland:</strong> <a href="https://uodo.gov.pl/" rel="noopener noreferrer">Urząd Ochrony Danych Osobowych (UODO)</a></li>
+  </ul>
+
+  <h2>8. Security &amp; the Family Ledger</h2>
+  <p>Morechard uses cryptographic hashing to ensure the integrity of your family ledger. Each transaction is linked to a hash of the previous one, forming a tamper-evident chain — this is the "Sovereign Ledger" design.</p>
+
+  <h3>How erasure works with an immutable ledger</h3>
+  <p>The hash chain covers <em>transaction records</em> — amounts, timestamps, and chore identifiers. It does not cover personal identifiers. When you delete your account, personal identifiers are removed and replaced with anonymised tokens. The hash chain remains mathematically valid because its integrity is anchored to transaction data, not to your identity. No remaining record can be linked back to you. This satisfies your right to erasure of personal data while maintaining ledger integrity.</p>
+
+  <h2>9. Automated Decision-Making</h2>
+  <p>Morechard uses AI to generate coaching observations and financial literacy content personalised to your child's activity in the app. These AI observations are <strong>informational only</strong> — they are presented to parents as guidance and carry no binding effect on any account, access right, or entitlement. A parent reviews all chore approvals, reward payments, and account-level decisions. No purely automated decision that produces a legal or similarly significant effect on any user is made by Morechard.</p>
+
+  <h2 id="cookies">10. Cookies &amp; Similar Technologies</h2>
   <p>We keep cookies to a minimum. We do <strong>not</strong> use advertising or cross-site tracking cookies, and we never sell your data. On our public website, analytics cookies are <strong>only set after you accept them</strong> using our cookie banner &mdash; if you decline, none are stored. You can change your choice at any time via <a href="#" data-cookie-settings>Cookie settings</a> in the footer.</p>
 
   <h3>Strictly necessary (no consent needed)</h3>
-  <p>A small amount of browser storage is used to remember your cookie choice, keep your light/dark theme, and keep you securely signed in to the app. These are essential for the service to function, so they don't require consent.</p>
+  <p>A small amount of browser storage is used to remember your cookie choice, keep your light/dark theme, and keep you securely signed in to the app. These are essential for the service to function and do not require consent.</p>
 
   <h3>Analytics (consent required)</h3>
   <ul>
     <li><strong>PostHog:</strong> Helps us understand which features people use so we can improve them. It sets first-party cookies to recognise return visits and, inside the app, to record session activity (every form input is masked). <strong>We never record children's sessions</strong> &mdash; session replay is switched off entirely on child profiles. On the public website you stay anonymous; once you sign in to the app, events are linked to your account ID so we can support you. We never sell this data.</li>
     <li><strong>Sentry:</strong> Crash reporting. If something breaks, Sentry sends us a diagnostic report so we can fix it. It does not set advertising cookies.</li>
   </ul>
-  <p>Because these are non-essential, they only load once you've given consent on our website. Withdrawing consent stops further collection and opts you out.</p>
+  <p>Because these are non-essential, they only load once you have given consent on our website. Withdrawing consent stops further collection and opts you out.</p>
 
-  <hr>
-  <p class="prose-footer">© 2026 Morechard. Privacy Policy v1.3. Contact: <a href="mailto:support@morechard.com">support@morechard.com</a></p>
 </main>
 <!-- BODY_END -->
 
