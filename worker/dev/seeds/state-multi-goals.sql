@@ -24,4 +24,5 @@ VALUES
 INSERT OR IGNORE INTO unlocked_modules (id, child_id, module_slug, unlocked_at)
 VALUES
   ('um_dev_m15', 'uDEV_CHILD00000000001', 'M15', strftime('%s','now','-7 days')),
-  ('um_dev_m17', 'uDEV_CHILD00000000001', 'M17', strftime('%s','now','-10 days'));
+  ('um_dev_m17', 'uDEV_CHILD00000000001', 'M17', strftime('%s','now','-10 days')),
+  ('um_dev_m20', 'uDEV_CHILD00000000001', 'M20', strftime('%s','now','-10 days'));
