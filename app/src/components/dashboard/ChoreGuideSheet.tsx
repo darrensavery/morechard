@@ -2,6 +2,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useMarketRates, fuzzyMatch } from '../../hooks/useMarketRates';
+import { ErrorBox } from '../ui/ErrorBox';
 import { useAndroidBack } from '../../hooks/useAndroidBack';
 import { createSuggestion, suggestChore, getSuggestions } from '../../lib/api';
 import type { MarketRate, Suggestion } from '../../lib/api';
@@ -295,7 +296,7 @@ export function ChoreGuideSheet({ open, onClose, familyId, context = null, curre
       {/* ── Scrollable list ───────────────────────────────────────── */}
       <div className="flex-1 overflow-y-auto overscroll-contain px-4 pb-8" style={{ touchAction: 'pan-y' }}>
         {loading && <p className="py-8 text-center text-sm text-[--color-text-muted]">Loading…</p>}
-        {error   && <p className="py-8 text-center text-sm text-red-500">{error}</p>}
+        <ErrorBox message={error} className="my-4" />
 
         {noResults && (
           <div className="py-12 flex flex-col items-center gap-3 px-6 text-center">
@@ -445,7 +446,7 @@ export function ChoreGuideSheet({ open, onClose, familyId, context = null, curre
                 <p className="text-[15px] font-bold text-[--color-text]">Suggest a new chore</p>
                 <p className="text-[12px] text-[--color-text-muted] mt-0.5">Tell your parent what you'd like to do and how much it should pay.</p>
               </div>
-              {newChoreError && <p className="text-[13px] text-red-600">{newChoreError}</p>}
+              <ErrorBox message={newChoreError} />
               <div>
                 <label className="text-[12px] font-semibold text-[var(--color-text-muted)] block mb-1.5">
                   Chore name <span className="text-red-400">*</span>
@@ -537,7 +538,7 @@ export function ChoreGuideSheet({ open, onClose, familyId, context = null, curre
               </p>
             </div>
 
-            {editError && <p className="text-[13px] text-red-600">{editError}</p>}
+            <ErrorBox message={editError} />
 
             {/* Amount input */}
             <div>

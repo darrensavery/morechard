@@ -27,6 +27,7 @@ import { MilestoneOverlay, consumeMilestonePending, queueCelebration, consumeNex
 import type { MilestoneEvent, MilestoneEventType } from '../components/celebration'
 import { MicroToast } from '../components/celebration/MicroToast'
 import { CONFIGS } from '../components/celebration/registry'
+import { ErrorBox } from '../components/ui/ErrorBox'
 import { DevTriggerPanel } from '../components/dev/DevTriggerPanel'
 
 // ─── localStorage grove planner ──────────────────────────────────────────────
@@ -885,7 +886,7 @@ function ChoreRow({
       {/* Note drawer */}
       {noteOpen && (
         <div className="mt-3 space-y-2">
-          {submitErr && <p className="text-[12px] text-red-600">{submitErr}</p>}
+          <ErrorBox message={submitErr} />
           <textarea
             className="w-full border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] rounded-lg px-3 py-2 text-[13px] resize-none focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] placeholder:text-[var(--color-text-muted)]"
             placeholder="Add a note for your parent (optional)"
@@ -1422,7 +1423,7 @@ function ProfessionalView({
                       </div>
                       {isNoteOpen && (
                         <div className="mt-2 space-y-1.5">
-                          {submitErr && <p className="text-[11px] text-red-600">{submitErr}</p>}
+                          <ErrorBox message={submitErr} />
                           <textarea
                             className="w-full border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] rounded px-2 py-1.5 text-[12px] resize-none focus:outline-none focus:ring-1 focus:ring-[var(--brand-primary)] placeholder:text-[var(--color-text-muted)]"
                             placeholder="Add a note (optional)"

@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { apiUrl, authHeaders } from '../../lib/api';
 import { useAndroidBack } from '../../hooks/useAndroidBack';
+import { ErrorBox } from '../ui/ErrorBox';
 
 type Expense = {
   id: number;
@@ -100,7 +101,7 @@ export function SettlementCard({ period, onClose, onReconciled }: Props) {
             <p className="text-sm text-[var(--color-text-muted)]">
               This will mark all committed expenses for {period} as settled and generate a summary you can share.
             </p>
-            {error && <p className="text-sm text-red-500">{error}</p>}
+            <ErrorBox message={error} />
             <button
               onClick={handleReconcile}
               disabled={loading}

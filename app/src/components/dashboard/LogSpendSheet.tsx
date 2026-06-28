@@ -5,6 +5,7 @@ import type { Goal } from '../../lib/api'
 import { useAndroidBack } from '../../hooks/useAndroidBack'
 import { useDragToClose } from '../../hooks/useDragToClose'
 import { useEffect } from 'react'
+import { ErrorBox } from '../ui/ErrorBox'
 
 const SVG_PROPS = {
   width: 22, height: 22, viewBox: '0 0 24 24', fill: 'none',
@@ -289,11 +290,7 @@ export function LogSpendSheet({ familyId, childId, currency, onClose, onSaved }:
               )}
             </div>
 
-            {error && (
-              <p className="text-[13px] text-red-500 bg-red-500/10 border border-red-500/20 rounded-xl px-3 py-2">
-                {error}
-              </p>
-            )}
+            <ErrorBox message={error} />
 
             <button
               type="submit"

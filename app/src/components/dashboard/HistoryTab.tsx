@@ -12,6 +12,7 @@ import { useDragToClose } from '../../hooks/useDragToClose'
 import { PremiumShell, MentorAvatar, ProBadge, injectPremiumStyles } from '../ui/PremiumShell'
 import { getDetails } from '../../lib/localBankDetails'
 import { useLocale, currencySymbol } from '../../lib/locale'
+import { ErrorBox } from '../ui/ErrorBox'
 
 interface Props {
   familyId: string
@@ -408,7 +409,7 @@ export function ActivityTab({ familyId, child, childCount, onCountChange, unpaid
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
               </button>
             </div>
-            {payoutError && <p className="text-[13px] text-red-600">{payoutError}</p>}
+            <ErrorBox message={payoutError} />
             <div className="relative">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[14px] text-[var(--color-text-muted)]">{currencySymbol(unpaidRow?.currency ?? familyCurrency)}</span>
               <input
@@ -450,7 +451,7 @@ export function ActivityTab({ familyId, child, childCount, onCountChange, unpaid
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
               </button>
             </div>
-            {bonusError && <p className="text-[13px] text-red-600">{bonusError}</p>}
+            <ErrorBox message={bonusError} />
             <div className="relative">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[14px] text-[var(--color-text-muted)]">{currencySymbol(familyCurrency)}</span>
               <input

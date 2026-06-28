@@ -568,8 +568,16 @@ async function route(request: Request, env: Env, method: string, path: string): 
   if (compProofMatch && method === 'POST') return withAuth(request, auth, env, (req, e) => handleProofUpload(req, e, compProofMatch[1]));
   if (compProofMatch && method === 'GET')  return withAuth(request, auth, env, (req, e) => handleProofGet(req, e, compProofMatch[1]));
 
-  // Goals — children & parents can read; parents can write
-  if (path === '/api/goals' && method === 'GET')      return withAuth(request, auth, env, handleGoalList);
+  // Goals — children & parents can read and write their own goals
+  if (path === '/api/goals' && method === 'GET')  return withAuth(request, auth, env, handleGoalList);
+  if (path === '/api/goals' && method === 'POST') return withAuth(request, auth, env, handleGoalCreate);
+  const goalIdMatch = path.match(/^\/api\/goals\/([^/]+)$/);
+  if (goalIdMatch && method === 'PATCH')  return withAuth(request, auth, env, (req, e) => handleGoalUpdate(req, e, goalIdMatch[1]));
+  if (goalIdMatch && method === 'DELETE') return withAuth(request, auth, env, (req, e) => handleGoalDelete(req, e, goalIdMatch[1]));
+  const goalReorderMatch = path.match(/^\/api\/goals\/([^/]+)\/reorder$/);
+  if (goalReorderMatch && method === 'POST') return withAuth(request, auth, env, (req, e) => handleGoalReorder(req, e, goalReorderMatch[1]));
+  const goalPurchaseMatch = path.match(/^\/api\/goals\/([^/]+)\/purchase$/);
+  if (goalPurchaseMatch && method === 'POST') return withAuth(request, auth, env, (req, e) => handleGoalPurchase(req, e, goalPurchaseMatch[1]));
 
   // Plans — both roles
   if (path === '/api/plans' && method === 'GET')      return withAuth(request, auth, env, handlePlanList);
@@ -707,15 +715,7 @@ async function route(request: Request, env: Env, method: string, path: string): 
   if (path === '/api/review-prompt/outcome'  && method === 'POST') return withAuth(request, auth, env, handleReviewOutcome);
   if (path === '/api/review-prompt/feedback' && method === 'POST') return withAuth(request, auth, env, handleReviewFeedback);
 
-  // Goals write (parent only)
-  if (path === '/api/goals' && method === 'POST') return withAuth(request, auth, env, handleGoalCreate);
-  const goalIdMatch = path.match(/^\/api\/goals\/([^/]+)$/);
-  if (goalIdMatch && method === 'PATCH')  return withAuth(request, auth, env, (req, e) => handleGoalUpdate(req, e, goalIdMatch[1]));
-  if (goalIdMatch && method === 'DELETE') return withAuth(request, auth, env, (req, e) => handleGoalDelete(req, e, goalIdMatch[1]));
-  const goalReorderMatch = path.match(/^\/api\/goals\/([^/]+)\/reorder$/);
-  if (goalReorderMatch && method === 'POST') return withAuth(request, auth, env, (req, e) => handleGoalReorder(req, e, goalReorderMatch[1]));
-  const goalPurchaseMatch = path.match(/^\/api\/goals\/([^/]+)\/purchase$/);
-  if (goalPurchaseMatch && method === 'POST') return withAuth(request, auth, env, (req, e) => handleGoalPurchase(req, e, goalPurchaseMatch[1]));
+  // Goals — contribute is parent-only (parent tops up child's goal)
   const goalContributeMatch = path.match(/^\/api\/goals\/([^/]+)\/contribute$/);
   if (goalContributeMatch && method === 'POST') return withAuth(request, auth, env, (req, e) => handleGoalContribute(req, e, goalContributeMatch[1]));
 

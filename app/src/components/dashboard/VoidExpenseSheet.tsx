@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { voidExpense } from '../../lib/api';
 import { useAndroidBack } from '../../hooks/useAndroidBack';
+import { ErrorBox } from '../ui/ErrorBox';
 
 type Props = {
   expenseId: number;
@@ -59,7 +60,7 @@ export function VoidExpenseSheet({ expenseId, description, onClose, onVoided }: 
             />
           </div>
 
-          {error && <p className="text-sm text-red-500">{error}</p>}
+          <ErrorBox message={error} />
 
           <button
             type="submit"

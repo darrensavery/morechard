@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { createSharedExpense, uploadReceipt } from '../../lib/api';
 import { useAndroidBack } from '../../hooks/useAndroidBack';
+import { ErrorBox } from '../ui/ErrorBox';
 import { useDragToClose } from '../../hooks/useDragToClose';
 import type { ExpensePreset, ExpenseCategory } from '../../lib/sharedExpensePresets';
 import {
@@ -382,7 +383,7 @@ export function AddExpenseSheet({ defaultSplitBp, currency, parentingMode, regio
               )}
             </div>
 
-            {error && <p className="text-sm text-red-500">{error}</p>}
+            <ErrorBox message={error} />
 
             <button
               type="submit"
