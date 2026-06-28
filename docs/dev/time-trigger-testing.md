@@ -25,14 +25,13 @@ it runs `_reset.sql` + `_base.sql` then inserts backdated rows.
 ### Prerequisites
 - Seed scripts and the dev server both target the **remote** `morechard-dev` database.
   Local D1 has schema divergence from the migration history — use remote only.
-- Start the dev server with `npm run dev:remote` (not `npm run dev`) so the Worker
-  reads from the same remote DB that the seeds wrote to.
+- Start the dev server with `npm run dev` — it targets `morechard-dev` remote by default.
 
 ### Running a seed
 
 ```bash
-npm run seed:m13       # puts Alex at £100+ lifetime earnings (writes to remote morechard-dev)
-npm run dev:remote     # starts worker + app connected to remote morechard-dev
+npm run seed:m13   # puts Alex at £100+ lifetime earnings (writes to remote morechard-dev)
+npm run dev        # starts worker + app connected to remote morechard-dev
 ```
 
 After the seed runs, you need to trigger evaluation:

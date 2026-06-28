@@ -1,8 +1,7 @@
 {
   "scripts": {
     "build": "cd app && npm install && npm run build",
-    "dev": "concurrently --kill-others --names \"worker,app\" --prefix-colors \"cyan,green\" \"cd worker && npm run dev\" \"cd app && npm run dev\"",
-    "dev:remote": "concurrently --kill-others --names \"worker,app\" --prefix-colors \"cyan,green\" \"cd worker && npx wrangler dev --remote\" \"cd app && npm run dev\"",
+    "dev": "concurrently --kill-others --names \"worker,app\" --prefix-colors \"cyan,green\" \"cd worker && npx wrangler dev --remote\" \"cd app && npm run dev\"",
     "loadtest": "node scripts/loadtest.mjs",
     "seed:reset": "cd worker && npx wrangler d1 execute morechard-dev --remote --file=dev/seeds/_reset.sql",
     "seed:base": "cd worker && npx wrangler d1 execute morechard-dev --remote --file=dev/seeds/_base.sql",
