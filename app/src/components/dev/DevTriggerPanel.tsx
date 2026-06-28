@@ -66,6 +66,7 @@ export function DevTriggerPanel({ childId }: { childId: string }) {
         apiUrl(`/dev/run-passive?child_id=${childId}`),
         { method: 'POST', headers: authHeaders() }
       )
+      if (!res.ok) throw new Error(`${res.status}`)
       const data = await res.json() as { ok: boolean; newlyUnlocked: string[] }
       flashFeedback(
         data.newlyUnlocked.length
