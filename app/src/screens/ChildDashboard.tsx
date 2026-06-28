@@ -27,6 +27,7 @@ import { MilestoneOverlay, consumeMilestonePending, queueCelebration, consumeNex
 import type { MilestoneEvent, MilestoneEventType } from '../components/celebration'
 import { MicroToast } from '../components/celebration/MicroToast'
 import { CONFIGS } from '../components/celebration/registry'
+import { DevTriggerPanel } from '../components/dev/DevTriggerPanel'
 
 // ─── localStorage grove planner ──────────────────────────────────────────────
 // Key: `grove_plans_${userId}`
@@ -791,6 +792,8 @@ export function ChildDashboard() {
           onClose={() => setShowGrove(false)}
         />
       )}
+
+      {import.meta.env.DEV && <DevTriggerPanel childId={userId} />}
     </div>
   )
 }
