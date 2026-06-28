@@ -32,7 +32,7 @@
       <li><strong>The Stack:</strong> We use premium tools like Cloudflare, PostHog, and Sentry to stay secure. Some are US-based; transfers are protected by Standard Contractual Clauses.</li>
       <li><strong>Selling Data:</strong> Never. We sell software licences. You are the customer, not the product.</li>
       <li><strong>Cookies:</strong> Only analytics cookies, and only if you accept them. Decline anytime.</li>
-      <li><strong>Erasure:</strong> Delete your account and we purge your personal identifiers after 30 days. Anonymised ledger records are retained solely to preserve hash-chain integrity — they cannot be linked back to you.</li>
+      <li><strong>Erasure:</strong> Delete your account and we purge your personal identifiers after 30 days. Pseudonymised ledger records are retained to preserve hash-chain integrity. They remain personal data under UK GDPR; we hold them under legitimate interests with strict access controls and no retained linkage key.</li>
     </ul>
   </div>
 
@@ -122,7 +122,7 @@
   <p>When you delete your account, a 30-day window begins. Your data is hidden immediately but retained for 30 days to prevent accidental loss and to allow co-parents to intervene if a deletion was unauthorised. After 30 days, personal identifiers — name, email, authentication hashes — are permanently purged from our active systems.</p>
 
   <h3>The family ledger</h3>
-  <p>Anonymised ledger transaction records (amounts, timestamps, chore identifiers) are retained after account deletion to preserve the cryptographic hash-chain integrity of the ledger. See Section 8 for how this interacts with your right to erasure. These records are stripped of all personal identifiers before retention and cannot be linked back to you.</p>
+  <p>Ledger transaction records (amounts, timestamps, chore identifiers, and the hash chain) are <strong>pseudonymised</strong> after account deletion — direct personal identifiers are removed and replaced with anonymous tokens. These records remain personal data under UK GDPR: the combination of amounts, timestamps, and chore patterns may constitute a unique behavioural fingerprint capable of singling out a household. We retain them under legitimate interests to preserve the cryptographic integrity of the ledger, with strict access controls and no retained linkage key. See Section 8 for how this interacts with your right to erasure.</p>
 
   <h3>Backups</h3>
   <p>Database backups are retained for up to 30 days, encrypted at rest, and then overwritten in rotation. Any personal data purged from active systems is not restored from backups.</p>
@@ -150,7 +150,8 @@
   <p>Morechard uses cryptographic hashing to ensure the integrity of your family ledger. Each transaction is linked to a hash of the previous one, forming a tamper-evident chain — this is the "Sovereign Ledger" design.</p>
 
   <h3>How erasure works with an immutable ledger</h3>
-  <p>The hash chain covers <em>transaction records</em> — amounts, timestamps, and chore identifiers. It does not cover personal identifiers. When you delete your account, personal identifiers are removed and replaced with anonymised tokens. The hash chain remains mathematically valid because its integrity is anchored to transaction data, not to your identity. No remaining record can be linked back to you. This satisfies your right to erasure of personal data while maintaining ledger integrity.</p>
+  <p>The hash chain covers <em>transaction records</em> — amounts, timestamps, and chore identifiers. When you delete your account, direct personal identifiers (name, email, authentication hashes) are removed and replaced with pseudonymous tokens. The hash chain remains mathematically valid because its integrity is anchored to transaction data, not to your identity.</p>
+  <p>However, the combination of amounts, timestamps, and chore patterns may constitute a unique behavioural fingerprint. Under UK GDPR this means the retained records are <strong>pseudonymous personal data</strong> — not truly anonymous data. We rely on Article 17(3) to decline full erasure of the hash chain, specifically the legitimate interest in maintaining ledger integrity for audit and legal-claims purposes. We minimise re-identification risk through strict access controls, no indexing of behavioural fields, and no secondary dataset that could enable re-linkage.</p>
 
   <h2>9. Automated Decision-Making</h2>
   <p>Morechard uses AI to generate coaching observations and financial literacy content personalised to your child's activity in the app. These AI observations are <strong>informational only</strong> — they are presented to parents as guidance and carry no binding effect on any account, access right, or entitlement. A parent reviews all chore approvals, reward payments, and account-level decisions. No purely automated decision that produces a legal or similarly significant effect on any user is made by Morechard.</p>
