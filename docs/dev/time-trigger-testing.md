@@ -86,10 +86,12 @@ npm run seed:reset    # wipes all is_seed=1 rows for the test child
 ### Adding a new seed scenario
 
 1. Create `worker/dev/seeds/state-<scenario>.sql`
-2. Start with `.read dev/seeds/_reset.sql` then `.read dev/seeds/_base.sql`
-3. Insert backdated rows using `strftime('%s', 'now', '-N days')` for timestamps
-4. Add `is_seed = 1` on every `completions` and `ledger` row
-5. Add an npm script in `package.json`: `"seed:<name>": "cd worker && wrangler d1 execute morechard-dev --file=dev/seeds/state-<scenario>.sql"`
+2. Insert backdated rows using `strftime('%s', 'now', '-N days')` for timestamps (no preamble needed — reset+base are chained by the npm script)
+3. Add `is_seed = 1` on every `completions` and `ledger` row
+4. Add an npm script in `package.json` that chains all three files:
+   ```
+   "seed:<name>": "cd worker && npx wrangler d1 execute morechard-dev --file=dev/seeds/_reset.sql && npx wrangler d1 execute morechard-dev --file=dev/seeds/_base.sql && npx wrangler d1 execute morechard-dev --file=dev/seeds/state-<scenario>.sql"
+   ```
 
 ---
 
