@@ -210,7 +210,8 @@ import {
   handleReviewOutcome,
   handleReviewFeedback,
   handleFeedbackDigest,
-} from './routes/reviewPrompt.js';
+} from './routes/reviewPrompt.js'
+import { handleDevRequest } from './routes/dev.js';
 
 const SENSITIVE_FIELDS = new Set(['password', 'pin', 'token', 'secret', 'authorization', 'jwt', 'api_key', 'apikey']);
 
@@ -857,6 +858,11 @@ async function route(request: Request, env: Env, method: string, path: string): 
     return withAuth(request, auth, env, handleRevokeOtherSessions);
   if (method === 'DELETE' && path.startsWith('/auth/sessions/'))
     return withAuth(request, auth, env, handleRevokeSession);
+
+  // Dev endpoints — only active when ENVIRONMENT === 'development'
+  if (path.startsWith('/dev/')) {
+    return handleDevRequest(request, env);
+  }
 
   return error('Not found', 404);
 }
