@@ -9,6 +9,7 @@ import { CreateChoreSheet } from './CreateChoreSheet'
 import { PremiumShell, MentorAvatar, ProBadge, injectPremiumStyles } from '../ui/PremiumShell'
 import { Button } from '../ui/button'
 import { useLocale } from '../../lib/locale'
+import { ErrorBox } from '../ui/ErrorBox'
 
 const DAYS = ['M', 'T', 'W', 'T', 'F', 'S', 'S']
 
@@ -271,7 +272,7 @@ export function ChoresTab({ familyId, child, children }: Props) {
                 ) : reviewMode === 'edit' ? (
                   <div className="border-t border-[color-mix(in_srgb,var(--brand-primary)_20%,transparent)] px-4 pt-3 pb-4 space-y-3">
                     <p className="text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider">Edit before approving</p>
-                    {reviewError && <p className="text-[12px] text-red-600">{reviewError}</p>}
+                    <ErrorBox message={reviewError} />
                     <div>
                       <label className="text-[11px] font-semibold text-[var(--color-text-muted)] block mb-1">Chore title</label>
                       <input
@@ -335,7 +336,7 @@ export function ChoresTab({ familyId, child, children }: Props) {
                     <p className="text-[12px] text-[var(--color-text-muted)]">
                       {child.display_name} will see this message. Be clear and encouraging.
                     </p>
-                    {reviewError && <p className="text-[12px] text-red-600">{reviewError}</p>}
+                    <ErrorBox message={reviewError} />
                     <textarea
                       rows={3}
                       placeholder={`e.g. We already have this covered, but try suggesting something else!`}

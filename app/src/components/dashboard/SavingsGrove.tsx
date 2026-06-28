@@ -15,6 +15,7 @@ import { createGoal, formatCurrency } from '../../lib/api'
 import { currencySymbol } from '../../lib/locale'
 import { useAndroidBack } from '../../hooks/useAndroidBack'
 import { useDragToClose } from '../../hooks/useDragToClose'
+import { ErrorBox } from '../ui/ErrorBox'
 
 const CATEGORIES = [
   { id: 'Toys',     label: '🧸 Toys' },
@@ -260,9 +261,7 @@ export function SavingsGrove({
             </div>
           )}
 
-          {err && (
-            <p className="text-xs font-medium text-red-600">{err}</p>
-          )}
+          <ErrorBox message={err} />
 
           <button
             type="submit"

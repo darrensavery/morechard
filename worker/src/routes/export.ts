@@ -499,6 +499,7 @@ ${baseStyles()}
 ${disputed > 0 ? `<p class="warn">⚠ ${disputed} ${pl ? 'wpis(-ów) zakwestionowanych' : 'disputed entry/entries'}</p>` : ''}
 
 <h2>${pl ? 'Rejestr transakcji' : 'Transaction Ledger'}</h2>
+${statusLegend(lang)}
 <table>
   <thead>
     <tr>
@@ -791,6 +792,7 @@ ${moduleRows.length > 0 ? `
 
 <div class="ledger-appendix">
 <h2>${pl ? 'Załącznik — Rejestr transakcji' : 'Appendix — Transaction Ledger'}</h2>
+${statusLegend(lang)}
 <table>
   <thead>
     <tr>
@@ -947,6 +949,7 @@ ${family.home_lat != null && family.home_lng != null ? `
 </table>` : ''}
 
 <h2>${pl ? 'Rejestr Dowodów z Hashami SHA-256' : 'Evidence Log with SHA-256 Hashes'}</h2>
+${statusLegend(lang)}
 <p style="font-size:9px;color:#777;font-style:italic;margin-bottom:8px">${pl
   ? 'Każdy wpis zawiera nazwę uczestnika odpowiedzialnego za dane zadanie.'
   : 'Each entry includes the Contributor attributed to the task.'}</p>
@@ -976,6 +979,7 @@ ${family.home_lat != null && family.home_lng != null ? `
 
 ${completions.length > 0 ? `
 <h2>${pl ? 'Dowody Wykonania Zadań — Urządzenie, Lokalizacja i Czas Zatwierdzenia' : 'Task Completion Evidence — Device, Location & Approval Latency'}</h2>
+${confidenceLegend(lang)}
 <p style="font-size:9px;color:#777;font-style:italic;margin-bottom:8px">${pl
   ? 'Odcisk urządzenia (device_fingerprint) to hash SHA-256 unikalnych identyfikatorów sprzętu — pozwala potwierdzić, że ten sam fizyczny telefon był używany we wszystkich wierszach. Czas oczekiwania na zatwierdzenie pokazuje, ile czasu minęło między przesłaniem a weryfikacją rodzica.'
   : 'Device Fingerprint is a SHA-256 hash of unique hardware identifiers — confirms the same physical handset was used across entries. Approval Latency shows the gap between upload and parental verification.'}</p>
@@ -1177,6 +1181,7 @@ function baseStyles(): string {
   .fp { font-family:monospace; font-size:10px; word-break:break-all; margin:4px 0; }
   .qr-placeholder { display:inline-block; width:64px; height:64px; border:1px solid #ccc; text-align:center; line-height:64px; font-size:8px; color:#999; vertical-align:middle; margin-right:12px; }
   .declaration { margin-top:24px; padding:14px; border:2px solid #1a1a1a; border-radius:4px; font-size:10px; line-height:1.6; }
+  .legend { font-size:9px; color:#888; margin:2px 0 8px; line-height:2; }
   @media print { body { padding: 16px; } }
 </style>`;
 }
@@ -1513,6 +1518,26 @@ function fmtAmount(pence: number, currency: string): string {
   if (currency === 'GBP') return `£${major}`;
   if (currency === 'PLN') return `${major} zł`;
   return `$${major}`;
+}
+
+function statusLegend(lang: string): string {
+  const pl = lang === 'pl';
+  return `<p class="legend">`
+    + `<span class="badge-auto">${pl ? 'Zweryfikowany auto' : 'Verified (Auto)'}</span> ${pl ? 'zatwierdzone automatycznie' : 'approved automatically'} &nbsp;·&nbsp; `
+    + `<span class="badge-manual">${pl ? 'Zweryfikowany ręcznie' : 'Verified (Manual)'}</span> ${pl ? 'zatwierdzone przez rodzica' : 'approved by parent'} &nbsp;·&nbsp; `
+    + `<span class="badge-pending">${pl ? 'Oczekujący' : 'Pending'}</span> ${pl ? 'czeka na weryfikację' : 'awaiting review'} &nbsp;·&nbsp; `
+    + `<span class="badge-disputed">${pl ? 'Zakwestionowany' : 'Disputed'}</span> ${pl ? 'zgłoszony do weryfikacji' : 'queried'} &nbsp;·&nbsp; `
+    + `<span class="badge-reversed">${pl ? 'Wycofany' : 'Reversed'}</span> ${pl ? 'skorygowany' : 'corrected'}`
+    + `</p>`;
+}
+
+function confidenceLegend(lang: string): string {
+  const pl = lang === 'pl';
+  return `<p class="legend">`
+    + `<span class="conf-high">${pl ? 'Wysoka' : 'High'}</span> ${pl ? 'GPS + hash + IP spójne' : 'GPS + hash + IP consistent'} &nbsp;·&nbsp; `
+    + `<span class="conf-medium">${pl ? 'Średnia' : 'Medium'}</span> ${pl ? 'częściowe dowody' : 'partial evidence'} &nbsp;·&nbsp; `
+    + `<span class="conf-low">${pl ? 'Niska' : 'Low'}</span> ${pl ? 'wykryto niespójności' : 'inconsistencies detected'}`
+    + `</p>`;
 }
 
 function badgeClass(status: string): string {

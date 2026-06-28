@@ -281,13 +281,9 @@ export default function App() {
     )
   }, [])
 
-  // Read app_view from localStorage so ThemeProvider can bias 'system' → 'dark'
-  // for CLEAN-view users before any API call completes.
-  const storedAppView = localStorage.getItem('mc_app_view') ?? 'ORCHARD'
-
   return (
     <LocaleProvider>
-    <ThemeProvider appView={storedAppView}>
+    <ThemeProvider>
     <BrowserRouter>
       <AppUrlListener />
       <AndroidBackController />

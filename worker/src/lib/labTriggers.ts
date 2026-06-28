@@ -121,7 +121,7 @@ export async function evaluatePassive(db: D1Database, childId: string): Promise<
      FROM completions
      WHERE child_id = ?
        AND status IN ('completed','rejected','needs_revision')
-       AND created_at >= strftime('%s', 'now', '-56 days')`
+       AND resolved_at >= strftime('%s', 'now', '-56 days')`
   ).bind(childId).first<{ total: number; passed: number }>()
 
   if (relRow && relRow.total >= 10 && (relRow.passed / relRow.total) >= 0.90) {
