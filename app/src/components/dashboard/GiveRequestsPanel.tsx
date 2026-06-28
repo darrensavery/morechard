@@ -53,7 +53,7 @@ export function GiveRequestsPanel({ familyId, onCountChange }: Props) {
     }
   }
 
-  if (requests.length === 0 && history.length === 0) {
+  if (requests.length === 0) {
     return null;
   }
 
