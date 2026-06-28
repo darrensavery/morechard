@@ -18,10 +18,10 @@ VALUES
    NULL, 'en', 1, 'CHORES', 'WEEKLY', 0, 6, 0,
    strftime('%s', 'now', '-90 days'));
 
-INSERT INTO family_roles (user_id, family_id, role, granted_at)
+INSERT INTO family_roles (user_id, family_id, role, parent_role)
 VALUES
-  ('uDEV_PARENT0000000001', 'fDEV000000000000000001', 'parent', strftime('%s', 'now', '-90 days')),
-  ('uDEV_CHILD00000000001', 'fDEV000000000000000001', 'child',  strftime('%s', 'now', '-90 days'));
+  ('uDEV_PARENT0000000001', 'fDEV000000000000000001', 'parent', 'lead'),
+  ('uDEV_CHILD00000000001', 'fDEV000000000000000001', 'child',  NULL);
 
 INSERT INTO user_settings (user_id, avatar_id, theme, locale, updated_at)
 VALUES

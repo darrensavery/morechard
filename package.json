@@ -17,7 +17,8 @@
     "seed:streak7": "cd worker && npx wrangler d1 execute morechard-dev --remote --file=dev/seeds/_reset.sql && npx wrangler d1 execute morechard-dev --remote --file=dev/seeds/_base.sql && npx wrangler d1 execute morechard-dev --remote --file=dev/seeds/state-streak-7.sql",
     "seed:streak30": "cd worker && npx wrangler d1 execute morechard-dev --remote --file=dev/seeds/_reset.sql && npx wrangler d1 execute morechard-dev --remote --file=dev/seeds/_base.sql && npx wrangler d1 execute morechard-dev --remote --file=dev/seeds/state-streak-30.sql",
     "seed:gaming": "cd worker && npx wrangler d1 execute morechard-dev --remote --file=dev/seeds/_reset.sql && npx wrangler d1 execute morechard-dev --remote --file=dev/seeds/_base.sql && npx wrangler d1 execute morechard-dev --remote --file=dev/seeds/state-gaming-goals.sql",
-    "seed:goals": "cd worker && npx wrangler d1 execute morechard-dev --remote --file=dev/seeds/_reset.sql && npx wrangler d1 execute morechard-dev --remote --file=dev/seeds/_base.sql && npx wrangler d1 execute morechard-dev --remote --file=dev/seeds/state-multi-goals.sql"
+    "seed:goals": "cd worker && npx wrangler d1 execute morechard-dev --remote --file=dev/seeds/_reset.sql && npx wrangler d1 execute morechard-dev --remote --file=dev/seeds/_base.sql && npx wrangler d1 execute morechard-dev --remote --file=dev/seeds/state-multi-goals.sql",
+    "seed:bootstrap": "cd worker && npx wrangler d1 execute morechard-dev --remote --file=dev/bootstrap_dev_db.sql"
   },
   "devDependencies": {
     "concurrently": "^9.2.1",
