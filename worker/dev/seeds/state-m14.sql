@@ -3,8 +3,6 @@
 -- Strategy: a few credits 30+ days ago, nothing recent.
 -- After loading: call /dev/run-passive — the nightly CRON condition fires.
 
-.read dev/seeds/_reset.sql
-.read dev/seeds/_base.sql
 
 INSERT INTO ledger (family_id, child_id, chore_id, entry_type, amount, currency, description,
   verification_status, authorised_by, ip_address, previous_hash, record_hash, created_at, is_seed)

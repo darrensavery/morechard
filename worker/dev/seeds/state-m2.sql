@@ -3,8 +3,6 @@
 -- Strategy: 10 completions + 2 bonus credits totalling £20.25 (2025p)
 -- After loading: call evaluateOnChoreApproval or open Learning Lab to trigger unlock.
 
-.read dev/seeds/_reset.sql
-.read dev/seeds/_base.sql
 
 INSERT INTO completions (id, family_id, chore_id, child_id, note, status, attempt_count,
   submitted_at, resolved_at, resolved_by, is_seed)

@@ -4,8 +4,6 @@
 -- The celebration event is queued by the server on approval; to see the overlay
 -- use the Dev Panel "Fire STREAK_7" button directly in the browser.
 
-.read dev/seeds/_reset.sql
-.read dev/seeds/_base.sql
 
 -- Set streak counters directly (these are summary rows, not ledger entries)
 UPDATE child_streaks

@@ -4,8 +4,6 @@
 -- Strategy: 13 completed + 1 rejected = 92.9% rate, 14 total completions.
 -- After loading: call /dev/run-passive to trigger passive evaluation.
 
-.read dev/seeds/_reset.sql
-.read dev/seeds/_base.sql
 
 INSERT INTO completions (id, family_id, chore_id, child_id, status, attempt_count,
   submitted_at, resolved_at, resolved_by, is_seed)

@@ -3,8 +3,6 @@
 -- Strategy: £31.50 of credits, no payment entries
 -- After loading: open Learning Lab or call /dev/run-passive to trigger unlock.
 
-.read dev/seeds/_reset.sql
-.read dev/seeds/_base.sql
 
 INSERT INTO ledger (family_id, child_id, chore_id, entry_type, amount, currency, description,
   verification_status, authorised_by, ip_address, previous_hash, record_hash, created_at, is_seed)

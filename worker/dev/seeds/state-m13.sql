@@ -3,8 +3,6 @@
 -- Also unlocks M2 (£20) and M8 (£30 balance) as side effects.
 -- After loading: call evaluateOnChoreApproval or open Learning Lab.
 
-.read dev/seeds/_reset.sql
-.read dev/seeds/_base.sql
 
 INSERT INTO ledger (family_id, child_id, chore_id, entry_type, amount, currency, description,
   verification_status, authorised_by, ip_address, previous_hash, record_hash, created_at, is_seed)

@@ -4,8 +4,6 @@
 -- evaluateOnGoalCreate is called; since seeds bypass that call, we insert the
 -- unlocked_modules rows directly here.
 
-.read dev/seeds/_reset.sql
-.read dev/seeds/_base.sql
 
 INSERT INTO goals (id, family_id, child_id, title, target_amount, currency, category,
   deadline, alloc_pct, archived, status, current_saved_pence, created_at, updated_at)

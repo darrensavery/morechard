@@ -2,8 +2,6 @@
 -- Target: STREAK_30 milestone (+ BADGE_CONSISTENCY_SAPLING)
 -- See state-streak-7.sql notes — use Dev Panel to fire the overlay immediately.
 
-.read dev/seeds/_reset.sql
-.read dev/seeds/_base.sql
 
 UPDATE child_streaks
 SET current_streak       = 30,

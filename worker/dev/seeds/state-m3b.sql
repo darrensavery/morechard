@@ -5,8 +5,6 @@
 -- The query groups by strftime('%Y-%W') so entries must span 4 distinct calendar weeks.
 -- After loading: call evaluateOnChoreApproval.
 
-.read dev/seeds/_reset.sql
-.read dev/seeds/_base.sql
 
 -- Week 1: low earnings (£1.00 = 100p) — 28 days ago
 INSERT INTO ledger (family_id, child_id, chore_id, entry_type, amount, currency, description,

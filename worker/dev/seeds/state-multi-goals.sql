@@ -2,8 +2,6 @@
 -- Target: M15 (Risk & Diversification) — 3+ active goals AND >=1 long-term (deadline > 90 days)
 -- Also triggers M17+M20 due to gaming goal being one of the three.
 
-.read dev/seeds/_reset.sql
-.read dev/seeds/_base.sql
 
 INSERT INTO goals (id, family_id, child_id, title, target_amount, currency, category,
   deadline, alloc_pct, archived, status, current_saved_pence, created_at, updated_at)
