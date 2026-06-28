@@ -11,6 +11,7 @@
 
 import { useState, useEffect } from 'react'
 import type { ChildRecord, Goal } from '../../lib/api'
+import { ErrorBox } from '../ui/ErrorBox'
 import { currencySymbol } from '../../lib/locale'
 import {
   getGoals, updateGoal, contributeToGoal,
@@ -95,7 +96,7 @@ export function GoalBoostingTab({ familyId, child }: Props) {
   if (err) {
     return (
       <div className="py-12 text-center space-y-2">
-        <p className="text-[14px] text-red-600">{err}</p>
+        <ErrorBox message={err} />
         <button onClick={load} className="text-[13px] text-[var(--brand-primary)] underline">Retry</button>
       </div>
     )

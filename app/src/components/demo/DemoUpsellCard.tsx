@@ -8,6 +8,7 @@ import { useState } from 'react'
 import { Sparkles } from 'lucide-react'
 import { apiUrl, authHeaders, setToken } from '@/lib/api'
 import type { TrialStatus } from '@/lib/api'
+import { ErrorBox } from '../ui/ErrorBox'
 import { setDeviceIdentity, getDeviceIdentity } from '@/lib/deviceIdentity'
 
 interface Props {
@@ -73,9 +74,7 @@ export function DemoUpsellCard({ trialStatus }: Props) {
             Try the full experience using our demo family, the Thomsons. You can add and edit chores to get a feel for the app. The demo resets every night at midnight.
           </p>
 
-          {error && (
-            <p className="text-xs text-red-500 mt-1.5 font-medium">{error}</p>
-          )}
+          <ErrorBox message={error} className="mt-1.5" />
 
           <button
             onClick={handleEnterDemo}

@@ -8,6 +8,7 @@ import { useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { logSpend } from '../../lib/api'
 import { useAndroidBack } from '../../hooks/useAndroidBack'
+import { ErrorBox } from '../ui/ErrorBox'
 import { currencySymbol } from '../../lib/locale'
 import { SPEND_CATEGORIES } from '../../lib/spendCategories'
 
@@ -436,7 +437,7 @@ export function SpendGuideSheet({ open, familyId, currency, onClose, onSaved }: 
               )}
             </div>
 
-            {saveErr && <p className="text-[13px] text-red-500">{saveErr}</p>}
+            <ErrorBox message={saveErr} />
 
             {/* Amount */}
             <div>

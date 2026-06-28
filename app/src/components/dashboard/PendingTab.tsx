@@ -185,7 +185,7 @@ export function PendingTab({ familyId, child, onCountChange }: Props) {
           reviseNote={reviseNote}
           busy={busy === c.id}
           anyBusy={!!busy || approveAllBusy}
-          onApprove={() => challenge(() => handleApprove(c.id))}
+          onApprove={() => handleApprove(c.id)}
           onStartRevise={() => { setReviseId(c.id); setReviseNote('') }}
           onCancelRevise={() => { setReviseId(null); setReviseNote('') }}
           onReviseNoteChange={setReviseNote}

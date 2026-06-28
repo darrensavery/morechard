@@ -29,6 +29,28 @@ body.prose-body nav {
   color: var(--text-dark);
 }
 
+.prose-page h3 {
+  font-family: var(--font-display);
+  font-size: clamp(15px, 2vw, 18px);
+  font-weight: 500;
+  margin-top: 24px;
+  margin-bottom: 10px;
+  color: var(--text-dark);
+}
+
+.prose-page ul,
+.prose-page ol {
+  padding-left: 1.4em;
+  margin-bottom: 16px;
+}
+
+.prose-page li {
+  font-size: 17px;
+  line-height: 1.7;
+  color: var(--text-sub);
+  margin-bottom: 10px;
+}
+
 .prose-page p {
   font-size: 17px;
   line-height: 1.7;

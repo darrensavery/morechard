@@ -25,6 +25,7 @@ import {
 } from '../../lib/api'
 import { track } from '../../lib/analytics'
 import { ChoreGuideSheet } from './ChoreGuideSheet'
+import { ErrorBox } from '../ui/ErrorBox'
 
 interface Props {
   familyId: string
@@ -273,9 +274,7 @@ export function EarnTab({ familyId, childId, currency, grovePlans = {}, onToggle
           <h2 className="text-[13px] font-extrabold text-[var(--color-text-muted)] uppercase tracking-wider mb-3">
             Open tasks — first come, first served
           </h2>
-          {claimError && (
-            <p className="text-[12px] text-red-600 mb-2">{claimError}</p>
-          )}
+          <ErrorBox message={claimError} className="mb-2" />
           <div className="space-y-2.5">
             {openChores.map(chore => (
               <div key={chore.id} className={`bg-[var(--color-surface)] border rounded-xl px-4 py-3 flex items-center gap-3 ${chore.is_flash ? 'border-l-4 border-l-red-500 border-[var(--color-border)]' : 'border-[var(--color-border)]'}`}>
@@ -440,7 +439,7 @@ function RevisionCard({
       {/* Note drawer or resubmit button */}
       {noteOpen ? (
         <div className="px-4 pb-4 space-y-2 border-t border-amber-200 dark:border-amber-800 pt-3">
-          {submitError && <p className="text-[12px] text-red-600">{submitError}</p>}
+          <ErrorBox message={submitError} />
           <textarea
             className="w-full border border-[var(--color-border)] rounded-xl px-3.5 py-2.5 text-[13px] resize-none bg-[var(--color-surface)] text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] transition"
             placeholder="Tell your parent what you've improved…"
@@ -623,7 +622,7 @@ function OpenChoreCard({
       {/* Note drawer */}
       {isActive && stage === 'note' && (
         <div className="px-4 pb-4 space-y-2.5 border-t border-[var(--color-border)] pt-3">
-          {error && <p className="text-[12px] text-red-600">{error}</p>}
+          <ErrorBox message={error} />
           <textarea
             className="w-full border border-[var(--color-border)] rounded-xl px-3.5 py-2.5 text-[13px] resize-none bg-[var(--color-surface)] text-[var(--color-text)] placeholder:text-[var(--color-text-muted)]/60 focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] transition"
             placeholder="Add a note for your parent (optional)"

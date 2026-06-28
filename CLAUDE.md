@@ -108,18 +108,95 @@ Wave 1 shipped deep-link support + `assetlinks.json` (Google's Digital Asset Lin
 
 Before production release: replace the debug SHA-256 in `app/public/.well-known/assetlinks.json` with the **release cert fingerprint** from Play Console → App integrity → App signing. Keep the upload cert fingerprint.
 
+## Database & Deployment Rules (CRITICAL — read before touching any wrangler command)
+
+### The two databases
+
+| Name | ID | Purpose |
+|------|----|---------|
+| `morechard-dev` | `a6f9fe7d-7e6c-4176-8654-b9d6c83e5cba` | Dev/testing only — seeded with fake data |
+| `morechard` | `5e8b4cd3-4807-43e4-bd84-4969da6e402c` | **Production — live user data** |
+
+### The two rules
+
+1. **`--local` is dead.** Local D1 has accumulated schema divergence and cannot be bootstrapped through the migration chain. Never use `--local` on any wrangler command.
+
+2. **`--env production` = production database.** Any wrangler command *without* `--env production` targets `morechard-dev`. Always double-check before running anything destructive.
+
+### Starting the dev server
+```bash
+npm run dev          # worker (remote morechard-dev) + app, both in watch mode
+```
+
+### Querying a database
+```bash
+# Dev:
+cd worker && npx wrangler d1 execute morechard-dev --remote --command="SELECT ..."
+
+# Prod:
+cd worker && npx wrangler d1 execute morechard --remote --env production --command="SELECT ..."
+```
+
+### Deploying the Worker
+```bash
+# From repo root OR from worker/:
+cd worker && npx wrangler deploy --env production
+```
+This binds the live `morechard` DB, production env vars, and live Stripe keys.
+**Never run `wrangler deploy` without `--env production`** — it deploys dev bindings over the production worker.
+
+### Applying a migration to production
+
+Simple migrations (ALTER TABLE, CREATE TABLE, CREATE INDEX — no triggers):
+```bash
+cd worker
+npx wrangler d1 migrations apply morechard --remote --env production
+```
+
+Migrations containing SQLite triggers (`CREATE TRIGGER ... BEGIN ... END`):
+`migrations apply` splits on `;` and breaks trigger bodies. Use `--file=` instead:
+```bash
+cd worker
+npx wrangler d1 execute morechard --remote --env production --file=migrations/XXXX_name.sql
+# Then manually mark it applied:
+npx wrangler d1 execute morechard --remote --env production \
+  --command="INSERT INTO d1_migrations (name) VALUES ('XXXX_name.sql')"
+```
+
+### Bootstrapping morechard-dev (if ever reset or empty)
+`wrangler d1 migrations apply morechard-dev` **will not work** — the migration chain has
+historical conflicts that only the production DB survived incrementally.
+Instead:
+```bash
+npm run seed:bootstrap   # applies worker/dev/bootstrap_dev_db.sql — drops + recreates all tables
+npm run seed:m13         # (or any other seed) to load test data
+```
+
+---
+
 ## Common Commands
 
 ### Daily save routine
+```bash
 git add .
 git commit -m "describe what changed"
 git push
+```
 
-### Start local server
-npm run dev
+### Start dev server
+```bash
+npm run dev    # worker (morechard-dev remote) + Vite app
+```
 
-### Deploy to Cloudflare
-wrangler deploy
+### Deploy Worker to production
+```bash
+cd worker && npx wrangler deploy --env production
+```
+
+### Apply a new migration to production
+```bash
+cd worker && npx wrangler d1 migrations apply morechard --remote --env production
+```
 
 ---
 
