@@ -61,7 +61,12 @@ export async function handleDevRequest(req: Request, env: Env): Promise<Response
     ).bind(child).all<{ module_slug: string }>()
     const before = new Set((beforeRow.results ?? []).map(r => r.module_slug))
 
-    await evaluatePassive(env.DB, child)
+    let passiveError: string | null = null
+    try {
+      await evaluatePassive(env.DB, child)
+    } catch (err) {
+      passiveError = err instanceof Error ? err.message : String(err)
+    }
 
     const afterRow = await env.DB.prepare(
       `SELECT module_slug FROM unlocked_modules WHERE child_id = ?`
@@ -70,7 +75,7 @@ export async function handleDevRequest(req: Request, env: Env): Promise<Response
       .map(r => r.module_slug)
       .filter(s => !before.has(s))
 
-    return Response.json({ ok: true, newlyUnlocked })
+    return Response.json({ ok: true, newlyUnlocked, ...(passiveError ? { error: passiveError } : {}) })
   }
 
   return new Response('Not Found', { status: 404 })
