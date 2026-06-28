@@ -23,13 +23,16 @@ Seeds live in `worker/dev/seeds/`. Each file is a complete, self-contained scena
 it runs `_reset.sql` + `_base.sql` then inserts backdated rows.
 
 ### Prerequisites
-- `npm run dev` running (worker + app)
-- Dev DB (`morechard-dev`) is the target — never run against production
+- Seed scripts and the dev server both target the **remote** `morechard-dev` database.
+  Local D1 has schema divergence from the migration history — use remote only.
+- Start the dev server with `npm run dev:remote` (not `npm run dev`) so the Worker
+  reads from the same remote DB that the seeds wrote to.
 
 ### Running a seed
 
 ```bash
-npm run seed:m13       # puts Alex at £100+ lifetime earnings
+npm run seed:m13       # puts Alex at £100+ lifetime earnings (writes to remote morechard-dev)
+npm run dev:remote     # starts worker + app connected to remote morechard-dev
 ```
 
 After the seed runs, you need to trigger evaluation:
@@ -90,7 +93,7 @@ npm run seed:reset    # wipes all is_seed=1 rows for the test child
 3. Add `is_seed = 1` on every `completions` and `ledger` row
 4. Add an npm script in `package.json` that chains all three files:
    ```
-   "seed:<name>": "cd worker && npx wrangler d1 execute morechard-dev --file=dev/seeds/_reset.sql && npx wrangler d1 execute morechard-dev --file=dev/seeds/_base.sql && npx wrangler d1 execute morechard-dev --file=dev/seeds/state-<scenario>.sql"
+   "seed:<name>": "cd worker && npx wrangler d1 execute morechard-dev --remote --file=dev/seeds/_reset.sql && npx wrangler d1 execute morechard-dev --remote --file=dev/seeds/_base.sql && npx wrangler d1 execute morechard-dev --remote --file=dev/seeds/state-<scenario>.sql"
    ```
 
 ---
