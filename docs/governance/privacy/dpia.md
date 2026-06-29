@@ -155,9 +155,9 @@ For every medium/high risk in Step 5, state the mitigation, whether it eliminate
 | Risk # | Measure | Effect (eliminate/reduce) | Residual | Owner | Done? |
 |---|---|---|---|---|---|
 | R10 | Remove direct identifiers on deletion; no retained linkage key; no index on behavioural fields; no admin query path to pseudonymised records | Reduce (cannot eliminate — chain remains pseudonymous) | Low–Medium | Darren Savery | [ ] Verify access controls in codebase |
-| R10 | Complete LIA for legitimate-interests basis for ledger retention | Reduce (documents proportionality) | — | Darren Savery | [ ] LIA not yet drafted |
-| R10 | Set and document time-bound retention period for pseudonymised chain | Reduce (limits exposure window) | — | Darren Savery | [ ] Period not yet decided |
-| R4 | Privacy notice v1.4 corrects erasure claim: pseudonymisation acknowledged, Art. 17(3) cited | Reduce (compliance gap closed in notice) | Residual: LIA still needed | Darren Savery | ✓ Done (2026-06-28) |
+| R10 | Complete LIA for legitimate-interests basis for ledger retention | Reduce (documents proportionality) | Residual: retention period not yet implemented | Darren Savery | ✓ LIA-3 drafted (2026-06-29) — docs/governance/lia/lia.md. Outstanding: decide 7-year period and implement scheduled purge |
+| R10 | Set and document time-bound retention period for pseudonymised chain | Reduce (limits exposure window) | — | Darren Savery | [ ] Period recommended as 7 years (Limitation Act 1980); not yet decided or implemented |
+| R4 | Privacy notice v1.4 corrects erasure claim: pseudonymisation acknowledged, Art. 17(3) cited | Reduce (compliance gap closed in notice) | Residual: scheduled purge still needed | Darren Savery | ✓ Done (2026-06-28) |
 
 ---
 
@@ -200,5 +200,5 @@ For each standard, state the specific measure taken (the Code requires this expl
 1. ~~**Controller entity** (sole trader vs. company)~~ — **Resolved 2026-06-28.** Controller: Darren Savery, trading as Morechard (sole trader).
 2. ~~**Live privacy notice still v1.3**~~ — **Resolved 2026-06-28.** Privacy notice v1.4 deployed: age threshold corrected (UK = 13), transfers disclosed, lawful bases added, controller named, erasure/ledger position corrected to pseudonymisation.
 3. **AI coaching profiling question** — determines Art. 22 / Standard 12 treatment. Interim position (v1.4 notice): AI observations are informational only, no solely-automated decisions with legal/significant effect. Needs architectural verification.
-4. **Ledger pseudonymisation LIA** — the erasure/immutable-ledger conflict (R4/R10) is now correctly framed (pseudonymous, not anonymous; Art. 17(3) cited). Residual blocker: Legitimate Interests Assessment not yet drafted. Must be completed before relying on legitimate interests as the retention basis.
+4. ~~**Ledger pseudonymisation LIA**~~ — **Resolved 2026-06-29.** LIA-3 drafted in `docs/governance/lia/lia.md`. All three tests pass (purpose, necessity, balancing). Outstanding action: decide and implement 7-year scheduled purge — until this is done, the time-limitation safeguard in Part B/C is absent and the proportionality argument is weaker.
 5. **Specialist legal review** — strongest candidate in the compliance stack for paid review. Priority: children's data + ledger pseudonymisation + co-parent weaponisation risk (R2).
