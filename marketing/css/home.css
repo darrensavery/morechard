@@ -14,15 +14,14 @@ nav:not(.scrolled):not(:has(.nav-group.is-expanded)) .nav-toggle span {
   background: #fff;
 }
 
-/* On mobile, restore dark text inside the open drawer (cream background) */
+/* On mobile, nav has a solid cream background (see base.css), so reset all white overrides */
 @media (max-width: 919px) {
-  nav.is-open:not(.scrolled):not(:has(.nav-group.is-expanded)) .nav-trigger,
-  nav.is-open:not(.scrolled):not(:has(.nav-group.is-expanded)) .nav-item > a {
-    color: var(--text-dark);
-  }
-  nav.is-open:not(.scrolled):not(:has(.nav-group.is-expanded)) .nav-trigger svg {
-    stroke: var(--text-dark);
-  }
+  nav .nav-logo-wordmark,
+  nav .nav-logo-wordmark span { color: var(--text-dark); }
+  nav .nav-toggle span { background: var(--text-dark); }
+  nav .nav-trigger,
+  nav .nav-item > a { color: var(--text-dark); }
+  nav .nav-trigger svg { stroke: currentColor; }
 }
 
 /* ── Hero ── */
