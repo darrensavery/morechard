@@ -70,6 +70,12 @@
     object-position: center 20%;
   }
 }
+@media (max-width: 919px) {
+  /* Darken the top of the scrim so the white nav logo + hamburger are legible */
+  .audience-hero .hero-scrim {
+    background: linear-gradient(180deg, rgba(27,45,46,0.55) 0%, rgba(27,45,46,0.10) 22%, rgba(27,45,46,0.00) 38%, rgba(27,45,46,0.55) 60%, rgba(27,45,46,0.78) 100%);
+  }
+}
 @media (prefers-reduced-motion: reduce) {
   .audience-hero img.hero-img { transform: none !important; transition: none !important; }
   .audience-hero .hero-scrim { opacity: 1 !important; transition: none !important; }

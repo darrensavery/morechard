@@ -534,16 +534,6 @@ nav.is-open .nav-toggle span:nth-child(2) { opacity: 0; }
 nav.is-open .nav-toggle span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
 
 @media (max-width: 919px) {
-  /* Always show a solid background on mobile — transparent-over-hero only works at desktop */
-  nav {
-    background: var(--bg-cream);
-    border-bottom-color: var(--border-light);
-  }
-  body.dark nav {
-    background: var(--bg-dark);
-    border-bottom-color: rgba(255,255,255,0.08);
-  }
-
   .nav-list {
     position: fixed;
     top: var(--h-nav);
