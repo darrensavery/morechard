@@ -545,7 +545,7 @@ nav.is-open .nav-toggle span:nth-child(3) { transform: translateY(-7px) rotate(-
     padding: 24px var(--pad-x);
     background: var(--bg-cream);
     overflow-y: auto;
-    transform: translateY(-100%);
+    transform: translateY(-100vh);
     border-top: 1px solid var(--border-light);
   }
   .nav-list { transition: transform 0.28s cubic-bezier(0.16,1,0.3,1); }
