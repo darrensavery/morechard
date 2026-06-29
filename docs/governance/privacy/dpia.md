@@ -156,7 +156,7 @@ For every medium/high risk in Step 5, state the mitigation, whether it eliminate
 |---|---|---|---|---|---|
 | R10 | Remove direct identifiers on deletion; no retained linkage key; no index on behavioural fields; no admin query path to pseudonymised records | Reduce (cannot eliminate — chain remains pseudonymous) | Low–Medium | Darren Savery | [ ] Verify access controls in codebase |
 | R10 | Complete LIA for legitimate-interests basis for ledger retention | Reduce (documents proportionality) | Residual: retention period not yet implemented | Darren Savery | ✓ LIA-3 drafted (2026-06-29) — docs/governance/lia/lia.md. Outstanding: decide 7-year period and implement scheduled purge |
-| R10 | Set and document time-bound retention period for pseudonymised chain | Reduce (limits exposure window) | — | Darren Savery | [ ] Period recommended as 7 years (Limitation Act 1980); not yet decided or implemented |
+| R10 | Set and document time-bound retention period for pseudonymised chain | Reduce (limits exposure window) | Low | Darren Savery | ✓ Done (2026-06-29). 7 years from deleted_at, aligned with Limitation Act 1980. Two-stage CRON purge implemented in worker/src/jobs/familyPurge.ts |
 | R4 | Privacy notice v1.4 corrects erasure claim: pseudonymisation acknowledged, Art. 17(3) cited | Reduce (compliance gap closed in notice) | Residual: scheduled purge still needed | Darren Savery | ✓ Done (2026-06-28) |
 
 ---

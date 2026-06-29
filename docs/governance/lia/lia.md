@@ -371,15 +371,23 @@ The residual concern is the Medium re-identification risk and the absence of a d
 
 ### LIA-3 Outcome
 
-All three tests pass, with one outstanding action (retention period) that must be completed before the assessment is fully defensible.
+All three tests pass.
 
 | Part | Outcome |
 |---|---|
 | A — Purpose | ✓ Legitimate |
-| B — Necessity | ✓ Necessary; minimum-data approach already in place. Outstanding: define and implement retention period. |
-| C — Balancing | ✓ Balance favours legitimate interest. Outstanding: retention period required to satisfy time-limitation safeguard. |
+| B — Necessity | ✓ Necessary; minimum-data approach already in place. Retention period: 7 years. |
+| C — Balancing | ✓ Balance favours legitimate interest. Time-limitation safeguard: 7-year scheduled purge implemented. |
 
-**Outstanding action:** Decide and document the retention period for pseudonymised chain records (recommended: 7 years from account deletion date, aligned with UK Limitation Act 1980 civil-claims period). Implement a scheduled purge in the worker. Record the decision and rationale in this document and in the DPIA (Step 5a, Step 6 R10 row).
+**Retention period decision (2026-06-29):** 7 years from account deletion date, aligned with the UK Limitation Act 1980 civil-claims window. This is also consistent with HMRC financial-record requirements.
+
+**Implementation (2026-06-29):** Two-stage scheduled purge added to the Cloudflare Worker CRON handler (`worker/src/jobs/familyPurge.ts`, wired into `worker/src/index.ts` scheduled()):
+
+- **Stage 1 — T+30 days (`runSoftDeletePurge`):** Hard-deletes all operational data (chores, goals, chat history, sessions, jar records, analytics, etc.) for families past their 30-day soft-delete window. Retains ledger rows as pseudonymised personal data. Tombstones the `families` row (nulls name, geolocation, referral codes; preserves `id` + `deleted_at` for Stage 2 gate).
+
+- **Stage 2 — T+7 years (`runLedgerPurge`):** Hard-deletes pseudonymised ledger rows, ledger status log, payment audit log, and the families tombstone for families deleted more than 7 years ago.
+
+**Technical note:** `family_id` cannot be replaced with a separate pseudonymous token — it is baked into the SHA-256 hash computation (`id || family_id || child_id || amount || currency || entry_type || previous_hash`). The `family_id` UUID is itself the pseudonymous identifier: after deletion, the `families` row has all PII stripped and there is no retained linkage key to a real-world identity.
 
 ---
 
@@ -391,13 +399,13 @@ All three tests pass, with one outstanding action (retention period) that must b
 |---|---|---|---|
 | LIA-1 | 30-day soft-delete / co-parent intervention window | Art. 6(1)(f) | ✓ Passes all three tests |
 | LIA-2 | Sentry crash and error reporting | Art. 6(1)(f) | ✓ Passes all three tests |
-| LIA-3 | Pseudonymised ledger retention after account deletion | Art. 6(1)(f) + Art. 17(3)(b) | ✓ Passes all three tests — one outstanding action |
+| LIA-3 | Pseudonymised ledger retention after account deletion | Art. 6(1)(f) + Art. 17(3)(b) | ✓ Passes all three tests |
 
 **Open items across all LIAs:**
 
 1. **LIA-1:** Confirm whether account holders can request earlier-than-30-day deletion. If not, implement this safeguard and document it.
 2. **LIA-1:** State the explicit reasoning for 30 days vs. a shorter period (e.g. 7 or 14 days). The shorter the period, the stronger the proportionality argument.
 3. **LIA-2:** Add periodic Sentry-payload review to the operational checklist to prevent personal-data scope creep.
-4. **LIA-3:** Decide the retention period for pseudonymised chain records (recommended: 7 years from deletion date). Implement scheduled purge in the worker. Record here and in DPIA Step 5a/Step 6.
+4. ~~**LIA-3:** Retention period and scheduled purge~~ — **Resolved 2026-06-29.** 7 years from deleted_at; `runSoftDeletePurge` (T+30d) and `runLedgerPurge` (T+7y) implemented in `worker/src/jobs/familyPurge.ts`.
 5. **All:** Review if the nature, scope, or context of any processing activity changes.
 6. **All:** Specialist legal review recommended given children's data context and the novel pseudonymous-ledger retention position.

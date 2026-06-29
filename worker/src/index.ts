@@ -176,6 +176,7 @@ import {
 } from './routes/market-rates.js';
 import { runMarketRateAggregation } from './jobs/marketRateAggregation.js';
 import { runSuggestionPromotion } from './jobs/suggestionPromotion.js';
+import { runSoftDeletePurge, runLedgerPurge } from './jobs/familyPurge.js';
 import { runMarketingEmails } from './cron/marketing-emails.js';
 import { runDemoReset } from './cron/demo-reset.js';
 import { runPassiveUnlockSweep } from './cron/passive-unlocks.js';
@@ -327,6 +328,19 @@ export default Sentry.withSentry(
         await runChildNudgeBackgroundChecks(env);
       }
     }
+
+    // ── 10. Family data purge — two-stage GDPR retention enforcement ─
+    //
+    // Stage 1 (daily): hard-delete operational data for families whose 30-day
+    // soft-delete window has closed. Ledger rows are kept as pseudonymised
+    // personal data (Art. 6(1)(f), LIA-3). Families row is reduced to a
+    // tombstone (id + deleted_at) to gate Stage 2.
+    //
+    // Stage 2 (daily): hard-delete pseudonymised ledger rows and tombstones
+    // for families deleted more than 7 years ago (UK Limitation Act 1980,
+    // civil-claims window — see docs/governance/lia/lia.md LIA-3).
+    await runSoftDeletePurge(env, now);
+    await runLedgerPurge(env, now);
   },
 } satisfies ExportedHandler<Env>,
 );
