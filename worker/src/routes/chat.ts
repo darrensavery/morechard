@@ -55,7 +55,6 @@ function selectPillar(intel: ChildIntelligence, message: string): FinancialPilla
   if (intel.inflation_nudge)                 return 'CAPITAL_MANAGEMENT'     // → 14-inflation
   if (intel.is_hoarder)                      return 'CAPITAL_MANAGEMENT'     // → 13-compound-growth
   if (intel.overdue_chore_count >= 2)        return 'DELAYED_GRATIFICATION' // → 12-good-vs-bad-debt
-  if (intel.distinct_ips_7d >= 3)            return 'SOCIAL_RESPONSIBILITY'  // → 05-scams-digital-safety
 
   // Explicit keyword overrides
   if (/interest|compound|inflation|grow|invest/.test(lower)) return 'CAPITAL_MANAGEMENT'
@@ -170,9 +169,6 @@ function buildUKPrompt(intel: ChildIntelligence, pillar: FinancialPillar, family
   const defaultNote = intel.overdue_chore_count >= 2
     ? `DEFAULT TRIGGER ACTIVE: ${intel.display_name} has ${intel.overdue_chore_count} overdue chores. Deliver the "Good vs. Bad Debt" lesson through the lens of commitments — explain that overdue jobs are like a small debt: the longer they wait, the heavier they feel. Tone: practical and motivating, not nagging.`
     : ''
-  const deviceNote = intel.distinct_ips_7d >= 3
-    ? `DEVICE SWAPPER TRIGGER ACTIVE: ${intel.distinct_ips_7d} different devices/locations detected this week. Deliver the "Digital Safety" lesson — teach about account security, sharing passwords, and recognising phishing. Frame it as a superpower: "Knowing your digital footprint keeps your grove safe."`
-    : ''
 
   const familyBlock = buildFamilyContextBlock(familyCtx, intel.child_id, intel.locale)
 
@@ -206,7 +202,6 @@ ${stagnantNote}
 ${inflationNote}
 ${hoarderNote}
 ${defaultNote}
-${deviceNote}
 ACTIVE PILLAR: ${pillar} — ${UK_PILLAR_NOTES[pillar]}
 
 UK NATIONAL CURRICULUM RULES:
@@ -252,9 +247,6 @@ function buildUSPrompt(intel: ChildIntelligence, pillar: FinancialPillar, family
   const usDefaultNote = intel.overdue_chore_count >= 2
     ? `DEFAULT TRIGGER ACTIVE: ${intel.overdue_chore_count} overdue chores. Deliver the "Good vs. Bad Debt" lesson via commitment framing — overdue chores are a debt on your Reliability Rating. Every day late is a point lost. Give them the exact number and a deadline to clear it.`
     : ''
-  const usDeviceNote = intel.distinct_ips_7d >= 3
-    ? `DEVICE SWAPPER TRIGGER ACTIVE: ${intel.distinct_ips_7d} distinct IPs this week. Deliver the "Digital Safety" lesson — teach about credential security and phishing. Frame it as a financial risk: "Your account is your digital wallet. Protecting it is step one of financial literacy."`
-    : ''
 
   const familyBlock = buildFamilyContextBlock(familyCtx, intel.child_id, intel.locale)
 
@@ -287,7 +279,6 @@ ${usStagnantNote}
 ${usInflationNote}
 ${usHoarderNote}
 ${usDefaultNote}
-${usDeviceNote}
 ACTIVE PILLAR: ${pillar} — ${US_PILLAR_NOTES[pillar]}
 
 US NATIONAL STANDARDS RULES:
@@ -332,9 +323,6 @@ function buildPLPrompt(intel: ChildIntelligence, pillar: FinancialPillar, family
   const plDefaultNote = intel.overdue_chore_count >= 2
     ? `WYZWALACZ ZALEGŁOŚCI: ${intel.overdue_chore_count} zaległe zadania. Dostarcz lekcję "Dobry vs. Zły Dług." Ramka: zaległości to dług honoru. "Na podstawie danych, ${intel.overdue_chore_count} zobowiązania czekają. Wymagane natychmiastowe działanie — honor i obowiązek nie mogą czekać."`
     : ''
-  const plDeviceNote = intel.distinct_ips_7d >= 3
-    ? `WYZWALACZ BEZPIECZEŃSTWA: ${intel.distinct_ips_7d} różnych adresów IP w ciągu 7 dni. Dostarcz lekcję "Bezpieczeństwo Cyfrowe." Ramka: cyfrowy portfel wymaga ochrony. "Na podstawie danych, konto było używane z wielu lokalizacji. Wymagana weryfikacja bezpieczeństwa — to podstawa cyfrowej odpowiedzialności."`
-    : ''
 
   const familyBlock = buildFamilyContextBlock(familyCtx, intel.child_id, intel.locale)
 
@@ -369,7 +357,6 @@ ${plStagnantNote}
 ${plInflationNote}
 ${plHoarderNote}
 ${plDefaultNote}
-${plDeviceNote}
 AKTYWNY FILAR: ${pillar} — ${PL_PILLAR_NOTES[pillar]}
 
 ZASADY POLSKIEJ STRATEGII EDUKACJI FINANSOWEJ:
@@ -433,7 +420,6 @@ function buildDataPoints(
     inflation_nudge:             intel.inflation_nudge,
     is_hoarder:                  intel.is_hoarder,
     overdue_chore_count:         intel.overdue_chore_count,
-    distinct_ips_7d:             intel.distinct_ips_7d,
     pillar,
   }
   if (intel.goals[0]) {

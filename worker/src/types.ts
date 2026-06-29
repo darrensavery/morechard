@@ -260,7 +260,6 @@ export interface ChildIntelligence {
   inflation_nudge: boolean;     // reward increased on a chore the child has completed before → 14-inflation
   is_hoarder: boolean;          // balance > £100 + 0 spend in 60 days → 13-compound-growth
   overdue_chore_count: number;  // chores with due_date < today; triggers at ≥2 → 12-good-vs-bad-debt
-  distinct_ips_7d: number;      // distinct IP addresses from child_logins in 7 days; triggers at 3+ → 05-scams-digital-safety
 
   // Spending (last 7 days)
   spent_minor_7d: number;

@@ -44,7 +44,6 @@ export async function getChildIntelligence(
     inflationNudge,
     isHoarder,
     overdueChoreCount,
-    distinctIps7d,
   ] = await Promise.all([
     queryIdentity(db, childId),
     queryBalance(db, childId),
@@ -64,7 +63,6 @@ export async function getChildIntelligence(
     queryInflationNudge(db, childId),
     queryIsHoarder(db, childId, now - SIXTY_DAYS_SECONDS),
     queryOverdueChoreCount(db, childId, now),
-    queryDistinctIps7d(db, childId, week_ago),
   ])
 
   if (!identity) return null
@@ -141,7 +139,6 @@ export async function getChildIntelligence(
     inflation_nudge: inflationNudge,
     is_hoarder: isHoarder,
     overdue_chore_count: overdueChoreCount,
-    distinct_ips_7d: distinctIps7d,
   }
 }
 
@@ -646,21 +643,6 @@ async function queryOverdueChoreCount(
 
 // Device Swapper: count of distinct IP addresses from child logins in last 7 days.
 // Trigger fires at ≥3. → module 05-scams-digital-safety
-async function queryDistinctIps7d(
-  db: D1Database,
-  childId: string,
-  week_ago: number,
-): Promise<number> {
-  const row = await db
-    .prepare(`
-      SELECT COUNT(DISTINCT ip_address) AS n
-      FROM child_logins
-      WHERE child_id = ? AND logged_at >= ?
-    `)
-    .bind(childId, week_ago)
-    .first<{ n: number }>()
-  return row?.n ?? 0
-}
 
 // ─────────────────────────────────────────────────────────────────
 // Sunday Scrambler detection

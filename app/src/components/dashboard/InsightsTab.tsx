@@ -537,6 +537,13 @@ function LiveBriefingCard({
                         style={{ background: p.accentDim, color: p.accent }}>
                     {p.label}
                   </span>
+                  {/* EU AI Act Article 50 disclosure — visible on every AI-generated card */}
+                  {briefing.source !== 'fallback' && (
+                    <span className="text-[9px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-full"
+                          style={{ background: 'rgba(255,255,255,0.08)', color: 'rgba(164,196,181,0.85)', border: '1px solid rgba(255,255,255,0.1)' }}>
+                      AI-generated
+                    </span>
+                  )}
                 </div>
                 <p className="text-[15px] font-extrabold tracking-tight" style={{ color: '#f0fdf4' }}>
                   {PERIOD_NOTE_LABEL[period]}
@@ -606,7 +613,7 @@ function LiveBriefingCard({
 
           {/* Pro attribution footer */}
           <p className="text-[10px] text-center" style={{ color: 'rgba(107,158,135,0.7)' }}>
-            ✦ Orchard Pro · AI-generated coaching note
+            ✦ Orchard Pro · {briefing.source !== 'fallback' ? 'AI-generated coaching note' : 'Coaching note'}
           </p>
 
         </div>
