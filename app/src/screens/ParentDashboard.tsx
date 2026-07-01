@@ -230,7 +230,7 @@ export function ParentDashboard() {
       <DemoBanner />
       <DemoUpsellCard trialStatus={trialStatus} />
       {/* Header */}
-      <header className="safe-top sticky top-0 z-10 glass-header">
+      <header className="safe-top sticky top-0 z-40 glass-header">
         <div className="max-w-[560px] mx-auto px-3.5 py-3 flex items-center justify-between">
           <FullLogo iconSize={26} />
           <div className="flex items-center gap-2">
