@@ -4,7 +4,7 @@ import { ThemeProvider } from './lib/theme'
 import { getDeviceIdentity, setDeviceIdentity, toInitials, hashPin } from './lib/deviceIdentity'
 import { LocaleProvider } from './lib/locale'
 import { analytics, track, applyInheritedChildConsent } from './lib/analytics'
-import { verifyMagicLink, setToken, getMe } from './lib/api'
+import { apiUrl } from './lib/api'
 import { AppUrlListener } from './components/AppUrlListener'
 import { AndroidBackController } from './components/AndroidBackController'
 import { AppAutoLock } from './components/AppAutoLock'
@@ -15,7 +15,6 @@ async function getSentry() { return import('@sentry/react') }
 
 const FullLogo             = lazy(() => import('./components/ui/Logo').then(m => ({ default: m.FullLogo })))
 const RegistrationShell    = lazy(() => import('./components/registration/RegistrationShell').then(m => ({ default: m.RegistrationShell })))
-const WelcomeOrchardScreen = lazy(() => import('./components/registration/WelcomeOrchardScreen').then(m => ({ default: m.WelcomeOrchardScreen })))
 const LandingGate          = lazy(() => import('./screens/LandingGate').then(m => ({ default: m.LandingGate })))
 const ParentDashboard      = lazy(() => import('./screens/ParentDashboard').then(m => ({ default: m.ParentDashboard })))
 const ChildDashboard       = lazy(() => import('./screens/ChildDashboard').then(m => ({ default: m.ChildDashboard })))
@@ -30,11 +29,14 @@ const LockScreen             = lazy(() => import('./screens/LockScreen').then(m 
 
 /**
  * MagicLinkVerifyScreen — handles /auth/verify?token=...
- * Consumes the token, marks email verified, then shows WelcomeOrchardScreen
- * (add first child or skip) before redirecting to the parent dashboard.
+ *
+ * When a token is present, the browser is navigated directly to the worker
+ * endpoint (/api/auth/verify?token=...). The worker validates the token and
+ * redirects to /auth/callback?slt=... which AuthCallbackScreen handles.
+ *
+ * When the worker rejects a token it redirects back here with ?error=<code>
+ * (e.g. expired, used, invalid) so this screen can show a friendly message.
  */
-const ML_SESSION_KEY = 'mc_ml_verified'
-
 const ERROR_MESSAGES: Record<string, { title: string; body: string }> = {
   used:    { title: 'Link already used',   body: 'This magic link has already been used. Each link can only be used once.' },
   expired: { title: 'Link expired',        body: 'Magic links expire after 15 minutes. Please request a new one.' },
@@ -43,26 +45,16 @@ const ERROR_MESSAGES: Record<string, { title: string; body: string }> = {
 }
 
 function MagicLinkVerifyScreen() {
-  const [params]  = useSearchParams()
-  const token     = params.get('token')
-  const errorCode = params.get('error')
+  const [params]    = useSearchParams()
+  const token       = params.get('token')
+  const errorCode   = params.get('error')
 
-  // If we already verified this session, restore identity without re-calling the API
-  const cached = (() => {
-    try { return JSON.parse(sessionStorage.getItem(ML_SESSION_KEY) ?? 'null') } catch { return null }
-  })()
-
-  const [phase, setPhase]   = useState<'verifying' | 'welcome' | 'error'>(
-    errorCode ? 'error' : cached ? 'welcome' : 'verifying'
-  )
-  const [errMsg, setErrMsg] = useState(errorCode ? (ERROR_MESSAGES[errorCode]?.body ?? 'Something went wrong.') : '')
+  const [phase, setPhase]     = useState<'verifying' | 'error'>(errorCode ? 'error' : 'verifying')
+  const [errMsg, setErrMsg]   = useState(errorCode ? (ERROR_MESSAGES[errorCode]?.body ?? 'Something went wrong.') : '')
   const [errTitle, setErrTitle] = useState(errorCode ? (ERROR_MESSAGES[errorCode]?.title ?? 'Sign-in failed') : '')
-  const [identity, setIdentity] = useState<{
-    family_id: string; user_id: string; display_name: string;
-  } | null>(cached)
 
   useEffect(() => {
-    if (errorCode || cached) return  // error already set, or already verified
+    if (errorCode) return  // error code already in URL — worker redirected here with ?error=
 
     if (!token) {
       setErrTitle('No link token')
@@ -71,53 +63,11 @@ function MagicLinkVerifyScreen() {
       return
     }
 
-    verifyMagicLink(token)
-      .then(async (result) => {
-        // Store token only after getMe() confirms it's valid
-        setToken(result.token)
-        let me: Awaited<ReturnType<typeof getMe>>
-        try {
-          me = await getMe()
-        } catch (e) {
-          // Token invalid — clear it so the app doesn't get stuck
-          localStorage.removeItem('mc_token')
-          throw e
-        }
-        // family_id / user_id / role are read from mc_device_identity — do not duplicate here.
-        const id = { family_id: me.family_id, user_id: me.id, display_name: me.display_name }
-        sessionStorage.setItem(ML_SESSION_KEY, JSON.stringify(id))
-        setIdentity(id)
-        setPhase('welcome')
-      })
-      .catch(e => {
-        const raw: string = e.message ?? ''
-        const friendly = raw.includes('JSON') || raw.includes('fetch') || raw.includes('NetworkError')
-          ? 'This link has already been used or has expired. Please request a new one.'
-          : raw || 'Verification failed.'
-        setErrTitle('Sign-in failed')
-        setErrMsg(friendly)
-        setPhase('error')
-      })
-  }, [token, errorCode])
-
-  function handleWelcomeDone() {
-    if (!identity) return
-    sessionStorage.removeItem(ML_SESSION_KEY)
-    setDeviceIdentity({
-      user_id:        identity.user_id,
-      family_id:      identity.family_id,
-      display_name:   identity.display_name,
-      role:           'parent',
-      parenting_role: 'LEAD_PARENT',
-      initials:       toInitials(identity.display_name),
-      registered_at:  new Date().toISOString(),
-      auth_method:    'none',
-    })
-    getSentry().then(S => S.setUser({ id: identity.user_id }))
-    analytics.identify(identity.user_id, { role: 'parent', family_id: identity.family_id })
-    track.registrationCompleted({ auth_method: 'none', parenting_mode: 'unknown', currency: 'unknown' })
-    window.location.href = '/parent'
-  }
+    // Navigate the browser to the worker endpoint. The worker validates the token
+    // and issues a 302 to /auth/callback?slt=... — AuthCallbackScreen handles the rest.
+    window.location.replace(apiUrl(`/api/auth/verify?token=${encodeURIComponent(token)}`))
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   if (phase === 'verifying') {
     return (
@@ -130,70 +80,31 @@ function MagicLinkVerifyScreen() {
     )
   }
 
-  if (phase === 'error') {
-    return (
-      <div className="min-h-svh flex items-center justify-center bg-[var(--color-bg)] px-5">
-        <div className="max-w-sm w-full text-center space-y-5">
-          <Suspense fallback={null}><FullLogo iconSize={26} /></Suspense>
-          <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] px-6 py-7 space-y-3 shadow-sm">
-            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-amber-500/10">
-              <svg className="h-6 w-6 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
-              </svg>
-            </div>
-            <h2 className="text-base font-semibold text-[var(--color-text)]">{errTitle || 'Sign-in failed'}</h2>
-            <p className="text-sm text-[var(--color-text-muted)] leading-relaxed">{errMsg}</p>
+  return (
+    <div className="min-h-svh flex items-center justify-center bg-[var(--color-bg)] px-5">
+      <div className="max-w-sm w-full text-center space-y-5">
+        <Suspense fallback={null}><FullLogo iconSize={26} /></Suspense>
+        <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] px-6 py-7 space-y-3 shadow-sm">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-amber-500/10">
+            <svg className="h-6 w-6 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+            </svg>
           </div>
-          <div className="flex flex-col gap-2.5">
-            <a
-              href="/auth/login"
-              className="block w-full rounded-xl bg-[var(--brand-primary)] py-3 text-sm font-semibold text-white text-center active:scale-[0.98] transition-transform"
-            >
-              Request a new link
-            </a>
-            <a href="/register" className="text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors">
-              Create a new account
-            </a>
-          </div>
+          <h2 className="text-base font-semibold text-[var(--color-text)]">{errTitle || 'Sign-in failed'}</h2>
+          <p className="text-sm text-[var(--color-text-muted)] leading-relaxed">{errMsg}</p>
+        </div>
+        <div className="flex flex-col gap-2.5">
+          <a
+            href="/auth/login"
+            className="block w-full rounded-xl bg-[var(--brand-primary)] py-3 text-sm font-semibold text-white text-center active:scale-[0.98] transition-transform"
+          >
+            Request a new link
+          </a>
+          <a href="/register" className="text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors">
+            Create a new account
+          </a>
         </div>
       </div>
-    )
-  }
-
-  // phase === 'welcome' — Step 3 of 3 in the registration layout
-  return (
-    <div className="min-h-svh bg-[var(--color-bg)] flex flex-col">
-      <header className="safe-top sticky top-0 z-40 bg-[var(--color-surface)] border-b border-[var(--color-border)] shadow-[0_1px_4px_rgba(0,0,0,0.06)]">
-        <div className="max-w-md mx-auto px-5 pt-4 pb-3 space-y-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2.5">
-              <Suspense fallback={null}><FullLogo iconSize={26} /></Suspense>
-            </div>
-            <div className="text-right">
-              <span className="text-[11px] font-semibold text-[var(--color-text-muted)] uppercase tracking-wider">
-                Step 3 of 3
-              </span>
-              <p className="text-xs font-semibold text-[var(--color-text)] leading-none mt-0.5">
-                Add Child
-              </p>
-            </div>
-          </div>
-          <div className="relative h-2 w-full rounded-full bg-[var(--color-border)] overflow-hidden">
-            <div className="absolute inset-y-0 left-0 rounded-full bg-teal-500 transition-all duration-500 ease-in-out" style={{ width: '100%' }} />
-          </div>
-        </div>
-      </header>
-      <main className="flex-1 px-5 py-8 max-w-md mx-auto w-full">
-        <Suspense fallback={<SuspenseFallback />}>
-          <WelcomeOrchardScreen
-            displayName={identity?.display_name}
-            onDone={handleWelcomeDone}
-          />
-        </Suspense>
-      </main>
-      <footer className="px-5 py-4 text-center border-t border-[var(--color-border)]">
-        <p className="text-[11px] text-[var(--color-text-muted)] tracking-wide">Your data is private and secure</p>
-      </footer>
     </div>
   )
 }
