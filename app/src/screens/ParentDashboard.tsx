@@ -355,7 +355,7 @@ export function ParentDashboard() {
       {/* Backdrop */}
       <div
         onClick={() => setShowSettings(false)}
-        className={`fixed inset-0 z-40 bg-black/40 transition-opacity duration-300 ${showSettings ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
+        className={`fixed inset-0 z-39 bg-black/40 transition-opacity duration-300 ${showSettings ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
         aria-hidden="true"
       />
       {/* Drawer panel */}

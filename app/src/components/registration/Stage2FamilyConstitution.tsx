@@ -169,7 +169,7 @@ export function Stage2FamilyConstitution({ data, onNext, onBack }: Props) {
 
               {showGovInfo && (
                 <>
-                  <div className="fixed inset-0 z-40" onClick={() => setShowGovInfo(false)} />
+                  <div className="fixed inset-0 z-39" onClick={() => setShowGovInfo(false)} />
                   <div className="absolute left-0 top-8 z-50 w-72 rounded-2xl border border-gray-200 bg-white shadow-xl p-4 space-y-3">
                     <div>
                       <p className="text-sm font-bold text-[#1C1C1A]">How should payments be approved?</p>
