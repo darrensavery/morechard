@@ -4,7 +4,6 @@ import type { SharedExpense } from '../../lib/api';
 import { apiUrl, authHeaders, getSharedExpenses } from '../../lib/api';
 import { VoidExpenseSheet } from './VoidExpenseSheet';
 import { ExpenseDetailSheet } from './ExpenseDetailSheet';
-import { Button } from '../ui/button';
 import { Receipt } from 'lucide-react';
 
 function CategoryIcon({ category, size = 14 }: { category: string; size?: number }) {
