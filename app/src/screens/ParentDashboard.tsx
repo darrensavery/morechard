@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import type { ChildRecord } from '../lib/api'
 import { getChildren, getCompletions, clearToken, getUnpaidSummary, getFamily, getTrialStatus, authHeaders, apiUrl, type UnpaidSummaryRow, type TrialStatus } from '../lib/api'
@@ -19,6 +19,7 @@ import { PaymentBridgeSheet } from '../components/payment/PaymentBridgeSheet'
 import { DemoBanner } from '../components/demo/DemoBanner'
 import { DemoUpsellCard } from '../components/demo/DemoUpsellCard'
 import { GiveRequestsPanel } from '../components/dashboard/GiveRequestsPanel'
+import { ParentBottomNav } from '../components/navigation/ParentBottomNav'
 
 // Offline signal SVG
 function OfflineIcon() {
@@ -63,9 +64,6 @@ export function ParentDashboard() {
     localStorage.setItem('mc_active_child_id', child.id)
   }
 
-  const tabBarRef = useRef<HTMLDivElement>(null)
-  const tabRefs = useRef<(HTMLButtonElement | null)[]>([])
-  const [indicator, setIndicator] = useState({ left: 0, width: 0 })
   const [children,   setChildren]   = useState<ChildRecord[]>([])
   const [activeChild, setActiveChild] = useState<ChildRecord | null>(null)
   const [childrenLoaded, setChildrenLoaded] = useState(false)
@@ -225,21 +223,7 @@ export function ParentDashboard() {
     return () => { clearInterval(t); document.removeEventListener('visibilitychange', onVisible) }
   }, [familyId, children, tab, activeChild?.id])
 
-  const TABS = useMemo(() => [
-    { id: 'chores'   as Tab, label: 'Chores' },
-    { id: 'activity' as Tab, label: 'Activity', badge: pendingCount || undefined },
-    { id: 'pool'     as Tab, label: 'Expenses' },
-    { id: 'insights' as Tab, label: 'Insights' },
-    { id: 'goals'    as Tab, label: 'Goals' },
-  ], [pendingCount])
-
-  useEffect(() => {
-    const idx = TABS.findIndex(t => t.id === tab)
-    const btn = tabRefs.current[idx]
-    const bar = tabBarRef.current
-    if (!btn || !bar) return
-    setIndicator({ left: btn.offsetLeft - bar.scrollLeft, width: btn.offsetWidth })
-  }, [tab, TABS.length, pendingCount])
+  const navBadges = useMemo(() => ({ activity: pendingCount || undefined }), [pendingCount])
 
   return (
     <div className="min-h-svh bg-[var(--color-bg)] flex flex-col" style={{ overscrollBehaviorY: 'none' }}>
@@ -341,38 +325,6 @@ export function ParentDashboard() {
           </div>
         )}
 
-        {/* Tab bar */}
-        <div ref={tabBarRef} className="max-w-[560px] mx-auto border-t border-[var(--color-border)] flex overflow-x-auto scrollbar-hide relative">
-          {TABS.map((t, i) => (
-            <button
-              key={t.id}
-              ref={el => { tabRefs.current[i] = el }}
-              onClick={() => handleTabChange(t.id)}
-              className={`
-                flex-1 shrink-0 px-3 py-2.5 text-[13px] font-semibold
-                relative flex items-center justify-center gap-1.5
-                transition-colors duration-100 cursor-pointer
-                ${tab === t.id ? 'text-[var(--brand-primary)]' : 'text-[var(--color-text-muted)] hover:text-[var(--color-text)]'}
-              `}
-            >
-              {t.label}
-              {t.badge ? (
-                <span className="bg-red-500 text-white text-[10px] font-bold rounded-full px-1.5 py-0.5 leading-none min-w-[18px] text-center">
-                  {t.badge}
-                </span>
-              ) : null}
-            </button>
-          ))}
-          {/* Sliding active indicator */}
-          <span
-            className="absolute bottom-0 h-[2.5px] bg-[var(--brand-primary)] rounded-t-full pointer-events-none"
-            style={{
-              left: indicator.left,
-              width: indicator.width,
-              transition: 'left 250ms cubic-bezier(0.4,0,0.2,1), width 250ms cubic-bezier(0.4,0,0.2,1)',
-            }}
-          />
-        </div>
       </header>
 
       {/* Trial nudge — one-time, shown after first child added */}
@@ -425,7 +377,7 @@ export function ParentDashboard() {
       </div>
 
       {/* Content */}
-      <main className="flex-1 max-w-[560px] mx-auto w-full px-3.5 py-4">
+      <main className="flex-1 max-w-[560px] mx-auto w-full px-3.5 py-4 pb-28">
         {!childrenLoaded ? <DashboardSkeleton /> : activeChild ? (
           <>
             <div className={tab === 'chores'   ? 'tab-panel' : 'tab-panel hidden'}><ChoresTab       familyId={familyId} child={activeChild} children={children} /></div>
@@ -504,11 +456,11 @@ export function ParentDashboard() {
         )}
       </main>
 
-      <footer className="py-3 text-center">
-        <p className="text-[10px] text-[var(--color-text-muted)] opacity-50 tracking-wide">
-          v{__APP_VERSION__}
-        </p>
-      </footer>
+      <ParentBottomNav
+        activeTab={tab}
+        onTabChange={handleTabChange}
+        badges={navBadges}
+      />
 
         {showAddExpense && (
           <AddExpenseSheet
