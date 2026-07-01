@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import { Loader2 } from 'lucide-react'
 import { exchangeSlt, setToken, postMarketingConsent, postAnalyticsConsent } from '../lib/api'
@@ -14,12 +14,18 @@ export default function AuthCallbackScreen() {
   const navigate          = useNavigate()
   const [state, setState]   = useState<ScreenState>('loading')
   const [errorMsg, setErrorMsg] = useState('')
+  // Guard against React StrictMode's double-invocation of useEffect in dev.
+  // The first run consumes the SLT; the ref prevents a second exchange attempt.
+  const exchangeStarted = useRef(false)
 
   const locale = getLocale()
 
   const bridgeText = isPolish(locale) ? 'Logowanie do Sadu…' : 'Consulting the Orchard Lead…'
 
   useEffect(() => {
+    if (exchangeStarted.current) return
+    exchangeStarted.current = true
+
     const slt = searchParams.get('slt')
 
     // Scrub token from URL before any async work
@@ -30,11 +36,8 @@ export default function AuthCallbackScreen() {
       return
     }
 
-    let cancelled = false
-
     exchangeSlt(slt)
       .then(result => {
-        if (cancelled) return
         setToken(result.token)
 
         // Flush any pending marketing consent recorded during registration
@@ -78,13 +81,9 @@ export default function AuthCallbackScreen() {
         window.location.replace('/parent')
       })
       .catch((err: unknown) => {
-        if (!cancelled) {
-          setErrorMsg(err instanceof Error ? err.message : String(err))
-          setState('error')
-        }
+        setErrorMsg(err instanceof Error ? err.message : String(err))
+        setState('error')
       })
-
-    return () => { cancelled = true }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 

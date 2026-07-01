@@ -24,7 +24,7 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,svg,png,ico,webmanifest,woff2,otf}'],
         // The main HTML entry is a SPA shell — serve it for all navigation misses
         navigateFallback: '/index.html',
-        navigateFallbackDenylist: [/^\/api/, /^\/auth(?!\/verify)/],
+        navigateFallbackDenylist: [/^\/api/, /^\/auth(?!\/(verify|callback))/],
         // Immutable hashed assets — cache-first, no expiry
         runtimeCaching: [
           {
