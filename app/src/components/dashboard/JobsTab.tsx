@@ -216,7 +216,7 @@ export function ChoresTab({ familyId, child, children }: Props) {
   if (loading) return <div className="py-10 text-center text-[14px] text-[var(--color-text-muted)]">Loading…</div>
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 pb-28">
       {/* Suggestion cards */}
       {suggestions.length > 0 && (
         <div className="space-y-3">
@@ -388,12 +388,17 @@ export function ChoresTab({ familyId, child, children }: Props) {
         </div>
       )}
 
-      {/* Add chore button — dashed when list has chores, FAB-style hint when empty handled above */}
-      {chores.length > 0 && (
-        <Button onClick={() => setShowSheet(true)} className="w-full">
-          + Add chore
-        </Button>
-      )}
+      {/* Add chore — fixed above bottom nav dock */}
+      <div className="fixed bottom-0 inset-x-0 z-20 flex justify-center pointer-events-none">
+        <div
+          className="pointer-events-auto w-full max-w-[520px] mx-3"
+          style={{ marginBottom: 'calc(max(12px, env(safe-area-inset-bottom)) + 68px)' }}
+        >
+          <Button onClick={() => setShowSheet(true)} className="w-full shadow-lg">
+            + Add chore
+          </Button>
+        </div>
+      </div>
 
       {/* Create chore sheet */}
       {showSheet && (

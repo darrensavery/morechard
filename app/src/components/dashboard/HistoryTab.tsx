@@ -238,23 +238,28 @@ export function ActivityTab({ familyId, child, childCount, onCountChange, unpaid
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 pb-28">
       <GatekeeperModal />
 
-      {/* ── Sticky action row ────────────────────────────────────────────────── */}
-      <div className="flex gap-2 pb-2 border-b border-[var(--color-border)]">
-        <button
-          onClick={() => setShowPayout(true)}
-          className="flex-1 bg-[var(--brand-primary)] text-white font-bold py-3 rounded-xl text-[14px] hover:opacity-90 active:scale-[0.98] transition-all cursor-pointer shadow-sm"
+      {/* ── Pay out + Bonus — fixed above bottom nav dock ─────────────────── */}
+      <div className="fixed bottom-0 inset-x-0 z-20 flex justify-center pointer-events-none">
+        <div
+          className="pointer-events-auto w-full max-w-[520px] mx-3 flex gap-2"
+          style={{ marginBottom: 'calc(max(12px, env(safe-area-inset-bottom)) + 68px)' }}
         >
-          Pay out
-        </button>
-        <button
-          onClick={() => setShowBonus(true)}
-          className="flex-1 border-2 border-[var(--brand-primary)] text-[var(--brand-primary)] font-bold py-3 rounded-xl text-[14px] bg-white hover:bg-[color-mix(in_srgb,var(--brand-primary)_6%,transparent)] active:scale-[0.98] transition-all cursor-pointer"
-        >
-          + Bonus
-        </button>
+          <button
+            onClick={() => setShowPayout(true)}
+            className="flex-1 bg-[var(--brand-primary)] text-white font-bold py-3 rounded-xl text-[14px] hover:opacity-90 active:scale-[0.98] transition-all cursor-pointer shadow-lg"
+          >
+            Pay out
+          </button>
+          <button
+            onClick={() => setShowBonus(true)}
+            className="flex-1 border-2 border-[var(--brand-primary)] text-[var(--brand-primary)] font-bold py-3 rounded-xl text-[14px] bg-[var(--color-surface)] hover:bg-[color-mix(in_srgb,var(--brand-primary)_6%,transparent)] active:scale-[0.98] transition-all cursor-pointer shadow-lg"
+          >
+            + Bonus
+          </button>
+        </div>
       </div>
 
       {/* ── Cross-child pending notice ────────────────────────────────────────── */}
