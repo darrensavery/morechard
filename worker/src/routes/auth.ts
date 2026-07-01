@@ -15,6 +15,7 @@ import { Env } from '../types.js'
 import { EmailService, buildVerifyEmailHtml, buildVerifyEmailText } from '../lib/email.js';
 
 import { json, error, clientIp, parseBody } from '../lib/response.js';
+import { logger } from '../lib/logger.js';
 import { hashPassword, verifyPassword } from '../lib/crypto.js';
 import { signJwt } from '../lib/jwt.js';
 import type { JwtPayload } from '../lib/jwt.js';
@@ -54,8 +55,23 @@ export async function handleCreateFamily(request: Request, env: Env): Promise<Re
     .bind(normEmail)
     .first<{ id: string; family_id: string; email_verified: number }>();
 
-  // If the user exists and has already verified their email, block re-registration
-  if (existing && existing.email_verified === 1) return error('Email already registered', 409);
+  // If the user exists and has already verified their email, they have a valid account.
+  // Re-send a magic link so they can sign in (handles the case where email was verified
+  // but the auth flow failed before a session was established, e.g. due to a routing bug).
+  if (existing && existing.email_verified === 1) {
+    const appUrl  = env.APP_URL ?? 'https://app.morechard.com';
+    const rawToken = nanoid(32);
+    const tokenHash = await sha256(rawToken);
+    const now = Math.floor(Date.now() / 1000);
+    await env.DB
+      .prepare('INSERT INTO magic_link_tokens (token_hash, user_id, expires_at, request_ip) VALUES (?,?,?,?)')
+      .bind(tokenHash, existing.id, now + MAGIC_LINK_EXPIRY, clientIp(request))
+      .run();
+    const link = `${appUrl}/auth/verify?token=${rawToken}`;
+    await sendMagicLinkEmail(normEmail, display_name as string, link, env).catch(() => null);
+    // Return the existing IDs so the frontend can advance to the "check email" screen
+    return json({ family_id: existing.family_id, user_id: existing.id, email: normEmail }, 200);
+  }
 
   // If the user exists but never verified (e.g. previous registration hit an error),
   // delete the orphaned record so they can start fresh cleanly.
@@ -64,6 +80,7 @@ export async function handleCreateFamily(request: Request, env: Env): Promise<Re
     await env.DB.batch([
       env.DB.prepare('DELETE FROM family_roles        WHERE user_id  = ?').bind(existing.id),
       env.DB.prepare('DELETE FROM magic_link_tokens   WHERE user_id  = ?').bind(existing.id),
+      env.DB.prepare('DELETE FROM slt_tokens          WHERE user_id  = ?').bind(existing.id),
       env.DB.prepare('DELETE FROM sessions            WHERE user_id  = ?').bind(existing.id),
       env.DB.prepare('DELETE FROM invite_codes        WHERE family_id = ?').bind(existing.family_id),
       env.DB.prepare('DELETE FROM registration_progress WHERE family_id = ?').bind(existing.family_id),
@@ -187,6 +204,9 @@ export async function handleLogin(request: Request, env: Env): Promise<Response>
 
   if (rl) {
     if (rl.locked_until > nowSec) {
+      logger.warn('handleLogin', 'login blocked — account locked', {
+        email_domain: normEmail.split('@')[1] ?? 'unknown', ip: clientIp(request),
+      });
       return error('Too many failed attempts — please try again later.', 429);
     }
     if (nowSec - rl.window_start < LOGIN_WINDOW_SEC && rl.attempts >= LOGIN_MAX_ATTEMPTS) {
@@ -195,6 +215,9 @@ export async function handleLogin(request: Request, env: Env): Promise<Response>
         .bind(nowSec + LOGIN_LOCKOUT_SEC, normEmail)
         .run()
         .catch(() => null);
+      logger.warn('handleLogin', 'login rate limit — account locked now', {
+        email_domain: normEmail.split('@')[1] ?? 'unknown', ip: clientIp(request), attempts: rl.attempts,
+      });
       return error('Too many failed attempts — please try again later.', 429);
     }
   }
@@ -208,12 +231,18 @@ export async function handleLogin(request: Request, env: Env): Promise<Response>
   if (!user || !user.password_hash) {
     // Still increment attempts to prevent user-enumeration timing sidechannel
     await recordFailedLogin(env, normEmail, nowSec, rl).catch(() => null);
+    logger.warn('handleLogin', 'login failed — unknown email', {
+      email_domain: normEmail.split('@')[1] ?? 'unknown', ip: clientIp(request),
+    });
     return error('Invalid credentials', 401);
   }
 
   const valid = await verifyPassword(password as string, user.password_hash);
   if (!valid) {
     await recordFailedLogin(env, normEmail, nowSec, rl).catch(() => null);
+    logger.warn('handleLogin', 'login failed — wrong password', {
+      email_domain: normEmail.split('@')[1] ?? 'unknown', ip: clientIp(request),
+    });
     return error('Invalid credentials', 401);
   }
 
@@ -435,6 +464,9 @@ export async function handleChildLogin(request: Request, env: Env): Promise<Resp
   // Lockout check — mirrors parent PIN behaviour
   if (user.pin_locked_until && user.pin_locked_until > now) {
     const seconds = user.pin_locked_until - now;
+    logger.warn('handleChildLogin', 'child PIN blocked — locked out', {
+      child_id, family_id, locked_until: user.pin_locked_until,
+    });
     return error(`Too many attempts. Try again in ${seconds} seconds.`, 429);
   }
 
@@ -447,11 +479,17 @@ export async function handleChildLogin(request: Request, env: Env): Promise<Resp
         .prepare('UPDATE users SET pin_attempt_count = 0, pin_locked_until = ? WHERE id = ?')
         .bind(now + 30, user.id)
         .run();
+      logger.warn('handleChildLogin', 'child PIN failed — account locked', {
+        child_id, family_id, attempt: newCount,
+      });
     } else {
       await env.DB
         .prepare('UPDATE users SET pin_attempt_count = ? WHERE id = ?')
         .bind(newCount, user.id)
         .run();
+      logger.warn('handleChildLogin', 'child PIN failed', {
+        child_id, family_id, attempt: newCount,
+      });
     }
     return error('Invalid credentials', 401);
   }
@@ -679,7 +717,7 @@ export async function handleMePatch(request: Request, env: Env): Promise<Respons
         text:    buildVerifyEmailText(verifyUrl, user.display_name),
       });
     } catch (err) {
-      console.error('[handleMePatch] verify email send failed', err);
+      logger.error('handleMePatch', 'verify email send failed', { err: String(err) });
       // Roll back staging so the user can try again
       await env.DB.prepare('UPDATE users SET email_pending = NULL WHERE id = ?').bind(caller.sub).run();
       await env.DB.prepare('DELETE FROM email_verify_tokens WHERE token = ?').bind(tokenHash).run();
@@ -1251,7 +1289,7 @@ export async function handleGoogleCallback(request: Request, env: Env): Promise<
   try {
     return await _handleGoogleCallback(request, env, appUrl);
   } catch (err) {
-    console.error('handleGoogleCallback unhandled error:', err);
+    logger.error('handleGoogleCallback', 'unhandled error', { err: String(err) });
     return new Response(null, {
       status: 302,
       headers: { 'Location': `${appUrl}/auth/login?error=google_exchange&detail=${encodeURIComponent(String(err).slice(0, 200))}` },
@@ -1721,7 +1759,7 @@ export async function sendApprovalEmail(
 
   if (!res.ok) {
     const body = await res.text();
-    console.error(`sendApprovalEmail Resend error ${res.status}: ${body}`);
+    logger.error('sendApprovalEmail', 'Resend API error', { status: res.status });
     // Non-fatal: expense is already recorded; email failure should not roll back the row.
   }
 }
