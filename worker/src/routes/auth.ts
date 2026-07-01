@@ -58,19 +58,45 @@ export async function handleCreateFamily(request: Request, env: Env): Promise<Re
   // If the user exists and has already verified their email, they have a valid account.
   // Re-send a magic link so they can sign in (handles the case where email was verified
   // but the auth flow failed before a session was established, e.g. due to a routing bug).
+  // Uses the same rate-limiting table as handleMagicLinkRequest; returns a generic
+  // acknowledgement with no internal identifiers to prevent user enumeration.
   if (existing && existing.email_verified === 1) {
-    const appUrl  = env.APP_URL ?? 'https://app.morechard.com';
-    const rawToken = nanoid(32);
-    const tokenHash = await sha256(rawToken);
-    const now = Math.floor(Date.now() / 1000);
-    await env.DB
-      .prepare('INSERT INTO magic_link_tokens (token_hash, user_id, expires_at, request_ip) VALUES (?,?,?,?)')
-      .bind(tokenHash, existing.id, now + MAGIC_LINK_EXPIRY, clientIp(request))
-      .run();
-    const link = `${appUrl}/auth/verify?token=${rawToken}`;
-    await sendMagicLinkEmail(normEmail, display_name as string, link, env).catch(() => null);
-    // Return the existing IDs so the frontend can advance to the "check email" screen
-    return json({ family_id: existing.family_id, user_id: existing.id, email: normEmail }, 200);
+    const nowSec = Math.floor(Date.now() / 1000);
+    const mla = await env.DB
+      .prepare('SELECT attempts, window_start FROM magic_link_attempts WHERE email = ?')
+      .bind(normEmail)
+      .first<{ attempts: number; window_start: number }>()
+      .catch(() => null);
+
+    const underLimit = !mla
+      || nowSec - mla.window_start >= MAGIC_LINK_WINDOW
+      || mla.attempts < MAGIC_LINK_MAX;
+
+    if (underLimit) {
+      if (!mla || nowSec - mla.window_start >= MAGIC_LINK_WINDOW) {
+        await env.DB
+          .prepare(`INSERT INTO magic_link_attempts (email, attempts, window_start)
+                    VALUES (?, 1, ?)
+                    ON CONFLICT(email) DO UPDATE SET attempts = 1, window_start = excluded.window_start`)
+          .bind(normEmail, nowSec).run().catch(() => null);
+      } else {
+        await env.DB
+          .prepare('UPDATE magic_link_attempts SET attempts = attempts + 1 WHERE email = ?')
+          .bind(normEmail).run().catch(() => null);
+      }
+      const appUrl   = env.APP_URL ?? 'https://app.morechard.com';
+      const rawToken = nanoid(32);
+      const tokenHash = await sha256(rawToken);
+      const now = Math.floor(Date.now() / 1000);
+      await env.DB
+        .prepare('INSERT INTO magic_link_tokens (token_hash, user_id, expires_at, request_ip) VALUES (?,?,?,?)')
+        .bind(tokenHash, existing.id, now + MAGIC_LINK_EXPIRY, clientIp(request))
+        .run();
+      const link = `${appUrl}/auth/verify?token=${rawToken}`;
+      await sendMagicLinkEmail(normEmail, display_name as string, link, env).catch(() => null);
+    }
+    // Generic response — does not confirm or deny whether this email is registered
+    return json({ sent: true }, 200);
   }
 
   // If the user exists but never verified (e.g. previous registration hit an error),
