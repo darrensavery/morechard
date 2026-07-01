@@ -128,20 +128,24 @@ export function RegistrationShell({ onComplete }: Props) {
           // Clear referral code after successful family creation
           localStorage.removeItem('morechard_referral_code')
 
-          merged.family_id = familyResult.family_id
-          merged.user_id   = familyResult.user_id
-          setState(merged)
+          if (!familyResult.sent) {
+            // Brand-new account — store IDs and send magic link
+            merged.family_id = familyResult.family_id
+            merged.user_id   = familyResult.user_id
+            setState(merged)
 
-          // Store consent choices for posting after email verification (no JWT yet at this point)
-          if (typeof merged.marketing_consent === 'boolean') {
-            localStorage.setItem('mc_pending_consent', String(merged.marketing_consent))
-          }
-          if (typeof merged.analytics_consent === 'boolean') {
-            localStorage.setItem('mc_pending_analytics_consent', String(merged.analytics_consent))
-          }
+            // Store consent choices for posting after email verification (no JWT yet at this point)
+            if (typeof merged.marketing_consent === 'boolean') {
+              localStorage.setItem('mc_pending_consent', String(merged.marketing_consent))
+            }
+            if (typeof merged.analytics_consent === 'boolean') {
+              localStorage.setItem('mc_pending_analytics_consent', String(merged.analytics_consent))
+            }
 
-          // Send magic link — user must verify email before continuing
-          await requestMagicLink(merged.email!)
+            // Send magic link — user must verify email before continuing
+            await requestMagicLink(merged.email!)
+          }
+          // sent:true = existing verified account; magic link already sent server-side
         }
 
         // Show "check your email" screen — steps 3+ run after email verified
@@ -166,7 +170,7 @@ export function RegistrationShell({ onComplete }: Props) {
       setDone(true)
 
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Something went wrong. Please try again.')
+      setError(err instanceof Error ? err.message : 'Couldn\'t send the link — check your email address and try again.')
     } finally {
       setSaving(false)
     }

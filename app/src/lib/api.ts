@@ -91,7 +91,7 @@ async function request<T>(path: string, options: RequestInit = {}, _retries = 2,
   try {
     data = text ? JSON.parse(text) as T & { error?: string } : {} as T & { error?: string };
   } catch {
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    if (!res.ok) throw new Error('Something went wrong — please try again.');
     throw new Error('Unexpected response from server. Please try again.');
   }
 
@@ -118,7 +118,7 @@ async function request<T>(path: string, options: RequestInit = {}, _retries = 2,
   }
 
   if (!res.ok) {
-    throw new Error((data as Record<string, unknown>).error as string ?? `HTTP ${res.status}`);
+    throw new Error((data as Record<string, unknown>).error as string ?? 'Something went wrong — please try again.');
   }
   return data;
 }
@@ -126,7 +126,11 @@ async function request<T>(path: string, options: RequestInit = {}, _retries = 2,
 // ----------------------------------------------------------------
 // Auth
 // ----------------------------------------------------------------
-export interface CreateFamilyResult { family_id: string; user_id: string; email: string }
+// sent:true = existing verified account — magic link already sent server-side
+export type CreateFamilyResult =
+  | { family_id: string; user_id: string; email: string; sent?: never }
+  | { sent: true; family_id?: never; user_id?: never }
+
 export async function createFamily(body: {
   display_name: string; email: string; password?: string;
   governance_mode?: string; base_currency?: string; parenting_mode?: string; locale?: string;
@@ -494,7 +498,7 @@ export async function uploadProof(completionId: string, file: Blob): Promise<{ p
     body: file,
   });
   const data = await res.json() as { proof_url?: string; error?: string };
-  if (!res.ok) throw new Error(data.error ?? `HTTP ${res.status}`);
+  if (!res.ok) throw new Error(data.error ?? 'Something went wrong — please try again.');
   return { proof_url: data.proof_url ?? '' };
 }
 
@@ -505,7 +509,7 @@ export async function getProofUrl(completionId: string): Promise<{ url: string }
   });
   if (!res.ok) {
     const data = await res.json().catch(() => ({})) as { message?: string };
-    throw new Error(data.message ?? `HTTP ${res.status}`);
+    throw new Error(data.message ?? 'Something went wrong — please try again.');
   }
   const blob = await res.blob();
   return { url: URL.createObjectURL(blob) };
@@ -1256,7 +1260,7 @@ export async function uploadReceipt(expenseId: number, file: File): Promise<{ id
     body: file,
   });
   const data = await res.json() as { id?: number; receipt_uploaded_at?: number; error?: string };
-  if (!res.ok) throw new Error(data.error ?? `HTTP ${res.status}`);
+  if (!res.ok) throw new Error(data.error ?? 'Something went wrong — please try again.');
   return { id: data.id!, receipt_uploaded_at: data.receipt_uploaded_at! };
 }
 

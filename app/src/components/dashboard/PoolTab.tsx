@@ -4,7 +4,6 @@ import type { SharedExpense } from '../../lib/api';
 import { apiUrl, authHeaders, getSharedExpenses } from '../../lib/api';
 import { VoidExpenseSheet } from './VoidExpenseSheet';
 import { ExpenseDetailSheet } from './ExpenseDetailSheet';
-import { Button } from '../ui/button';
 import { Receipt } from 'lucide-react';
 
 function CategoryIcon({ category, size = 14 }: { category: string; size?: number }) {
@@ -79,7 +78,7 @@ export function PoolTab({ familyId, currentUserId, parentingMode, refreshKey, on
       const data = await getSharedExpenses();
       setExpenses(data.expenses);
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : 'Failed to load');
+      setError(e instanceof Error ? e.message : 'Couldn\'t load the shared expenses — check your connection.');
     } finally {
       setLoading(false);
     }
@@ -188,7 +187,22 @@ export function PoolTab({ familyId, currentUserId, parentingMode, refreshKey, on
   const currency = expenses[0]?.currency ?? 'GBP';
 
   return (
-    <div className="flex flex-col gap-4 pb-24">
+    <div className="flex flex-col gap-4 pb-36">
+
+      {/* ── Sticky bottom action bar ─────────────────────────────────────────── */}
+      <div
+        className="fixed inset-x-0 z-20 flex justify-center pointer-events-none"
+        style={{ bottom: 'calc(max(12px, env(safe-area-inset-bottom)) + 68px)' }}
+      >
+        <div className="pointer-events-auto w-full max-w-[560px] px-3.5 flex gap-2 pt-3 pb-2 bg-gradient-to-t from-[var(--color-bg)] via-[var(--color-bg)]/90 to-transparent">
+          <button
+            onClick={onAddClick}
+            className="flex-1 bg-[var(--brand-primary)] text-white font-bold py-3 rounded-xl text-[14px] hover:opacity-90 active:scale-[0.98] transition-all cursor-pointer shadow-sm"
+          >
+            {isCoParenting ? '+ Log shared expense' : '+ Log household expense'}
+          </button>
+        </div>
+      </div>
 
       {/* Running balance / month summary chip */}
       {openExpenses.length > 0 && (
@@ -217,13 +231,6 @@ export function PoolTab({ familyId, currentUserId, parentingMode, refreshKey, on
           )}
         </div>
       )}
-
-      {/* Add expense button */}
-      <div className="px-4">
-        <Button onClick={onAddClick} className="w-full">
-          {isCoParenting ? '+ Log shared expense' : '+ Log household expense'}
-        </Button>
-      </div>
 
       {/* Pending approvals — only relevant in co-parenting mode */}
       {isCoParenting && pendingExpenses.length > 0 && (
@@ -443,17 +450,19 @@ export function PoolTab({ familyId, currentUserId, parentingMode, refreshKey, on
       {expenses.length === 0 && (
         <div className="px-4 pt-2">
           <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5 space-y-3" style={{ boxShadow: 'var(--shadow-card)' }}>
-            <div className="w-10 h-10 rounded-xl bg-[var(--color-surface-alt)] flex items-center justify-center">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--brand-primary)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
-                <polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/>
-              </svg>
-            </div>
-            <div>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 shrink-0 rounded-xl bg-[var(--color-surface-alt)] flex items-center justify-center">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--brand-primary)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                  <polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/>
+                </svg>
+              </div>
               <p className="text-[14px] font-bold text-[var(--color-text)] leading-snug">
                 {isCoParenting ? 'Track shared child expenses' : 'Track household expenses'}
               </p>
-              <p className="text-[12px] text-[var(--color-text-muted)] mt-1 leading-relaxed">
+            </div>
+            <div>
+              <p className="text-[12px] text-[var(--color-text-muted)] leading-relaxed">
                 {isCoParenting
                   ? 'Log costs you share for your child — school trips, clubs, clothing, medical. Each expense is split between you and your co-parent and kept in an immutable record you can both refer to.'
                   : 'Keep a running record of what you spend on your child — school trips, activities, clothing, and more. Every entry is logged and archived by month for easy reference.'}
@@ -467,7 +476,7 @@ export function PoolTab({ familyId, currentUserId, parentingMode, refreshKey, on
                 'Export to CSV any time for your records',
               ].map((step, i) => (
                 <div key={i} className="flex items-start gap-2.5">
-                  <span className="shrink-0 w-4 h-4 rounded-full bg-[color-mix(in_srgb,var(--brand-primary)_15%,transparent)] text-[var(--brand-primary)] flex items-center justify-center text-[9px] font-bold mt-0.5">{i + 1}</span>
+                  <span className="shrink-0 w-5 h-5 rounded-full bg-[color-mix(in_srgb,var(--brand-primary)_15%,transparent)] text-[var(--brand-primary)] flex items-center justify-center text-[10px] font-bold mt-0.5">{i + 1}</span>
                   <p className="text-[12px] text-[var(--color-text-muted)] leading-snug">{step}</p>
                 </div>
               ))}

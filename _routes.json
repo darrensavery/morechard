@@ -1,5 +1,5 @@
 {
   "version": 1,
   "include": ["/auth/*", "/api/*"],
-  "exclude": []
+  "exclude": ["/auth/verify", "/auth/callback"]
 }

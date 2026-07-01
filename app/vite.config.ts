@@ -24,7 +24,7 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,svg,png,ico,webmanifest,woff2,otf}'],
         // The main HTML entry is a SPA shell — serve it for all navigation misses
         navigateFallback: '/index.html',
-        navigateFallbackDenylist: [/^\/api/, /^\/auth(?!\/verify)/],
+        navigateFallbackDenylist: [/^\/api/, /^\/auth(?!\/(verify|callback))/],
         // Immutable hashed assets — cache-first, no expiry
         runtimeCaching: [
           {
@@ -102,10 +102,14 @@ export default defineConfig({
   server: {
     port: 5173,
     proxy: {
-      // /auth/verify is a React SPA route — must NOT be proxied to the worker
+      // /auth/verify and /auth/callback are React SPA routes — must NOT be proxied to the worker
       '/auth': {
         target: 'http://localhost:8787',
-        bypass: (req) => (req.url?.startsWith('/auth/verify') ? req.url : undefined),
+        bypass: (req) => {
+          const url = req.url ?? ''
+          if (url.startsWith('/auth/verify') || url.startsWith('/auth/callback')) return url
+          return undefined
+        },
       },
       '/api': 'http://localhost:8787',
     },
