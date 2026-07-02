@@ -4,6 +4,7 @@ import { getBalance, getGoals, getChores, purchaseGoal, formatCurrency, effectiv
 import { ChildNudgeBanner } from '../child/ChildNudgeBanner'
 import { GrowingTree } from '../ui/GrowingTree'
 import { SavingsGrove } from './SavingsGrove'
+import { Button } from '../ui/button'
 
 interface Props {
   familyId:        string
@@ -111,21 +112,15 @@ export function ChildGoalsTab({ familyId, childId, currency, appView, nudge, onN
   )
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 pb-28">
       {/* AI Mentor goals nudge */}
       {nudge && onNudgeDismiss && (
         <ChildNudgeBanner nudge={nudge} appView={appView} onDismiss={onNudgeDismiss} />
       )}
 
       <div className="bg-[var(--color-surface)] rounded-2xl card-depth border border-[var(--color-border)] overflow-hidden">
-        <div className="px-4 pt-4 pb-3 flex items-center justify-between">
+        <div className="px-4 pt-4 pb-3">
           <h2 className="text-[15px] font-bold text-[var(--color-text)]">{appView === 'CLEAN' ? 'My Goals' : '🌳 Savings Grove'}</h2>
-          <button
-            onClick={() => setShowGrove(true)}
-            className="flex items-center gap-1.5 text-[12px] font-bold text-[var(--brand-primary)] border border-[var(--brand-primary)] rounded-lg px-2.5 py-1 hover:bg-[color-mix(in_srgb,var(--brand-primary)_8%,transparent)] transition-colors cursor-pointer"
-          >
-            <span>+</span> {appView === 'CLEAN' ? 'Add Goal' : 'Plant Goal'}
-          </button>
         </div>
 
         {activeGoals.length === 0 ? (
@@ -231,6 +226,18 @@ export function ChildGoalsTab({ familyId, childId, currency, appView, nudge, onN
             )}
           </div>
         )}
+      </div>
+
+      {/* Add goal — fixed above bottom nav dock */}
+      <div className="fixed bottom-0 inset-x-0 z-20 flex justify-center pointer-events-none">
+        <div
+          className="pointer-events-auto w-full max-w-[520px] mx-3"
+          style={{ marginBottom: 'calc(max(12px, env(safe-area-inset-bottom)) + 68px)' }}
+        >
+          <Button onClick={() => setShowGrove(true)} className="w-full shadow-lg">
+            {appView === 'CLEAN' ? '+ Add Goal' : '🌱 Plant Goal'}
+          </Button>
+        </div>
       </div>
 
       {showGrove && (

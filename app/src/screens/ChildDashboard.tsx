@@ -23,6 +23,7 @@ import { LabTab } from '../components/dashboard/LabTab'
 import { ChildHistoryTab } from '../components/dashboard/ChildHistoryTab'
 import { ChildMoneyTab } from '../components/dashboard/ChildMoneyTab'
 import { ChildGoalsTab } from '../components/dashboard/ChildGoalsTab'
+import { ChildBottomNav } from '../components/navigation/ChildBottomNav'
 import { MilestoneOverlay, consumeMilestonePending, queueCelebration, consumeNextCelebration } from '../components/celebration'
 import type { MilestoneEvent, MilestoneEventType } from '../components/celebration'
 import { MicroToast } from '../components/celebration/MicroToast'
@@ -156,9 +157,6 @@ export function ChildDashboard() {
   // Per-chore submission state
   const [childTab,      setChildTab]      = useState<'home' | 'chores' | 'money' | 'goals' | 'lab'>('home')
   const [labUnread,     setLabUnread]     = useState(0)
-  const tabBarRef = useRef<HTMLDivElement>(null)
-  const tabRefs   = useRef<(HTMLButtonElement | null)[]>([])
-  const [indicator, setIndicator]         = useState({ left: 0, width: 0 })
   const [submitting,    setSubmitting]    = useState<string | null>(null)
   const [submitted,     setSubmitted]     = useState<Set<string>>(new Set())
   const [noteChore,     setNoteChore]     = useState<string | null>(null)
@@ -295,16 +293,6 @@ export function ChildDashboard() {
   // Clean up goal bar timer on unmount
   useEffect(() => () => { if (goalBarTimer.current) clearTimeout(goalBarTimer.current) }, [])
 
-  // Sliding tab indicator — mirrors parent portal pattern
-  const CHILD_TABS = ['home', 'chores', 'money', 'goals', 'lab'] as const
-  useEffect(() => {
-    const idx = CHILD_TABS.indexOf(childTab)
-    const btn = tabRefs.current[idx]
-    const bar = tabBarRef.current
-    if (!btn || !bar) return
-    setIndicator({ left: btn.offsetLeft - bar.scrollLeft, width: btn.offsetWidth })
-  }, [childTab])
-
   // ── Grove planner helpers ──────────────────────────────────────────────────
 
   function togglePlant(chore: Chore, day: number) {
@@ -423,7 +411,7 @@ export function ChildDashboard() {
         </div>
       )}
       {/* Header */}
-      <header className="safe-top sticky top-0 z-10 glass-header">
+      <header className="safe-top sticky top-0 z-40 glass-header">
         <div className="max-w-[560px] mx-auto px-3.5 py-3 flex items-center justify-between">
           <FullLogo iconSize={26} />
           <div className="flex items-center gap-3">
@@ -450,35 +438,6 @@ export function ChildDashboard() {
               </svg>
             </button>
           </div>
-        </div>
-
-        {/* Tab bar */}
-        <div ref={tabBarRef} className="max-w-[560px] mx-auto border-t border-[var(--color-border)] flex relative">
-          {([['home', 'Home'], ['chores', 'Chores'], ['money', 'Money'], ['goals', 'Goals'], ['lab', 'Learn']] as const).map(([id, label], i) => (
-            <button
-              key={id}
-              ref={el => { tabRefs.current[i] = el }}
-              onClick={() => { setChildTab(id); if (id === 'lab') setLabUnread(0) }}
-              className={`flex-1 py-2.5 text-[13px] font-semibold relative transition-colors duration-100 cursor-pointer
-                ${childTab === id ? 'text-[var(--brand-primary)]' : 'text-[var(--color-text-muted)] hover:text-[var(--color-text)]'}`}
-            >
-              {label}
-              {id === 'lab' && labUnread > 0 && (
-                <span className="absolute top-1.5 right-[calc(50%-18px)] w-4 h-4 rounded-full bg-[var(--brand-primary)] text-white text-[9px] font-bold flex items-center justify-center">
-                  {labUnread}
-                </span>
-              )}
-            </button>
-          ))}
-          {/* Sliding active indicator */}
-          <span
-            className="absolute bottom-0 h-[2.5px] bg-[var(--brand-primary)] rounded-t-full pointer-events-none"
-            style={{
-              left: indicator.left,
-              width: indicator.width,
-              transition: 'left 250ms cubic-bezier(0.4,0,0.2,1), width 250ms cubic-bezier(0.4,0,0.2,1)',
-            }}
-          />
         </div>
       </header>
 
@@ -579,7 +538,7 @@ export function ChildDashboard() {
         </div>
       )}
 
-      <main className="flex-1 max-w-[560px] mx-auto w-full px-3.5 py-4 flex flex-col gap-4">
+      <main className="flex-1 max-w-[560px] mx-auto w-full px-3.5 py-4 pb-28 flex flex-col gap-4">
         {childTab === 'home' && (
           tone.isChild ? (
             <OrchardView
@@ -769,6 +728,12 @@ export function ChildDashboard() {
         <div className={childTab === 'lab'   ? 'tab-panel' : 'tab-panel hidden'}><LabTab appView={appView} /></div>
 
       </main>
+
+      <ChildBottomNav
+        activeTab={childTab}
+        onTabChange={id => { setChildTab(id); if (id === 'lab') setLabUnread(0) }}
+        badges={{ lab: labUnread }}
+      />
 
       {/* Hidden camera input for proof-required chores */}
       <input

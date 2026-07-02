@@ -10,6 +10,7 @@ import { JarDetailSheet } from './JarDetailSheet'
 import { JarSettingsSheet } from './JarSettingsSheet'
 import { JarOnboardingWizard } from './JarOnboardingWizard'
 import { GiveRequestSheet } from './GiveRequestSheet'
+import { Button } from '../ui/button'
 
 interface Props {
   familyId:       string
@@ -84,7 +85,7 @@ export function ChildMoneyTab({ familyId, childId, currency, appView, nudge, onN
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 pb-28">
 
       {/* AI Mentor money nudge */}
       {nudge && onNudgeDismiss && (
@@ -155,16 +156,6 @@ export function ChildMoneyTab({ familyId, childId, currency, appView, nudge, onN
         <StatCard label="Saved"  value={loading             ? '—' : formatCurrency(saved,           currency)} tone="muted" />
       </div>
 
-      {/* Log a spend CTA */}
-      <button
-        type="button"
-        onClick={() => setLogOpen(true)}
-        className="w-full flex items-center justify-center gap-2.5 bg-[var(--color-surface)] border-2 border-dashed border-[var(--brand-primary)]/40 hover:border-[var(--brand-primary)] hover:bg-[color-mix(in_srgb,var(--brand-primary)_6%,transparent)] rounded-2xl py-4 transition-all cursor-pointer group"
-      >
-        <span className="text-[22px] group-hover:scale-110 transition-transform">💸</span>
-        <span className="text-[15px] font-bold text-[var(--brand-primary)]">Log a spend</span>
-      </button>
-
       {/* Spending history */}
       {spending.length > 0 && (
         <SpendingHistory spending={spending} currency={currency} />
@@ -177,6 +168,18 @@ export function ChildMoneyTab({ familyId, childId, currency, appView, nudge, onN
         currency={currency}
         variant="money"
       />
+
+      {/* Log a spend — fixed above bottom nav dock */}
+      <div className="fixed bottom-0 inset-x-0 z-20 flex justify-center pointer-events-none">
+        <div
+          className="pointer-events-auto w-full max-w-[520px] mx-3"
+          style={{ marginBottom: 'calc(max(12px, env(safe-area-inset-bottom)) + 68px)' }}
+        >
+          <Button onClick={() => setLogOpen(true)} className="w-full shadow-lg">
+            💸 Log a spend
+          </Button>
+        </div>
+      </div>
 
       <SpendGuideSheet
         open={logOpen}
