@@ -24,6 +24,7 @@ import { ChildHistoryTab } from '../components/dashboard/ChildHistoryTab'
 import { ChildMoneyTab } from '../components/dashboard/ChildMoneyTab'
 import { ChildGoalsTab } from '../components/dashboard/ChildGoalsTab'
 import { ChildBottomNav } from '../components/navigation/ChildBottomNav'
+import { ChoreIcon } from '../components/dashboard/ChoreIcon'
 import { MilestoneOverlay, consumeMilestonePending, queueCelebration, consumeNextCelebration } from '../components/celebration'
 import type { MilestoneEvent, MilestoneEventType } from '../components/celebration'
 import { MicroToast } from '../components/celebration/MicroToast'
@@ -36,6 +37,12 @@ import { DevTriggerPanel } from '../components/dev/DevTriggerPanel'
 // Value: Record<chore_id, number[]>  — array of day_of_week (1=Mon … 7=Sun)
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] as const
+
+function triggerHaptic() {
+  if ('vibrate' in navigator) {
+    try { navigator.vibrate(1) } catch { /* unsupported */ }
+  }
+}
 
 function loadGrovePlans(userId: string): Record<string, number[]> {
   try {
@@ -572,6 +579,7 @@ export function ChildDashboard() {
               setNoteText={setNoteText}
               onPlantGoal={() => setShowGrove(true)}
               onDoneWithProof={startProofCapture}
+              streakData={streakData}
             />
           ) : (
             <ProfessionalView
@@ -591,6 +599,14 @@ export function ChildDashboard() {
               setNoteChore={setNoteChore}
               setNoteText={setNoteText}
               onDoneWithProof={startProofCapture}
+              cardClass={cardClass}
+              activeDay={activeDay}
+              setActiveDay={setActiveDay}
+              grovePlans={grovePlans}
+              dayChores={dayChores}
+              streakData={streakData}
+              isPlanted={_isPlanted}
+              togglePlant={togglePlant}
             />
           )
         )}
@@ -604,86 +620,6 @@ export function ChildDashboard() {
                 appView={appView}
                 onDismiss={() => setChildNudges(n => ({ ...n, earn: null }))}
               />
-            )}
-
-            {/* Weekly day planner */}
-            {!loading && (
-              <div className={cardClass}>
-                <div className="px-4 pt-4 pb-1">
-                  <h2 className="text-[15px] font-bold text-[var(--color-text)]">{tone.weekSection}</h2>
-                  <p className="text-[12px] text-[var(--color-text-muted)] mt-0.5">{tone.weekSubtitle}</p>
-                </div>
-                <div className="flex gap-1.5 px-4 pb-3 mt-2 overflow-x-auto scrollbar-hide">
-                  {DAYS.map((day, i) => {
-                    const dayNum = i + 1
-                    const isToday = activeDay === dayNum
-                    const hasChores = chores.some(c => effectiveDays(c, grovePlans).includes(dayNum))
-                    return (
-                      <button
-                        key={day}
-                        onClick={() => setActiveDay(dayNum)}
-                        className={`shrink-0 flex flex-col items-center rounded-xl px-2.5 py-2 min-w-[44px] transition-colors duration-100 cursor-pointer
-                          ${isToday ? 'bg-[var(--brand-primary)] text-white day-pill-active' : 'bg-[var(--color-surface-alt)] text-[var(--color-text-muted)] hover:bg-[var(--color-border)]'}`}
-                      >
-                        <span className="text-[11px] font-semibold">{day}</span>
-                        <span className={`mt-1.5 rounded-full w-1.5 h-1.5 ${hasChores ? (isToday ? 'bg-white/50' : 'bg-[var(--brand-primary)]') : 'bg-transparent'}`} />
-                      </button>
-                    )
-                  })}
-                </div>
-                <div className="border-t border-[var(--color-border)] divide-y divide-[var(--color-border)]">
-                  {dayChores.length === 0 ? (
-                    <p className="px-4 py-5 text-[13px] text-[var(--color-text-muted)] text-center">
-                      {tone.nothingToday} {DAYS[activeDay - 1]} yet
-                    </p>
-                  ) : (
-                    dayChores.map(chore => (
-                      <ChoreRow
-                        key={chore.id}
-                        chore={chore}
-                        tone={tone}
-                        submitted={submitted.has(chore.id)}
-                        submitting={submitting === chore.id}
-                        noteOpen={noteChore === chore.id}
-                        noteText={noteChore === chore.id ? noteText : ''}
-                        submitErr={submitErr}
-                        onDone={() => chore.proof_required ? startProofCapture(chore.id) : chore.description ? setNoteChore(chore.id) : handleDone(chore.id)}
-                        onNoteChange={setNoteText}
-                        onNoteSubmit={() => handleDone(chore.id, noteText || undefined)}
-                        onNoteCancel={() => { setNoteChore(null); setNoteText('') }}
-                        showPlantButton={false}
-                        planted={true}
-                      />
-                    ))
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Compact top-goal progress bar */}
-            {!loading && activeTopGoal && (
-              <div className={cardClass}>
-                <div className="px-4 py-3 flex items-center gap-3">
-                  <GrowingTree pct={goalBarPct} size={40} showLabel />
-                  <div className="flex-1 min-w-0">
-                    <div className="text-[13px] font-semibold text-[var(--color-text)] truncate mb-1.5">{activeTopGoal.title}</div>
-                    <div className="w-full h-2.5 bg-[var(--color-surface-alt)] rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-[var(--brand-primary)] rounded-full progress-fill-glow"
-                        style={{ width: `${goalBarPct}%`, transition: 'width 1.1s cubic-bezier(0.25, 1, 0.5, 1)' }}
-                      />
-                    </div>
-                    <div className="flex justify-between mt-1">
-                      <span className="text-[11px] text-[var(--color-text-muted)] tabular-nums">
-                        {formatCurrency(balance?.available ?? 0, activeTopGoal.currency)} saved
-                      </span>
-                      <span className="text-[11px] text-[var(--color-text-muted)] tabular-nums">
-                        {Math.min(100, Math.round(((balance?.available ?? 0) / effectiveTarget(activeTopGoal)) * 100))}% of {formatCurrency(effectiveTarget(activeTopGoal), activeTopGoal.currency)}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
             )}
 
             <EarnTab familyId={familyId} childId={userId} currency={chores[0]?.currency ?? 'GBP'} grovePlans={grovePlans} onTogglePlant={togglePlant} appView={appView} earningsMode={earningsMode} allowanceAmountPence={allowanceAmountPence} />
@@ -792,11 +728,15 @@ function ChoreRow({
 
   return (
     <div className="px-4 py-3">
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-3">
+        {/* Icon */}
+        <div className="w-9 h-9 rounded-full bg-[var(--color-surface-alt)] flex items-center justify-center shrink-0 text-[var(--color-text-muted)]">
+          <ChoreIcon title={chore.title} size={18} />
+        </div>
         {/* Info */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5 flex-wrap">
-            {chore.is_flash && (
+            {!!chore.is_flash && (
               <span className="text-[10px] font-bold text-red-600 bg-red-100 rounded px-1.5 py-0.5">FLASH</span>
             )}
             {isRecurring && (
@@ -839,7 +779,7 @@ function ChoreRow({
           </span>
         ) : (
           <button
-            onClick={onDone}
+            onClick={() => { triggerHaptic(); onDone() }}
             disabled={submitting}
             className={`shrink-0 h-9 bg-[var(--brand-primary)] text-white text-[13px] font-bold ${tone.isChild ? 'rounded-xl' : 'rounded-lg'} hover:opacity-90 disabled:opacity-50 transition-all cursor-pointer active:scale-95 flex items-center gap-1.5 btn-depth ${chore.proof_required ? 'px-3' : 'px-3.5'}`}
           >
@@ -945,6 +885,243 @@ function CameraIconSmall() {
   )
 }
 
+// ─── WeeklyPlannerCard — collapsible "My week" chore list, shared by both home views ──
+
+interface WeeklyPlannerCardProps {
+  cardClass: string
+  tone: ReturnType<typeof import('../lib/useTone').useTone>
+  activeDay: number
+  setActiveDay: (d: number) => void
+  chores: Chore[]
+  grovePlans: Record<string, number[]>
+  dayChores: Chore[]
+  submitted: Set<string>
+  submitting: string | null
+  noteChore: string | null
+  noteText: string
+  submitErr: string | null
+  onDone: (chore: Chore) => void
+  onNoteChange: (v: string) => void
+  onNoteSubmit: (chore: Chore) => void
+  onNoteCancel: () => void
+}
+
+function WeeklyPlannerCard({
+  cardClass, tone, activeDay, setActiveDay, chores, grovePlans, dayChores,
+  submitted, submitting, noteChore, noteText, submitErr,
+  onDone, onNoteChange, onNoteSubmit, onNoteCancel,
+}: WeeklyPlannerCardProps) {
+  const [expanded, setExpanded] = useState(false)
+
+  return (
+    <div className={cardClass}>
+      <button
+        type="button"
+        onClick={() => { triggerHaptic(); setExpanded(e => !e) }}
+        className="w-full flex items-center justify-between px-4 py-4 text-left cursor-pointer"
+      >
+        <div>
+          <h2 className="text-[15px] font-bold text-[var(--color-text)]">{tone.weekSection}</h2>
+          <p className="text-[12px] text-[var(--color-text-muted)] mt-0.5">
+            {dayChores.length === 0
+              ? tone.weekSubtitle
+              : `${dayChores.length} chore${dayChores.length !== 1 ? 's' : ''} today`}
+          </p>
+        </div>
+        <svg
+          width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"
+          className={`text-[var(--color-text-muted)] shrink-0 transition-transform duration-200 ${expanded ? 'rotate-180' : ''}`}
+        >
+          <polyline points="6 9 12 15 18 9"/>
+        </svg>
+      </button>
+
+      {expanded && (
+        <>
+          <div className="flex gap-1.5 px-4 pb-3 overflow-x-auto scrollbar-hide">
+            {DAYS.map((day, i) => {
+              const dayNum = i + 1
+              const isToday = activeDay === dayNum
+              const hasChores = chores.some(c => effectiveDays(c, grovePlans).includes(dayNum))
+              return (
+                <button
+                  key={day}
+                  onClick={() => { triggerHaptic(); setActiveDay(dayNum) }}
+                  className={`shrink-0 flex flex-col items-center rounded-xl px-2.5 py-2 min-w-[44px] transition-colors duration-100 cursor-pointer
+                    ${isToday ? 'bg-[var(--brand-primary)] text-white day-pill-active' : 'bg-[var(--color-surface-alt)] text-[var(--color-text-muted)] hover:bg-[var(--color-border)]'}`}
+                >
+                  <span className="text-[11px] font-semibold">{day}</span>
+                  <span className={`mt-1.5 rounded-full w-1.5 h-1.5 ${hasChores ? (isToday ? 'bg-white/50' : 'bg-[var(--brand-primary)]') : 'bg-transparent'}`} />
+                </button>
+              )
+            })}
+          </div>
+          <div className="border-t border-[var(--color-border)] divide-y divide-[var(--color-border)]">
+            {dayChores.length === 0 ? (
+              <p className="px-4 py-5 text-[13px] text-[var(--color-text-muted)] text-center">
+                {tone.nothingToday} {DAYS[activeDay - 1]} yet
+              </p>
+            ) : (
+              dayChores.map(chore => (
+                <ChoreRow
+                  key={chore.id}
+                  chore={chore}
+                  tone={tone}
+                  submitted={submitted.has(chore.id)}
+                  submitting={submitting === chore.id}
+                  noteOpen={noteChore === chore.id}
+                  noteText={noteChore === chore.id ? noteText : ''}
+                  submitErr={submitErr}
+                  onDone={() => onDone(chore)}
+                  onNoteChange={onNoteChange}
+                  onNoteSubmit={() => onNoteSubmit(chore)}
+                  onNoteCancel={onNoteCancel}
+                  showPlantButton={false}
+                  planted={true}
+                />
+              ))
+            )}
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
+
+// ─── KpiRow — compact effort/progress snapshot, shared by both home views ─────
+
+interface KpiRowProps {
+  streakData: {
+    longest_streak:        number
+    total_approved_chores: number
+    total_goals_completed: number
+    earned_badge_keys:     string[]
+  } | null
+}
+
+function KpiRow({ streakData }: KpiRowProps) {
+  if (!streakData) return null
+  const stats: { icon: string; value: number; label: string; cardClass: string }[] = [
+    {
+      icon: '✅', value: streakData.total_approved_chores, label: 'Chores done',
+      cardClass: 'bg-[color-mix(in_srgb,var(--brand-primary)_8%,transparent)] border-[color-mix(in_srgb,var(--brand-primary)_20%,transparent)]',
+    },
+    {
+      icon: '🎯', value: streakData.total_goals_completed, label: 'Goals hit',
+      cardClass: 'bg-[color-mix(in_srgb,var(--brand-accent)_8%,transparent)] border-[color-mix(in_srgb,var(--brand-accent)_20%,transparent)]',
+    },
+    {
+      icon: '🏆', value: streakData.earned_badge_keys.length, label: 'Badges',
+      cardClass: 'bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900',
+    },
+  ]
+  return (
+    <div className="grid grid-cols-3 gap-2.5">
+      {stats.map(({ icon, value, label, cardClass }) => (
+        <div key={label} className={`rounded-xl border p-3 text-center ${cardClass}`}>
+          <div className="text-[18px] leading-none mb-1">{icon}</div>
+          <div className="text-[17px] font-extrabold text-[var(--color-text)] tabular-nums leading-none">{value}</div>
+          <div className="text-[10px] font-semibold text-[var(--color-text-muted)] uppercase tracking-wide mt-1">{label}</div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+// ─── AllChoresCard — every chore, incl. ones with no due date / not yet
+// scheduled into "My week" (one-off / future-dated / never-planned). Collapsible;
+// opens by default when something needs scheduling so it doesn't get lost.
+
+interface AllChoresCardProps {
+  cardClass: string
+  tone: ReturnType<typeof import('../lib/useTone').useTone>
+  chores: Chore[]
+  grovePlans: Record<string, number[]>
+  activeDay: number
+  submitted: Set<string>
+  submitting: string | null
+  noteChore: string | null
+  noteText: string
+  submitErr: string | null
+  isPlanted: (c: Chore) => boolean
+  togglePlant: (c: Chore, day: number) => void
+  onDone: (chore: Chore) => void
+  onNoteChange: (v: string) => void
+  onNoteSubmit: (chore: Chore) => void
+  onNoteCancel: () => void
+}
+
+function AllChoresCard({
+  cardClass, tone, chores, grovePlans, activeDay,
+  submitted, submitting, noteChore, noteText, submitErr,
+  isPlanted, togglePlant, onDone, onNoteChange, onNoteSubmit, onNoteCancel,
+}: AllChoresCardProps) {
+  const unplanned = useMemo(
+    () => chores.filter(c => effectiveDays(c, grovePlans).length === 0),
+    [chores, grovePlans],
+  )
+  const [expanded, setExpanded] = useState(unplanned.length > 0)
+
+  // Unscheduled chores surface first so they don't get missed.
+  const sorted = useMemo(() => {
+    const unplannedIds = new Set(unplanned.map(c => c.id))
+    return [...chores].sort((a, b) => Number(unplannedIds.has(b.id)) - Number(unplannedIds.has(a.id)))
+  }, [chores, unplanned])
+
+  if (chores.length === 0) return null
+
+  return (
+    <div className={cardClass}>
+      <button
+        type="button"
+        onClick={() => { triggerHaptic(); setExpanded(e => !e) }}
+        className="w-full flex items-center justify-between px-4 py-4 text-left cursor-pointer"
+      >
+        <div>
+          <h2 className="text-[15px] font-bold text-[var(--color-text)]">{tone.allChores}</h2>
+          <p className="text-[12px] mt-0.5">
+            {unplanned.length > 0 ? (
+              <span className="font-semibold text-amber-600">{unplanned.length} not yet scheduled</span>
+            ) : (
+              <span className="text-[var(--color-text-muted)]">{chores.length} chore{chores.length !== 1 ? 's' : ''}</span>
+            )}
+          </p>
+        </div>
+        <svg
+          width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"
+          className={`text-[var(--color-text-muted)] shrink-0 transition-transform duration-200 ${expanded ? 'rotate-180' : ''}`}
+        >
+          <polyline points="6 9 12 15 18 9"/>
+        </svg>
+      </button>
+
+      {expanded && (
+        <div className="border-t border-[var(--color-border)] divide-y divide-[var(--color-border)]">
+          {sorted.map(chore => (
+            <ChoreRow
+              key={chore.id}
+              chore={chore}
+              tone={tone}
+              submitted={submitted.has(chore.id)}
+              submitting={submitting === chore.id}
+              noteOpen={noteChore === chore.id}
+              noteText={noteChore === chore.id ? noteText : ''}
+              submitErr={submitErr}
+              onDone={() => onDone(chore)}
+              onNoteChange={onNoteChange}
+              onNoteSubmit={() => onNoteSubmit(chore)}
+              onNoteCancel={onNoteCancel}
+              showPlantButton={!isAutoPlant(chore.frequency) && weeklyDayFromChore(chore) === null}
+              planted={isPlanted(chore)}
+              onTogglePlant={() => togglePlant(chore, activeDay)}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ─── OrchardView ─────────────────────────────────────────────────────────────
 // Card-based, metaphorical layout for younger children.
 // ─────────────────────────────────────────────────────────────────────────────
@@ -980,6 +1157,7 @@ interface OrchardViewProps {
   setNoteText: (t: string) => void
   onPlantGoal: () => void
   onDoneWithProof: (choreId: string) => void
+  streakData: KpiRowProps['streakData']
 }
 
 function OrchardView({
@@ -988,7 +1166,7 @@ function OrchardView({
   activeTopGoal, goalBarPct, submitted, submitting, purchasing,
   noteChore, noteText, submitErr, cardClass, currency, weeklyAllowancePence,
   isPlanted, togglePlant, handleDone, handlePurchase,
-  setNoteChore, setNoteText, onPlantGoal, onDoneWithProof,
+  setNoteChore, setNoteText, onPlantGoal, onDoneWithProof, streakData,
 }: OrchardViewProps) {
   // Best chore for effort calc
   const bestChore = useMemo(() => {
@@ -1057,87 +1235,48 @@ function OrchardView({
         </div>
       )}
 
-      {/* Weekly tracker */}
-      <div className={cardClass}>
-        <div className="px-4 pt-4 pb-1">
-          <h2 className="text-[15px] font-bold text-[var(--color-text)]">{tone.weekSection}</h2>
-          <p className="text-[12px] text-[var(--color-text-muted)] mt-0.5">{tone.weekSubtitle}</p>
-        </div>
-        <div className="flex gap-1.5 px-4 pb-3 mt-2 overflow-x-auto scrollbar-hide">
-          {DAYS.map((day, i) => {
-            const dayNum = i + 1
-            const isToday = activeDay === dayNum
-            const hasChores = chores.some(c => effectiveDays(c, grovePlans).includes(dayNum))
-            return (
-              <button
-                key={day}
-                onClick={() => setActiveDay(dayNum)}
-                className={`shrink-0 flex flex-col items-center rounded-xl px-2.5 py-2 min-w-[44px] transition-colors duration-100 cursor-pointer
-                  ${isToday ? 'bg-[var(--brand-primary)] text-white' : 'bg-[var(--color-surface-alt)] text-[var(--color-text-muted)] hover:bg-[var(--color-border)]'}`}
-              >
-                <span className="text-[11px] font-semibold">{day}</span>
-                <span className={`mt-1.5 rounded-full w-1.5 h-1.5 ${hasChores ? (isToday ? 'bg-white/50' : 'bg-[var(--brand-primary)]') : 'bg-transparent'}`} />
-              </button>
-            )
-          })}
-        </div>
-        <div className="border-t border-[var(--color-border)] divide-y divide-[var(--color-border)]">
-          {dayChores.length === 0 ? (
-            <p className="px-4 py-5 text-[13px] text-[var(--color-text-muted)] text-center">
-              {tone.nothingToday} {DAYS[activeDay - 1]} yet
-            </p>
-          ) : (
-            dayChores.map(chore => (
-              <ChoreRow
-                key={chore.id}
-                chore={chore}
-                tone={tone}
-                submitted={submitted.has(chore.id)}
-                submitting={submitting === chore.id}
-                noteOpen={noteChore === chore.id}
-                noteText={noteChore === chore.id ? noteText : ''}
-                submitErr={submitErr}
-                onDone={() => chore.proof_required ? onDoneWithProof(chore.id) : chore.description ? setNoteChore(chore.id) : handleDone(chore.id)}
-                onNoteChange={setNoteText}
-                onNoteSubmit={() => handleDone(chore.id, noteText || undefined)}
-                onNoteCancel={() => { setNoteChore(null); setNoteText('') }}
-                showPlantButton={false}
-                planted={true}
-              />
-            ))
-          )}
-        </div>
-      </div>
+      {/* Effort snapshot */}
+      <KpiRow streakData={streakData} />
 
-      {/* All jobs */}
-      {chores.length > 0 && (
-        <div className={cardClass}>
-          <div className="px-4 py-3 border-b border-[var(--color-border)]">
-            <h2 className="text-[15px] font-bold text-[var(--color-text)]">{tone.allChores}</h2>
-          </div>
-          <div className="divide-y divide-[var(--color-border)]">
-            {chores.map(chore => (
-              <ChoreRow
-                key={chore.id}
-                chore={chore}
-                tone={tone}
-                submitted={submitted.has(chore.id)}
-                submitting={submitting === chore.id}
-                noteOpen={noteChore === chore.id}
-                noteText={noteChore === chore.id ? noteText : ''}
-                submitErr={submitErr}
-                onDone={() => chore.proof_required ? onDoneWithProof(chore.id) : (setNoteChore(chore.id), setNoteText(''))}
-                onNoteChange={setNoteText}
-                onNoteSubmit={() => handleDone(chore.id, noteText || undefined)}
-                onNoteCancel={() => { setNoteChore(null); setNoteText('') }}
-                showPlantButton={!isAutoPlant(chore.frequency) && weeklyDayFromChore(chore) === null}
-                planted={isPlanted(chore)}
-                onTogglePlant={() => togglePlant(chore, activeDay)}
-              />
-            ))}
-          </div>
-        </div>
-      )}
+      {/* Weekly tracker — collapsed by default */}
+      <WeeklyPlannerCard
+        cardClass={cardClass}
+        tone={tone}
+        activeDay={activeDay}
+        setActiveDay={setActiveDay}
+        chores={chores}
+        grovePlans={grovePlans}
+        dayChores={dayChores}
+        submitted={submitted}
+        submitting={submitting}
+        noteChore={noteChore}
+        noteText={noteText}
+        submitErr={submitErr}
+        onDone={chore => chore.proof_required ? onDoneWithProof(chore.id) : chore.description ? setNoteChore(chore.id) : handleDone(chore.id)}
+        onNoteChange={setNoteText}
+        onNoteSubmit={chore => handleDone(chore.id, noteText || undefined)}
+        onNoteCancel={() => { setNoteChore(null); setNoteText('') }}
+      />
+
+      {/* All chores — incl. anything not yet scheduled into "My week" */}
+      <AllChoresCard
+        cardClass={cardClass}
+        tone={tone}
+        chores={chores}
+        grovePlans={grovePlans}
+        activeDay={activeDay}
+        submitted={submitted}
+        submitting={submitting}
+        noteChore={noteChore}
+        noteText={noteText}
+        submitErr={submitErr}
+        isPlanted={isPlanted}
+        togglePlant={togglePlant}
+        onDone={chore => chore.proof_required ? onDoneWithProof(chore.id) : (setNoteChore(chore.id), setNoteText(''))}
+        onNoteChange={setNoteText}
+        onNoteSubmit={chore => handleDone(chore.id, noteText || undefined)}
+        onNoteCancel={() => { setNoteChore(null); setNoteText('') }}
+      />
 
       {chores.length === 0 && (
         <div className="bg-[var(--color-surface)] rounded-2xl shadow-sm border border-[var(--color-border)] p-8 text-center">
@@ -1299,26 +1438,35 @@ interface ProfessionalViewProps {
   setNoteChore: (id: string | null) => void
   setNoteText: (t: string) => void
   onDoneWithProof: (choreId: string) => void
+  cardClass: string
+  activeDay: number
+  setActiveDay: (d: number) => void
+  grovePlans: Record<string, number[]>
+  dayChores: Chore[]
+  streakData: KpiRowProps['streakData']
+  isPlanted: (c: Chore) => boolean
+  togglePlant: (c: Chore, day: number) => void
 }
 
-// @ts-ignore TS6133 — kept for future use, not yet wired into ChildDashboard JSX
 function ProfessionalView({
   balance, appView, chores, pending, goals,
   tone, currency, submitted, submitting,
   noteChore, noteText, submitErr,
   handleDone, setNoteChore, setNoteText, onDoneWithProof,
+  cardClass, activeDay, setActiveDay, grovePlans, dayChores, streakData,
+  isPlanted, togglePlant,
 }: ProfessionalViewProps) {
   return (
     <>
       {/* Account summary — dense stat row */}
-      <div className="bg-[var(--color-surface)] rounded-xl border border-[var(--color-border)] overflow-hidden">
-        <div className="px-4 py-3 border-b border-[var(--color-border)]">
+      <div className="bg-[linear-gradient(155deg,color-mix(in_srgb,var(--brand-primary)_10%,var(--color-surface))_0%,var(--color-surface)_60%)] rounded-xl border-t-[3px] border-t-[var(--brand-primary)] border border-[var(--color-border)] overflow-hidden">
+        <div className="px-4 py-4 border-b border-[var(--color-border)] flex flex-col items-center text-center">
           <p className="text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-widest">{tone.balance}</p>
-          <p className="text-[36px] font-extrabold text-[var(--color-text)] leading-none tabular-nums mt-0.5">
+          <p className="text-[36px] font-extrabold text-[var(--color-text)] leading-none tabular-nums mt-1">
             {balance ? formatCurrency(balance.available, currency) : '£—'}
           </p>
           {balance?.streak && balance.streak.current > 0 && (
-            <div className="flex items-center gap-2 mt-1.5 text-sm text-teal-400 font-semibold tabular-nums">
+            <div className="flex items-center gap-2 mt-2 text-sm text-teal-400 font-semibold tabular-nums">
               <span>🔥</span>
               <span>{balance.streak.current} day streak</span>
               {balance.streak.grace_remaining > 0 && (
@@ -1355,87 +1503,48 @@ function ProfessionalView({
         </div>
       )}
 
-      {/* Tasks table */}
-      <div className="bg-[var(--color-surface)] rounded-xl border border-[var(--color-border)] overflow-hidden">
-        <div className="px-4 py-2.5 border-b border-[var(--color-border)] flex items-center justify-between">
-          <p className="text-[12px] font-bold text-[var(--color-text-muted)] uppercase tracking-widest">{tone.allChores}</p>
-          <p className="text-[11px] text-[var(--color-text-muted)]">{chores.length} task{chores.length !== 1 ? 's' : ''}</p>
-        </div>
+      {/* Effort snapshot */}
+      <KpiRow streakData={streakData} />
 
-        {chores.length === 0 ? (
-          <p className="px-4 py-6 text-[13px] text-[var(--color-text-muted)] text-center">{tone.emptyGrove}</p>
-        ) : (
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="border-b border-[var(--color-border)] bg-[var(--color-surface-alt)]">
-                <th className="px-4 py-2 text-[10px] font-bold text-[var(--color-text-muted)] uppercase tracking-wide">Task</th>
-                <th className="px-4 py-2 text-[10px] font-bold text-[var(--color-text-muted)] uppercase tracking-wide">Frequency</th>
-                <th className="px-4 py-2 text-[10px] font-bold text-[var(--color-text-muted)] uppercase tracking-wide text-right">Value</th>
-                <th className="px-2 py-2 text-[10px] font-bold text-[var(--color-text-muted)] uppercase tracking-wide text-right">Action</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[var(--color-border)]">
-              {chores.map(chore => {
-                const isSubmitted = submitted.has(chore.id)
-                const isSubmitting = submitting === chore.id
-                const isNoteOpen = noteChore === chore.id
-                return (
-                  <tr key={chore.id} className="group">
-                    <td className="px-4 py-2.5 align-top">
-                      <div className="flex items-center gap-1.5">
-                        {chore.is_flash && <span className="text-[9px] font-bold text-red-600 bg-red-50 border border-red-200 rounded px-1">FLASH</span>}
-                        <span className="text-[13px] font-semibold text-[var(--color-text)]">{chore.title}</span>
-                      </div>
-                      {isNoteOpen && (
-                        <div className="mt-2 space-y-1.5">
-                          <ErrorBox message={submitErr} />
-                          <textarea
-                            className="w-full border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] rounded px-2 py-1.5 text-[12px] resize-none focus:outline-none focus:ring-1 focus:ring-[var(--brand-primary)] placeholder:text-[var(--color-text-muted)]"
-                            placeholder="Add a note (optional)"
-                            rows={2}
-                            value={noteText}
-                            onChange={e => setNoteText(e.target.value)}
-                            autoFocus
-                          />
-                          <div className="flex gap-1.5">
-                            <button onClick={() => { setNoteChore(null); setNoteText('') }}
-                              className="flex-1 border border-[var(--color-border)] rounded px-2 py-1 text-[12px] font-semibold text-[var(--color-text-muted)] cursor-pointer hover:bg-[var(--color-surface-alt)]">
-                              Cancel
-                            </button>
-                            <button onClick={() => handleDone(chore.id, noteText || undefined)} disabled={isSubmitting}
-                              className="flex-1 bg-[var(--brand-primary)] text-white rounded px-2 py-1 text-[12px] font-bold hover:opacity-90 disabled:opacity-50 cursor-pointer">
-                              {isSubmitting ? '…' : tone.submitButton}
-                            </button>
-                          </div>
-                        </div>
-                      )}
-                    </td>
-                    <td className="px-4 py-2.5 align-top">
-                      <span className="text-[12px] text-[var(--color-text-muted)] capitalize">{chore.frequency.replace('_', ' ')}</span>
-                    </td>
-                    <td className="px-4 py-2.5 align-top text-right">
-                      <span className="text-[13px] font-semibold text-[var(--color-text)] tabular-nums">{formatCurrency(chore.reward_amount, chore.currency)}</span>
-                    </td>
-                    <td className="px-2 py-2.5 align-top text-right">
-                      {isSubmitted ? (
-                        <span className="text-[11px] font-bold text-amber-700 bg-amber-50 border border-amber-200 rounded px-1.5 py-0.5">{tone.waitingBadge}</span>
-                      ) : (
-                        <button
-                          onClick={() => chore.proof_required ? onDoneWithProof(chore.id) : (setNoteChore(chore.id), setNoteText(''))}
-                          disabled={isSubmitting}
-                          className="text-[12px] font-bold text-[var(--brand-primary)] hover:underline disabled:opacity-50 cursor-pointer whitespace-nowrap flex items-center gap-1"
-                        >
-                          {isSubmitting ? '…' : chore.proof_required ? <><CameraIconSmall />{tone.doneButton}</> : tone.doneButton}
-                        </button>
-                      )}
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        )}
-      </div>
+      {/* Chore list — collapsed by default */}
+      <WeeklyPlannerCard
+        cardClass={cardClass}
+        tone={tone}
+        activeDay={activeDay}
+        setActiveDay={setActiveDay}
+        chores={chores}
+        grovePlans={grovePlans}
+        dayChores={dayChores}
+        submitted={submitted}
+        submitting={submitting}
+        noteChore={noteChore}
+        noteText={noteText}
+        submitErr={submitErr}
+        onDone={chore => chore.proof_required ? onDoneWithProof(chore.id) : (setNoteChore(chore.id), setNoteText(''))}
+        onNoteChange={setNoteText}
+        onNoteSubmit={chore => handleDone(chore.id, noteText || undefined)}
+        onNoteCancel={() => { setNoteChore(null); setNoteText('') }}
+      />
+
+      {/* All chores — incl. anything not yet scheduled into "My week" */}
+      <AllChoresCard
+        cardClass={cardClass}
+        tone={tone}
+        chores={chores}
+        grovePlans={grovePlans}
+        activeDay={activeDay}
+        submitted={submitted}
+        submitting={submitting}
+        noteChore={noteChore}
+        noteText={noteText}
+        submitErr={submitErr}
+        isPlanted={isPlanted}
+        togglePlant={togglePlant}
+        onDone={chore => chore.proof_required ? onDoneWithProof(chore.id) : (setNoteChore(chore.id), setNoteText(''))}
+        onNoteChange={setNoteText}
+        onNoteSubmit={chore => handleDone(chore.id, noteText || undefined)}
+        onNoteCancel={() => { setNoteChore(null); setNoteText('') }}
+      />
 
       {/* Savings goals — compact list */}
       {goals.length > 0 && (

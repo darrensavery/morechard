@@ -78,7 +78,7 @@ const CLEAN_BASE = {
   doneButton:    'Mark complete',
   submitButton:  'Submit for approval',
   waitingBadge:  'Pending',
-  allChores:     'All tasks',
+  allChores:     'All chores',
 }
 
 function buildTerminology(locale: AppLocale): Terminology {
