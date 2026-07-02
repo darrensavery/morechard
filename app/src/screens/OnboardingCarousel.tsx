@@ -29,13 +29,13 @@ const SLIDES: Slide[] = [
     image:    slide1,
     alt:      'A child completing a chore, glowing with warm light',
     headline: 'Chores that actually pay',
-    subtext:  'Every task is tracked as real, earned money — not just a checklist to cross off.',
+    subtext:  'Every task is tracked as real, earned money - not just a checklist to cross off.',
   },
   {
     image:    slide2,
     alt:      'A child looking up at a glowing orb of light above their palm',
     headline: 'Money lessons that actually stick',
-    subtext:  'The AI Mentor turns their own earning and spending into real financial lessons — not a generic course.',
+    subtext:  'The AI Mentor turns their own earning and spending into real financial lessons - not a generic course.',
   },
   {
     image:    slide3,
@@ -47,7 +47,7 @@ const SLIDES: Slide[] = [
     image:    slide4,
     alt:      'Glowing golden chain links sealed with light, resting in open palms',
     headline: 'A record nothing can quietly change',
-    subtext:  'Every entry is locked the moment it’s approved — permanent, tamper-proof, and visible to everyone who needs it.',
+    subtext:  "Every entry is locked the moment it's approved - permanent, tamper-proof, and visible to everyone who needs it.",
   },
 ]
 

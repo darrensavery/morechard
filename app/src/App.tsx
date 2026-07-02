@@ -9,7 +9,6 @@ import { AppUrlListener } from './components/AppUrlListener'
 import { AndroidBackController } from './components/AndroidBackController'
 import { AppAutoLock } from './components/AppAutoLock'
 import { FreshdeskWidget } from './components/FreshdeskWidget'
-import { OnboardingCarousel } from './screens/OnboardingCarousel'
 import { hasSeenOnboarding }  from './lib/onboarding'
 // Sentry is deferred via requestIdleCallback in main.tsx — import lazily here too
 // so vendor-sentry stays out of the initial module graph
@@ -28,6 +27,7 @@ const PaymentSuccessScreen = lazy(() => import('./screens/PaymentSuccessScreen')
 const DemoRegisterScreen   = lazy(() => import('./components/demo/DemoRegisterScreen'))
 const VerifyLedgerHashScreen = lazy(() => import('./screens/VerifyLedgerHashScreen').then(m => ({ default: m.VerifyLedgerHashScreen })))
 const LockScreen             = lazy(() => import('./screens/LockScreen').then(m => ({ default: m.LockScreen })))
+const OnboardingCarousel     = lazy(() => import('./screens/OnboardingCarousel').then(m => ({ default: m.OnboardingCarousel })))
 
 /**
  * MagicLinkVerifyScreen — handles /auth/verify?token=...
