@@ -84,6 +84,8 @@ OnboardingCarousel (screen)
 
 Follows the existing screen-component convention (same shape as `LandingGate.tsx`/`LoginScreen.tsx`: `h-svh flex flex-col`, `bg-[var(--color-bg)]` parchment background, `rounded-2xl h-14` solid-teal primary button, `active:scale-[0.98]` press feedback). No new UI primitives needed — this is a straightforward reuse of existing button/badge classes from those two screens.
 
+Each slide's internal layout: artwork positioned above (mobile-width single column — this is a phone-first PWA, so image sits top, text below, rather than a true left/right split) with the subject composed left-of-frame facing right per the composition rule below, so the figure's gaze leads down/across into the headline and subtext underneath.
+
 ## Content — 4 slides
 
 | # | Headline | Subtext | Image metaphor |
@@ -110,6 +112,8 @@ Draft per-slide prompts (subject only — append the tail above):
 4. *A close view of interlocking golden chain links glowing softly, each one sealed with light, resting in open palms*
 
 Firefly settings: Content type → Art · Style Reference: existing hero at ~65% · square or portrait crop (not 16:9, to fit mobile card). Output files land in `app/src/assets/onboarding/slide-{1..4}.{webp|png}` and are imported like other screen art (no CMS/dynamic loading needed — this is a static, rarely-changed sequence).
+
+**Composition rule:** subject positioned left-of-frame, facing/looking right, so the figure's gaze leads the eye toward the headline/subtext which sits right-of-image (or below, on narrow viewports). Applies to all 4 slides for visual consistency across the sequence. User is producing the final artwork directly — the prompts above are reference/starting points, not a hard requirement to run through Firefly.
 
 ## Data flow / state
 
