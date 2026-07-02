@@ -176,7 +176,7 @@ export function ChildMoneyTab({ familyId, childId, currency, appView, nudge, onN
           style={{ marginBottom: 'calc(max(12px, env(safe-area-inset-bottom)) + 68px)' }}
         >
           <Button onClick={() => setLogOpen(true)} className="w-full shadow-lg">
-            💸 Log a spend
+            {appView === 'CLEAN' ? 'Log a spend' : '💸 Log a spend'}
           </Button>
         </div>
       </div>

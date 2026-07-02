@@ -7,7 +7,7 @@
  *
  * Usage:
  *   const view = useAppView('ORCHARD')
- *   view.balance   → "Your harvest"  |  "Total balance"
+ *   view.balance   → "Your balance"  |  "Total balance"
  *
  * useTone() is a legacy alias accepting the old teen_mode number — kept so
  * parent-side callers (FamilySettings, ChildProfileSettings) don't break.
@@ -47,20 +47,20 @@ export type Tone = ViewCopy
 
 const ORCHARD_BASE = {
   isChild:       true,
-  dashboard:     'The Orchard',
-  balance:       'Your harvest',
-  addToSchedule: 'Plant in my grove',
-  allowance:     'Rainfall',
-  rewards:       'Sunshine',
-  weekSection:   'Your week in the grove',
-  weekSubtitle:  "Tap a day to see what's growing",
-  emptyGrove:    'Your grove is empty',
-  emptyGroveSub: 'Ask a parent to plant some jobs for you.',
-  nothingToday:  'Nothing planted for',
+  dashboard:     'My Money',
+  balance:       'Your balance',
+  addToSchedule: 'Add to my week',
+  allowance:     'Pocket money',
+  rewards:       'Bonus',
+  weekSection:   'My week',
+  weekSubtitle:  "Tap a day to see what's on",
+  emptyGrove:    'Nothing here yet',
+  emptyGroveSub: 'Ask a parent to add some chores for you.',
+  nothingToday:  'Nothing planned for',
   doneButton:    'Done!',
   submitButton:  'Send to parent',
   waitingBadge:  'Waiting…',
-  allChores:     'All my jobs',
+  allChores:     'All my chores',
 }
 
 const CLEAN_BASE = {

@@ -20,7 +20,6 @@ import { FullLogo } from '../components/ui/Logo'
 import { GrowingTree } from '../components/ui/GrowingTree'
 import { EarnTab } from '../components/dashboard/EarnTab'
 import { LabTab } from '../components/dashboard/LabTab'
-import { ChildHistoryTab } from '../components/dashboard/ChildHistoryTab'
 import { ChildMoneyTab } from '../components/dashboard/ChildMoneyTab'
 import { ChildGoalsTab } from '../components/dashboard/ChildGoalsTab'
 import { ChildBottomNav } from '../components/navigation/ChildBottomNav'
@@ -320,11 +319,6 @@ export function ChildDashboard() {
     saveGrovePlans(userId, updated)
   }
 
-  function _isPlanted(chore: Chore): boolean {
-    const days = effectiveDays(chore, grovePlans)
-    return days.length > 0
-  }
-
   // ── Submission ─────────────────────────────────────────────────────────────
 
   async function handleDone(choreId: string, note?: string, file?: File) {
@@ -380,6 +374,16 @@ export function ChildDashboard() {
     () => chores.filter(c => effectiveDays(c, grovePlans).length === 0),
     [chores, grovePlans],
   )
+
+  // One-off chores past their due date that haven't been submitted yet.
+  const overdueChores = useMemo(() => {
+    const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0)
+    return chores.filter(c => {
+      if (c.archived || c.frequency !== 'one-off' || !c.due_date || submitted.has(c.id)) return false
+      const due = new Date(c.due_date)
+      return !isNaN(due.getTime()) && due < todayStart
+    })
+  }, [chores, submitted])
 
   const activeTopGoal = goals[0] ?? null
   const tone = useAppView(appView)
@@ -560,6 +564,7 @@ export function ChildDashboard() {
               grovePlans={grovePlans}
               dayChores={dayChores}
               unplannedChores={_unplannedChores}
+              overdueChores={overdueChores}
               activeTopGoal={activeTopGoal}
               goalBarPct={goalBarPct}
               submitted={submitted}
@@ -571,8 +576,6 @@ export function ChildDashboard() {
               cardClass={cardClass}
               currency={currency}
               weeklyAllowancePence={weeklyAllowancePence}
-              isPlanted={_isPlanted}
-              togglePlant={togglePlant}
               handleDone={handleDone}
               handlePurchase={_handlePurchase}
               setNoteChore={setNoteChore}
@@ -604,9 +607,8 @@ export function ChildDashboard() {
               setActiveDay={setActiveDay}
               grovePlans={grovePlans}
               dayChores={dayChores}
+              overdueChores={overdueChores}
               streakData={streakData}
-              isPlanted={_isPlanted}
-              togglePlant={togglePlant}
             />
           )
         )}
@@ -623,7 +625,6 @@ export function ChildDashboard() {
             )}
 
             <EarnTab familyId={familyId} childId={userId} currency={chores[0]?.currency ?? 'GBP'} grovePlans={grovePlans} onTogglePlant={togglePlant} appView={appView} earningsMode={earningsMode} allowanceAmountPence={allowanceAmountPence} />
-            <ChildHistoryTab familyId={familyId} childId={userId} currency={currency} variant="chore" />
 
             {/* Badges & streaks */}
             {!loading && streakData && (
@@ -1028,96 +1029,58 @@ function KpiRow({ streakData }: KpiRowProps) {
   )
 }
 
-// ─── AllChoresCard — every chore, incl. ones with no due date / not yet
-// scheduled into "My week" (one-off / future-dated / never-planned). Collapsible;
-// opens by default when something needs scheduling so it doesn't get lost.
+// ─── OverdueChoresCard — one-off chores past their due date, not yet
+// submitted. Surfaced on Home so nothing slips through unnoticed; everything
+// else chore-related (browsing, scheduling, history) lives in the Chores tab.
 
-interface AllChoresCardProps {
-  cardClass: string
+interface OverdueChoresCardProps {
   tone: ReturnType<typeof import('../lib/useTone').useTone>
   chores: Chore[]
-  grovePlans: Record<string, number[]>
-  activeDay: number
   submitted: Set<string>
   submitting: string | null
   noteChore: string | null
   noteText: string
   submitErr: string | null
-  isPlanted: (c: Chore) => boolean
-  togglePlant: (c: Chore, day: number) => void
   onDone: (chore: Chore) => void
   onNoteChange: (v: string) => void
   onNoteSubmit: (chore: Chore) => void
   onNoteCancel: () => void
 }
 
-function AllChoresCard({
-  cardClass, tone, chores, grovePlans, activeDay,
-  submitted, submitting, noteChore, noteText, submitErr,
-  isPlanted, togglePlant, onDone, onNoteChange, onNoteSubmit, onNoteCancel,
-}: AllChoresCardProps) {
-  const unplanned = useMemo(
-    () => chores.filter(c => effectiveDays(c, grovePlans).length === 0),
-    [chores, grovePlans],
-  )
-  const [expanded, setExpanded] = useState(unplanned.length > 0)
-
-  // Unscheduled chores surface first so they don't get missed.
-  const sorted = useMemo(() => {
-    const unplannedIds = new Set(unplanned.map(c => c.id))
-    return [...chores].sort((a, b) => Number(unplannedIds.has(b.id)) - Number(unplannedIds.has(a.id)))
-  }, [chores, unplanned])
-
+function OverdueChoresCard({
+  tone, chores, submitted, submitting, noteChore, noteText, submitErr,
+  onDone, onNoteChange, onNoteSubmit, onNoteCancel,
+}: OverdueChoresCardProps) {
   if (chores.length === 0) return null
 
   return (
-    <div className={cardClass}>
-      <button
-        type="button"
-        onClick={() => { triggerHaptic(); setExpanded(e => !e) }}
-        className="w-full flex items-center justify-between px-4 py-4 text-left cursor-pointer"
-      >
-        <div>
-          <h2 className="text-[15px] font-bold text-[var(--color-text)]">{tone.allChores}</h2>
-          <p className="text-[12px] mt-0.5">
-            {unplanned.length > 0 ? (
-              <span className="font-semibold text-amber-600">{unplanned.length} not yet scheduled</span>
-            ) : (
-              <span className="text-[var(--color-text-muted)]">{chores.length} chore{chores.length !== 1 ? 's' : ''}</span>
-            )}
-          </p>
-        </div>
-        <svg
-          width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"
-          className={`text-[var(--color-text-muted)] shrink-0 transition-transform duration-200 ${expanded ? 'rotate-180' : ''}`}
-        >
-          <polyline points="6 9 12 15 18 9"/>
-        </svg>
-      </button>
-
-      {expanded && (
-        <div className="border-t border-[var(--color-border)] divide-y divide-[var(--color-border)]">
-          {sorted.map(chore => (
-            <ChoreRow
-              key={chore.id}
-              chore={chore}
-              tone={tone}
-              submitted={submitted.has(chore.id)}
-              submitting={submitting === chore.id}
-              noteOpen={noteChore === chore.id}
-              noteText={noteChore === chore.id ? noteText : ''}
-              submitErr={submitErr}
-              onDone={() => onDone(chore)}
-              onNoteChange={onNoteChange}
-              onNoteSubmit={() => onNoteSubmit(chore)}
-              onNoteCancel={onNoteCancel}
-              showPlantButton={!isAutoPlant(chore.frequency) && weeklyDayFromChore(chore) === null}
-              planted={isPlanted(chore)}
-              onTogglePlant={() => togglePlant(chore, activeDay)}
-            />
-          ))}
-        </div>
-      )}
+    <div className="bg-[var(--color-surface)] rounded-2xl card-depth border-2 border-amber-400 overflow-hidden">
+      <div className="px-4 pt-4 pb-1 flex items-center gap-2">
+        <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+        <h2 className="text-[13px] font-extrabold text-amber-600 uppercase tracking-wider">
+          {chores.length === 1 ? 'Overdue — 1 chore' : `Overdue — ${chores.length} chores`}
+        </h2>
+      </div>
+      <div className="divide-y divide-[var(--color-border)]">
+        {chores.map(chore => (
+          <ChoreRow
+            key={chore.id}
+            chore={chore}
+            tone={tone}
+            submitted={submitted.has(chore.id)}
+            submitting={submitting === chore.id}
+            noteOpen={noteChore === chore.id}
+            noteText={noteChore === chore.id ? noteText : ''}
+            submitErr={submitErr}
+            onDone={() => onDone(chore)}
+            onNoteChange={onNoteChange}
+            onNoteSubmit={() => onNoteSubmit(chore)}
+            onNoteCancel={onNoteCancel}
+            showPlantButton={false}
+            planted={false}
+          />
+        ))}
+      </div>
     </div>
   )
 }
@@ -1138,6 +1101,7 @@ interface OrchardViewProps {
   grovePlans: Record<string, number[]>
   dayChores: Chore[]
   unplannedChores: Chore[]
+  overdueChores: Chore[]
   activeTopGoal: Goal | null
   goalBarPct: number
   submitted: Set<string>
@@ -1149,8 +1113,6 @@ interface OrchardViewProps {
   cardClass: string
   currency: string
   weeklyAllowancePence: number
-  isPlanted: (c: Chore) => boolean
-  togglePlant: (c: Chore, day: number) => void
   handleDone: (id: string, note?: string, file?: File) => Promise<void>
   handlePurchase: (id: string) => Promise<void>
   setNoteChore: (id: string | null) => void
@@ -1162,10 +1124,10 @@ interface OrchardViewProps {
 
 function OrchardView({
   balance, appView, chores, pending, goals, tone,
-  activeDay, setActiveDay, grovePlans, dayChores, unplannedChores,
+  activeDay, setActiveDay, grovePlans, dayChores, unplannedChores, overdueChores,
   activeTopGoal, goalBarPct, submitted, submitting, purchasing,
   noteChore, noteText, submitErr, cardClass, currency, weeklyAllowancePence,
-  isPlanted, togglePlant, handleDone, handlePurchase,
+  handleDone, handlePurchase,
   setNoteChore, setNoteText, onPlantGoal, onDoneWithProof, streakData,
 }: OrchardViewProps) {
   // Best chore for effort calc
@@ -1182,7 +1144,7 @@ function OrchardView({
     }
     if (weeklyAllowancePence > 0) {
       const weeks = Math.ceil(targetPence / weeklyAllowancePence)
-      return `${weeks} week${weeks !== 1 ? 's' : ''} of Harvest`
+      return `${weeks} week${weeks !== 1 ? 's' : ''} of saving`
     }
     return formatCurrency(targetPence, currency)
   }
@@ -1235,6 +1197,21 @@ function OrchardView({
         </div>
       )}
 
+      {/* Overdue — one-off chores past their due date, not yet submitted */}
+      <OverdueChoresCard
+        tone={tone}
+        chores={overdueChores}
+        submitted={submitted}
+        submitting={submitting}
+        noteChore={noteChore}
+        noteText={noteText}
+        submitErr={submitErr}
+        onDone={chore => chore.proof_required ? onDoneWithProof(chore.id) : (setNoteChore(chore.id), setNoteText(''))}
+        onNoteChange={setNoteText}
+        onNoteSubmit={chore => handleDone(chore.id, noteText || undefined)}
+        onNoteCancel={() => { setNoteChore(null); setNoteText('') }}
+      />
+
       {/* Effort snapshot */}
       <KpiRow streakData={streakData} />
 
@@ -1258,26 +1235,6 @@ function OrchardView({
         onNoteCancel={() => { setNoteChore(null); setNoteText('') }}
       />
 
-      {/* All chores — incl. anything not yet scheduled into "My week" */}
-      <AllChoresCard
-        cardClass={cardClass}
-        tone={tone}
-        chores={chores}
-        grovePlans={grovePlans}
-        activeDay={activeDay}
-        submitted={submitted}
-        submitting={submitting}
-        noteChore={noteChore}
-        noteText={noteText}
-        submitErr={submitErr}
-        isPlanted={isPlanted}
-        togglePlant={togglePlant}
-        onDone={chore => chore.proof_required ? onDoneWithProof(chore.id) : (setNoteChore(chore.id), setNoteText(''))}
-        onNoteChange={setNoteText}
-        onNoteSubmit={chore => handleDone(chore.id, noteText || undefined)}
-        onNoteCancel={() => { setNoteChore(null); setNoteText('') }}
-      />
-
       {chores.length === 0 && (
         <div className="bg-[var(--color-surface)] rounded-2xl shadow-sm border border-[var(--color-border)] p-8 text-center">
           <p className="text-[28px] mb-2">🌱</p>
@@ -1286,15 +1243,15 @@ function OrchardView({
         </div>
       )}
 
-      {/* ── Savings Grove: Effort-to-Earn Mentor ──────────────────────────── */}
+      {/* ── My Goals: Effort-to-Earn Mentor ──────────────────────────── */}
       <div className="bg-[var(--color-surface)] rounded-2xl card-depth border border-[var(--color-border)] overflow-hidden">
         <div className="px-4 pt-4 pb-3 flex items-center justify-between">
-          <h2 className="text-[15px] font-bold text-[var(--color-text)]">🌳 Savings Grove</h2>
+          <h2 className="text-[15px] font-bold text-[var(--color-text)]">🎯 My Goals</h2>
           <button
             onClick={onPlantGoal}
             className="flex items-center gap-1.5 text-[12px] font-bold text-[var(--brand-primary)] border border-[var(--brand-primary)] rounded-lg px-2.5 py-1 hover:bg-[color-mix(in_srgb,var(--brand-primary)_8%,transparent)] transition-colors cursor-pointer"
           >
-            <span>+</span> Plant Goal
+            <span>+</span> Add Goal
           </button>
         </div>
 
@@ -1302,7 +1259,7 @@ function OrchardView({
           <div className="px-4 pb-5 text-center flex flex-col items-center">
             <GrowingTree pct={0} size={64} showLabel className="mb-1" />
             <p className="text-[13px] font-semibold text-[var(--color-text)]">No goals yet</p>
-            <p className="text-[12px] text-[var(--color-text-muted)] mt-0.5">Tap "Plant Goal" to start saving for something exciting!</p>
+            <p className="text-[12px] text-[var(--color-text-muted)] mt-0.5">Tap "Add Goal" to start saving for something exciting!</p>
           </div>
         ) : (
           <div className="divide-y divide-[var(--color-border)]">
@@ -1381,7 +1338,7 @@ function OrchardView({
                       disabled={purchasing === activeTopGoal.id}
                       className="w-full rounded-xl bg-emerald-500 text-white font-bold py-2.5 text-[13px] hover:bg-emerald-600 disabled:opacity-60 transition-colors cursor-pointer"
                     >
-                      {purchasing === activeTopGoal.id ? '🌸 Blossoming…' : '🌸 Mark as Purchased!'}
+                      {purchasing === activeTopGoal.id ? '🎉 Saving…' : '🎉 Mark as Purchased!'}
                     </button>
                   )}
                 </div>
@@ -1395,7 +1352,7 @@ function OrchardView({
                 <div className="grid grid-cols-1 gap-2">
                   {activeGoals.map((g, i) => (
                     <div key={g.id} className={`flex items-center gap-2 rounded-lg px-3 py-2 border ${i === 0 ? 'border-[var(--brand-primary)] bg-[color-mix(in_srgb,var(--brand-primary)_6%,transparent)]' : 'border-[var(--color-border)] bg-[var(--color-bg)]'}`}>
-                      <span className="text-base">{i === 0 ? '🎯' : '🌱'}</span>
+                      <span className="text-base">{i === 0 ? '🎯' : '⭕'}</span>
                       <span className="flex-1 text-[12px] font-semibold text-[var(--color-text)] truncate">{g.title}</span>
                       <span className="text-[11px] text-[var(--color-text-muted)] shrink-0">{effortLabel(g.target_amount)}</span>
                     </div>
@@ -1409,7 +1366,7 @@ function OrchardView({
 
       {unplannedChores.length > 0 && (
         <p className="text-center text-[12px] text-[var(--color-text-muted)]">
-          {unplannedChores.length} chore{unplannedChores.length > 1 ? 's' : ''} not in your week yet — tap <PlantIcon inline /> to add them.
+          {unplannedChores.length} chore{unplannedChores.length > 1 ? 's' : ''} not in your week yet — find {unplannedChores.length > 1 ? 'them' : 'it'} in the Chores tab.
         </p>
       )}
     </>
@@ -1443,9 +1400,8 @@ interface ProfessionalViewProps {
   setActiveDay: (d: number) => void
   grovePlans: Record<string, number[]>
   dayChores: Chore[]
+  overdueChores: Chore[]
   streakData: KpiRowProps['streakData']
-  isPlanted: (c: Chore) => boolean
-  togglePlant: (c: Chore, day: number) => void
 }
 
 function ProfessionalView({
@@ -1453,8 +1409,7 @@ function ProfessionalView({
   tone, currency, submitted, submitting,
   noteChore, noteText, submitErr,
   handleDone, setNoteChore, setNoteText, onDoneWithProof,
-  cardClass, activeDay, setActiveDay, grovePlans, dayChores, streakData,
-  isPlanted, togglePlant,
+  cardClass, activeDay, setActiveDay, grovePlans, dayChores, overdueChores, streakData,
 }: ProfessionalViewProps) {
   return (
     <>
@@ -1503,6 +1458,21 @@ function ProfessionalView({
         </div>
       )}
 
+      {/* Overdue — one-off chores past their due date, not yet submitted */}
+      <OverdueChoresCard
+        tone={tone}
+        chores={overdueChores}
+        submitted={submitted}
+        submitting={submitting}
+        noteChore={noteChore}
+        noteText={noteText}
+        submitErr={submitErr}
+        onDone={chore => chore.proof_required ? onDoneWithProof(chore.id) : (setNoteChore(chore.id), setNoteText(''))}
+        onNoteChange={setNoteText}
+        onNoteSubmit={chore => handleDone(chore.id, noteText || undefined)}
+        onNoteCancel={() => { setNoteChore(null); setNoteText('') }}
+      />
+
       {/* Effort snapshot */}
       <KpiRow streakData={streakData} />
 
@@ -1520,26 +1490,6 @@ function ProfessionalView({
         noteChore={noteChore}
         noteText={noteText}
         submitErr={submitErr}
-        onDone={chore => chore.proof_required ? onDoneWithProof(chore.id) : (setNoteChore(chore.id), setNoteText(''))}
-        onNoteChange={setNoteText}
-        onNoteSubmit={chore => handleDone(chore.id, noteText || undefined)}
-        onNoteCancel={() => { setNoteChore(null); setNoteText('') }}
-      />
-
-      {/* All chores — incl. anything not yet scheduled into "My week" */}
-      <AllChoresCard
-        cardClass={cardClass}
-        tone={tone}
-        chores={chores}
-        grovePlans={grovePlans}
-        activeDay={activeDay}
-        submitted={submitted}
-        submitting={submitting}
-        noteChore={noteChore}
-        noteText={noteText}
-        submitErr={submitErr}
-        isPlanted={isPlanted}
-        togglePlant={togglePlant}
         onDone={chore => chore.proof_required ? onDoneWithProof(chore.id) : (setNoteChore(chore.id), setNoteText(''))}
         onNoteChange={setNoteText}
         onNoteSubmit={chore => handleDone(chore.id, noteText || undefined)}

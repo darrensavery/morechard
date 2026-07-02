@@ -88,7 +88,7 @@ export function ChildGoalsTab({ familyId, childId, currency, appView, nudge, onN
     }
     if (weeklyAllowancePence > 0) {
       const weeks = Math.ceil(targetPence / weeklyAllowancePence)
-      return `${weeks} week${weeks !== 1 ? 's' : ''} of chores`
+      return `${weeks} week${weeks !== 1 ? 's' : ''} of saving`
     }
     return formatCurrency(targetPence, currency)
   }
@@ -120,14 +120,14 @@ export function ChildGoalsTab({ familyId, childId, currency, appView, nudge, onN
 
       <div className="bg-[var(--color-surface)] rounded-2xl card-depth border border-[var(--color-border)] overflow-hidden">
         <div className="px-4 pt-4 pb-3">
-          <h2 className="text-[15px] font-bold text-[var(--color-text)]">{appView === 'CLEAN' ? 'My Goals' : '🌳 Savings Grove'}</h2>
+          <h2 className="text-[15px] font-bold text-[var(--color-text)]">{appView === 'CLEAN' ? 'My Goals' : '🎯 My Goals'}</h2>
         </div>
 
         {activeGoals.length === 0 ? (
           <div className="px-4 pb-5 text-center flex flex-col items-center">
             <GrowingTree pct={0} size={64} showLabel className="mb-1" />
             <p className="text-[13px] font-semibold text-[var(--color-text)]">No goals yet</p>
-            <p className="text-[12px] text-[var(--color-text-muted)] mt-0.5">Tap "{appView === 'CLEAN' ? 'Add Goal' : 'Plant Goal'}" to start saving for something exciting!</p>
+            <p className="text-[12px] text-[var(--color-text-muted)] mt-0.5">Tap "Add Goal" to start saving for something exciting!</p>
           </div>
         ) : (
           <div className="divide-y divide-[var(--color-border)]">
@@ -202,8 +202,8 @@ export function ChildGoalsTab({ familyId, childId, currency, appView, nudge, onN
                       className="w-full rounded-xl bg-emerald-500 text-white font-bold py-2.5 text-[13px] hover:bg-emerald-600 disabled:opacity-60 transition-colors cursor-pointer"
                     >
                       {purchasing === activeTopGoal.id
-                        ? (appView === 'CLEAN' ? 'Saving…' : '🌸 Blossoming…')
-                        : (appView === 'CLEAN' ? 'Mark as Purchased!' : '🌸 Mark as Purchased!')}
+                        ? (appView === 'CLEAN' ? 'Saving…' : '🎉 Saving…')
+                        : (appView === 'CLEAN' ? 'Mark as Purchased!' : '🎉 Mark as Purchased!')}
                     </button>
                   )}
                 </div>
@@ -216,7 +216,7 @@ export function ChildGoalsTab({ familyId, childId, currency, appView, nudge, onN
                 <div className="grid grid-cols-1 gap-2">
                   {activeGoals.map((g, i) => (
                     <div key={g.id} className={`flex items-center gap-2 rounded-lg px-3 py-2 border ${i === 0 ? 'border-[var(--brand-primary)] bg-[color-mix(in_srgb,var(--brand-primary)_6%,transparent)]' : 'border-[var(--color-border)] bg-[var(--color-bg)]'}`}>
-                      <span className="text-base">{i === 0 ? '🎯' : (appView === 'CLEAN' ? '⭕' : '🌱')}</span>
+                      <span className="text-base">{i === 0 ? '🎯' : '⭕'}</span>
                       <span className="flex-1 text-[12px] font-semibold text-[var(--color-text)] truncate">{g.title}</span>
                       <span className="text-[11px] text-[var(--color-text-muted)] shrink-0">{effortLabel(g.target_amount)}</span>
                     </div>
@@ -235,7 +235,7 @@ export function ChildGoalsTab({ familyId, childId, currency, appView, nudge, onN
           style={{ marginBottom: 'calc(max(12px, env(safe-area-inset-bottom)) + 68px)' }}
         >
           <Button onClick={() => setShowGrove(true)} className="w-full shadow-lg">
-            {appView === 'CLEAN' ? '+ Add Goal' : '🌱 Plant Goal'}
+            {appView === 'CLEAN' ? '+ Add Goal' : '🎯 Add Goal'}
           </Button>
         </div>
       </div>
