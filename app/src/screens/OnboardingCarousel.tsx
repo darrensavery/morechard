@@ -87,7 +87,7 @@ export function OnboardingCarousel() {
 
       <main className="flex-1 flex flex-col px-5 max-w-md mx-auto w-full overflow-hidden">
         <div className="flex-1 flex items-center justify-center overflow-hidden">
-          <AnimatePresence>
+          <AnimatePresence mode="wait">
             <motion.div
               key={activeIndex}
               drag="x"
