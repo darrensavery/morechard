@@ -199,7 +199,7 @@ export function ActiveSessionsSettings({ onBack }: Props) {
                         type="button"
                         onClick={() => handleRevoke(session.jti)}
                         disabled={isRevoking}
-                        className="shrink-0 px-3 py-1.5 rounded-lg text-[12px] font-bold text-red-600 border border-red-200 hover:bg-red-50 disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed transition-colors"
+                        className="tap-target-44 shrink-0 px-3 py-1.5 rounded-lg text-[12px] font-bold text-red-600 border border-red-200 hover:bg-red-50 disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed transition-colors"
                       >
                         {isRevoking ? '…' : 'Revoke'}
                       </button>

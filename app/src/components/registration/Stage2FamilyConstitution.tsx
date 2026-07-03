@@ -161,7 +161,7 @@ export function Stage2FamilyConstitution({ data, onNext, onBack }: Props) {
               <button
                 type="button"
                 onClick={() => setShowGovInfo(v => !v)}
-                className="rounded-full p-1 text-[#9b9a96] hover:text-[#1C1C1A] hover:bg-gray-100 transition-colors"
+                className="tap-target-44 rounded-full p-1 text-[#9b9a96] hover:text-[#1C1C1A] hover:bg-gray-100 transition-colors"
                 aria-label="Learn about approval styles"
               >
                 <Info size={15} />

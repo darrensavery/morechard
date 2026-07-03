@@ -132,7 +132,7 @@ export function SectionHeader({ title, subtitle, onBack }: { title: string; subt
         <button
           type="button"
           onClick={onBack}
-          className="w-8 h-8 rounded-xl flex items-center justify-center bg-[var(--color-surface)] border border-[var(--color-border)] hover:bg-[var(--color-surface-alt)] cursor-pointer transition-colors shrink-0"
+          className="tap-target-44 w-8 h-8 rounded-xl flex items-center justify-center bg-[var(--color-surface)] border border-[var(--color-border)] hover:bg-[var(--color-surface-alt)] cursor-pointer transition-colors shrink-0"
         >
           <ChevronLeft size={16} className="text-[var(--color-text-muted)]" />
         </button>

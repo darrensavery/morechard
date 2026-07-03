@@ -65,7 +65,7 @@ export function ChildNudgeBanner({ nudge, appView, onDismiss }: Props) {
           <button
             onClick={handleDismiss}
             aria-label="Dismiss nudge"
-            className="shrink-0 w-7 h-7 flex items-center justify-center rounded-lg transition-opacity hover:opacity-70 active:opacity-50 cursor-pointer"
+            className="tap-target-44 shrink-0 w-7 h-7 flex items-center justify-center rounded-lg transition-opacity hover:opacity-70 active:opacity-50 cursor-pointer"
             style={{ background: 'rgba(255,255,255,0.07)' }}
           >
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none"

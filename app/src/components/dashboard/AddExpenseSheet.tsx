@@ -169,7 +169,7 @@ export function AddExpenseSheet({ defaultSplitBp, currency, parentingMode, regio
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-lg border border-[var(--color-border)] flex items-center justify-center text-[var(--color-text-muted)] hover:bg-[var(--color-surface-alt)] cursor-pointer"
+            className="tap-target-44 w-8 h-8 rounded-lg border border-[var(--color-border)] flex items-center justify-center text-[var(--color-text-muted)] hover:bg-[var(--color-surface-alt)] cursor-pointer"
             aria-label="Close"
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
@@ -256,7 +256,7 @@ export function AddExpenseSheet({ defaultSplitBp, currency, parentingMode, regio
               <button
                 type="button"
                 onClick={() => setShowCategoryOverride(v => !v)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-[var(--brand-primary)] bg-[color-mix(in_srgb,var(--brand-primary)_10%,transparent)] text-sm font-medium text-[var(--brand-primary)] cursor-pointer"
+                className="tap-target-44 flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-[var(--brand-primary)] bg-[color-mix(in_srgb,var(--brand-primary)_10%,transparent)] text-sm font-medium text-[var(--brand-primary)] cursor-pointer"
               >
                 <CategoryIcon category={category} size={13} />
                 {selectedCategoryLabel}
@@ -271,7 +271,7 @@ export function AddExpenseSheet({ defaultSplitBp, currency, parentingMode, regio
                     key={c.value}
                     type="button"
                     onClick={() => { setCategory(c.value); setShowCategoryOverride(false); }}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm border transition-colors cursor-pointer
+                    className={`tap-target-44 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm border transition-colors cursor-pointer
                       ${category === c.value
                         ? 'border-[var(--brand-primary)] bg-[color-mix(in_srgb,var(--brand-primary)_10%,transparent)] text-[var(--brand-primary)]'
                         : 'border-[var(--color-border)] bg-[var(--color-surface-alt)] text-[var(--color-text-muted)] hover:border-[var(--brand-primary)] hover:text-[var(--brand-primary)]'

@@ -129,6 +129,7 @@ export function JarDetailSheet({
           </div>
           <button
             onClick={onClose}
+            className="tap-target-44"
             style={{
               marginLeft: 'auto',
               color: 'rgba(255,255,255,0.4)',

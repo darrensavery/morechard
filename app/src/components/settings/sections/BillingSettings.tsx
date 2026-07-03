@@ -97,7 +97,7 @@ function ComparePlansModal({ onClose }: { onClose: () => void }) {
           <button
             type="button"
             onClick={onClose}
-            className="w-8 h-8 rounded-full flex items-center justify-center bg-[var(--color-surface-alt)] text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors"
+            className="tap-target-44 w-8 h-8 rounded-full flex items-center justify-center bg-[var(--color-surface-alt)] text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors"
           >
             <X size={15} />
           </button>
@@ -401,7 +401,7 @@ function PlanView({ onBack, showToast, shieldUpgradePrice }: {
                   <button
                     type="button"
                     onClick={() => setShowCompare(true)}
-                    className="text-[12px] font-semibold text-[var(--brand-primary)] px-2.5 py-1 rounded-lg border border-[var(--brand-primary)] hover:bg-[color-mix(in_srgb,var(--brand-primary)_10%,transparent)] active:bg-[color-mix(in_srgb,var(--brand-primary)_18%,transparent)] active:scale-[0.97] transition-all duration-150"
+                    className="tap-target-44 text-[12px] font-semibold text-[var(--brand-primary)] px-2.5 py-1 rounded-lg border border-[var(--brand-primary)] hover:bg-[color-mix(in_srgb,var(--brand-primary)_10%,transparent)] active:bg-[color-mix(in_srgb,var(--brand-primary)_18%,transparent)] active:scale-[0.97] transition-all duration-150"
                   >
                     Compare all plans
                   </button>
@@ -611,7 +611,7 @@ function PlanView({ onBack, showToast, shieldUpgradePrice }: {
                     <button
                       type="button"
                       onClick={() => setShowCancelConfirm(true)}
-                      className="text-[12px] font-semibold text-red-500 px-2.5 py-1 rounded-lg border border-red-300 hover:bg-red-50 hover:text-red-600 hover:border-red-400 active:bg-red-100 active:scale-[0.97] transition-all duration-150"
+                      className="tap-target-44 text-[12px] font-semibold text-red-500 px-2.5 py-1 rounded-lg border border-red-300 hover:bg-red-50 hover:text-red-600 hover:border-red-400 active:bg-red-100 active:scale-[0.97] transition-all duration-150"
                     >
                       Cancel plan & request refund
                     </button>

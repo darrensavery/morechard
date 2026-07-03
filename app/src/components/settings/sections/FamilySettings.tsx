@@ -250,7 +250,7 @@ export function FamilySettings({
                 Let children's balances go negative
               </p>
             </div>
-            <label className="relative inline-flex items-center cursor-pointer">
+            <label className="tap-target-44 relative inline-flex items-center cursor-pointer">
               <input
                 type="checkbox"
                 checked={localEnabled}

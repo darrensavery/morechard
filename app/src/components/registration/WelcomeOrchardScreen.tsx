@@ -145,7 +145,7 @@ export function WelcomeOrchardScreen({ displayName, onDone }: Props) {
         <div className="flex items-center gap-3">
           <button
             onClick={() => { setPhase('welcome'); setError('') }}
-            className="w-8 h-8 rounded-lg border border-[var(--color-border)] flex items-center justify-center text-[var(--color-text-muted)] hover:bg-[var(--color-surface-alt)] cursor-pointer"
+            className="tap-target-44 w-8 h-8 rounded-lg border border-[var(--color-border)] flex items-center justify-center text-[var(--color-text-muted)] hover:bg-[var(--color-surface-alt)] cursor-pointer"
           >
             <ArrowLeft size={15} />
           </button>

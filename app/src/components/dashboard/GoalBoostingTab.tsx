@@ -212,7 +212,7 @@ export function GoalBoostingTab({ familyId, child }: Props) {
                     key={opt}
                     onClick={() => handleMatchChange(goal, opt)}
                     disabled={isSaving}
-                    className={`rounded-lg border px-3 py-1.5 text-[12px] font-bold transition-colors cursor-pointer disabled:opacity-50 ${
+                    className={`tap-target-44 rounded-lg border px-3 py-1.5 text-[12px] font-bold transition-colors cursor-pointer disabled:opacity-50 ${
                       goal.parent_match_pct === opt
                         ? 'border-[var(--brand-primary)] bg-[var(--brand-primary)] text-white'
                         : 'border-[var(--color-border)] text-[var(--color-text-muted)] hover:border-[var(--brand-primary)]'

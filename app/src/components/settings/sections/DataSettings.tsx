@@ -141,7 +141,7 @@ export function DataSettings({
             aria-label="Usage analytics"
             onClick={toggleAnalytics}
             className={cn(
-              'relative w-11 h-6 rounded-full transition-colors shrink-0 cursor-pointer mt-0.5',
+              'tap-target-44 relative w-11 h-6 rounded-full transition-colors shrink-0 cursor-pointer mt-0.5',
               analyticsOn ? 'bg-teal-600' : 'bg-gray-300',
             )}
           >

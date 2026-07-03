@@ -263,7 +263,7 @@ export function ParentDashboard() {
               return avatarId ? (
                 <button
                   onClick={() => setShowSettings(true)}
-                  className="w-8 h-8 rounded-full overflow-hidden shrink-0 border border-[var(--color-border)] cursor-pointer focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)]"
+                  className="tap-target-44 w-8 h-8 rounded-full overflow-hidden shrink-0 border border-[var(--color-border)] cursor-pointer focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)]"
                   title="Settings"
                   aria-label="Open settings"
                 >
@@ -272,7 +272,7 @@ export function ParentDashboard() {
               ) : (
                 <button
                   onClick={() => setShowSettings(true)}
-                  className="w-8 h-8 rounded-full bg-[var(--brand-primary)] flex items-center justify-center text-white text-[11px] font-bold tracking-wide shrink-0 cursor-pointer focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-[var(--brand-primary)]"
+                  className="tap-target-44 w-8 h-8 rounded-full bg-[var(--brand-primary)] flex items-center justify-center text-white text-[11px] font-bold tracking-wide shrink-0 cursor-pointer focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-[var(--brand-primary)]"
                   title="Settings"
                   aria-label="Open settings"
                 >
@@ -294,7 +294,7 @@ export function ParentDashboard() {
                   key={child.id}
                   onClick={() => handleSetActiveChild(child)}
                   className={`
-                    shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[13px] font-semibold
+                    tap-target-44 shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[13px] font-semibold
                     transition-colors duration-100 cursor-pointer relative
                     ${activeChild?.id === child.id
                       ? 'bg-[var(--brand-primary)] text-white'
@@ -405,45 +405,48 @@ export function ParentDashboard() {
               ? `Witaj, ${name}. Zacznijmy uprawę Twojego sadu.`
               : `Welcome, ${name}. Let's grow your orchard.`
             return (
-              <div className="flex flex-col items-center justify-center py-16 px-4 text-center gap-5">
-                {/* Sapling illustration */}
-                <div className="w-20 h-20 rounded-3xl bg-[color-mix(in_srgb,var(--brand-primary)_10%,transparent)] border-2 border-[color-mix(in_srgb,var(--brand-primary)_20%,transparent)] flex items-center justify-center shadow-sm">
-                  <svg width="44" height="44" viewBox="0 0 44 44" fill="none" aria-hidden="true">
-                    {/* Soil line */}
-                    <rect x="8" y="36" width="28" height="3" rx="1.5" fill="color-mix(in srgb, var(--brand-primary) 30%, transparent)" opacity="0.4"/>
-                    {/* Trunk */}
-                    <path d="M22 36 L22 22" stroke="#92613a" strokeWidth="2.5" strokeLinecap="round"/>
-                    {/* Left leaf */}
-                    <path d="M22 26 C22 26 14 24 13 17 C17 17 22 21 22 26Z" fill="#34d399"/>
-                    <path d="M22 26 C22 26 14 24 13 17 C17 17 22 21 22 26Z" fill="none" stroke="#059669" strokeWidth="0.6"/>
-                    {/* Right leaf */}
-                    <path d="M22 22 C22 22 30 20 31 13 C27 13 22 17 22 22Z" fill="#34d399"/>
-                    <path d="M22 22 C22 22 30 20 31 13 C27 13 22 17 22 22Z" fill="none" stroke="#059669" strokeWidth="0.6"/>
-                    {/* Leaf vein left */}
-                    <path d="M22 26 L14.5 18.5" stroke="#059669" strokeWidth="0.5" strokeLinecap="round" opacity="0.6"/>
-                    {/* Leaf vein right */}
-                    <path d="M22 22 L29.5 15" stroke="#059669" strokeWidth="0.5" strokeLinecap="round" opacity="0.6"/>
-                    {/* Top bud */}
-                    <circle cx="22" cy="11" r="3" fill="#6ee7b7"/>
-                    <circle cx="22" cy="11" r="3" fill="none" stroke="#059669" strokeWidth="0.6"/>
-                  </svg>
+              <div className="flex flex-col h-full min-h-[70svh] px-4 text-center">
+                {/* Sapling illustration + copy — centered in the available space */}
+                <div className="flex-1 flex flex-col items-center justify-center gap-5">
+                  <div className="w-20 h-20 rounded-3xl bg-[color-mix(in_srgb,var(--brand-primary)_10%,transparent)] border-2 border-[color-mix(in_srgb,var(--brand-primary)_20%,transparent)] flex items-center justify-center shadow-sm">
+                    <svg width="44" height="44" viewBox="0 0 44 44" fill="none" aria-hidden="true">
+                      {/* Soil line */}
+                      <rect x="8" y="36" width="28" height="3" rx="1.5" fill="color-mix(in srgb, var(--brand-primary) 30%, transparent)" opacity="0.4"/>
+                      {/* Trunk */}
+                      <path d="M22 36 L22 22" stroke="#92613a" strokeWidth="2.5" strokeLinecap="round"/>
+                      {/* Left leaf */}
+                      <path d="M22 26 C22 26 14 24 13 17 C17 17 22 21 22 26Z" fill="#34d399"/>
+                      <path d="M22 26 C22 26 14 24 13 17 C17 17 22 21 22 26Z" fill="none" stroke="#059669" strokeWidth="0.6"/>
+                      {/* Right leaf */}
+                      <path d="M22 22 C22 22 30 20 31 13 C27 13 22 17 22 22Z" fill="#34d399"/>
+                      <path d="M22 22 C22 22 30 20 31 13 C27 13 22 17 22 22Z" fill="none" stroke="#059669" strokeWidth="0.6"/>
+                      {/* Leaf vein left */}
+                      <path d="M22 26 L14.5 18.5" stroke="#059669" strokeWidth="0.5" strokeLinecap="round" opacity="0.6"/>
+                      {/* Leaf vein right */}
+                      <path d="M22 22 L29.5 15" stroke="#059669" strokeWidth="0.5" strokeLinecap="round" opacity="0.6"/>
+                      {/* Top bud */}
+                      <circle cx="22" cy="11" r="3" fill="#6ee7b7"/>
+                      <circle cx="22" cy="11" r="3" fill="none" stroke="#059669" strokeWidth="0.6"/>
+                    </svg>
+                  </div>
+
+                  <div>
+                    <p className="text-[12px] font-semibold text-[var(--brand-primary)] mb-2 tracking-wide">
+                      {welcome}
+                    </p>
+                    <h2 className="text-[18px] font-extrabold text-[var(--color-text)] tracking-tight mb-1.5">
+                      Add your first child
+                    </h2>
+                    <p className="text-[13px] text-[var(--color-text-muted)] leading-relaxed max-w-[260px] mx-auto">
+                      Once you add a child, you can set up chores, track their pocket money, and watch their savings grow.
+                    </p>
+                  </div>
                 </div>
 
-                <div>
-                  <p className="text-[12px] font-semibold text-[var(--brand-primary)] mb-2 tracking-wide">
-                    {welcome}
-                  </p>
-                  <h2 className="text-[18px] font-extrabold text-[var(--color-text)] tracking-tight mb-1.5">
-                    Add your first child
-                  </h2>
-                  <p className="text-[13px] text-[var(--color-text-muted)] leading-relaxed max-w-[260px] mx-auto">
-                    Once you add a child, you can set up chores, track their pocket money, and watch their savings grow.
-                  </p>
-                </div>
-
+                {/* Primary CTA — pinned to the bottom, matching other primary-action placement */}
                 <button
                   onClick={() => setShowSettings(true)}
-                  className="h-12 px-6 bg-[var(--brand-primary)] text-white font-semibold text-[14px] rounded-2xl cursor-pointer hover:opacity-90 active:scale-[0.98] transition-all shadow-md flex items-center gap-2"
+                  className="h-12 px-6 mx-auto mb-2 bg-[var(--brand-primary)] text-white font-semibold text-[14px] rounded-2xl cursor-pointer hover:opacity-90 active:scale-[0.98] transition-all shadow-md flex items-center gap-2"
                 >
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
                     <path d="M12 5v14M5 12h14"/>

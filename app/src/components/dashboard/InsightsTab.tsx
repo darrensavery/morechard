@@ -78,7 +78,7 @@ export function InsightsTab({ familyId, child }: Props) {
             key={p}
             onClick={() => setPeriod(p)}
             className={`
-              flex-1 py-1.5 rounded-lg text-[12px] font-semibold transition-all duration-150 cursor-pointer
+              tap-target-44 flex-1 py-1.5 rounded-lg text-[12px] font-semibold transition-all duration-150 cursor-pointer
               ${period === p
                 ? 'bg-[var(--color-surface)] text-[var(--color-text)] shadow-sm'
                 : 'text-[var(--color-text-muted)] hover:text-[var(--color-text)]'}
@@ -727,7 +727,7 @@ function ShareNudgeModal({
             <p className="text-[10px] font-bold text-[var(--color-text-muted)] uppercase tracking-widest mb-0.5">Share coaching note</p>
             <p className="text-[15px] font-extrabold text-[var(--color-text)] tracking-tight">Message for {name}</p>
           </div>
-          <button onClick={onClose} className="w-8 h-8 rounded-lg border border-[var(--color-border)] flex items-center justify-center text-[var(--color-text-muted)] hover:bg-[var(--color-surface-alt)] cursor-pointer">
+          <button onClick={onClose} className="tap-target-44 w-8 h-8 rounded-lg border border-[var(--color-border)] flex items-center justify-center text-[var(--color-text-muted)] hover:bg-[var(--color-surface-alt)] cursor-pointer">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
               <path d="M18 6 6 18M6 6l12 12"/>
             </svg>

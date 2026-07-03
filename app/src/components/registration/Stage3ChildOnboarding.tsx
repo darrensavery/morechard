@@ -156,7 +156,7 @@ export function Stage3ChildOnboarding({ data, onNext, onBack }: Props) {
                   <button
                     type="button"
                     onClick={() => copyCode(child.invite_code)}
-                    className="p-1.5 rounded-lg hover:bg-muted transition-colors text-muted-foreground"
+                    className="tap-target-44 p-1.5 rounded-lg hover:bg-muted transition-colors text-muted-foreground"
                     aria-label="Copy invite code"
                   >
                     {copiedCode === child.invite_code

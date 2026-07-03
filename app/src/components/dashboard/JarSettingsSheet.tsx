@@ -64,6 +64,7 @@ export function JarSettingsSheet({ config, familyId, childId, onClose, onSaved, 
           <span style={{ fontSize: 18, fontWeight: 700, color: '#fff' }}>Jar settings</span>
           <button
             onClick={onClose}
+            className="tap-target-44"
             style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', fontSize: 20, cursor: 'pointer' }}
           >
             ✕

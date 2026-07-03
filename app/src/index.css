@@ -201,6 +201,28 @@ body::before {
   animation: spark-glow 800ms ease-out forwards;
 }
 
+/* ── Tap-target expansion ─────────────────────────────────────────────────
+   Apple HIG / WCAG recommend a minimum 44×44px hit box for tappable
+   elements. Many icon buttons are visually smaller than that by design
+   (16-32px icons/boxes). This utility expands ONLY the invisible hit box
+   via a centered ::before pseudo-element — the visible icon/box/pill never
+   changes size. Apply to any button/label that is visually < 44×44px.
+   Requires the element to establish a positioning context (position other
+   than static); most buttons already do via flex/inline-flex so this is
+   safe to add without affecting layout. */
+.tap-target-44 {
+  position: relative;
+}
+.tap-target-44::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 44px;
+  height: 44px;
+}
+
 /* ── Safe-area insets ──────────────────────────────────────────────────────
    Capacitor on Android 15+ and iOS uses edge-to-edge by default, so the
    WebView extends under the status bar / home indicator. Sticky headers and

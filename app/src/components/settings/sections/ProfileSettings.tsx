@@ -221,7 +221,7 @@ export function ProfileSettings({
         <SectionCard>
           <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--color-border)]">
             <p className="text-[15px] font-bold">Choose avatar</p>
-            <button onClick={() => setShowAvatarPicker(false)} className="text-[var(--color-text-muted)] hover:text-[var(--color-text)] cursor-pointer">
+            <button onClick={() => setShowAvatarPicker(false)} className="tap-target-44 text-[var(--color-text-muted)] hover:text-[var(--color-text)] cursor-pointer">
               <X size={18} />
             </button>
           </div>
@@ -381,7 +381,7 @@ export function ProfileSettings({
           <div className="w-full max-w-sm bg-[var(--color-surface)] rounded-2xl p-5 space-y-4 shadow-2xl">
             <div className="flex items-center justify-between">
               <p className="text-[16px] font-bold text-[var(--color-text)]">Leave Family?</p>
-              <button onClick={() => { setShowLeaveModal(false); setDangerError(null) }} className="text-[var(--color-text-muted)] cursor-pointer">
+              <button onClick={() => { setShowLeaveModal(false); setDangerError(null) }} className="tap-target-44 text-[var(--color-text-muted)] cursor-pointer">
                 <X size={18} />
               </button>
             </div>
@@ -411,7 +411,7 @@ export function ProfileSettings({
           <div className="w-full max-w-sm bg-[var(--color-surface)] rounded-2xl p-5 space-y-4 shadow-2xl">
             <div className="flex items-center justify-between">
               <p className="text-[16px] font-bold text-red-600">Delete Everything?</p>
-              <button onClick={() => { setShowUprootModal(false); setUprootInput(''); setDangerError(null) }} className="text-[var(--color-text-muted)] cursor-pointer">
+              <button onClick={() => { setShowUprootModal(false); setUprootInput(''); setDangerError(null) }} className="tap-target-44 text-[var(--color-text-muted)] cursor-pointer">
                 <X size={18} />
               </button>
             </div>
@@ -443,7 +443,7 @@ export function ProfileSettings({
           <div className="w-full max-w-sm bg-[var(--color-surface)] rounded-2xl p-5 space-y-4 shadow-2xl">
             <div className="flex items-center justify-between">
               <p className="text-[16px] font-bold text-[var(--color-text)]">Confirm your PIN</p>
-              <button onClick={() => { setPinGate(null); setPinInput(''); setPinError(null) }} className="text-[var(--color-text-muted)] cursor-pointer">
+              <button onClick={() => { setPinGate(null); setPinInput(''); setPinError(null) }} className="tap-target-44 text-[var(--color-text-muted)] cursor-pointer">
                 <X size={18} />
               </button>
             </div>

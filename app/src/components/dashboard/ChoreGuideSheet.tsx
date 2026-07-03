@@ -255,7 +255,7 @@ export function ChoreGuideSheet({ open, onClose, familyId, context = null, curre
             <h2 className="text-lg font-semibold text-[--color-text]">Chore Guide</h2>
             <p className="text-[11px] text-[var(--color-text-muted)] mt-0.5">What other families pay</p>
           </div>
-          <button onClick={onClose} className="w-8 h-8 rounded-lg border border-[var(--color-border)] flex items-center justify-center text-[var(--color-text-muted)] hover:bg-[var(--color-surface-alt)] cursor-pointer" aria-label="Close">
+          <button onClick={onClose} className="tap-target-44 w-8 h-8 rounded-lg border border-[var(--color-border)] flex items-center justify-center text-[var(--color-text-muted)] hover:bg-[var(--color-surface-alt)] cursor-pointer" aria-label="Close">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
           </button>
         </div>
@@ -280,7 +280,7 @@ export function ChoreGuideSheet({ open, onClose, familyId, context = null, curre
             <button
               key={cat.label}
               onClick={() => setCategory(cat.label)}
-              className={`shrink-0 flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12px] font-semibold border transition-colors cursor-pointer whitespace-nowrap ${
+              className={`tap-target-44 shrink-0 flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12px] font-semibold border transition-colors cursor-pointer whitespace-nowrap ${
                 category === cat.label
                   ? 'bg-[var(--brand-primary)] text-white border-[var(--brand-primary)]'
                   : 'bg-[var(--color-surface-alt)] text-[var(--color-text-muted)] border-[var(--color-border)] hover:bg-[color-mix(in_srgb,var(--color-surface-alt)_85%,var(--color-text)_15%)] hover:text-[var(--color-text)]'
@@ -322,7 +322,7 @@ export function ChoreGuideSheet({ open, onClose, familyId, context = null, curre
                   <button
                     key={opt.value}
                     onClick={() => setSort(opt.value)}
-                    className={`px-2 py-1 rounded-md text-[11px] font-semibold transition-colors cursor-pointer
+                    className={`tap-target-44 px-2 py-1 rounded-md text-[11px] font-semibold transition-colors cursor-pointer
                       ${sort === opt.value
                         ? 'bg-[var(--brand-primary)] text-white'
                         : 'bg-[var(--color-surface-alt)] text-[var(--color-text-muted)] hover:bg-[color-mix(in_srgb,var(--color-surface-alt)_70%,var(--color-border))] hover:text-[var(--color-text)]'

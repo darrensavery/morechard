@@ -322,7 +322,7 @@ export function CreateChoreSheet({
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-lg border border-[var(--color-border)] flex items-center justify-center text-[var(--color-text-muted)] hover:bg-[var(--color-surface-alt)] cursor-pointer"
+            className="tap-target-44 w-8 h-8 rounded-lg border border-[var(--color-border)] flex items-center justify-center text-[var(--color-text-muted)] hover:bg-[var(--color-surface-alt)] cursor-pointer"
             aria-label="Close"
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
@@ -342,7 +342,7 @@ export function CreateChoreSheet({
                   key={c.id}
                   type="button"
                   onClick={() => toggleChildId(c.id)}
-                  className={`shrink-0 px-3 py-1 rounded-full text-[12px] font-semibold border transition-all cursor-pointer whitespace-nowrap
+                  className={`tap-target-44 shrink-0 px-3 py-1 rounded-full text-[12px] font-semibold border transition-all cursor-pointer whitespace-nowrap
                     ${active
                       ? 'bg-[var(--brand-primary)] text-white border-[var(--brand-primary)]'
                       : 'bg-[var(--color-surface-alt)] text-[var(--color-text-muted)] border-[var(--color-border)] hover:border-[var(--brand-primary)] hover:text-[var(--brand-primary)]'
@@ -356,7 +356,7 @@ export function CreateChoreSheet({
             <button
               type="button"
               onClick={setModeAnyone}
-              className={`shrink-0 px-3 py-1 rounded-full text-[12px] font-semibold border transition-all cursor-pointer whitespace-nowrap
+              className={`tap-target-44 shrink-0 px-3 py-1 rounded-full text-[12px] font-semibold border transition-all cursor-pointer whitespace-nowrap
                 ${assignMode === 'anyone'
                   ? 'bg-[var(--brand-primary)] text-white border-[var(--brand-primary)]'
                   : 'bg-[var(--color-surface-alt)] text-[var(--color-text-muted)] border-[var(--color-border)] hover:border-[var(--brand-primary)] hover:text-[var(--brand-primary)]'
@@ -368,7 +368,7 @@ export function CreateChoreSheet({
             <button
               type="button"
               onClick={setModeEveryone}
-              className={`shrink-0 px-3 py-1 rounded-full text-[12px] font-semibold border transition-all cursor-pointer whitespace-nowrap
+              className={`tap-target-44 shrink-0 px-3 py-1 rounded-full text-[12px] font-semibold border transition-all cursor-pointer whitespace-nowrap
                 ${assignMode === 'everyone'
                   ? 'bg-[var(--brand-primary)] text-white border-[var(--brand-primary)]'
                   : 'bg-[var(--color-surface-alt)] text-[var(--color-text-muted)] border-[var(--color-border)] hover:border-[var(--brand-primary)] hover:text-[var(--brand-primary)]'
@@ -502,7 +502,7 @@ export function CreateChoreSheet({
                 <button
                   type="button"
                   onClick={() => applySuggestion(suggestion)}
-                  className="px-3 py-1 rounded-full bg-[color-mix(in_srgb,var(--brand-primary)_12%,transparent)] border border-[var(--brand-primary)] text-[var(--brand-primary)] text-[13px] font-bold tabular-nums hover:bg-[color-mix(in_srgb,var(--brand-primary)_22%,transparent)] active:scale-95 transition-all cursor-pointer"
+                  className="tap-target-44 px-3 py-1 rounded-full bg-[color-mix(in_srgb,var(--brand-primary)_12%,transparent)] border border-[var(--brand-primary)] text-[var(--brand-primary)] text-[13px] font-bold tabular-nums hover:bg-[color-mix(in_srgb,var(--brand-primary)_22%,transparent)] active:scale-95 transition-all cursor-pointer"
                 >
                   {sym}{(suggestion.median_amount / 100).toFixed(2)}
                 </button>
@@ -587,7 +587,7 @@ export function CreateChoreSheet({
                   key={opt.value}
                   type="button"
                   onClick={() => setField('frequency', opt.value)}
-                  className={`shrink-0 px-4 py-1.5 rounded-full text-[12px] font-semibold border transition-all cursor-pointer whitespace-nowrap
+                  className={`tap-target-44 shrink-0 px-4 py-1.5 rounded-full text-[12px] font-semibold border transition-all cursor-pointer whitespace-nowrap
                     ${form.frequency === opt.value
                       ? 'bg-[var(--brand-primary)] text-white border-[var(--brand-primary)]'
                       : 'bg-[var(--color-surface-alt)] text-[var(--color-text-muted)] border-[var(--color-border)] hover:border-[var(--brand-primary)] hover:text-[var(--brand-primary)]'

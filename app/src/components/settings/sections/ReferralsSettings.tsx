@@ -121,7 +121,7 @@ function PeerView({ onBack, showToast }: { onBack: () => void; showToast: (m: st
                 <button
                   type="button"
                   onClick={handleCopyUrl}
-                  className="shrink-0 w-10 h-10 rounded-lg flex items-center justify-center bg-[var(--color-surface-alt)] border border-[var(--color-border)] hover:bg-[var(--color-surface)] transition-colors cursor-pointer"
+                  className="tap-target-44 shrink-0 w-10 h-10 rounded-lg flex items-center justify-center bg-[var(--color-surface-alt)] border border-[var(--color-border)] hover:bg-[var(--color-surface)] transition-colors cursor-pointer"
                   aria-label={pl ? 'Kopiuj link' : 'Copy link'}
                 >
                   {copied

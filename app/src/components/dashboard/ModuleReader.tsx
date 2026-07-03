@@ -152,7 +152,7 @@ export function ModuleReader({ slug, childData, completedActs, onActComplete, on
       <div className="flex items-center justify-between px-4 pt-4 pb-3 border-b border-[var(--color-border)] bg-[var(--color-surface)]">
         <button
           onClick={() => actIndex > 0 ? setActIndex(prev => (prev - 1) as ActIndex) : onClose()}
-          className="w-9 h-9 flex items-center justify-center rounded-xl border border-[var(--color-border)] cursor-pointer"
+          className="tap-target-44 w-9 h-9 flex items-center justify-center rounded-xl border border-[var(--color-border)] cursor-pointer"
           aria-label="Back"
         >
           <ChevronLeft size={16} />
@@ -168,7 +168,7 @@ export function ModuleReader({ slug, childData, completedActs, onActComplete, on
         </div>
         <button
           onClick={onClose}
-          className="w-9 h-9 flex items-center justify-center rounded-xl border border-[var(--color-border)] cursor-pointer"
+          className="tap-target-44 w-9 h-9 flex items-center justify-center rounded-xl border border-[var(--color-border)] cursor-pointer"
           aria-label="Close"
         >
           <X size={16} />

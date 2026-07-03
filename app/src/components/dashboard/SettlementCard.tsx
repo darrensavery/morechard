@@ -93,7 +93,7 @@ export function SettlementCard({ period, onClose, onReconciled }: Props) {
       <div className="w-full max-w-[560px] bg-[var(--color-surface)] rounded-t-2xl p-6 pb-10 flex flex-col gap-4">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-bold">Reconcile {period}</h2>
-          <button onClick={onClose} className="text-[var(--color-text-muted)] text-2xl leading-none">&times;</button>
+          <button onClick={onClose} className="tap-target-44 text-[var(--color-text-muted)] text-2xl leading-none">&times;</button>
         </div>
 
         {!result && (

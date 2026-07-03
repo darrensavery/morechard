@@ -428,7 +428,7 @@ export function ChildDashboard() {
           <div className="flex items-center gap-3">
             <button
               onClick={() => setShowSettings(true)}
-              className="w-10 h-10 rounded-xl border border-[color-mix(in_srgb,var(--brand-primary)_28%,var(--color-border))] flex items-center justify-center text-[var(--color-text-muted)] hover:text-[var(--brand-primary)] hover:border-[var(--brand-primary)] hover:bg-[var(--color-surface-alt)] active:scale-95 transition-colors cursor-pointer"
+              className="tap-target-44 w-10 h-10 rounded-xl border border-[color-mix(in_srgb,var(--brand-primary)_28%,var(--color-border))] flex items-center justify-center text-[var(--color-text-muted)] hover:text-[var(--brand-primary)] hover:border-[var(--brand-primary)] hover:bg-[var(--color-surface-alt)] active:scale-95 transition-colors cursor-pointer"
               title="Settings"
               aria-label="Settings"
             >
@@ -439,7 +439,7 @@ export function ChildDashboard() {
             </button>
             <button
               onClick={() => navigate('/lock?manual=1')}
-              className="w-10 h-10 rounded-xl border border-[color-mix(in_srgb,var(--brand-primary)_28%,var(--color-border))] flex items-center justify-center text-[var(--color-text-muted)] hover:text-[var(--brand-primary)] hover:border-[var(--brand-primary)] hover:bg-[var(--color-surface-alt)] active:scale-95 transition-colors cursor-pointer"
+              className="tap-target-44 w-10 h-10 rounded-xl border border-[color-mix(in_srgb,var(--brand-primary)_28%,var(--color-border))] flex items-center justify-center text-[var(--color-text-muted)] hover:text-[var(--brand-primary)] hover:border-[var(--brand-primary)] hover:bg-[var(--color-surface-alt)] active:scale-95 transition-colors cursor-pointer"
               title="Lock"
               aria-label="Lock screen"
             >
@@ -466,7 +466,7 @@ export function ChildDashboard() {
               <p className="text-[16px] font-extrabold text-[var(--color-text)]">Settings</p>
               <button
                 onClick={() => setShowSettings(false)}
-                className="text-[var(--color-text-muted)] hover:text-[var(--color-text)] cursor-pointer"
+                className="tap-target-44 text-[var(--color-text-muted)] hover:text-[var(--color-text)] cursor-pointer"
               >
                 <X size={18} />
               </button>
@@ -1249,7 +1249,7 @@ function OrchardView({
           <h2 className="text-[15px] font-bold text-[var(--color-text)]">🎯 My Goals</h2>
           <button
             onClick={onPlantGoal}
-            className="flex items-center gap-1.5 text-[12px] font-bold text-[var(--brand-primary)] border border-[var(--brand-primary)] rounded-lg px-2.5 py-1 hover:bg-[color-mix(in_srgb,var(--brand-primary)_8%,transparent)] transition-colors cursor-pointer"
+            className="tap-target-44 flex items-center gap-1.5 text-[12px] font-bold text-[var(--brand-primary)] border border-[var(--brand-primary)] rounded-lg px-2.5 py-1 hover:bg-[color-mix(in_srgb,var(--brand-primary)_8%,transparent)] transition-colors cursor-pointer"
           >
             <span>+</span> Add Goal
           </button>

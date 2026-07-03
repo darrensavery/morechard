@@ -127,7 +127,7 @@ export function ChildHistoryTab({ familyId, childId, currency, variant }: Props)
           <button
             type="button"
             onClick={() => setHistorySort(s => s === 'date-desc' ? 'date-asc' : 'date-desc')}
-            className="flex items-center gap-1 text-[11px] font-semibold text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors cursor-pointer px-2 py-1 rounded-lg hover:bg-[var(--color-surface-alt)]"
+            className="tap-target-44 flex items-center gap-1 text-[11px] font-semibold text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors cursor-pointer px-2 py-1 rounded-lg hover:bg-[var(--color-surface-alt)]"
           >
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
               <path d="M3 6h18M7 12h10M11 18h2"/>
