@@ -150,8 +150,9 @@ import { handleCreateCheckout, handleStripeWebhook, handleCancelPlan, handleShie
 import {
   handleCreatePromoCode, handleListPromoCodes, handleGetPromoCode,
   handleListPromotionCandidates, handlePromotePromotionCandidate, handleDismissPromotionCandidate,
+  handleGetAdminExchangeRates, handleUpdateExchangeRate,
 } from './routes/admin.js';
-import { handleExchange } from './routes/exchange.js';
+import { serveAdminUI } from './routes/admin-ui.js';
 import {
   handleGenerateInvite,
   handlePeekInvite,
@@ -450,7 +451,6 @@ async function route(request: Request, env: Env, method: string, path: string): 
   // ── Public ──────────────────────────────────────────────────
   if (path === '/api/health') return json({ ok: true });
 
-  if (path === '/auth/exchange'      && method === 'POST') return handleExchange(request, env);
   if (path === '/auth/create-family' && method === 'POST') return handleCreateFamily(request, env);
   if (path === '/auth/register'      && method === 'POST') return handleRegister(request, env);
   if (path === '/auth/login'       && method === 'POST') return handleLogin(request, env);
@@ -466,6 +466,9 @@ async function route(request: Request, env: Env, method: string, path: string): 
   // Stripe webhook — public but signature-verified internally
   if (path === '/api/stripe/webhook' && method === 'POST') return handleStripeWebhook(request, env);
 
+  // Admin — self-contained browser panel (login gated client-side by X-Admin-Key)
+  if (path === '/admin' && method === 'GET') return serveAdminUI();
+
   // Admin — protected by X-Admin-Key header
   if (path === '/api/admin/promo-codes' && method === 'POST') return handleCreatePromoCode(request, env);
   if (path === '/api/admin/promo-codes' && method === 'GET')  return handleListPromoCodes(request, env);
@@ -478,6 +481,11 @@ async function route(request: Request, env: Env, method: string, path: string): 
   if (promoteMatch && method === 'POST') return handlePromotePromotionCandidate(promoteMatch[1], request, env);
   const dismissMatch = path.match(/^\/api\/admin\/promotion-candidates\/([^/]+)\/dismiss$/);
   if (dismissMatch && method === 'POST') return handleDismissPromotionCandidate(dismissMatch[1], request, env);
+
+  // Admin — exchange rate (locale multiplier) management
+  if (path === '/api/admin/exchange-rates' && method === 'GET') return handleGetAdminExchangeRates(request, env);
+  const exchangeRateMatch = path.match(/^\/api\/admin\/exchange-rates\/([^/]+)$/);
+  if (exchangeRateMatch && method === 'PUT') return handleUpdateExchangeRate(exchangeRateMatch[1], request, env);
 
   // Market rates — CRON health check (no user auth)
   if (path === '/api/market-rates/cron' && method === 'GET') return handleMarketRateCron(request, env);
@@ -767,6 +775,8 @@ async function route(request: Request, env: Env, method: string, path: string): 
   // Ledger
   if (path === '/api/ledger') {
     if (method === 'POST') {
+      const parentCheck = requireRole(auth, 'parent');
+      if (parentCheck) return parentCheck;
       const famCheck = await checkFamilyFromBody(request, auth, env);
       if (famCheck) return famCheck;
       return handleLedgerPost(request, env);
@@ -779,13 +789,21 @@ async function route(request: Request, env: Env, method: string, path: string): 
   }
 
   const verifyMatch = path.match(/^\/api\/ledger\/(\d+)\/verify$/);
-  if (verifyMatch && method === 'POST') return handleLedgerVerify(request, env, verifyMatch[1]);
+  if (verifyMatch && method === 'POST') {
+    const parentCheck = requireRole(auth, 'parent');
+    if (parentCheck) return parentCheck;
+    return withAuth(request, auth, env, (req, e) => handleLedgerVerify(req, e, verifyMatch[1]));
+  }
 
   const raiseDisputeMatch = path.match(/^\/api\/ledger\/(\d+)\/raise-dispute$/);
-  if (raiseDisputeMatch && method === 'POST') return handleRaiseDispute(request, env, raiseDisputeMatch[1]);
+  if (raiseDisputeMatch && method === 'POST') return withAuth(request, auth, env, (req, e) => handleRaiseDispute(req, e, raiseDisputeMatch[1]));
 
   const disputeMatch = path.match(/^\/api\/ledger\/(\d+)\/dispute$/);
-  if (disputeMatch && method === 'POST') return handleLedgerDispute(request, env, disputeMatch[1]);
+  if (disputeMatch && method === 'POST') {
+    const parentCheck = requireRole(auth, 'parent');
+    if (parentCheck) return parentCheck;
+    return withAuth(request, auth, env, (req, e) => handleLedgerDispute(req, e, disputeMatch[1]));
+  }
 
   // Export
   if (path === '/api/export/json' && method === 'GET') {

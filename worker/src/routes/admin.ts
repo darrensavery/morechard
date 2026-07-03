@@ -9,11 +9,15 @@
  * GET  /api/admin/promotion-candidates           — review queue of popular child suggestions
  * POST /api/admin/promotion-candidates/:id/promote — add candidate to the market_rates library
  * POST /api/admin/promotion-candidates/:id/dismiss — reject candidate (never resurfaced)
+ *
+ * GET /api/admin/exchange-rates           — list locale multipliers
+ * PUT /api/admin/exchange-rates/:locale   — update a locale's multiplier/label, busts cache
  */
 
 import { Env } from '../types.js';
 import { json, error } from '../lib/response.js';
 import { nanoid } from '../lib/nanoid.js';
+import { loadMultipliers, bustExchangeRatesCache } from './exchange-rates.js';
 
 // ----------------------------------------------------------------
 // Auth guard
@@ -303,4 +307,67 @@ export async function handleDismissPromotionCandidate(
     .run();
 
   return json({ ok: true });
+}
+
+// ----------------------------------------------------------------
+// GET /api/admin/exchange-rates
+// ----------------------------------------------------------------
+
+export async function handleGetAdminExchangeRates(
+  request: Request,
+  env: Env,
+): Promise<Response> {
+  const authErr = requireAdmin(request, env);
+  if (authErr) return authErr;
+
+  const multipliers = await loadMultipliers(env);
+  return json({ rates: Array.from(multipliers.values()) });
+}
+
+// ----------------------------------------------------------------
+// PUT /api/admin/exchange-rates/:locale
+// Body: { multiplier: number, label?: string }
+// ----------------------------------------------------------------
+
+export async function handleUpdateExchangeRate(
+  locale: string,
+  request: Request,
+  env: Env,
+): Promise<Response> {
+  const authErr = requireAdmin(request, env);
+  if (authErr) return authErr;
+
+  const existing = await env.DB
+    .prepare('SELECT locale FROM locale_multipliers WHERE locale = ?')
+    .bind(locale)
+    .first<{ locale: string }>();
+  if (!existing) return error('Unknown locale', 404);
+
+  let body: { multiplier?: unknown; label?: unknown };
+  try {
+    body = await request.json() as typeof body;
+  } catch {
+    return error('Invalid JSON body', 400);
+  }
+
+  const multiplier = body.multiplier;
+  const label      = typeof body.label === 'string' ? body.label.trim() : undefined;
+
+  if (typeof multiplier !== 'number' || !Number.isFinite(multiplier) || multiplier <= 0) {
+    return error('multiplier must be a positive number', 400);
+  }
+
+  const now = Math.floor(Date.now() / 1000);
+  await env.DB
+    .prepare(`
+      UPDATE locale_multipliers
+      SET multiplier = ?, label = COALESCE(?, label), updated_at = ?
+      WHERE locale = ?
+    `)
+    .bind(multiplier, label ?? null, now, locale)
+    .run();
+
+  await bustExchangeRatesCache(env);
+
+  return json({ ok: true, locale, multiplier, label: label ?? undefined });
 }

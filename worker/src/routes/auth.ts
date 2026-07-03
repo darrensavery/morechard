@@ -16,7 +16,7 @@ import { EmailService, buildVerifyEmailHtml, buildVerifyEmailText } from '../lib
 
 import { json, error, clientIp, parseBody } from '../lib/response.js';
 import { logger } from '../lib/logger.js';
-import { hashPassword, verifyPassword } from '../lib/crypto.js';
+import { hashPassword, verifyPassword, timingSafeEqual } from '../lib/crypto.js';
 import { signJwt } from '../lib/jwt.js';
 import type { JwtPayload } from '../lib/jwt.js';
 import { nanoid } from '../lib/nanoid.js';
@@ -1340,7 +1340,11 @@ async function _handleGoogleCallback(request: Request, env: Env, appUrl: string)
   const nonce        = stateParam.slice(0, dotIdx);
   const receivedSig  = stateParam.slice(dotIdx + 1);
   const expectedSig  = await hmacSign(`oauth-state.${nonce}`, env.JWT_SECRET);
-  if (receivedSig !== expectedSig) {
+  const sigsMatch = timingSafeEqual(
+    new TextEncoder().encode(receivedSig),
+    new TextEncoder().encode(expectedSig),
+  );
+  if (!sigsMatch) {
     return new Response(null, { status: 302, headers: { 'Location': `${appUrl}/auth/login?error=csrf` } });
   }
 

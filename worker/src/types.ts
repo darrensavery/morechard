@@ -19,7 +19,6 @@ export interface Env {
   STRIPE_PRICE_SHIELD_AI:   string;
   STRIPE_PRICE_AI_UPGRADE:  string;
   STRIPE_SHIELD_PRODUCT_ID: string;
-  FIREBASE_PROJECT_ID: string;
   GOOGLE_CLIENT_ID:     string;
   GOOGLE_CLIENT_SECRET: string;
   POSTHOG_API_KEY:      string;
