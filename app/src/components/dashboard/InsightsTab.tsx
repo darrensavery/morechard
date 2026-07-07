@@ -2,14 +2,18 @@
  * InsightsTab — Parent behavioural dashboard for each child.
  *
  * Layout order:
- *  1. Child selector (multi-child only)
- *  2. Period toggle
+ *  1. Family Audit card (monthly, family-wide AI rollup)
+ *  2. Mentor section    — carousel when > 1 card (weekly, per-child AI briefing —
+ *                          kept adjacent to the Family Audit card above)
  *  3. Balance bar (available | allocated savings | lifetime)
  *  4. Sparkline cards  (Responsibility · Consistency · Savings)
  *  5. Effort preference tag
- *  6. Mentor section   — carousel when > 1 card
- *  7. Learning Lab     (learning_lab_enabled only)
- *  8. Progress Summary stats
+ *  6. Learning Lab     (learning_lab_enabled only)
+ *  7. Progress Summary stats
+ *
+ * The period toggle ("This week / This month / All time") is rendered as a
+ * fixed bar in the thumb zone, just above the bottom nav — not part of the
+ * scrolling content order above.
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react'
@@ -74,22 +78,29 @@ export function InsightsTab({ familyId, child }: Props) {
 
       <FamilyAuditCard familyId={familyId} />
 
-      {/* ── Period toggle ── */}
-      <div className="flex gap-1.5 bg-[var(--color-surface-alt)] rounded-xl p-1">
-        {(Object.keys(PERIOD_LABELS) as Period[]).map(p => (
-          <button
-            key={p}
-            onClick={() => setPeriod(p)}
-            className={`
-              tap-target-44 flex-1 py-1.5 rounded-lg text-[12px] font-semibold transition-all duration-150 cursor-pointer
-              ${period === p
-                ? 'bg-[var(--color-surface)] text-[var(--color-text)] shadow-sm'
-                : 'text-[var(--color-text-muted)] hover:text-[var(--color-text)]'}
-            `}
-          >
-            {PERIOD_LABELS[p]}
-          </button>
-        ))}
+      {/* ── Period toggle — fixed in the thumb zone, just above the bottom nav ── */}
+      <div className="fixed bottom-0 inset-x-0 z-20 flex justify-center pointer-events-none">
+        <div
+          className="pointer-events-auto w-full max-w-[520px] mx-3"
+          style={{ marginBottom: 'calc(max(12px, env(safe-area-inset-bottom)) + 68px)' }}
+        >
+          <div className="flex gap-1.5 bg-[var(--color-surface-alt)] rounded-xl p-1 shadow-lg border border-[var(--color-border)]">
+            {(Object.keys(PERIOD_LABELS) as Period[]).map(p => (
+              <button
+                key={p}
+                onClick={() => setPeriod(p)}
+                className={`
+                  tap-target-44 flex-1 py-1.5 rounded-lg text-[12px] font-semibold transition-all duration-150 cursor-pointer
+                  ${period === p
+                    ? 'bg-[var(--color-surface)] text-[var(--color-text)] shadow-sm'
+                    : 'text-[var(--color-text-muted)] hover:text-[var(--color-text)]'}
+                `}
+              >
+                {PERIOD_LABELS[p]}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
 
       {loading ? (
@@ -141,10 +152,24 @@ function InsightsDashboard({
         </div>
       )}
 
-      {/* 1. Balance bar */}
+      {/* 1. Premium Mentor section — kept adjacent to FamilyAuditCard above */}
+      <MentorSection data={data} child={child} period={period} onViewTrends={() => {
+        // Open the metric with the largest absolute trend delta
+        const t = data.trends
+        if (!t) { setExpandedMetric('consistency'); return }
+        const candidates: ['responsibility' | 'consistency' | 'savings', number][] = [
+          ['responsibility', Math.abs(t.responsibility?.delta ?? 0)],
+          ['consistency',    Math.abs(t.consistency?.delta    ?? 0)],
+          ['savings',        Math.abs(t.horizon?.delta        ?? 0)],
+        ]
+        candidates.sort((a, b) => b[1] - a[1])
+        setExpandedMetric(candidates[0][0])
+      }} />
+
+      {/* 2. Balance bar */}
       <BalanceBar data={data} currency={currency} />
 
-      {/* 2. Sparkline cards */}
+      {/* 3. Sparkline cards */}
       <div className="grid grid-cols-3 gap-2.5">
         <SparklineCard
           label="Responsibility"
@@ -175,24 +200,10 @@ function InsightsDashboard({
         />
       </div>
 
-      {/* 3. Effort preference tag */}
+      {/* 4. Effort preference tag */}
       {!data.is_discovery_phase && data.effort_preference && (
         <EffortTag preference={data.effort_preference} child={child} />
       )}
-
-      {/* 4. Premium Mentor section */}
-      <MentorSection data={data} child={child} period={period} onViewTrends={() => {
-        // Open the metric with the largest absolute trend delta
-        const t = data.trends
-        if (!t) { setExpandedMetric('consistency'); return }
-        const candidates: ['responsibility' | 'consistency' | 'savings', number][] = [
-          ['responsibility', Math.abs(t.responsibility?.delta ?? 0)],
-          ['consistency',    Math.abs(t.consistency?.delta    ?? 0)],
-          ['savings',        Math.abs(t.horizon?.delta        ?? 0)],
-        ]
-        candidates.sort((a, b) => b[1] - a[1])
-        setExpandedMetric(candidates[0][0])
-      }} />
 
       {/* 5. Child nudge summary — what the AI sent to the child this week */}
       {childNudgeSummary && (
