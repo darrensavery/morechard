@@ -434,7 +434,7 @@ function DiscoveryCard({ data, name }: { data: InsightsData; name: string }) {
             <MentorAvatar />
             <div>
               <div className="flex items-center gap-2 mb-0.5">
-                <span className="text-[10px] font-bold tracking-widest uppercase" style={{ color: '#9ca3af' }}>
+                <span className="text-[10px] font-bold tracking-widest uppercase" style={{ color: '#6b9e87' }}>
                   Orchard Mentor
                 </span>
                 <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />

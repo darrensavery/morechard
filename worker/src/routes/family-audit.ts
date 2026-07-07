@@ -219,7 +219,10 @@ CONSTRAINTS:
 - Use first-person plural ("We", "Us", "Our") throughout.
 - Tone: supportive, egalitarian, collaborative. No chatbot fluff or excessive praise.
 - Choice Architecture: present options for the parent ("You might consider..."); never dictate.
-- UK English: "Wellbeing", "Pence", "Organise", "Behaviour", "Recognise".
+- UK English: "Wellbeing", "Organise", "Behaviour", "Recognise".
+- Currency: every value in "totals" is in pence (100 pence = £1). ALWAYS convert to pounds and
+  write it the way a person actually talks — "£8.00", "£21.50" — never write a raw pence figure
+  or the word "pence" anywhere in your response.
 - behavioral_root MUST name the given Pillar explicitly.
 - Respond ONLY with a valid JSON object. No markdown, no commentary, no extra fields.
 
@@ -230,9 +233,16 @@ Response schema (strict):
   "the_action": "<1 sentence — a concrete option for the parent, framed as a choice>"
 }`;
 
+  const formatPounds = (pence: number) => `£${(pence / 100).toFixed(2)}`;
+
   const userPrompt = JSON.stringify({
-    family_name:   familyName,
-    totals,
+    family_name: familyName,
+    totals_formatted: {
+      earned: formatPounds(totals.total_earned_pence),
+      spent:  formatPounds(totals.total_spent_pence),
+      saved:  formatPounds(totals.total_saved_pence),
+      given:  formatPounds(totals.total_given_pence),
+    },
     flagged_child: flagged.child_name,
     flagged_pillar: flagged.pillar,
   });
