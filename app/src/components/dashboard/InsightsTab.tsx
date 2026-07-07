@@ -22,6 +22,7 @@ import { SparklineCard } from './SparklineCard'
 import { SparklineExpanded } from './SparklineExpanded'
 import { LabSection } from './LabSection'
 import { AnimatedStat } from './AnimatedStat'
+import { FamilyAuditCard } from './FamilyAuditCard'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -70,6 +71,8 @@ export function InsightsTab({ familyId, child }: Props) {
 
   return (
     <div className="space-y-4">
+
+      <FamilyAuditCard familyId={familyId} />
 
       {/* ── Period toggle ── */}
       <div className="flex gap-1.5 bg-[var(--color-surface-alt)] rounded-xl p-1">
