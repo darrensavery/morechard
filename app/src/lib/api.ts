@@ -1321,3 +1321,28 @@ export async function dismissChildNudge(nudgeId: number): Promise<{ ok: boolean 
     body: JSON.stringify({ nudge_id: nudgeId }),
   });
 }
+
+// ----------------------------------------------------------------
+// Family Audit
+// ----------------------------------------------------------------
+
+export interface FamilyAuditData {
+  month:             string;
+  is_empty?:         boolean;
+  totals?: {
+    total_earned_pence: number;
+    total_spent_pence:  number;
+    total_saved_pence:  number;
+    total_given_pence:  number;
+  };
+  flagged_child_id?:   string;
+  flagged_pillar?:     string;
+  observation?:        string;
+  behavioral_root?:    string;
+  the_action?:         string;
+  source?:             'ai' | 'rule_based';
+}
+
+export async function getFamilyAudit(family_id: string): Promise<FamilyAuditData> {
+  return request(`/api/family-audit?family_id=${family_id}`);
+}
