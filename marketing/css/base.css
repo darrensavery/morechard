@@ -87,7 +87,6 @@ nav {
   justify-content: space-between;
   padding: 0 var(--pad-x);
   background: transparent;
-  transition: background-color 0.15s ease, border-color 0.15s ease;
   border-bottom: 1px solid transparent;
 }
 nav.scrolled,
