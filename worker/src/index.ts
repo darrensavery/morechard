@@ -194,6 +194,7 @@ import { handleConsentPost, handleConsentGet, handleAnalyticsConsentPost, handle
 import { handlePublicInterest } from './routes/public-interest.js';
 import { handleGetJars, handlePutJarConfig, handlePostJarMove, handleGetJarMovements } from './routes/jars.js';
 import { handleGetChildNudges, handleDismissChildNudge, runChildNudgeBackgroundChecks } from './routes/child-nudges.js';
+import { handleGetFamilyAudit } from './routes/family-audit.js';
 import { handlePostGiveRequest, handleGetGiveRequests, handlePatchGiveRequest } from './routes/give-requests.js';
 import { json, error } from './lib/response.js';
 import { JwtPayload } from './lib/jwt.js';
@@ -626,6 +627,9 @@ async function route(request: Request, env: Env, method: string, path: string): 
 
   // Insights — parent or child (child sees own data only, enforced in handler)
   if (path === '/api/insights'  && method === 'GET')  return withAuth(request, auth, env, handleInsights);
+
+  // Family Audit — monthly family-wide rollup for parents (Phase 5)
+  if (path === '/api/family-audit' && method === 'GET') return withAuth(request, auth, env, handleGetFamilyAudit);
 
   // Child nudges — AI Mentor inline coaching cards
   if (path === '/api/child-nudges'         && method === 'GET')  return withAuth(request, auth, env, handleGetChildNudges);

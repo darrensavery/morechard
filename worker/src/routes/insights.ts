@@ -26,6 +26,11 @@ import { JwtPayload } from '../lib/jwt.js';
 import { captureAiGeneration } from '../lib/posthog.js';
 import { getFamilyContext } from '../lib/intelligence.js';
 import { computeJarSignals, JarSignals } from '../lib/jar-balance.js';
+import { getAvailableBalancePence } from '../lib/ledgerBalance.js';
+import {
+  buildSetupSignature, getOutstandingCandidates, buildRuleBasedDiscoveryBriefing,
+  type DiscoverySetupFacts, type DiscoveryCandidateKey, type DiscoveryBriefingContent,
+} from '../lib/discoveryBriefing.js';
 
 type AuthedRequest = Request & { auth: JwtPayload };
 
@@ -169,7 +174,7 @@ export async function handleInsights(request: Request, env: Env): Promise<Respon
   }
 
   // ── 5. Financial Metrics ─────────────────────────────────────────────────
-  const [earnedRow, spentRow, savedRow, balanceRow, lifetimeRow, goalsRow] = await Promise.all([
+  const [earnedRow, spentRow, savedRow, lifetimeRow, goalsRow] = await Promise.all([
     env.DB.prepare(`
       SELECT COALESCE(SUM(amount), 0) AS total FROM ledger
       WHERE family_id = ? AND child_id = ? AND entry_type = 'credit'
@@ -192,15 +197,6 @@ export async function handleInsights(request: Request, env: Env): Promise<Respon
       .first<{ total: number }>()
       .catch(() => ({ total: 0 })),
 
-    // Available balance: sum of credits minus debits from ledger
-    env.DB.prepare(`
-      SELECT
-        COALESCE(SUM(CASE WHEN entry_type = 'credit' THEN amount ELSE -amount END), 0) AS available
-      FROM ledger
-      WHERE family_id = ? AND child_id = ?
-    `).bind(family_id, effectiveChildId)
-      .first<{ available: number }>(),
-
     // Lifetime earned
     env.DB.prepare(`
       SELECT COALESCE(SUM(amount), 0) AS total FROM ledger
@@ -222,7 +218,7 @@ export async function handleInsights(request: Request, env: Env): Promise<Respon
   const totalEarned   = earnedRow?.total     ?? 0;
   const totalSpent    = spentRow?.total      ?? 0;
   const totalSaved    = savedRow?.total      ?? 0;
-  const availableBal  = balanceRow?.available ?? 0;
+  const availableBal  = await getAvailableBalancePence(env.DB, family_id, effectiveChildId);
   const lifetimeEarned = lifetimeRow?.total  ?? 0;
   const goalsLocked   = goalsRow?.locked     ?? 0;
 
@@ -353,6 +349,60 @@ export async function handleInsights(request: Request, env: Env): Promise<Respon
         mode:                   'seedling' as const,
         avg_tasks_per_week:     Math.round(allTimeCompleted / weeksOfHistory),
       };
+
+  // ── 8b. Discovery Briefing (Discovery Phase only) ────────────────────────
+  let discoveryBriefing: (DiscoveryBriefingContent & { source: 'ai' | 'rule_based' }) | null = null;
+
+  if (isDiscoveryPhase) {
+    const [choreRow, proofRow, goalRow] = await Promise.all([
+      env.DB.prepare(`SELECT COUNT(*) AS cnt FROM chores WHERE assigned_to = ?`)
+        .bind(effectiveChildId).first<{ cnt: number }>(),
+      env.DB.prepare(`SELECT COUNT(*) AS cnt FROM chores WHERE assigned_to = ? AND proof_required = 1`)
+        .bind(effectiveChildId).first<{ cnt: number }>(),
+      env.DB.prepare(`SELECT COUNT(*) AS cnt FROM goals WHERE child_id = ? AND archived = 0`)
+        .bind(effectiveChildId).first<{ cnt: number }>(),
+    ]);
+
+    const setupFacts: DiscoverySetupFacts = {
+      chore_count:              choreRow?.cnt ?? 0,
+      has_proof_required_chore: (proofRow?.cnt ?? 0) > 0,
+      has_active_goal:          (goalRow?.cnt ?? 0) > 0,
+    };
+    const signature = buildSetupSignature(setupFacts);
+
+    const cachedDiscovery = await env.DB.prepare(`
+      SELECT setup_signature, intro, actions, source FROM discovery_briefings WHERE child_id = ?
+    `).bind(effectiveChildId)
+      .first<{ setup_signature: string; intro: string; actions: string; source: 'ai' | 'rule_based' }>();
+
+    if (cachedDiscovery && cachedDiscovery.setup_signature === signature) {
+      discoveryBriefing = {
+        intro:   cachedDiscovery.intro,
+        actions: JSON.parse(cachedDiscovery.actions) as string[],
+        source:  cachedDiscovery.source,
+      };
+    } else {
+      const outstanding = getOutstandingCandidates(setupFacts);
+      const generated    = await generateDiscoveryBriefing(env, effectiveChildId, childName, outstanding);
+
+      await env.DB.prepare(`
+        INSERT INTO discovery_briefings (child_id, family_id, setup_signature, intro, actions, source)
+        VALUES (?, ?, ?, ?, ?, ?)
+        ON CONFLICT(child_id) DO UPDATE SET
+          family_id       = excluded.family_id,
+          setup_signature = excluded.setup_signature,
+          intro           = excluded.intro,
+          actions         = excluded.actions,
+          source          = excluded.source,
+          created_at      = unixepoch()
+      `).bind(
+        effectiveChildId, family_id, signature,
+        generated.intro, JSON.stringify(generated.actions), generated.source,
+      ).run();
+
+      discoveryBriefing = generated;
+    }
+  }
 
   // ── 9. Orchard Lead Mentor Briefing (AI, cached per week) ────────────────
   let mentorBriefing: MentorBriefing | null = null;
@@ -666,6 +716,9 @@ export async function handleInsights(request: Request, env: Env): Promise<Respon
 
     // AI Executive Briefing (null during Discovery Phase)
     mentor_briefing: mentorBriefing,
+
+    // Discovery Phase onboarding briefing (null once past Discovery Phase)
+    discovery_briefing: discoveryBriefing,
 
     // Sparkline data
     sparkline_points:       sparklinePoints,
@@ -1403,6 +1456,104 @@ async function generateBriefing(env: Env, childId: string, input: BriefingInput)
     });
 
     return buildRuleBasedBriefing(input);
+  }
+}
+
+async function generateDiscoveryBriefing(
+  env:         Env,
+  childId:     string,
+  childName:   string,
+  outstanding: DiscoveryCandidateKey[],
+): Promise<DiscoveryBriefingContent & { source: 'ai' | 'rule_based' }> {
+  const systemPrompt = `You are the 'Orchard Lead', a collaborative financial coach for parents. \
+A child has just started on Morechard and has not yet completed enough tasks for real behavioural \
+coaching. Your job is to write a short, warm onboarding note for the parent.
+
+You are given a list of "outstanding" setup steps for this child — a subset of:
+- ASSIGN_MORE_CHORES: fewer than 3 chores are currently assigned to the child.
+- SET_A_GOAL: the child has no active savings goal.
+- ENABLE_PHOTO_CHECKIN: none of the child's chores require photo proof.
+
+CONSTRAINTS:
+- Only write about the steps in the given "outstanding" list. Never invent or mention a step that
+  is not listed — if a step isn't listed, treat it as already done and do not reference it.
+- If "outstanding" is an empty array, write ONLY a short intro telling the parent everything is
+  set up and you just need a few completions from the child to start coaching — return an empty
+  "actions" array in that case.
+- Use first-person singular ("I'm building a picture of...") — this note is from the Mentor
+  observing the child, distinct from the family-wide "We" voice used elsewhere in the app.
+- Tone: warm, professional, not childish. UK English.
+- Respond ONLY with a valid JSON object. No markdown, no commentary, no extra fields.
+
+Response schema (strict):
+{
+  "intro": "<1-2 sentences>",
+  "actions": ["<one sentence per outstanding step, same order as given, empty array if none>"]
+}`;
+
+  const userPrompt = JSON.stringify({ child_name: childName, outstanding });
+
+  const messages = [
+    { role: 'system', content: systemPrompt },
+    { role: 'user',   content: userPrompt },
+  ];
+  const traceId = crypto.randomUUID();
+  const t0      = Date.now();
+
+  try {
+    const res = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type':  'application/json',
+        'Authorization': `Bearer ${env.OPENAI_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model:           'gpt-4o-mini',
+        messages,
+        max_tokens:      250,
+        response_format: { type: 'json_object' },
+      }),
+      signal: AbortSignal.timeout(10000),
+    });
+
+    if (!res.ok) throw new Error(`OpenAI ${res.status}`);
+
+    const data   = await res.json() as { choices: Array<{ message: { content: string } }> };
+    const raw    = data.choices[0]?.message?.content ?? '';
+    const parsed = JSON.parse(raw) as Partial<DiscoveryBriefingContent>;
+
+    if (!parsed.intro || !Array.isArray(parsed.actions)) {
+      throw new Error('Incomplete AI response schema');
+    }
+
+    const actions = parsed.actions.filter((a): a is string => typeof a === 'string').slice(0, 3);
+
+    captureAiGeneration(env, {
+      distinctId:     childId,
+      traceId,
+      spanName:       'discovery_briefing',
+      model:          'gpt-4o-mini',
+      provider:       'openai',
+      input:          messages,
+      outputText:     raw,
+      latencySeconds: (Date.now() - t0) / 1000,
+    });
+
+    return { intro: parsed.intro, actions, source: 'ai' };
+  } catch (err) {
+    captureAiGeneration(env, {
+      distinctId:     childId,
+      traceId,
+      spanName:       'discovery_briefing',
+      model:          'gpt-4o-mini',
+      provider:       'openai',
+      input:          messages,
+      latencySeconds: (Date.now() - t0) / 1000,
+      isError:        true,
+      errorMessage:   err instanceof Error ? err.message : String(err),
+    });
+
+    return { ...buildRuleBasedDiscoveryBriefing(childName, outstanding), source: 'rule_based' };
   }
 }
 

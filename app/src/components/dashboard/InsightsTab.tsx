@@ -2,14 +2,18 @@
  * InsightsTab — Parent behavioural dashboard for each child.
  *
  * Layout order:
- *  1. Child selector (multi-child only)
- *  2. Period toggle
+ *  1. Family Audit card (monthly, family-wide AI rollup)
+ *  2. Mentor section    — carousel when > 1 card (weekly, per-child AI briefing —
+ *                          kept adjacent to the Family Audit card above)
  *  3. Balance bar (available | allocated savings | lifetime)
  *  4. Sparkline cards  (Responsibility · Consistency · Savings)
  *  5. Effort preference tag
- *  6. Mentor section   — carousel when > 1 card
- *  7. Learning Lab     (learning_lab_enabled only)
- *  8. Progress Summary stats
+ *  6. Learning Lab     (learning_lab_enabled only)
+ *  7. Progress Summary stats
+ *
+ * The period toggle ("This week / This month / All time") is rendered as a
+ * fixed bar in the thumb zone, just above the bottom nav — not part of the
+ * scrolling content order above.
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react'
@@ -17,11 +21,12 @@ import { AnimatePresence } from 'framer-motion'
 import type { ChildRecord, InsightsData, MentorBriefing } from '../../lib/api'
 import { getInsights, formatCurrency, getChildNudges } from '../../lib/api'
 import { useAndroidBack } from '../../hooks/useAndroidBack'
-import { PremiumShell, MentorAvatar, ProBadge, injectPremiumStyles } from '../ui/PremiumShell'
+import { PremiumShell, MentorAvatar, ProBadge, AiDisclosurePill, injectPremiumStyles } from '../ui/PremiumShell'
 import { SparklineCard } from './SparklineCard'
 import { SparklineExpanded } from './SparklineExpanded'
 import { LabSection } from './LabSection'
 import { AnimatedStat } from './AnimatedStat'
+import { FamilyAuditCard } from './FamilyAuditCard'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -71,22 +76,31 @@ export function InsightsTab({ familyId, child }: Props) {
   return (
     <div className="space-y-4">
 
-      {/* ── Period toggle ── */}
-      <div className="flex gap-1.5 bg-[var(--color-surface-alt)] rounded-xl p-1">
-        {(Object.keys(PERIOD_LABELS) as Period[]).map(p => (
-          <button
-            key={p}
-            onClick={() => setPeriod(p)}
-            className={`
-              tap-target-44 flex-1 py-1.5 rounded-lg text-[12px] font-semibold transition-all duration-150 cursor-pointer
-              ${period === p
-                ? 'bg-[var(--color-surface)] text-[var(--color-text)] shadow-sm'
-                : 'text-[var(--color-text-muted)] hover:text-[var(--color-text)]'}
-            `}
-          >
-            {PERIOD_LABELS[p]}
-          </button>
-        ))}
+      <FamilyAuditCard familyId={familyId} />
+
+      {/* ── Period toggle — fixed in the thumb zone, just above the bottom nav ── */}
+      <div className="fixed bottom-0 inset-x-0 z-20 flex justify-center pointer-events-none">
+        <div
+          className="pointer-events-auto w-full max-w-[520px] mx-3"
+          style={{ marginBottom: 'calc(max(12px, env(safe-area-inset-bottom)) + 68px)' }}
+        >
+          <div className="flex gap-1.5 bg-[var(--color-surface-alt)] rounded-xl p-1 shadow-lg border border-[var(--color-border)]">
+            {(Object.keys(PERIOD_LABELS) as Period[]).map(p => (
+              <button
+                key={p}
+                onClick={() => setPeriod(p)}
+                className={`
+                  tap-target-44 flex-1 py-1.5 rounded-lg text-[12px] font-semibold transition-all duration-150 cursor-pointer
+                  ${period === p
+                    ? 'bg-[var(--color-surface)] text-[var(--color-text)] shadow-sm'
+                    : 'text-[var(--color-text-muted)] hover:text-[var(--color-text)]'}
+                `}
+              >
+                {PERIOD_LABELS[p]}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
 
       {loading ? (
@@ -138,10 +152,24 @@ function InsightsDashboard({
         </div>
       )}
 
-      {/* 1. Balance bar */}
+      {/* 1. Premium Mentor section — kept adjacent to FamilyAuditCard above */}
+      <MentorSection data={data} child={child} period={period} onViewTrends={() => {
+        // Open the metric with the largest absolute trend delta
+        const t = data.trends
+        if (!t) { setExpandedMetric('consistency'); return }
+        const candidates: ['responsibility' | 'consistency' | 'savings', number][] = [
+          ['responsibility', Math.abs(t.responsibility?.delta ?? 0)],
+          ['consistency',    Math.abs(t.consistency?.delta    ?? 0)],
+          ['savings',        Math.abs(t.horizon?.delta        ?? 0)],
+        ]
+        candidates.sort((a, b) => b[1] - a[1])
+        setExpandedMetric(candidates[0][0])
+      }} />
+
+      {/* 2. Balance bar */}
       <BalanceBar data={data} currency={currency} />
 
-      {/* 2. Sparkline cards */}
+      {/* 3. Sparkline cards */}
       <div className="grid grid-cols-3 gap-2.5">
         <SparklineCard
           label="Responsibility"
@@ -172,24 +200,10 @@ function InsightsDashboard({
         />
       </div>
 
-      {/* 3. Effort preference tag */}
+      {/* 4. Effort preference tag */}
       {!data.is_discovery_phase && data.effort_preference && (
         <EffortTag preference={data.effort_preference} child={child} />
       )}
-
-      {/* 4. Premium Mentor section */}
-      <MentorSection data={data} child={child} period={period} onViewTrends={() => {
-        // Open the metric with the largest absolute trend delta
-        const t = data.trends
-        if (!t) { setExpandedMetric('consistency'); return }
-        const candidates: ['responsibility' | 'consistency' | 'savings', number][] = [
-          ['responsibility', Math.abs(t.responsibility?.delta ?? 0)],
-          ['consistency',    Math.abs(t.consistency?.delta    ?? 0)],
-          ['savings',        Math.abs(t.horizon?.delta        ?? 0)],
-        ]
-        candidates.sort((a, b) => b[1] - a[1])
-        setExpandedMetric(candidates[0][0])
-      }} />
 
       {/* 5. Child nudge summary — what the AI sent to the child this week */}
       {childNudgeSummary && (
@@ -409,6 +423,8 @@ function MentorCarousel({
 // ── Discovery card ────────────────────────────────────────────────────────────
 
 function DiscoveryCard({ data, name }: { data: InsightsData; name: string }) {
+  const briefing = data.discovery_briefing
+
   return (
     <PremiumShell>
       <div className="px-4 pt-5 pb-4 relative z-10">
@@ -420,10 +436,12 @@ function DiscoveryCard({ data, name }: { data: InsightsData; name: string }) {
             <MentorAvatar />
             <div>
               <div className="flex items-center gap-2 mb-0.5">
-                <span className="text-[10px] font-bold tracking-widest uppercase" style={{ color: '#9ca3af' }}>
+                <span className="text-[10px] font-bold tracking-widest uppercase" style={{ color: '#6b9e87' }}>
                   Orchard Mentor
                 </span>
-                <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+                {briefing?.source === 'ai'
+                  ? <AiDisclosurePill />
+                  : <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />}
               </div>
               <p className="text-[15px] font-extrabold tracking-tight" style={{ color: '#f0fdf4' }}>
                 Getting to know {name}
@@ -449,28 +467,19 @@ function DiscoveryCard({ data, name }: { data: InsightsData; name: string }) {
 
         {/* Body — advisor prose style */}
         <p className="text-[13px] leading-relaxed mb-4" style={{ color: '#a7c4b5' }}>
-          I'm building a picture of how <span style={{ color: '#e2f5ee', fontWeight: 600 }}>{name}</span> approaches their responsibilities.
-          Once I've seen a few more completed tasks, I'll have enough to give you genuinely useful, specific coaching — not generic tips.
-        </p>
-        <p className="text-[12px] leading-relaxed mb-4" style={{ color: '#6b9e87' }}>
-          To speed this up, try these three things this week:
+          {briefing
+            ? briefing.intro
+            : <>I'm building a picture of how <span style={{ color: '#e2f5ee', fontWeight: 600 }}>{name}</span> approaches their responsibilities.</>}
         </p>
 
         {/* Action list */}
-        <div className="space-y-2.5 mb-4">
-          <DiscoveryAction
-            step="01"
-            text={`Assign 2–3 small daily tasks so I can spot ${name}'s consistency patterns.`}
-          />
-          <DiscoveryAction
-            step="02"
-            text={`Help ${name} set a savings goal — even a small one — so I can track their planning instincts.`}
-          />
-          <DiscoveryAction
-            step="03"
-            text="Turn on photo check-in for one task, so I can measure follow-through accurately."
-          />
-        </div>
+        {briefing && briefing.actions.length > 0 && (
+          <div className="space-y-2.5 mb-4">
+            {briefing.actions.map((text, i) => (
+              <DiscoveryAction key={i} step={String(i + 1).padStart(2, '0')} text={text} />
+            ))}
+          </div>
+        )}
 
       </div>
     </PremiumShell>
@@ -538,12 +547,7 @@ function LiveBriefingCard({
                     {p.label}
                   </span>
                   {/* EU AI Act Article 50 disclosure — visible on every AI-generated card */}
-                  {briefing.source !== 'fallback' && (
-                    <span className="text-[9px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-full"
-                          style={{ background: 'rgba(255,255,255,0.08)', color: 'rgba(164,196,181,0.85)', border: '1px solid rgba(255,255,255,0.1)' }}>
-                      AI-generated
-                    </span>
-                  )}
+                  {briefing.source !== 'fallback' && <AiDisclosurePill />}
                 </div>
                 <p className="text-[15px] font-extrabold tracking-tight" style={{ color: '#f0fdf4' }}>
                   {PERIOD_NOTE_LABEL[period]}

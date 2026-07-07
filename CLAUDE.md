@@ -230,7 +230,7 @@ cd worker && npx wrangler d1 migrations apply morechard --remote --env productio
   - [x] `insight_snapshots` D1 table — weekly KPI snapshots with trend deltas (consistency, responsibility, planning horizon)
   - [x] Temporal context: delta calculation vs. prior week snapshot, direction indicators (up/down/flat)
   - [x] Velocity context: Orchard mode (avg tasks/week) vs. Clean mode (avg £ earned/week)
-  - [x] Orchard Lead AI briefing via `@cf/meta/llama-3-8b-instruct` with 5s timeout + rule-based fallback
+  - [x] Orchard Lead AI briefing via OpenAI `gpt-4o-mini` with 10s timeout + rule-based fallback
   - [x] D1 briefing cache — AI runs once per week per child; subsequent loads return instantly
   - [x] Literacy Matrix integration — all briefings grounded in Pillars 1–5 with explicit Pillar naming
   - [x] Pillar 5 surplus trigger — fires when balance > £100 or all goals funded
@@ -245,8 +245,7 @@ cd worker && npx wrangler d1 migrations apply morechard --remote --env productio
   - [x] CreateChoreSheet tile grid + fuzzy search redesign
   - [x] RateGuideSheet (parent) + ChoreGuideSheet (child)
   - [x] Fast-Track suggestion flow (post-save prompt)
-- [ ] An AI-driven "Audit" of monthly spending across all children to identify family-wide trends
-- [ ] Linking "Seasonal" events (Birthdays, Holidays, School trips) to the Mentor's advice so it can predict future spending needs
+- [x] An AI-driven "Audit" of monthly spending across all children to identify family-wide trends — Family Audit card in parent Insights tab (`GET /api/family-audit`, `family_audit_snapshots` cache table); shares the "Orchard Mentor" header/`ProBadge`/`AiDisclosurePill` design system with the per-child briefing card
 
 ### **Phase 6: Compliance & Legal (The "Audit" Factor)**
 - [ ] Build 'Court-Ready' PDF Audit Export for co-parents
