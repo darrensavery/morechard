@@ -1180,17 +1180,22 @@ html:has(.feature-page) nav {
   display: block;
 }
 
-/* SVG ring — centred over the video */
+/* SVG ring — small progress-dial badge, bottom-right corner of the video */
 .fp-ring {
   position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
+  bottom: 16px;
+  right: 16px;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: rgba(15, 26, 20, 0.55);
+  backdrop-filter: blur(4px);
+  box-shadow: 0 2px 10px rgba(0,0,0,0.25);
   pointer-events: none;
 }
 
 @keyframes ring-fill {
-  from { stroke-dashoffset: 503; }
+  from { stroke-dashoffset: 164; }
   to   { stroke-dashoffset: 0; }
 }
 
@@ -1200,20 +1205,20 @@ html:has(.feature-page) nav {
   100% { filter: drop-shadow(0 0 2px rgba(0,149,156,0.35)); }
 }
 
-/* circumference of r=80 circle = 2π×80 ≈ 503 */
+/* circumference of r=26 circle = 2π×26 ≈ 164 */
 .fp-ring-track {
   fill: none;
-  stroke: rgba(255,255,255,0.12);
+  stroke: rgba(255,255,255,0.2);
   stroke-width: 5;
 }
 
 .fp-ring-fill {
   fill: none;
   stroke: var(--teal);
-  stroke-width: 6;
+  stroke-width: 5;
   stroke-linecap: round;
-  stroke-dasharray: 503;
-  stroke-dashoffset: 503;
+  stroke-dasharray: 164;
+  stroke-dashoffset: 164;
   transform-origin: center;
   transform: rotate(-90deg);
   opacity: 0;
