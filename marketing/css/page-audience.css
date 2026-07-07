@@ -1316,22 +1316,15 @@ body, body.dark { transition: background-color 0.55s cubic-bezier(0,0,0.6,1), co
 .audience-section .section-sub,
 .ledger-col:not(.shared),
 .ledger-col .ledger-total strong,
-.audience-image-wide {
+.audience-image-wide,
+#nav,
+#nav.scrolled {
   transition-property:
     background-color,
     border-color,
     color,
     box-shadow,
     transform;
-  transition-duration: 0.55s;
-  transition-timing-function: cubic-bezier(0,0,0.6,1);
-}
-/* Nav keeps its scroll-triggered background/border snapping instantly (see base.css)
-   so page content never bleeds through mid-fade; only its text color follows the
-   theme-mood transition. */
-#nav,
-#nav.scrolled {
-  transition-property: color, box-shadow, transform;
   transition-duration: 0.55s;
   transition-timing-function: cubic-bezier(0,0,0.6,1);
 }
