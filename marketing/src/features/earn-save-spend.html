@@ -594,6 +594,16 @@
           if (mp4)  { var s2 = document.createElement('source'); s2.src = mp4;  s2.type = 'video/mp4';  vid.appendChild(s2); }
           vid.load();
           vid.play();
+          // Sync the ring's fill duration to the video's real length so it
+          // completes right as each loop ends, instead of a guessed value.
+          vid.addEventListener('loadedmetadata', function () {
+            if (isFinite(vid.duration) && vid.duration > 0) {
+              var delay = 0.3;
+              var fillDuration = Math.max(vid.duration - delay, 1);
+              ringWrap.style.setProperty('--ring-delay', delay + 's');
+              ringWrap.style.setProperty('--ring-fill-duration', fillDuration + 's');
+            }
+          });
           // Restart ring each time the video loops
           vid.addEventListener('seeked', function () {
             if (vid.currentTime < 0.5) restartRing();

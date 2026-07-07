@@ -1221,13 +1221,15 @@ html:has(.feature-page) nav {
   transition: opacity 0.4s;
 }
 
-/* Triggered when the pair scrolls into view */
+/* Triggered when the pair scrolls into view.
+   --ring-delay / --ring-fill-duration are set from JS once the video's real
+   duration is known, so the ring completes exactly as each loop ends. */
 .fp-ring-wrap.ring-active .fp-ring-fill {
   opacity: 1;
   animation:
-    ring-fill 9s linear forwards,
-    ring-glow-pulse 2.5s ease-in-out 0.5s infinite;
-  animation-delay: 0.5s, 0.5s;
+    ring-fill var(--ring-fill-duration, 7.7s) linear forwards,
+    ring-glow-pulse 2.5s ease-in-out var(--ring-delay, 0.3s) infinite;
+  animation-delay: var(--ring-delay, 0.3s), var(--ring-delay, 0.3s);
 }
 
 /* ── Hero carousel ── */
