@@ -1225,7 +1225,7 @@ html:has(.feature-page) nav {
 .fp-ring-wrap.ring-active .fp-ring-fill {
   opacity: 1;
   animation:
-    ring-fill 9.5s linear forwards,
+    ring-fill 9s linear forwards,
     ring-glow-pulse 2.5s ease-in-out 0.5s infinite;
   animation-delay: 0.5s, 0.5s;
 }
