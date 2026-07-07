@@ -245,8 +245,7 @@ cd worker && npx wrangler d1 migrations apply morechard --remote --env productio
   - [x] CreateChoreSheet tile grid + fuzzy search redesign
   - [x] RateGuideSheet (parent) + ChoreGuideSheet (child)
   - [x] Fast-Track suggestion flow (post-save prompt)
-- [ ] An AI-driven "Audit" of monthly spending across all children to identify family-wide trends
-- [ ] Linking "Seasonal" events (Birthdays, Holidays, School trips) to the Mentor's advice so it can predict future spending needs
+- [x] An AI-driven "Audit" of monthly spending across all children to identify family-wide trends — Family Audit card in parent Insights tab (`GET /api/family-audit`, `family_audit_snapshots` cache table); shares the "Orchard Mentor" header/`ProBadge`/`AiDisclosurePill` design system with the per-child briefing card
 
 ### **Phase 6: Compliance & Legal (The "Audit" Factor)**
 - [ ] Build 'Court-Ready' PDF Audit Export for co-parents
