@@ -1,5 +1,12 @@
 /* ── Feature pages — shared layout ── */
 
+/* Nav sits over a solid cream hero from the top (no photo underneath), so the
+   scroll-triggered background must snap instantly — a fade would let hero
+   text bleed through the nav for a moment while scrolling. */
+html:has(.feature-page) nav {
+  transition: none;
+}
+
 /* Page wrapper */
 .feature-page {
   padding-top: var(--h-nav);

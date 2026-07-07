@@ -8,6 +8,12 @@ html:has(.pricing-page) body:not(.dark) nav:not(.scrolled):not(:has(.nav-group.i
   color: var(--teal);
   background-color: rgba(0,149,156,0.06);
 }
+/* Nav sits over a solid cream hero from the top (no photo underneath), so the
+   scroll-triggered background must snap instantly — a fade would let hero
+   text bleed through the nav for a moment while scrolling. */
+html:has(.pricing-page) nav {
+  transition: none;
+}
 
 /* ── Accessibility ── */
 .sr-only {
