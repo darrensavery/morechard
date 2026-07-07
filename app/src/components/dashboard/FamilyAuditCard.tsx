@@ -7,7 +7,7 @@
 import { useEffect, useState } from 'react'
 import { getFamilyAudit } from '../../lib/api'
 import type { FamilyAuditData } from '../../lib/api'
-import { PremiumShell, MentorAvatar, AiDisclosurePill, injectPremiumStyles } from '../ui/PremiumShell'
+import { PremiumShell, MentorAvatar, ProBadge, AiDisclosurePill, injectPremiumStyles } from '../ui/PremiumShell'
 
 interface Props {
   familyId: string
@@ -46,12 +46,23 @@ export function FamilyAuditCard({ familyId }: Props) {
     <PremiumShell>
       <div className="px-4 pt-4 pb-3.5 relative z-10">
 
-        <div className="flex items-center gap-2 mb-3">
-          <MentorAvatar />
-          <span className="text-[10px] font-black uppercase tracking-wider" style={{ color: '#0d9488' }}>
-            This Month, Family-Wide
-          </span>
-          {data.source === 'ai' && <AiDisclosurePill />}
+        {/* Header row — matches DiscoveryCard / LiveBriefingCard exactly */}
+        <div className="flex items-start justify-between gap-3 mb-3">
+          <div className="flex items-center gap-3">
+            <MentorAvatar />
+            <div>
+              <div className="flex items-center gap-2 mb-0.5">
+                <span className="text-[10px] font-bold tracking-widest uppercase" style={{ color: '#6b9e87' }}>
+                  Orchard Mentor
+                </span>
+                {data.source === 'ai' && <AiDisclosurePill />}
+              </div>
+              <p className="text-[15px] font-extrabold tracking-tight" style={{ color: '#f0fdf4' }}>
+                This Month, Family-Wide
+              </p>
+            </div>
+          </div>
+          <ProBadge />
         </div>
 
         <div className="grid grid-cols-4 gap-2 mb-3.5">
