@@ -31,15 +31,7 @@ export async function handleGetFamilyAudit(request: Request, env: Env): Promise<
   const monthKey   = getMonthKey(new Date());
   const monthStart = getMonthStartEpoch(monthKey);
 
-  const cached = await env.DB.prepare(`
-    SELECT total_earned_pence, total_spent_pence, total_saved_pence, total_given_pence,
-           flagged_child_id, flagged_pillar, observation, behavioral_root, the_action, source
-    FROM family_audit_snapshots WHERE family_id = ? AND month_key = ?
-  `).bind(family_id, monthKey).first<{
-    total_earned_pence: number; total_spent_pence: number; total_saved_pence: number; total_given_pence: number;
-    flagged_child_id: string; flagged_pillar: string;
-    observation: string; behavioral_root: string; the_action: string; source: 'rule_based' | 'ai';
-  }>();
+  const cached = await getCachedSnapshot(env, family_id, monthKey);
 
   if (cached) {
     return json({
@@ -104,8 +96,15 @@ export async function handleGetFamilyAudit(request: Request, env: Env): Promise<
 
     const [balRow, goalsRow, completionRow] = await Promise.all([
       env.DB.prepare(`
-        SELECT COALESCE(SUM(CASE WHEN entry_type='credit' THEN amount ELSE -amount END),0) AS bal
+        SELECT COALESCE(SUM(
+          CASE entry_type
+            WHEN 'credit'  THEN amount
+            WHEN 'payment' THEN -amount
+            ELSE 0
+          END
+        ),0) AS bal
         FROM ledger WHERE family_id=? AND child_id=?
+          AND verification_status IN ('verified_auto','verified_manual')
       `).bind(family_id, childId).first<{ bal: number }>(),
 
       env.DB.prepare(`
@@ -140,7 +139,7 @@ export async function handleGetFamilyAudit(request: Request, env: Env): Promise<
   const content = await generateFamilyAuditContent(env, family_id, totals, flagged, familyCtx.family_name);
 
   await env.DB.prepare(`
-    INSERT INTO family_audit_snapshots
+    INSERT OR IGNORE INTO family_audit_snapshots
       (family_id, month_key, total_earned_pence, total_spent_pence, total_saved_pence, total_given_pence,
        flagged_child_id, flagged_pillar, observation, behavioral_root, the_action, source)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -151,13 +150,40 @@ export async function handleGetFamilyAudit(request: Request, env: Env): Promise<
     content.observation, content.behavioral_root, content.the_action, content.source,
   ).run();
 
+  // Re-read from the cache table rather than returning `content` directly: if a concurrent
+  // request won the INSERT OR IGNORE race, this returns the winner's persisted text so the
+  // response stays consistent with what's actually cached.
+  const persisted = await getCachedSnapshot(env, family_id, monthKey);
+
   return json({
     month: monthKey,
-    totals,
-    flagged_child_id: flagged.child_id,
-    flagged_pillar:   flagged.pillar,
-    ...content,
+    totals: persisted ? {
+      total_earned_pence: persisted.total_earned_pence,
+      total_spent_pence:  persisted.total_spent_pence,
+      total_saved_pence:  persisted.total_saved_pence,
+      total_given_pence:  persisted.total_given_pence,
+    } : totals,
+    flagged_child_id: persisted?.flagged_child_id ?? flagged.child_id,
+    flagged_pillar:   persisted?.flagged_pillar   ?? flagged.pillar,
+    observation:      persisted?.observation      ?? content.observation,
+    behavioral_root:  persisted?.behavioral_root  ?? content.behavioral_root,
+    the_action:       persisted?.the_action       ?? content.the_action,
+    source:           persisted?.source           ?? content.source,
   });
+}
+
+interface CachedFamilyAuditSnapshot {
+  total_earned_pence: number; total_spent_pence: number; total_saved_pence: number; total_given_pence: number;
+  flagged_child_id: string; flagged_pillar: string;
+  observation: string; behavioral_root: string; the_action: string; source: 'rule_based' | 'ai';
+}
+
+async function getCachedSnapshot(env: Env, family_id: string, monthKey: string): Promise<CachedFamilyAuditSnapshot | null> {
+  return env.DB.prepare(`
+    SELECT total_earned_pence, total_spent_pence, total_saved_pence, total_given_pence,
+           flagged_child_id, flagged_pillar, observation, behavioral_root, the_action, source
+    FROM family_audit_snapshots WHERE family_id = ? AND month_key = ?
+  `).bind(family_id, monthKey).first<CachedFamilyAuditSnapshot>();
 }
 
 interface GeneratedContent {
