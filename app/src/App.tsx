@@ -9,6 +9,7 @@ import { AppUrlListener } from './components/AppUrlListener'
 import { AndroidBackController } from './components/AndroidBackController'
 import { AppAutoLock } from './components/AppAutoLock'
 import { FreshdeskWidget } from './components/FreshdeskWidget'
+import { hasSeenOnboarding }  from './lib/onboarding'
 // Sentry is deferred via requestIdleCallback in main.tsx — import lazily here too
 // so vendor-sentry stays out of the initial module graph
 async function getSentry() { return import('@sentry/react') }
@@ -26,6 +27,7 @@ const PaymentSuccessScreen = lazy(() => import('./screens/PaymentSuccessScreen')
 const DemoRegisterScreen   = lazy(() => import('./components/demo/DemoRegisterScreen'))
 const VerifyLedgerHashScreen = lazy(() => import('./screens/VerifyLedgerHashScreen').then(m => ({ default: m.VerifyLedgerHashScreen })))
 const LockScreen             = lazy(() => import('./screens/LockScreen').then(m => ({ default: m.LockScreen })))
+const OnboardingCarousel     = lazy(() => import('./screens/OnboardingCarousel').then(m => ({ default: m.OnboardingCarousel })))
 
 /**
  * MagicLinkVerifyScreen — handles /auth/verify?token=...
@@ -109,13 +111,14 @@ function MagicLinkVerifyScreen() {
   )
 }
 
-/** Root — cold start shows landing page, returning user goes to lock screen. */
+/** Root — cold start shows onboarding then landing page, returning user goes to lock screen. */
 function RootGate() {
   const identity = getDeviceIdentity()
   // If identity exists, redirect immediately with no intermediate render.
   // Rendering LandingGate even for one frame causes a visible flash on
   // pull-to-refresh and after logout.
   if (identity) return <Navigate to="/lock" replace />
+  if (!hasSeenOnboarding()) return <Navigate to="/onboarding" replace />
   return <LandingGate />
 }
 
@@ -202,8 +205,9 @@ export default function App() {
       <FreshdeskWidget />
       <Suspense fallback={<SuspenseFallback />}>
         <Routes>
-          <Route path="/"         element={<RootGate />} />
-          <Route path="/lock"     element={<LockScreen />} />
+          <Route path="/"           element={<RootGate />} />
+          <Route path="/onboarding" element={<OnboardingCarousel />} />
+          <Route path="/lock"       element={<LockScreen />} />
           <Route path="/join"     element={<JoinFamilyScreen />} />
           <Route
             path="/register"
