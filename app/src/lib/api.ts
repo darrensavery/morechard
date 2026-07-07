@@ -592,6 +592,7 @@ export interface InsightsData {
     | { mode: 'professional';  avg_earned_pence_week: number }
   ) | null;
   mentor_briefing: MentorBriefing | null;
+  discovery_briefing: { intro: string; actions: string[]; source: 'ai' | 'rule_based' } | null;
   // New additive fields
   sparkline_points:       SparklinePoints | null;
   learning_lab_enabled:   boolean;

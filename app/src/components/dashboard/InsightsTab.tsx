@@ -423,6 +423,8 @@ function MentorCarousel({
 // ── Discovery card ────────────────────────────────────────────────────────────
 
 function DiscoveryCard({ data, name }: { data: InsightsData; name: string }) {
+  const briefing = data.discovery_briefing
+
   return (
     <PremiumShell>
       <div className="px-4 pt-5 pb-4 relative z-10">
@@ -437,7 +439,9 @@ function DiscoveryCard({ data, name }: { data: InsightsData; name: string }) {
                 <span className="text-[10px] font-bold tracking-widest uppercase" style={{ color: '#6b9e87' }}>
                   Orchard Mentor
                 </span>
-                <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+                {briefing?.source === 'ai'
+                  ? <AiDisclosurePill />
+                  : <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />}
               </div>
               <p className="text-[15px] font-extrabold tracking-tight" style={{ color: '#f0fdf4' }}>
                 Getting to know {name}
@@ -463,28 +467,19 @@ function DiscoveryCard({ data, name }: { data: InsightsData; name: string }) {
 
         {/* Body — advisor prose style */}
         <p className="text-[13px] leading-relaxed mb-4" style={{ color: '#a7c4b5' }}>
-          I'm building a picture of how <span style={{ color: '#e2f5ee', fontWeight: 600 }}>{name}</span> approaches their responsibilities.
-          Once I've seen a few more completed tasks, I'll have enough to give you genuinely useful, specific coaching — not generic tips.
-        </p>
-        <p className="text-[12px] leading-relaxed mb-4" style={{ color: '#6b9e87' }}>
-          To speed this up, try these three things this week:
+          {briefing
+            ? briefing.intro
+            : <>I'm building a picture of how <span style={{ color: '#e2f5ee', fontWeight: 600 }}>{name}</span> approaches their responsibilities.</>}
         </p>
 
         {/* Action list */}
-        <div className="space-y-2.5 mb-4">
-          <DiscoveryAction
-            step="01"
-            text={`Assign 2–3 small daily tasks so I can spot ${name}'s consistency patterns.`}
-          />
-          <DiscoveryAction
-            step="02"
-            text={`Help ${name} set a savings goal — even a small one — so I can track their planning instincts.`}
-          />
-          <DiscoveryAction
-            step="03"
-            text="Turn on photo check-in for one task, so I can measure follow-through accurately."
-          />
-        </div>
+        {briefing && briefing.actions.length > 0 && (
+          <div className="space-y-2.5 mb-4">
+            {briefing.actions.map((text, i) => (
+              <DiscoveryAction key={i} step={String(i + 1).padStart(2, '0')} text={text} />
+            ))}
+          </div>
+        )}
 
       </div>
     </PremiumShell>
