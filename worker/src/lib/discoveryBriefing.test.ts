@@ -5,10 +5,10 @@ import {
 } from './discoveryBriefing.js';
 
 const allDone: DiscoverySetupFacts = {
-  chore_count: 3, has_proof_required_chore: true, has_active_goal: true, jars_enabled: true,
+  chore_count: 3, has_proof_required_chore: true, has_active_goal: true,
 };
 const noneDone: DiscoverySetupFacts = {
-  chore_count: 0, has_proof_required_chore: false, has_active_goal: false, jars_enabled: false,
+  chore_count: 0, has_proof_required_chore: false, has_active_goal: false,
 };
 
 describe('buildSetupSignature', () => {

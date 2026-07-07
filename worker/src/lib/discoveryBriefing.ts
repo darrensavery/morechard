@@ -14,7 +14,6 @@ export interface DiscoverySetupFacts {
   chore_count:              number;
   has_proof_required_chore: boolean;
   has_active_goal:          boolean;
-  jars_enabled:              boolean;
 }
 
 export interface DiscoveryBriefingContent {
@@ -34,7 +33,6 @@ export function buildSetupSignature(facts: DiscoverySetupFacts): string {
     facts.chore_count >= 3 ? '1' : '0',
     facts.has_proof_required_chore ? '1' : '0',
     facts.has_active_goal ? '1' : '0',
-    facts.jars_enabled ? '1' : '0',
   ].join('');
 }
 

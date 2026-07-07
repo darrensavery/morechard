@@ -354,22 +354,19 @@ export async function handleInsights(request: Request, env: Env): Promise<Respon
   let discoveryBriefing: (DiscoveryBriefingContent & { source: 'ai' | 'rule_based' }) | null = null;
 
   if (isDiscoveryPhase) {
-    const [choreRow, proofRow, goalRow, jarRow] = await Promise.all([
+    const [choreRow, proofRow, goalRow] = await Promise.all([
       env.DB.prepare(`SELECT COUNT(*) AS cnt FROM chores WHERE assigned_to = ?`)
         .bind(effectiveChildId).first<{ cnt: number }>(),
       env.DB.prepare(`SELECT COUNT(*) AS cnt FROM chores WHERE assigned_to = ? AND proof_required = 1`)
         .bind(effectiveChildId).first<{ cnt: number }>(),
       env.DB.prepare(`SELECT COUNT(*) AS cnt FROM goals WHERE child_id = ? AND archived = 0`)
         .bind(effectiveChildId).first<{ cnt: number }>(),
-      env.DB.prepare(`SELECT enabled FROM jar_config WHERE family_id = ? AND child_id = ?`)
-        .bind(family_id, effectiveChildId).first<{ enabled: number }>(),
     ]);
 
     const setupFacts: DiscoverySetupFacts = {
       chore_count:              choreRow?.cnt ?? 0,
       has_proof_required_chore: (proofRow?.cnt ?? 0) > 0,
       has_active_goal:          (goalRow?.cnt ?? 0) > 0,
-      jars_enabled:              (jarRow?.enabled ?? 0) === 1,
     };
     const signature = buildSetupSignature(setupFacts);
 
@@ -1529,6 +1526,8 @@ Response schema (strict):
       throw new Error('Incomplete AI response schema');
     }
 
+    const actions = parsed.actions.filter((a): a is string => typeof a === 'string').slice(0, 3);
+
     captureAiGeneration(env, {
       distinctId:     childId,
       traceId,
@@ -1540,7 +1539,7 @@ Response schema (strict):
       latencySeconds: (Date.now() - t0) / 1000,
     });
 
-    return { intro: parsed.intro, actions: parsed.actions, source: 'ai' };
+    return { intro: parsed.intro, actions, source: 'ai' };
   } catch (err) {
     captureAiGeneration(env, {
       distinctId:     childId,
