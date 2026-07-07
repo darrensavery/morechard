@@ -658,7 +658,20 @@
     var slides   = Array.from(document.querySelectorAll('.fp-carousel-slide'));
     var dots     = Array.from(document.querySelectorAll('.fp-carousel-dot'));
     var caption  = document.getElementById('carousel-caption');
+    var slidesEl = document.getElementById('carousel-slides');
     if (!slides.length) return;
+
+    // Lock the container to the tallest slide's height so switching slides
+    // never reflows the content below the carousel.
+    function lockHeight() {
+      var max = 0;
+      slides.forEach(function (slide) {
+        max = Math.max(max, slide.getBoundingClientRect().height);
+      });
+      if (max > 0 && slidesEl) slidesEl.style.height = max + 'px';
+    }
+    lockHeight();
+    window.addEventListener('resize', lockHeight);
 
     var current  = 0;
     var INTERVAL = 4000;

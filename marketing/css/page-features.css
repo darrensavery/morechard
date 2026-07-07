@@ -1253,7 +1253,6 @@ html:has(.feature-page) nav {
 
 .fp-carousel-slide.active {
   opacity: 1;
-  position: relative;
   pointer-events: auto;
 }
 

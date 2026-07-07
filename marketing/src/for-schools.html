@@ -3,8 +3,8 @@
   DESCRIPTION: 25 financial literacy modules mapped to PSHE, CfE, and Curriculum for Wales — each triggered by a child's real money. No cost to pilot with your school.
   CANONICAL: https://morechard.com/for-schools
   PAGE_CSS: page-audience.css
-  HERO_IMAGE: /Images/schools_16_9.png
-  HERO_IMAGE_MOBILE: /Images/schools_3_4.png
+  HERO_IMAGE: /Images/schools_16_9.webp
+  HERO_IMAGE_MOBILE: /Images/schools_3_4.webp
 -->
 
 <!-- SCHEMA_START -->
@@ -290,8 +290,8 @@
   <!-- ── Hero (photo, centred overlay) ── -->
   <section class="audience-hero" id="hero">
     <picture>
-      <source media="(max-width: 960px)" srcset="/Images/schools_3_4.png" />
-      <img class="hero-img" src="/Images/schools_16_9.png" alt="A bright classroom where pupils work together at a table, warm natural light" loading="eager" />
+      <source media="(max-width: 960px)" srcset="/Images/schools_3_4.webp" />
+      <img class="hero-img" src="/Images/schools_16_9.webp" alt="A child at the kitchen table sorting real coins into labelled Save, Spend, and Donate jars, with a classroom-style goals list on a chalkboard behind them" loading="eager" />
     </picture>
     <div class="hero-scrim"></div>
     <div class="hero-content is-center">
@@ -856,6 +856,21 @@
     if (!stage || !tabs.length) return;
     var DWELL = 12000, reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     var cur = 0, startT = 0, lastTs = 0, paused = false;
+    function lockHeight() {
+      var maxH = 0;
+      panels.forEach(function (p) {
+        var wasActive = p.classList.contains('is-active');
+        p.style.cssText += 'position:absolute;left:0;right:0;top:0;visibility:hidden;pointer-events:none;display:grid;';
+        maxH = Math.max(maxH, p.offsetHeight);
+        p.style.cssText = '';
+        p.classList.toggle('is-active', wasActive);
+      });
+      stage.style.minHeight = maxH + 'px';
+    }
+    lockHeight();
+    window.addEventListener('load', lockHeight);
+    var resizeT;
+    window.addEventListener('resize', function () { clearTimeout(resizeT); resizeT = setTimeout(lockHeight, 150); });
     function show(k) {
       cur = ((k % tabs.length) + tabs.length) % tabs.length;
       tabs.forEach(function (t, i) { var on = i === cur; t.classList.toggle('is-active', on); t.setAttribute('aria-selected', String(on)); });
@@ -914,7 +929,7 @@
         if (n && !n.dataset.done) { n.dataset.done = '1'; countUp(n, parseInt(n.dataset.to, 10), 1100); }
         cio.unobserve(card);
       });
-    }, { threshold: 0.55 });
+    }, { threshold: 0, rootMargin: '0px 0px -35% 0px' });
     cards.forEach(function (c) { cio.observe(c); });
   })();
 

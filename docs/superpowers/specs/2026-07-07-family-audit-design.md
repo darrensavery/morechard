@@ -78,10 +78,18 @@ One row per family per calendar month. Cache-on-read, same convention as
   context block).
 - `month_key` is always the current calendar month — no query param.
 - Aggregates, across every child in the family, for the month:
-  - `total_earned_pence` (ledger credits)
-  - `total_spent_pence` (spending table)
-  - `total_saved_pence` (goal_contributions)
-  - `total_given_pence` (jar_movements where jar = 'give')
+  - `total_earned_pence` — `SUM(amount)` from `ledger` where `entry_type = 'credit'`
+  - `total_spent_pence` — `SUM(amount)` from `spending`
+  - `total_saved_pence` — `SUM(delta)` from `jar_movements` where
+    `jar = 'save' AND kind = 'allocation'` (the actual live source of
+    savings accumulation; `goal_contributions` — used by the weekly
+    per-child briefing — is not a real table and that stat is silently
+    always 0 there via a `.catch()`, so this endpoint intentionally does
+    not repeat that mistake)
+  - `total_given_pence` — `SUM(amount)` from `give_requests` where
+    `status = 'fulfilled'` and `fulfilled_at` falls in the month (not
+    `jar_movements` — `give_fulfilled` rows there are audit-only with
+    `delta = 0`)
   - per-child consistency score / planning horizon, reusing the same SQL
     shapes already in `insights.ts`
 - Picks the **flagged child**: run the same Pillar priority ladder used in
