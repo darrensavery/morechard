@@ -12,7 +12,7 @@
  */
 
 import { useEffect } from 'react'
-import { injectPremiumStyles, PremiumShell, MentorAvatar } from '../ui/PremiumShell'
+import { injectPremiumStyles, PremiumShell, MentorAvatar, AiDisclosurePill } from '../ui/PremiumShell'
 import { dismissChildNudge } from '../../lib/api'
 import type { ChildNudge } from '../../lib/api'
 
@@ -55,9 +55,12 @@ export function ChildNudgeBanner({ nudge, appView, onDismiss }: Props) {
         <div className="flex items-start gap-3 mb-3">
           <MentorAvatar accent={accent} />
           <div className="flex-1 min-w-0">
-            <p className="text-[10px] font-black uppercase tracking-wider" style={{ color: accent }}>
-              Your Orchard Mentor
-            </p>
+            <div className="flex items-center gap-1.5">
+              <p className="text-[10px] font-black uppercase tracking-wider" style={{ color: accent }}>
+                Your Orchard Mentor
+              </p>
+              {nudge.source === 'ai' && <AiDisclosurePill />}
+            </div>
             <p className="text-[11px] mt-0.5" style={{ color: 'rgba(167,196,181,0.7)' }}>
               {pillarLabel}
             </p>
@@ -80,9 +83,9 @@ export function ChildNudgeBanner({ nudge, appView, onDismiss }: Props) {
           {text}
         </p>
 
-        {/* Attribution footer */}
+        {/* Attribution footer — the AI-generated distinction is now carried by the header pill above */}
         <p className="text-[10px] mt-3 text-center" style={{ color: 'rgba(107,158,135,0.6)' }}>
-          ✦ Your Orchard Mentor · {nudge.source === 'ai' ? 'AI coaching note' : 'Personalised coaching'}
+          ✦ Your Orchard Mentor · Personalised coaching
         </p>
 
       </div>
