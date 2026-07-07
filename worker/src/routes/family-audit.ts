@@ -17,6 +17,7 @@ import {
   getMonthKey, getMonthStartEpoch, pickFlaggedChild, buildRuleBasedFamilyAudit,
   ChildMonthSignal, FamilyTotals, FlaggedChild,
 } from '../lib/familyAudit.js';
+import { getAvailableBalancePence } from '../lib/ledgerBalance.js';
 
 type AuthedRequest = Request & { auth: JwtPayload };
 
@@ -94,18 +95,8 @@ export async function handleGetFamilyAudit(request: Request, env: Env): Promise<
     const childId   = familyCtx.child_ids[i];
     const childName = familyCtx.child_names[i];
 
-    const [balRow, goalsRow, completionRow] = await Promise.all([
-      env.DB.prepare(`
-        SELECT COALESCE(SUM(
-          CASE entry_type
-            WHEN 'credit'  THEN amount
-            WHEN 'payment' THEN -amount
-            ELSE 0
-          END
-        ),0) AS bal
-        FROM ledger WHERE family_id=? AND child_id=?
-          AND verification_status IN ('verified_auto','verified_manual')
-      `).bind(family_id, childId).first<{ bal: number }>(),
+    const [availableBalRaw, goalsRow, completionRow] = await Promise.all([
+      getAvailableBalancePence(env.DB, family_id, childId),
 
       env.DB.prepare(`
         SELECT COALESCE(SUM(target_amount - current_saved_pence),0) AS locked
@@ -118,7 +109,7 @@ export async function handleGetFamilyAudit(request: Request, env: Env): Promise<
       `).bind(family_id, childId, monthStart).first<{ total: number; first_time: number }>(),
     ]);
 
-    const availableBal    = Math.max(0, balRow?.bal ?? 0);
+    const availableBal    = Math.max(0, availableBalRaw);
     const goalsLocked     = goalsRow?.locked ?? 0;
     const totalHeld       = availableBal + goalsLocked;
     const totalCompleted  = completionRow?.total ?? 0;

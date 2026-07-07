@@ -26,6 +26,7 @@ import { JwtPayload } from '../lib/jwt.js';
 import { captureAiGeneration } from '../lib/posthog.js';
 import { getFamilyContext } from '../lib/intelligence.js';
 import { computeJarSignals, JarSignals } from '../lib/jar-balance.js';
+import { getAvailableBalancePence } from '../lib/ledgerBalance.js';
 
 type AuthedRequest = Request & { auth: JwtPayload };
 
@@ -169,7 +170,7 @@ export async function handleInsights(request: Request, env: Env): Promise<Respon
   }
 
   // ── 5. Financial Metrics ─────────────────────────────────────────────────
-  const [earnedRow, spentRow, savedRow, balanceRow, lifetimeRow, goalsRow] = await Promise.all([
+  const [earnedRow, spentRow, savedRow, lifetimeRow, goalsRow] = await Promise.all([
     env.DB.prepare(`
       SELECT COALESCE(SUM(amount), 0) AS total FROM ledger
       WHERE family_id = ? AND child_id = ? AND entry_type = 'credit'
@@ -192,15 +193,6 @@ export async function handleInsights(request: Request, env: Env): Promise<Respon
       .first<{ total: number }>()
       .catch(() => ({ total: 0 })),
 
-    // Available balance: sum of credits minus debits from ledger
-    env.DB.prepare(`
-      SELECT
-        COALESCE(SUM(CASE WHEN entry_type = 'credit' THEN amount ELSE -amount END), 0) AS available
-      FROM ledger
-      WHERE family_id = ? AND child_id = ?
-    `).bind(family_id, effectiveChildId)
-      .first<{ available: number }>(),
-
     // Lifetime earned
     env.DB.prepare(`
       SELECT COALESCE(SUM(amount), 0) AS total FROM ledger
@@ -222,7 +214,7 @@ export async function handleInsights(request: Request, env: Env): Promise<Respon
   const totalEarned   = earnedRow?.total     ?? 0;
   const totalSpent    = spentRow?.total      ?? 0;
   const totalSaved    = savedRow?.total      ?? 0;
-  const availableBal  = balanceRow?.available ?? 0;
+  const availableBal  = await getAvailableBalancePence(env.DB, family_id, effectiveChildId);
   const lifetimeEarned = lifetimeRow?.total  ?? 0;
   const goalsLocked   = goalsRow?.locked     ?? 0;
 
