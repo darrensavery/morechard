@@ -50,7 +50,7 @@ export function getOutstandingCandidates(facts: DiscoverySetupFacts): DiscoveryC
 const CANDIDATE_TEXT: Record<DiscoveryCandidateKey, (childName: string) => string> = {
   ASSIGN_MORE_CHORES:   (name) => `Assign 2–3 small daily tasks so I can spot ${name}'s consistency patterns.`,
   SET_A_GOAL:           (name) => `Help ${name} set a savings goal — even a small one — so I can track their planning instincts.`,
-  ENABLE_PHOTO_CHECKIN: (name) => `Turn on photo check-in for one task for ${name}, so I can measure follow-through accurately.`,
+  ENABLE_PHOTO_CHECKIN: (name) => `Turn on photo check-in for one task, so I can measure ${name}'s follow-through accurately.`,
 };
 
 /** Deterministic fallback text — used when the LLM call errors or times out. */
