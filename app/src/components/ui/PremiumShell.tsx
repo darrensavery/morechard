@@ -110,3 +110,22 @@ export function ProBadge() {
     </span>
   )
 }
+
+/**
+ * EU AI Act Article 50 disclosure — shown on every card whose content is
+ * genuinely AI-generated (never on deterministic rule-based fallback text).
+ */
+export function AiDisclosurePill() {
+  return (
+    <span
+      className="text-[9px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-full"
+      style={{
+        background: 'rgba(255,255,255,0.08)',
+        color:      'rgba(164,196,181,0.85)',
+        border:     '1px solid rgba(255,255,255,0.1)',
+      }}
+    >
+      AI-generated
+    </span>
+  )
+}

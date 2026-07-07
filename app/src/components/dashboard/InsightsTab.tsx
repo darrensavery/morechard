@@ -17,7 +17,7 @@ import { AnimatePresence } from 'framer-motion'
 import type { ChildRecord, InsightsData, MentorBriefing } from '../../lib/api'
 import { getInsights, formatCurrency, getChildNudges } from '../../lib/api'
 import { useAndroidBack } from '../../hooks/useAndroidBack'
-import { PremiumShell, MentorAvatar, ProBadge, injectPremiumStyles } from '../ui/PremiumShell'
+import { PremiumShell, MentorAvatar, ProBadge, AiDisclosurePill, injectPremiumStyles } from '../ui/PremiumShell'
 import { SparklineCard } from './SparklineCard'
 import { SparklineExpanded } from './SparklineExpanded'
 import { LabSection } from './LabSection'
@@ -538,12 +538,7 @@ function LiveBriefingCard({
                     {p.label}
                   </span>
                   {/* EU AI Act Article 50 disclosure — visible on every AI-generated card */}
-                  {briefing.source !== 'fallback' && (
-                    <span className="text-[9px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-full"
-                          style={{ background: 'rgba(255,255,255,0.08)', color: 'rgba(164,196,181,0.85)', border: '1px solid rgba(255,255,255,0.1)' }}>
-                      AI-generated
-                    </span>
-                  )}
+                  {briefing.source !== 'fallback' && <AiDisclosurePill />}
                 </div>
                 <p className="text-[15px] font-extrabold tracking-tight" style={{ color: '#f0fdf4' }}>
                   {PERIOD_NOTE_LABEL[period]}
