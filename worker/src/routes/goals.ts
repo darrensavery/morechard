@@ -127,10 +127,11 @@ export async function handleGoalUpdate(request: Request, env: Env, id: string): 
   if (!body) return error('Invalid JSON');
 
   const goal = await env.DB
-    .prepare('SELECT family_id FROM goals WHERE id = ?')
-    .bind(id).first<{ family_id: string }>();
+    .prepare('SELECT family_id, child_id FROM goals WHERE id = ?')
+    .bind(id).first<{ family_id: string; child_id: string }>();
   if (!goal) return error('Goal not found', 404);
   if (goal.family_id !== auth.family_id) return error('Forbidden', 403);
+  if (auth.role === 'child' && goal.child_id !== auth.sub) return error('Forbidden', 403);
 
   const allowed = [
     'title','target_amount','currency','category','deadline','alloc_pct','match_rate',
@@ -161,6 +162,7 @@ export async function handleGoalDelete(request: Request, env: Env, id: string): 
     .bind(id).first<{ family_id: string; child_id: string; created_at: number; current_saved_pence: number }>();
   if (!goal) return error('Goal not found', 404);
   if (goal.family_id !== auth.family_id) return error('Forbidden', 403);
+  if (auth.role === 'child' && goal.child_id !== auth.sub) return error('Forbidden', 403);
 
   await env.DB
     .prepare('UPDATE goals SET archived = 1, updated_at = ? WHERE id = ?')
@@ -197,6 +199,7 @@ export async function handleGoalReorder(request: Request, env: Env, id: string):
     .bind(id).first<{ family_id: string; child_id: string; sort_order: number }>();
   if (!goal) return error('Goal not found', 404);
   if (goal.family_id !== auth.family_id) return error('Forbidden', 403);
+  if (auth.role === 'child' && goal.child_id !== auth.sub) return error('Forbidden', 403);
 
   const neighbor = await env.DB.prepare(
     dir === 'up'
