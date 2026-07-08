@@ -11,6 +11,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react'
+import { tick } from '../../lib/haptics'
 import { useGatekeeper } from '../../hooks/useGatekeeper'
 import type { Completion, ChildRecord } from '../../lib/api'
 import {
@@ -63,6 +64,7 @@ export function PendingTab({ familyId, child, onCountChange }: Props) {
   useEffect(() => { load() }, [load])
 
   async function handleApprove(id: string) {
+    void tick()
     setBusy(id)
     try {
       const result = await approveCompletion(id)

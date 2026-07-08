@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
+import { tick } from '../../lib/haptics'
 import type { BalanceSummary, Goal, Chore, ChildNudge } from '../../lib/api'
 import { getBalance, getGoals, getChores, purchaseGoal, formatCurrency, effectiveTarget } from '../../lib/api'
 import { ChildNudgeBanner } from '../child/ChildNudgeBanner'
@@ -94,6 +95,7 @@ export function ChildGoalsTab({ familyId, childId, currency, appView, nudge, onN
   }
 
   async function handlePurchase(goalId: string) {
+    void tick()
     setPurchasing(goalId)
     try {
       await purchaseGoal(goalId)

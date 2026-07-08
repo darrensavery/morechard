@@ -3,6 +3,7 @@
  */
 
 import React, { useState, useRef, useEffect, useCallback } from 'react'
+import { tick } from '../../lib/haptics'
 import type { ChildRecord, Chore, MarketRate } from '../../lib/api'
 import { createChore, updateChore } from '../../lib/api'
 import { currencySymbol } from '../../lib/locale'
@@ -221,6 +222,7 @@ export function CreateChoreSheet({
   // ── Completion Rules toggle logic ──────────────────────────────────────────
 
   function toggleProofRequired() {
+    void tick()
     const next = !form.proof_required
     setForm(f => ({
       ...f,
@@ -237,6 +239,7 @@ export function CreateChoreSheet({
       setConflictMsg(true)
       return
     }
+    void tick()
     setField('auto_approve', !form.auto_approve)
     setConflictMsg(false)
   }

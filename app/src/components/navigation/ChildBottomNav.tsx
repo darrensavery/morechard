@@ -1,5 +1,6 @@
 import { Home, ClipboardList, Wallet, Target, GraduationCap } from 'lucide-react'
 import type { ComponentType } from 'react'
+import { tick } from '../../lib/haptics'
 
 type Tab = 'home' | 'chores' | 'money' | 'goals' | 'lab'
 
@@ -22,12 +23,6 @@ interface Props {
   onTabChange: (tab: Tab) => void
   badges?: Partial<Record<Tab, number>>
   disabled?: boolean
-}
-
-function triggerHaptic() {
-  if ('vibrate' in navigator) {
-    try { navigator.vibrate(1) } catch { /* unsupported */ }
-  }
 }
 
 export function ChildBottomNav({ activeTab, onTabChange, badges = {}, disabled = false }: Props) {
@@ -74,7 +69,7 @@ export function ChildBottomNav({ activeTab, onTabChange, badges = {}, disabled =
               return (
                 <button
                   key={id}
-                  onClick={() => { triggerHaptic(); onTabChange(id) }}
+                  onClick={() => { void tick(); onTabChange(id) }}
                   aria-label={label}
                   aria-current={isActive ? 'page' : undefined}
                   className="relative z-10 flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5 cursor-pointer select-none transition-transform duration-75 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--brand-primary)]"
