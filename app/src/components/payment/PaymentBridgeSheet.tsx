@@ -13,6 +13,7 @@ import { DeepLinkHandler } from './DeepLinkHandler';
 import { SmartCopyPanel } from './SmartCopyPanel';
 import { PaymentConfirmSheet } from './PaymentConfirmSheet';
 import { getDetails } from '../../lib/localBankDetails';
+import { useDragToClose } from '../../hooks/useDragToClose';
 
 type Props = {
   open: boolean;
@@ -45,6 +46,8 @@ export function PaymentBridgeSheet(props: Props) {
   const [view, setView] = useState<View>({ kind: 'grid' });
   const amountMajor = (totalMinorUnits / 100).toFixed(2);
   const reference = buildReference(child.display_name);
+
+  const { sheetRef, handleProps } = useDragToClose(onClose);
 
   // Android hardware Back button — close nested view first, then the sheet.
   useEffect(() => {
@@ -143,11 +146,14 @@ export function PaymentBridgeSheet(props: Props) {
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 bg-black/50 z-50" />
         <Dialog.Content
+          ref={sheetRef}
           className="fixed left-1/2 bottom-0 z-50 w-full max-w-md -translate-x-1/2 rounded-t-3xl bg-white pb-safe"
           aria-describedby={undefined}
         >
           <Dialog.Title className="sr-only">Payment Bridge</Dialog.Title>
-          <div className="mx-auto mt-2 mb-2 h-1 w-10 rounded-full bg-neutral-300" />
+          <div {...handleProps}>
+            <div className="mx-auto h-1 w-10 rounded-full bg-neutral-300" />
+          </div>
 
           <div className="px-4 pt-1 pb-2">
             <div className="text-[13px] text-neutral-500">Pay {child.display_name}</div>
