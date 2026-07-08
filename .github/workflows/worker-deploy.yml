@@ -46,11 +46,13 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          RAW_REF: ${{ github.head_ref || github.ref_name }}
+          COMMIT_SHA: ${{ github.sha }}
         run: |
-          SAFE_REF=$(echo "${{ github.head_ref || github.ref_name }}" | tr -c 'a-zA-Z0-9' '-' | cut -c1-28)
+          SAFE_REF=$(printf '%s' "$RAW_REF" | tr -c 'a-zA-Z0-9' '-' | cut -c1-28)
           OUTPUT=$(npx wrangler versions upload --env production \
             --preview-alias "pr-$SAFE_REF" \
-            --message "Preview for ${{ github.sha }}" 2>&1 | tee /dev/stderr)
+            --message "Preview for $COMMIT_SHA" 2>&1 | tee /dev/stderr)
           VERSION_ID=$(echo "$OUTPUT" | grep -oE 'Worker Version ID:[[:space:]]*[a-f0-9-]+' | grep -oE '[a-f0-9-]{36}' || true)
           {
             echo "### Worker preview deployed"
@@ -84,9 +86,10 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          COMMIT_SHA: ${{ github.sha }}
         run: |
           OUTPUT=$(npx wrangler versions upload --env production \
-            --message "main @ ${{ github.sha }}" 2>&1 | tee /dev/stderr)
+            --message "main @ $COMMIT_SHA" 2>&1 | tee /dev/stderr)
           VERSION_ID=$(echo "$OUTPUT" | grep -oE 'Worker Version ID:[[:space:]]*[a-f0-9-]+' | grep -oE '[a-f0-9-]{36}' || true)
           if [ -z "$VERSION_ID" ]; then
             echo "Could not parse a Worker Version ID from wrangler output — aborting before promoting anything." >&2
