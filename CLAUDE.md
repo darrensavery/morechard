@@ -138,8 +138,22 @@ cd worker && npx wrangler d1 execute morechard --remote --env production --comma
 ```
 
 ### Deploying the Worker
+
+Automatic via GitHub Actions (`.github/workflows/worker-deploy.yml`) on every push:
+- Any branch/PR touching `worker/**` → uploads a preview **version** (no live traffic shift), tested against the real production DB, at its own preview URL.
+- Push to `main` → uploads a version, then promotes it to 100% of live traffic.
+
+This is Cloudflare's "blue/green" primitive (Worker Versions & Gradual Deployments): both the old and new version share the same live `morechard` D1, so there's never a "which one has the real writes" split — only the swap of which version serves requests changes. Requires the `CLOUDFLARE_API_TOKEN` / `CLOUDFLARE_ACCOUNT_ID` repo secrets to be set (see workflow file comments).
+
+Manual equivalent from the CLI:
 ```bash
-# From repo root OR from worker/:
+cd worker
+npm run deploy:preview   # uploads a version, does NOT go live — gives a private preview URL
+npm run deploy:promote   # shifts 100% of live traffic to that version instantly
+```
+
+Old one-shot method (still works, but skips the safety net above):
+```bash
 cd worker && npx wrangler deploy --env production
 ```
 This binds the live `morechard` DB, production env vars, and live Stripe keys.
@@ -269,5 +283,5 @@ cd worker && npx wrangler d1 migrations apply morechard --remote --env productio
 - [ ] Final PWA Optimization (Offline caching & Push notifications)
 
 ### **Infrastructure**
-- [ ] Set up Cloudflare staging environment (staging worker + staging D1 + staging Pages branch) with GitHub Actions auto-deploy to production on merge to main
+- [x] Set up Worker blue/green deploys with GitHub Actions auto-deploy to production on merge to main — implemented via Cloudflare Worker Versions & Gradual Deployments (`.github/workflows/worker-deploy.yml`) instead of a separate staging Worker/D1: every branch/PR gets a live preview version against the real production DB (no separate staging DB to keep in sync), and merging to `main` auto-promotes to 100% traffic. **Blocked on user action**: add `CLOUDFLARE_API_TOKEN` + `CLOUDFLARE_ACCOUNT_ID` repo secrets in GitHub before this runs. The app/Pages side already got this for free — Cloudflare Pages auto-builds a live preview per branch/PR.
 - [ ] Custom domain for the API worker (`api.morechard.com`) — removes `darren-savery.workers.dev` from the Google OAuth consent screen; requires adding custom domain in Cloudflare Workers dashboard, updating redirect URI in Google Cloud Console, and updating the hard-coded `redirectUri` in `worker/src/routes/auth.ts`

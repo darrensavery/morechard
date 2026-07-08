@@ -5,6 +5,8 @@
   "scripts": {
     "dev": "wrangler dev --remote",
     "deploy": "wrangler deploy --env production",
+    "deploy:preview": "wrangler versions upload --env production",
+    "deploy:promote": "wrangler versions deploy --env production",
     "test": "vitest"
   },
   "devDependencies": {

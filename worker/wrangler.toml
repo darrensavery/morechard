@@ -66,7 +66,15 @@ STRIPE_SHIELD_PRODUCT_ID = "prod_UOe8ZtEJmwuNj6"
 crons = ["0 8 * * 6", "0 3 * * 1", "0 6 * * *", "0 0 * * *"]
 
 # ── Production environment ────────────────────────────────────────────────────
-# Deploy with: wrangler deploy --env production
+# GitHub Actions (.github/workflows/worker-deploy.yml) handles this automatically
+# on every push, using the blue/green flow below. To do it by hand:
+#
+#   npm run deploy:preview   # uploads a new version, does NOT go live — gives you
+#                             # a private preview URL against the REAL production DB
+#   npm run deploy:promote   # shifts 100% of live traffic to that version instantly
+#
+# Old one-shot method (still works, but skips the safety net above):
+#   npx wrangler deploy --env production
 [env.production]
 name = "morechard-api"
 vars = { ENVIRONMENT = "production", APP_URL = "https://app.morechard.com", WORKER_URL = "https://api.morechard.com", POSTHOG_HOST = "https://eu.i.posthog.com", STRIPE_PRICE_COMPLETE = "price_REPLACE_WITH_LIVE_COMPLETE", STRIPE_PRICE_COMPLETE_AI = "price_REPLACE_WITH_LIVE_COMPLETE_AI", STRIPE_PRICE_SHIELD_AI = "price_REPLACE_WITH_LIVE_SHIELD_AI", STRIPE_PRICE_AI_UPGRADE = "price_REPLACE_WITH_LIVE_AI_UPGRADE", STRIPE_SHIELD_PRODUCT_ID = "prod_REPLACE_WITH_LIVE_SHIELD_PRODUCT_ID" }
