@@ -218,14 +218,16 @@ cd worker && npx wrangler d1 migrations apply morechard --remote --env productio
 - [x] Build 'Child Mark Done' UI (Virtual Ledger interaction)
 - [x] Implement Parent Approval -> Immutable Ledger Write
 
-### **Phase 4: Behavioral Education (The "Simulator" Logic)**
+### **Phase 4: Behavioral Education (The "Simulator" Logic)** — CLOSED (2026-07-08)
 - [x] Build 'Goal Planning' Module — Savings Grove with effort-to-earn mentor, goal creation sheet, purchase flow, parental boosting portal
-- [ ] Implement 'Real-World' explainers for Ledger entries (e.g., Inflation/Interest)
-- [ ] Create Child Funds Dashboard (Unified view: Total Funds / Available Balance)
+- [x] ~~Implement 'Real-World' explainers for Ledger entries (e.g., Inflation/Interest)~~ — **cut, won't build.** The ledger doesn't accrue interest or apply inflation (Sovereign Ledger philosophy, developer-bible §16 — not a bank simulation), so there's no concrete entry type this would attach to. Inflation/interest are already taught via the proactive Inflation Nudge trigger (`intelligence.ts`) and Learning Lab modules 10/13/14 (Interest Trap, Compound Growth, Inflation) — a ledger-row explainer would be a redundant third delivery channel.
+- [x] ~~Create Child Funds Dashboard (Unified view: Total Funds / Available Balance)~~ — **cut, won't build.** No confirmed evidence of a real confusion gap in the current child dashboard to justify the new balance-model work (new "locked in goals" calc, API changes).
 
-### **Phase 5: The AI Mentor (Behavioral Nudging)**
-- [ ] Integrate AI Personality for Child ('Coaching' tone)
-- [x] Implement AI 'Nudges' based on spending patterns — background sweep in `child-nudges.ts`; real-time gap closed by the Impulse Speed Bump cooldown interstitial (`SpendGuideSheet.tsx` + `impulseSpeedBump.ts`, logged via `POST /api/child-nudges/impulse-outcome`). Velocity Alert / Parental Loan Modeller remain out of scope, tracked separately.
+### **Phase 5: The AI Mentor (Behavioral Nudging)** — reviewed 2026-07-08
+- [x] Integrate AI Personality for Child ('Coaching' tone) — already shipped, roadmap was stale. Seedling/Professional child personas defined in `02-ai-personality.md` §3; live in `child-nudges.ts` (35+ dual-tone nudges), `GoalMentorNudge.tsx`, `insights.ts`/`chat.ts` tone-switching.
+- [x] Implement AI 'Nudges' based on spending patterns — background sweep in `child-nudges.ts`; real-time gap closed by the Impulse Speed Bump cooldown interstitial (`SpendGuideSheet.tsx` + `impulseSpeedBump.ts`, logged via `POST /api/child-nudges/impulse-outcome`).
+- [x] Velocity Alert — already shipped, roadmap was stale. `velocity_7d` mechanic + goal-slippage framing live in `intelligence.ts`, `chat.ts`, `GoalMentorNudge.tsx`.
+- [ ] ~~Parental Loan Modeller (live feature)~~ — **decided against, education-only.** A live loan-with-interest flow between parent and child would contradict the Sovereign Ledger philosophy (§16 developer-bible: never simulate a bank instrument the app doesn't support) and adds real interest-bearing debt to a hash-chained ledger built to be court-submissible for separated families — a legal liability surface with no validated demand. The concept stays exclusively as the Learning Lab M10 "Interest Trap" hypothetical calculator. Dead stub `evaluateOnLoanRequest()` (never wired to a route) should be removed as unused code — not yet done.
 - [x] Build Parent 'Insights' AI (Summarizing child behavior for the week)
   - [x] `insight_snapshots` D1 table — weekly KPI snapshots with trend deltas (consistency, responsibility, planning horizon)
   - [x] Temporal context: delta calculation vs. prior week snapshot, direction indicators (up/down/flat)

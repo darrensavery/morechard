@@ -9,12 +9,14 @@
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20240909.0",
+    "@types/qrcode-svg": "^1.1.5",
     "typescript": "^5.5.2",
     "vitest": "^4.1.5",
     "wrangler": "^4.79.0"
   },
   "dependencies": {
     "@cloudflare/puppeteer": "^1.1.0",
-    "@sentry/cloudflare": "^10.47.0"
+    "@sentry/cloudflare": "^10.47.0",
+    "qrcode-svg": "^1.1.0"
   }
 }

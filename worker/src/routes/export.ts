@@ -23,6 +23,7 @@
  */
 
 import puppeteer from '@cloudflare/puppeteer';
+import QRCode from 'qrcode-svg';
 import { Env } from '../types.js';
 import { error } from '../lib/response.js';
 import { sha256 } from '../lib/hash.js';
@@ -253,6 +254,18 @@ export async function handleExportPdf(request: Request, env: Env): Promise<Respo
   const shortFp           = fingerprint.slice(0, 16).toUpperCase();
   const docUuid           = `MCH-${shortFp.slice(0, 4)}-${shortFp.slice(4, 8)}-${shortFp.slice(8, 12)}-${shortFp.slice(12)}`;
 
+  // Chain-head hash — the record_hash of the newest ledger row at export time.
+  // Anyone holding this document can independently confirm the ledger hasn't
+  // been tampered with via the public /api/verify/:hash endpoint.
+  const chainHeadHash = ledgerRows.length ? ledgerRows[ledgerRows.length - 1].record_hash : null;
+  const verifyUrl     = chainHeadHash ? `${env.APP_URL ?? 'https://app.morechard.com'}/verify/${chainHeadHash}` : null;
+  const verifyQrSvg    = verifyUrl
+    ? new QRCode({
+        content: verifyUrl, width: 64, height: 64, padding: 2, ecl: 'M',
+        container: 'svg-viewbox', xmlDeclaration: false,
+      }).svg({ container: 'svg-viewbox' })
+    : null;
+
   const pending  = ledgerRows.filter(r => r.verification_status === 'pending').length;
   const verified = ledgerRows.filter(r => r.verification_status.startsWith('verified')).length;
   const disputed = ledgerRows.filter(r => r.verification_status === 'disputed').length;
@@ -268,19 +281,21 @@ export async function handleExportPdf(request: Request, env: Env): Promise<Respo
       family, lang, ledgerRows, govRows, completions, rewardEdits, loginRows,
       statusRows, labelMap, fingerprint, shortFp, docUuid,
       exportTs, pending, verified, disputed, totalEarned, totalTasks,
-      sharedExpenseRows,
+      sharedExpenseRows, verifyUrl, verifyQrSvg,
     });
   } else if (tier === 'behavioral') {
     html = buildBehavioralReport({
       family, lang, ledgerRows, govRows, statusRows, moduleRows, labelMap,
       fingerprint, shortFp, docUuid, exportTs,
       pending, verified, disputed, totalEarned, totalTasks,
+      verifyUrl, verifyQrSvg,
     });
   } else {
     html = buildBasicReport({
       family, lang, ledgerRows, govRows, statusRows, labelMap,
       fingerprint, shortFp, docUuid, exportTs,
       pending, verified, disputed, totalEarned, totalTasks,
+      verifyUrl, verifyQrSvg,
     });
   }
 
@@ -452,6 +467,8 @@ interface ReportContext {
   disputed:     number;
   totalEarned:  number;
   totalTasks:   number;
+  verifyUrl:    string | null;
+  verifyQrSvg:  string | null;
 }
 
 // ----------------------------------------------------------------
@@ -459,8 +476,9 @@ interface ReportContext {
 // ----------------------------------------------------------------
 function buildBasicReport(ctx: ReportContext): string {
   const { family, lang, ledgerRows, statusRows, labelMap,
-          fingerprint, shortFp, docUuid, exportTs,
-          pending, verified, disputed, totalEarned, totalTasks } = ctx;
+          fingerprint, docUuid, exportTs,
+          pending, verified, disputed, totalEarned, totalTasks,
+          verifyUrl, verifyQrSvg } = ctx;
   const pl = lang === 'pl';
 
   const title   = pl ? 'Podsumowanie Rodzinnego Sadu' : 'Family Orchard Summary';
@@ -540,7 +558,7 @@ ${statusRows.length > 0 ? `
   </tbody>
 </table>` : ''}
 
-${fingerprintBlock(fingerprint, shortFp, lang)}
+${fingerprintBlock(fingerprint, lang, verifyUrl, verifyQrSvg)}
 ${declarationFooter(family.name, exportTs, lang, docUuid, false)}
 
 </body>
@@ -585,7 +603,7 @@ const MODULE_PILLAR: Record<string, number> = {
 
 function buildBehavioralReport(ctx: BehavioralContext): string {
   const { family, lang, ledgerRows, statusRows, moduleRows,
-          fingerprint, shortFp, docUuid, exportTs } = ctx;
+          fingerprint, docUuid, exportTs, verifyUrl, verifyQrSvg } = ctx;
   const pl = lang === 'pl';
 
   const title = pl ? 'Raport Wzrostu i Nauki' : 'Growth & Learning Report';
@@ -817,7 +835,7 @@ ${statusLegend(lang)}
 </table>
 </div>
 
-${fingerprintBlock(fingerprint, shortFp, lang)}
+${fingerprintBlock(fingerprint, lang, verifyUrl, verifyQrSvg)}
 ${declarationFooter(family.name, exportTs, lang, docUuid, false)}
 
 </body>
@@ -887,7 +905,7 @@ interface ForensicContext extends ReportContext {
 function buildForensicReport(ctx: ForensicContext): string {
   const { family, lang, ledgerRows, govRows, completions, rewardEdits, loginRows,
           sharedExpenseRows, fingerprint, docUuid, exportTs,
-          disputed, totalEarned, totalTasks } = ctx;
+          disputed, totalEarned, totalTasks, verifyUrl, verifyQrSvg } = ctx;
   const pl = lang === 'pl';
 
   const highConf   = completions.filter(c => c.verification_confidence === 'High').length;
@@ -1136,12 +1154,18 @@ ${buildExhibitsSection(sharedExpenseRows, exhibitAssignments, pl)}
   })()}
 
 <div class="integrity-block">
-  <strong>${pl ? 'Pieczęć Integralności Dokumentu' : 'Document Integrity Seal'}</strong><br/>
-  <span style="font-family:monospace;font-size:9px">${fingerprint}</span><br/>
-  <span style="font-size:9px;color:#555">UUID: ${docUuid}</span>
-  <div style="font-size:9px;color:#666;margin-top:6px">${pl
-    ? 'Hash SHA-256 jednoznacznie identyfikuje ten eksport. Każda zmiana danych spowoduje inny hash.'
-    : 'This SHA-256 hash uniquely identifies this export. Any data change produces a different hash.'}</div>
+  ${verifyQrSvg ? `<span class="qr-code">${verifyQrSvg}</span>` : ''}
+  <span>
+    <strong>${pl ? 'Pieczęć Integralności Dokumentu' : 'Document Integrity Seal'}</strong><br/>
+    <span style="font-family:monospace;font-size:9px">${fingerprint}</span><br/>
+    <span style="font-size:9px;color:#555">UUID: ${docUuid}</span>
+    <div style="font-size:9px;color:#666;margin-top:6px">${pl
+      ? 'Hash SHA-256 jednoznacznie identyfikuje ten eksport. Każda zmiana danych spowoduje inny hash.'
+      : 'This SHA-256 hash uniquely identifies this export. Any data change produces a different hash.'}</div>
+    ${verifyUrl ? `<div style="font-size:9px;color:#666;margin-top:6px">${pl
+      ? `<strong>Zweryfikuj łańcuch rejestru:</strong> zeskanuj kod lub odwiedź <a href="${escHtml(verifyUrl)}">${escHtml(verifyUrl)}</a> aby potwierdzić, że rejestr nie został zmieniony.`
+      : `<strong>Verify the ledger chain:</strong> scan the code or visit <a href="${escHtml(verifyUrl)}">${escHtml(verifyUrl)}</a> to confirm this ledger has not been tampered with.`}</div>` : ''}
+  </span>
 </div>
 
 ${declarationFooter(family.name, exportTs, lang, docUuid, true)}
@@ -1179,23 +1203,32 @@ function baseStyles(): string {
   .warn { color:#b71c1c; font-size:10px; margin-bottom:8px; }
   .fingerprint-block { margin-top:24px; padding:14px; border:1px solid #ccc; border-radius:6px; background:#f9f9f9; }
   .fp { font-family:monospace; font-size:10px; word-break:break-all; margin:4px 0; }
-  .qr-placeholder { display:inline-block; width:64px; height:64px; border:1px solid #ccc; text-align:center; line-height:64px; font-size:8px; color:#999; vertical-align:middle; margin-right:12px; }
+  .qr-code { display:inline-block; width:64px; height:64px; vertical-align:middle; margin-right:12px; }
+  .qr-code svg { width:100%; height:100%; }
   .declaration { margin-top:24px; padding:14px; border:2px solid #1a1a1a; border-radius:4px; font-size:10px; line-height:1.6; }
   .legend { font-size:9px; color:#888; margin:2px 0 8px; line-height:2; }
   @media print { body { padding: 16px; } }
 </style>`;
 }
 
-function fingerprintBlock(fingerprint: string, shortFp: string, lang: string): string {
+function fingerprintBlock(
+  fingerprint: string,
+  lang: string,
+  verifyUrl: string | null,
+  verifyQrSvg: string | null,
+): string {
   const pl = lang === 'pl';
   return `<div class="fingerprint-block">
-  <span class="qr-placeholder">QR<br/>${shortFp.slice(0, 8)}</span>
+  ${verifyQrSvg ? `<span class="qr-code">${verifyQrSvg}</span>` : ''}
   <span>
     <strong>${pl ? 'Odcisk dokumentu' : 'Document Fingerprint'}:</strong><br/>
     <span class="fp">${fingerprint}</span>
     <div style="font-size:9px;color:#666;margin-top:4px">${pl
       ? 'Ten hash SHA-256 jednoznacznie identyfikuje ten eksport. Każda zmiana danych spowoduje inny hash.'
       : 'This SHA-256 hash uniquely identifies this export. Any data change produces a different hash.'}</div>
+    ${verifyUrl ? `<div style="font-size:9px;color:#666;margin-top:4px">${pl
+      ? `<strong>Zweryfikuj łańcuch rejestru:</strong> zeskanuj kod lub odwiedź <a href="${escHtml(verifyUrl)}">${escHtml(verifyUrl)}</a>.`
+      : `<strong>Verify the ledger chain:</strong> scan the code or visit <a href="${escHtml(verifyUrl)}">${escHtml(verifyUrl)}</a>.`}</div>` : ''}
   </span>
 </div>`;
 }
