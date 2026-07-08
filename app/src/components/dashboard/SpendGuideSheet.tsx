@@ -8,6 +8,7 @@ import { useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { logSpend } from '../../lib/api'
 import { useAndroidBack } from '../../hooks/useAndroidBack'
+import { useDragToClose } from '../../hooks/useDragToClose'
 import { ErrorBox } from '../ui/ErrorBox'
 import { currencySymbol } from '../../lib/locale'
 import { SPEND_CATEGORIES } from '../../lib/spendCategories'
@@ -171,8 +172,11 @@ export function SpendGuideSheet({ open, familyId, currency, onClose, onSaved }: 
   const [search,   setSearch]   = useState('')
   const [category, setCategory] = useState('all')
 
+  const closeEntry = () => { setEntry(null); setSaveErr(null) }
+  const { sheetRef: entrySheetRef, handleProps: entryHandleProps } = useDragToClose(closeEntry)
+
   useAndroidBack(open && !entry, onClose)
-  useAndroidBack(!!entry,        () => { setEntry(null); setSaveErr(null) })
+  useAndroidBack(!!entry,        closeEntry)
 
   // Catalogue grouped by category, after search + filter. Only groups with at
   // least one match are kept, so headings never sit above an empty list.
@@ -380,11 +384,11 @@ export function SpendGuideSheet({ open, familyId, currency, onClose, onSaved }: 
       {/* ── Amount entry sub-sheet ── */}
       {entry && (
         <div className="absolute inset-0 z-10 flex flex-col justify-end">
-          <div className="absolute inset-0 bg-black/40" onClick={() => { setEntry(null); setSaveErr(null) }} />
-          <div className="relative bg-[var(--color-surface)] rounded-t-2xl px-5 pt-2 pb-8 space-y-4 max-h-[88%] overflow-y-auto">
+          <div className="absolute inset-0 bg-black/40" onClick={closeEntry} />
+          <div ref={entrySheetRef} className="relative bg-[var(--color-surface)] rounded-t-2xl px-5 pt-2 pb-8 space-y-4 max-h-[88%] overflow-y-auto">
 
             {/* Drag handle */}
-            <div className="flex justify-center pt-2 pb-1">
+            <div {...entryHandleProps}>
               <div className="w-10 h-1 rounded-full bg-[var(--color-border)]" />
             </div>
 
@@ -484,7 +488,7 @@ export function SpendGuideSheet({ open, familyId, currency, onClose, onSaved }: 
 
             <div className="flex gap-3">
               <button
-                onClick={() => { setEntry(null); setSaveErr(null) }}
+                onClick={closeEntry}
                 className="flex-1 border border-[var(--color-border)] rounded-xl py-3 text-[14px] font-semibold text-[var(--color-text-muted)] hover:bg-[var(--color-surface-alt)] cursor-pointer"
               >
                 Back
