@@ -13,7 +13,7 @@ The other two §9 triggers (Velocity Alert, Parental Loan Modeller) are out of s
 
 ## Trigger condition
 
-Evaluated client-side, synchronously, when a child taps "Save spend →" in `SpendGuideSheet.tsx`:
+Evaluated client-side, synchronously, when a child taps "Save spend →" in `SpendGuideSheet.tsx` — **after** the existing form validation (`title` non-empty, `pence > 0`) already run by `handleSave()` today. A mistyped amount that fails that validation shows the existing inline error and never reaches the threshold check at all.
 
 ```
 availableBalancePence >= 500        // £5 floor — skip the check entirely below this
@@ -35,10 +35,13 @@ On threshold trip, `handleSave()` does **not** call `logSpend` immediately. Inst
   - **"Wait a bit"** — closes the sheet without saving. The child can return and log it later (or not). This is the whole mechanism for the "48-hour cooldown" — there is no timer or re-prompt; it relies on friction, not enforcement, per the guardrail against outcome-pressuring language.
   - **"I'm sure, log it"** — proceeds to call `logSpend` exactly as today.
 - No specific goal is referenced (the source doc's Orchard example name-checks "your Great Tree goal"). `SpendGuideSheet` doesn't currently load goal data and adding that fetch for a single copy line isn't worth the coupling — the generic "your grove keeps growing" phrasing carries the same idea.
+- Both interstitial copy strings must be short enough to sit comfortably above the two action buttons without pushing them off-screen on small devices (this sheet is capped at `max-h-[88%]` like the amount sub-sheet it replaces) — implementation should sanity-check both on a small viewport (e.g. iPhone SE / 375×667) before merging, not just the two happy-path devices.
 
 ## Audit trail
 
-Whenever the interstitial is shown, fire-and-forget a `child_nudges` row via the existing `generateChildNudge(db, child_id, family_id, 'impulse_speed_bump', meta)` helper — same helper every other trigger in `child-nudges.ts` uses, just called from a new code path (the spending route) instead of `checkPatterns()`.
+Fire-and-forget a `child_nudges` row via the existing `generateChildNudge(db, child_id, family_id, 'impulse_speed_bump', meta)` helper — same helper every other trigger in `child-nudges.ts` uses, just called from a new code path (a new endpoint) instead of `checkPatterns()`.
+
+The row is written once the child **acts on** the interstitial — taps either "Wait a bit" or "I'm sure, log it" — not when the interstitial merely appears. This means one call carries the outcome directly, instead of a "shown" event that can never learn what happened next (an earlier draft of this spec logged on-shown and considered a follow-up patch call for the outcome; recording on-action instead gets the same data in one round trip). If the child abandons the sheet without tapping either button, no row is written — an acceptable gap, not worth a `beforeunload`/visibility hook to close.
 
 New `NUDGES['impulse_speed_bump']` entry:
 ```ts
@@ -50,16 +53,17 @@ impulse_speed_bump: {
 },
 ```
 
-This is logged once per interstitial *shown* (i.e. once per large-spend attempt), regardless of whether the child proceeds or waits — it's screen-throttle-exempt (uses `generateChildNudge`, not `maybeGenerateChildNudge`), matching how event-driven triggers like `jar_raid` already behave, since this is a per-event trigger not a background pattern.
+This is screen-throttle-exempt (uses `generateChildNudge`, not `maybeGenerateChildNudge`) — matching how event-driven triggers like `jar_raid` already behave, since this is a per-event trigger, not a background pattern.
 
-`meta` will carry `{ amount_pence: spendAmountPence, balance_pence: availableBalancePence }` for future parent-facing audit context — no UI consumes this yet, but the column already exists (`trigger_meta`) and every other trigger populates it where relevant.
+`meta` carries `{ amount_pence: spendAmountPence, balance_pence: availableBalancePence, outcome: 'waited' | 'proceeded' }`. The `outcome` field is what makes this row useful for product analytics later (conversion rate of the friction point — did it actually change behaviour) and for a future parent-facing audit view; no UI reads it yet, but the `trigger_meta` column already exists and every other trigger populates it where relevant.
 
 ## Endpoint change
 
-New minimal endpoint: `POST /api/child-nudges/impulse-check` is **not** needed — the trigger condition is computed entirely client-side from data the client already has (`availableBalancePence` from `getBalance`, spend amount from the form). The only new server-side work is:
+The trigger condition itself is computed entirely client-side (`availableBalancePence` from `getBalance`, spend amount from the form) — no endpoint needed for that. The only new server-side work:
+
 1. Add `impulse_speed_bump` to the `NUDGES` dict in `child-nudges.ts`.
-2. Export `generateChildNudge` is already exported — reuse it.
-3. Call it from `handleSpendingCreate` in `worker/src/routes/finance.ts`? — **No.** The nudge must fire when the interstitial is *shown* (client-side, before save), not when the spend is *saved* (which may never happen if the child chooses "Wait a bit"). So the client calls a tiny new endpoint to log the nudge event: reuse the existing nudge-writing pattern via a new lightweight POST, OR simplest — just log it from the client via a new one-line worker endpoint `POST /api/child-nudges/impulse-shown` that takes `{ child_id, family_id, amount_pence, balance_pence }` and calls `generateChildNudge(..., 'impulse_speed_bump', meta)`. This avoids exposing the `NUDGES` content library or D1 writes directly to the client.
+2. New endpoint `POST /api/child-nudges/impulse-outcome`, body `{ child_id, family_id, amount_pence, balance_pence, outcome: 'waited' | 'proceeded' }`, calling the already-exported `generateChildNudge(..., 'impulse_speed_bump', meta)`. This is a thin wrapper, not a reimplementation — it keeps the `NUDGES` content library and D1 writes server-side rather than exposing them to the client.
+3. `SpendGuideSheet` calls this endpoint (fire-and-forget) when either interstitial button is tapped, then either closes (`Wait a bit`) or proceeds to `logSpend` (`I'm sure, log it`) as already described above.
 
 ## Non-goals
 
