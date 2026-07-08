@@ -27,6 +27,7 @@ import { SparklineExpanded } from './SparklineExpanded'
 import { LabSection } from './LabSection'
 import { AnimatedStat } from './AnimatedStat'
 import { FamilyAuditCard } from './FamilyAuditCard'
+import { tick } from '../../lib/haptics'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -524,8 +525,11 @@ function LiveBriefingCard({
   onViewTrends:  () => void
 }) {
   const [modalOpen, setModalOpen] = useState(false)
+  const [dismissed, setDismissed] = useState(false)
   const animate = briefing.source === 'ai'
   const p = PERSONA_CONFIG[persona]
+
+  if (dismissed) return null
 
   return (
     <>
@@ -554,7 +558,18 @@ function LiveBriefingCard({
                 </p>
               </div>
             </div>
-            <ProBadge />
+            <div className="flex items-center gap-2">
+              <ProBadge />
+              <button
+                onClick={() => { void tick(); setDismissed(true) }}
+                aria-label="Dismiss"
+                className="tap-target-44 w-6 h-6 flex items-center justify-center rounded-full text-white/30 hover:text-white/60 cursor-pointer"
+              >
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                  <path d="M18 6 6 18M6 6l12 12"/>
+                </svg>
+              </button>
+            </div>
           </div>
 
           {/* Advisory prose — Problem → Insight → Action, no section headers */}
