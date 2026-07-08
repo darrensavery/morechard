@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { postGiveRequest } from '../../lib/api';
+import { BaseSheet } from '../ui/BaseSheet';
+import { tick } from '../../lib/haptics';
 
 interface Props {
   giveBalance: number;
@@ -39,47 +41,49 @@ export function GiveRequestSheet({ giveBalance, currency, familyId, childId, onC
   }
 
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 200, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'flex-end' }} onClick={onClose}>
-      <div onClick={e => e.stopPropagation()} style={{ width: '100%', background: '#1a2e22', borderRadius: '20px 20px 0 0', padding: '24px 20px 40px', fontFamily: 'Manrope' }}>
-        {done ? (
-          <div style={{ textAlign: 'center', padding: '20px 0' }}>
-            <div style={{ fontSize: 40, marginBottom: 12 }}>✓</div>
-            <div style={{ fontSize: 18, fontWeight: 700, color: '#fff', marginBottom: 8 }}>Gift request sent!</div>
-            <div style={{ fontSize: 14, color: 'rgba(255,255,255,0.5)', marginBottom: 24 }}>Your parent will make the donation and let you know.</div>
-            <button onClick={() => { onSubmitted(); onClose(); }} style={{ padding: '14px 28px', borderRadius: 12, background: '#0d9488', color: '#fff', border: 'none', fontSize: 15, fontWeight: 600, cursor: 'pointer' }}>Done</button>
+    <BaseSheet
+      onClose={onClose}
+      zIndex={200}
+      panelStyle={{ background: '#1a2e22', borderRadius: '20px 20px 0 0', padding: '8px 20px 40px', fontFamily: 'Manrope' }}
+    >
+      {done ? (
+        <div style={{ textAlign: 'center', padding: '20px 0' }}>
+          <div style={{ fontSize: 40, marginBottom: 12 }}>✓</div>
+          <div style={{ fontSize: 18, fontWeight: 700, color: '#fff', marginBottom: 8 }}>Gift request sent!</div>
+          <div style={{ fontSize: 14, color: 'rgba(255,255,255,0.5)', marginBottom: 24 }}>Your parent will make the donation and let you know.</div>
+          <button onClick={() => { onSubmitted(); onClose(); }} style={{ padding: '14px 28px', borderRadius: 12, background: '#0d9488', color: '#fff', border: 'none', fontSize: 15, fontWeight: 600, cursor: 'pointer' }}>Done</button>
+        </div>
+      ) : (
+        <>
+          <div style={{ fontSize: 18, fontWeight: 700, color: '#fff', marginBottom: 4 }}>Make a gift</div>
+          <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', marginBottom: 24 }}>
+            Give jar: {fmt(giveBalance, currency)} available
           </div>
-        ) : (
-          <>
-            <div style={{ fontSize: 18, fontWeight: 700, color: '#fff', marginBottom: 4 }}>Make a gift</div>
-            <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', marginBottom: 24 }}>
-              Give jar: {fmt(giveBalance, currency)} available
-            </div>
 
-            <label style={{ display: 'block', color: 'rgba(255,255,255,0.6)', fontSize: 13, marginBottom: 6 }}>What is it for?</label>
-            <input
-              type="text" maxLength={60} placeholder="e.g. Cancer Research, school fundraiser…"
-              value={cause} onChange={e => setCause(e.target.value)}
-              style={{ width: '100%', padding: '12px', borderRadius: 10, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', fontSize: 15, marginBottom: 4, boxSizing: 'border-box' }}
-            />
-            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', marginBottom: 20, textAlign: 'right' }}>{cause.length}/60</div>
+          <label style={{ display: 'block', color: 'rgba(255,255,255,0.6)', fontSize: 13, marginBottom: 6 }}>What is it for?</label>
+          <input
+            type="text" maxLength={60} placeholder="e.g. Cancer Research, school fundraiser…"
+            value={cause} onChange={e => setCause(e.target.value)}
+            style={{ width: '100%', padding: '12px', borderRadius: 10, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', fontSize: 15, marginBottom: 4, boxSizing: 'border-box' }}
+          />
+          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', marginBottom: 20, textAlign: 'right' }}>{cause.length}/60</div>
 
-            <label style={{ display: 'block', color: 'rgba(255,255,255,0.6)', fontSize: 13, marginBottom: 6 }}>Amount</label>
-            <input
-              type="number" min="0.01" max={giveBalance / 100} step="0.01" placeholder="0.00"
-              value={amt} onChange={e => setAmt(e.target.value)}
-              style={{ width: '100%', padding: '12px', borderRadius: 10, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', fontSize: 15, marginBottom: 20, boxSizing: 'border-box' }}
-            />
+          <label style={{ display: 'block', color: 'rgba(255,255,255,0.6)', fontSize: 13, marginBottom: 6 }}>Amount</label>
+          <input
+            type="number" min="0.01" max={giveBalance / 100} step="0.01" placeholder="0.00"
+            value={amt} onChange={e => setAmt(e.target.value)}
+            style={{ width: '100%', padding: '12px', borderRadius: 10, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', fontSize: 15, marginBottom: 20, boxSizing: 'border-box' }}
+          />
 
-            {err && <div style={{ color: '#f87171', fontSize: 13, marginBottom: 12 }}>{err}</div>}
+          {err && <div style={{ color: '#f87171', fontSize: 13, marginBottom: 12 }}>{err}</div>}
 
-            <button onClick={handleSubmit} disabled={saving}
-              style={{ width: '100%', padding: 14, borderRadius: 12, background: '#d97706', color: '#fff', border: 'none', fontSize: 15, fontWeight: 600, cursor: 'pointer', marginBottom: 10 }}>
-              {saving ? 'Sending…' : 'Send request to parent'}
-            </button>
-            <button onClick={onClose} style={{ width: '100%', padding: 12, borderRadius: 12, background: 'none', color: 'rgba(255,255,255,0.4)', border: 'none', fontSize: 14, cursor: 'pointer' }}>Cancel</button>
-          </>
-        )}
-      </div>
-    </div>
+          <button onClick={() => { void tick(); handleSubmit(); }} disabled={saving}
+            style={{ width: '100%', padding: 14, borderRadius: 12, background: '#d97706', color: '#fff', border: 'none', fontSize: 15, fontWeight: 600, cursor: 'pointer', marginBottom: 10 }}>
+            {saving ? 'Sending…' : 'Send request to parent'}
+          </button>
+          <button onClick={onClose} style={{ width: '100%', padding: 12, borderRadius: 12, background: 'none', color: 'rgba(255,255,255,0.4)', border: 'none', fontSize: 14, cursor: 'pointer' }}>Cancel</button>
+        </>
+      )}
+    </BaseSheet>
   );
 }

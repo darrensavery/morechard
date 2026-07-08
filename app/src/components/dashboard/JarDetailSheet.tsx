@@ -3,6 +3,7 @@ import { getJarMovements, postJarMove, type JarMovement, type JarBalances } from
 import { SpendJarIcon } from '../icons/SpendJarIcon';
 import { SaveJarIcon  } from '../icons/SaveJarIcon';
 import { GiveJarIcon  } from '../icons/GiveJarIcon';
+import { BaseSheet } from '../ui/BaseSheet';
 
 type JarType = 'spend' | 'save' | 'give';
 
@@ -96,26 +97,18 @@ export function JarDetailSheet({
   }
 
   return (
-    <div
-      style={{
-        position: 'fixed', inset: 0, zIndex: 200,
-        background: 'rgba(0,0,0,0.6)',
-        display: 'flex', alignItems: 'flex-end',
+    <BaseSheet
+      onClose={onClose}
+      zIndex={200}
+      panelStyle={{
+        background: '#1a2e22',
+        borderRadius: '20px 20px 0 0',
+        padding: '8px 20px 40px',
+        fontFamily: 'Manrope, sans-serif',
+        maxHeight: '85vh',
+        overflowY: 'auto',
       }}
-      onClick={onClose}
     >
-      <div
-        onClick={e => e.stopPropagation()}
-        style={{
-          width: '100%',
-          background: '#1a2e22',
-          borderRadius: '20px 20px 0 0',
-          padding: '24px 20px 40px',
-          fontFamily: 'Manrope, sans-serif',
-          maxHeight: '85vh',
-          overflowY: 'auto',
-        }}
-      >
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
           <Icon size={32} />
@@ -263,8 +256,7 @@ export function JarDetailSheet({
             </button>
           </div>
         )}
-      </div>
-    </div>
+    </BaseSheet>
   );
 }
 
