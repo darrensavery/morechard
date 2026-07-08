@@ -184,7 +184,10 @@ export function ChildMoneyTab({ familyId, childId, currency, appView, nudge, onN
       <SpendGuideSheet
         open={logOpen}
         familyId={familyId}
+        childId={childId}
         currency={currency}
+        appView={appView}
+        availableBalancePence={balance?.available ?? 0}
         onClose={() => setLogOpen(false)}
         onSaved={handleSaved}
       />

@@ -225,7 +225,7 @@ cd worker && npx wrangler d1 migrations apply morechard --remote --env productio
 
 ### **Phase 5: The AI Mentor (Behavioral Nudging)**
 - [ ] Integrate AI Personality for Child ('Coaching' tone)
-- [ ] Implement AI 'Nudges' based on spending patterns
+- [x] Implement AI 'Nudges' based on spending patterns — background sweep in `child-nudges.ts`; real-time gap closed by the Impulse Speed Bump cooldown interstitial (`SpendGuideSheet.tsx` + `impulseSpeedBump.ts`, logged via `POST /api/child-nudges/impulse-outcome`). Velocity Alert / Parental Loan Modeller remain out of scope, tracked separately.
 - [x] Build Parent 'Insights' AI (Summarizing child behavior for the week)
   - [x] `insight_snapshots` D1 table — weekly KPI snapshots with trend deltas (consistency, responsibility, planning horizon)
   - [x] Temporal context: delta calculation vs. prior week snapshot, direction indicators (up/down/flat)

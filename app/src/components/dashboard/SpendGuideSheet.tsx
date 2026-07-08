@@ -6,7 +6,8 @@
 // entry so families can track what children spend on over time.
 import { useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { logSpend } from '../../lib/api'
+import { logSpend, logImpulseOutcome } from '../../lib/api'
+import { shouldTriggerImpulseSpeedBump } from '../../lib/impulseSpeedBump'
 import { useAndroidBack } from '../../hooks/useAndroidBack'
 import { useDragToClose } from '../../hooks/useDragToClose'
 import { tick } from '../../lib/haptics'
@@ -147,7 +148,10 @@ const FILTERABLE = SPEND_CATEGORIES.filter(c => SPEND_ITEMS.some(i => i.category
 interface Props {
   open:      boolean
   familyId:  string
+  childId:   string
   currency:  string
+  appView:   'ORCHARD' | 'CLEAN'
+  availableBalancePence: number
   onClose:   () => void
   onSaved:   () => void
 }
@@ -161,19 +165,20 @@ interface EntryState {
   category:  string
 }
 
-export function SpendGuideSheet({ open, familyId, currency, onClose, onSaved }: Props) {
+export function SpendGuideSheet({ open, familyId, childId, currency, appView, availableBalancePence, onClose, onSaved }: Props) {
   const symbol = currencySymbol(currency)
 
   const [entry,   setEntry]   = useState<EntryState | null>(null)
   const [saving,  setSaving]  = useState(false)
   const [saveErr, setSaveErr] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
+  const [cooldown, setCooldown] = useState<{ amountPence: number } | null>(null)
 
   // Search + category filter
   const [search,   setSearch]   = useState('')
   const [category, setCategory] = useState('all')
 
-  const closeEntry = () => { void tick(); setEntry(null); setSaveErr(null) }
+  const closeEntry = () => { void tick(); setEntry(null); setSaveErr(null); setCooldown(null) }
   const { sheetRef: entrySheetRef, handleProps: entryHandleProps } = useDragToClose(closeEntry)
 
   useAndroidBack(open && !entry, onClose)
@@ -205,13 +210,22 @@ export function SpendGuideSheet({ open, familyId, currency, onClose, onSaved }: 
     setSaveErr(null)
   }
 
-  async function handleSave() {
+  function handleSaveClick() {
     if (!entry) return
     const title = entry.title.trim()
     if (!title) { setSaveErr('Please add a description.'); return }
     const pence = Math.round(parseFloat(entry.amountStr || '0') * 100)
     if (!pence || pence <= 0) { setSaveErr('Please enter an amount.'); return }
 
+    if (shouldTriggerImpulseSpeedBump(pence, availableBalancePence)) {
+      setCooldown({ amountPence: pence })
+      return
+    }
+    void doSave(pence, title)
+  }
+
+  async function doSave(pence: number, title: string) {
+    if (!entry) return
     setSaving(true)
     setSaveErr(null)
     try {
@@ -230,6 +244,30 @@ export function SpendGuideSheet({ open, familyId, currency, onClose, onSaved }: 
     } finally {
       setSaving(false)
     }
+  }
+
+  function handleCooldownWait() {
+    if (!cooldown) return
+    logImpulseOutcome({
+      family_id: familyId, child_id: childId,
+      amount_pence: cooldown.amountPence, balance_pence: availableBalancePence,
+      outcome: 'waited',
+    }).catch(() => {})
+    setCooldown(null)
+    closeEntry()
+  }
+
+  function handleCooldownProceed() {
+    if (!cooldown || !entry) return
+    const amountPence = cooldown.amountPence
+    const title = entry.title.trim()
+    logImpulseOutcome({
+      family_id: familyId, child_id: childId,
+      amount_pence: amountPence, balance_pence: availableBalancePence,
+      outcome: 'proceeded',
+    }).catch(() => {})
+    setCooldown(null)
+    void doSave(amountPence, title)
   }
 
   if (!open) return null
@@ -383,7 +421,41 @@ export function SpendGuideSheet({ open, familyId, currency, onClose, onSaved }: 
       </div>
 
       {/* ── Amount entry sub-sheet ── */}
-      {entry && (
+      {entry && cooldown && (
+        <div className="absolute inset-0 z-10 flex flex-col justify-end">
+          <div className="absolute inset-0 bg-black/40" onClick={handleCooldownWait} />
+          <div className="relative bg-[var(--color-surface)] rounded-t-2xl px-5 pt-2 pb-8 space-y-4">
+            <div className="flex justify-center pt-3 pb-0">
+              <div className="w-10 h-1 rounded-full bg-[var(--color-border)]" />
+            </div>
+            <p className="text-[11px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider">
+              Just checking
+            </p>
+            <p className="text-[15px] leading-relaxed text-[var(--color-text)]">
+              {appView === 'CLEAN'
+                ? 'This is 15% of your available balance. Delaying big spends by 48 hours usually feels better later. Shall we pause?'
+                : "We've noticed this harvest is very large! If you keep these seeds instead, your grove keeps growing. Are you sure?"}
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={handleCooldownWait}
+                className="flex-1 border border-[var(--color-border)] rounded-xl py-3 text-[14px] font-semibold text-[var(--color-text-muted)] hover:bg-[var(--color-surface-alt)] cursor-pointer"
+              >
+                Wait a bit
+              </button>
+              <button
+                onClick={handleCooldownProceed}
+                disabled={saving}
+                className="flex-1 bg-[var(--brand-primary)] text-white rounded-xl py-3 text-[14px] font-bold hover:opacity-90 disabled:opacity-50 cursor-pointer active:scale-[0.98] transition-all"
+              >
+                {saving ? 'Saving…' : "I'm sure, log it"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {entry && !cooldown && (
         <div className="absolute inset-0 z-10 flex flex-col justify-end">
           <div className="absolute inset-0 bg-black/40" onClick={closeEntry} />
           <div ref={entrySheetRef} className="relative bg-[var(--color-surface)] rounded-t-2xl px-5 pt-2 pb-8 space-y-4 max-h-[88%] overflow-y-auto">
@@ -495,7 +567,7 @@ export function SpendGuideSheet({ open, familyId, currency, onClose, onSaved }: 
                 Back
               </button>
               <button
-                onClick={handleSave}
+                onClick={handleSaveClick}
                 disabled={saving}
                 className="flex-1 bg-[var(--brand-primary)] text-white rounded-xl py-3 text-[14px] font-bold hover:opacity-90 disabled:opacity-50 cursor-pointer active:scale-[0.98] transition-all"
               >
