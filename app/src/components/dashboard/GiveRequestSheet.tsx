@@ -51,7 +51,7 @@ export function GiveRequestSheet({ giveBalance, currency, familyId, childId, onC
           <div style={{ fontSize: 40, marginBottom: 12 }}>✓</div>
           <div style={{ fontSize: 18, fontWeight: 700, color: '#fff', marginBottom: 8 }}>Gift request sent!</div>
           <div style={{ fontSize: 14, color: 'rgba(255,255,255,0.5)', marginBottom: 24 }}>Your parent will make the donation and let you know.</div>
-          <button onClick={() => { onSubmitted(); onClose(); }} style={{ padding: '14px 28px', borderRadius: 12, background: '#0d9488', color: '#fff', border: 'none', fontSize: 15, fontWeight: 600, cursor: 'pointer' }}>Done</button>
+          <button onClick={() => { void tick(); onSubmitted(); onClose(); }} style={{ padding: '14px 28px', borderRadius: 12, background: '#0d9488', color: '#fff', border: 'none', fontSize: 15, fontWeight: 600, cursor: 'pointer' }}>Done</button>
         </div>
       ) : (
         <>
@@ -81,7 +81,7 @@ export function GiveRequestSheet({ giveBalance, currency, familyId, childId, onC
             style={{ width: '100%', padding: 14, borderRadius: 12, background: '#d97706', color: '#fff', border: 'none', fontSize: 15, fontWeight: 600, cursor: 'pointer', marginBottom: 10 }}>
             {saving ? 'Sending…' : 'Send request to parent'}
           </button>
-          <button onClick={onClose} style={{ width: '100%', padding: 12, borderRadius: 12, background: 'none', color: 'rgba(255,255,255,0.4)', border: 'none', fontSize: 14, cursor: 'pointer' }}>Cancel</button>
+          <button onClick={() => { void tick(); onClose(); }} style={{ width: '100%', padding: 12, borderRadius: 12, background: 'none', color: 'rgba(255,255,255,0.4)', border: 'none', fontSize: 14, cursor: 'pointer' }}>Cancel</button>
         </>
       )}
     </BaseSheet>

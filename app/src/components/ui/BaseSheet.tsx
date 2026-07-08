@@ -32,7 +32,9 @@ export function BaseSheet({ onClose, children, panelClassName, panelStyle, zInde
         className={panelClassName}
         style={{ width: '100%', transition: 'transform 300ms', ...panelStyle }}
       >
-        <div {...handleProps} />
+        <div {...handleProps}>
+          <div className="w-10 h-1 rounded-full bg-[var(--color-border)]" />
+        </div>
         {children}
       </div>
     </div>

@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { voidExpense } from '../../lib/api';
 import { ErrorBox } from '../ui/ErrorBox';
 import { BaseSheet } from '../ui/BaseSheet';
+import { tick } from '../../lib/haptics';
 
 type Props = {
   expenseId: number;
@@ -36,7 +37,7 @@ export function VoidExpenseSheet({ expenseId, description, onClose, onVoided }: 
     <BaseSheet onClose={onClose} panelClassName="w-full max-w-[560px] mx-auto bg-[var(--color-surface)] rounded-t-2xl p-6 pb-10 flex flex-col gap-4">
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-bold">Void expense</h2>
-        <button onClick={onClose} className="tap-target-44 text-[var(--color-text-muted)] text-2xl leading-none">&times;</button>
+        <button onClick={() => { void tick(); onClose(); }} className="tap-target-44 text-[var(--color-text-muted)] text-2xl leading-none">&times;</button>
       </div>
 
       <p className="text-sm text-[var(--color-text-muted)]">

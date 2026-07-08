@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { requestPublicReview, recordOutcome, submitFeedback, trackReviewPrompt } from '../../lib/reviewPrompt'
 import { BaseSheet } from '../ui/BaseSheet'
+import { tick } from '../../lib/haptics'
 
 interface Props {
   open:    boolean
@@ -17,6 +18,7 @@ export function ReviewPromptSheet({ open, onClose }: Props) {
   if (!open) return null
 
   function handleLoveIt() {
+    void tick()
     trackReviewPrompt('sentiment_positive')
     recordOutcome('prompted')
     requestPublicReview()
@@ -39,6 +41,7 @@ export function ReviewPromptSheet({ open, onClose }: Props) {
   }
 
   function handleMaybeLater() {
+    void tick()
     trackReviewPrompt('outcome', { outcome: 'maybe_later' })
     recordOutcome('maybe_later')
     onClose()
@@ -120,7 +123,7 @@ export function ReviewPromptSheet({ open, onClose }: Props) {
             Your feedback helps us improve Morechard for everyone.
           </p>
           <button
-            onClick={onClose}
+            onClick={() => { void tick(); onClose(); }}
             className="w-full rounded-xl bg-[var(--brand-primary,#4ade80)] py-3 font-semibold text-[#0f1a14]"
           >
             Done

@@ -4,6 +4,7 @@ import { SpendJarIcon } from '../icons/SpendJarIcon';
 import { SaveJarIcon  } from '../icons/SaveJarIcon';
 import { GiveJarIcon  } from '../icons/GiveJarIcon';
 import { BaseSheet } from '../ui/BaseSheet';
+import { tick } from '../../lib/haptics';
 
 type JarType = 'spend' | 'save' | 'give';
 
@@ -121,7 +122,7 @@ export function JarDetailSheet({
             </div>
           </div>
           <button
-            onClick={onClose}
+            onClick={() => { void tick(); onClose(); }}
             className="tap-target-44"
             style={{
               marginLeft: 'auto',

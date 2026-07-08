@@ -14,6 +14,7 @@ import { SmartCopyPanel } from './SmartCopyPanel';
 import { PaymentConfirmSheet } from './PaymentConfirmSheet';
 import { getDetails } from '../../lib/localBankDetails';
 import { useDragToClose } from '../../hooks/useDragToClose';
+import { tick } from '../../lib/haptics';
 
 type Props = {
   open: boolean;
@@ -47,7 +48,12 @@ export function PaymentBridgeSheet(props: Props) {
   const amountMajor = (totalMinorUnits / 100).toFixed(2);
   const reference = buildReference(child.display_name);
 
-  const { sheetRef, handleProps } = useDragToClose(onClose);
+  function closeSheet() {
+    void tick();
+    onClose();
+  }
+
+  const { sheetRef, handleProps } = useDragToClose(closeSheet);
 
   // Android hardware Back button — close nested view first, then the sheet.
   useEffect(() => {

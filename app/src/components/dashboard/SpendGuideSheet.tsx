@@ -9,6 +9,7 @@ import { createPortal } from 'react-dom'
 import { logSpend } from '../../lib/api'
 import { useAndroidBack } from '../../hooks/useAndroidBack'
 import { useDragToClose } from '../../hooks/useDragToClose'
+import { tick } from '../../lib/haptics'
 import { ErrorBox } from '../ui/ErrorBox'
 import { currencySymbol } from '../../lib/locale'
 import { SPEND_CATEGORIES } from '../../lib/spendCategories'
@@ -172,7 +173,7 @@ export function SpendGuideSheet({ open, familyId, currency, onClose, onSaved }: 
   const [search,   setSearch]   = useState('')
   const [category, setCategory] = useState('all')
 
-  const closeEntry = () => { setEntry(null); setSaveErr(null) }
+  const closeEntry = () => { void tick(); setEntry(null); setSaveErr(null) }
   const { sheetRef: entrySheetRef, handleProps: entryHandleProps } = useDragToClose(closeEntry)
 
   useAndroidBack(open && !entry, onClose)

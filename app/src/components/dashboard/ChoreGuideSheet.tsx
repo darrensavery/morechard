@@ -5,6 +5,7 @@ import { useMarketRates, fuzzyMatch } from '../../hooks/useMarketRates';
 import { ErrorBox } from '../ui/ErrorBox';
 import { useAndroidBack } from '../../hooks/useAndroidBack';
 import { useDragToClose } from '../../hooks/useDragToClose';
+import { tick } from '../../lib/haptics';
 import { createSuggestion, suggestChore, getSuggestions } from '../../lib/api';
 import type { MarketRate, Suggestion } from '../../lib/api';
 import { currencySymbol } from '../../lib/locale';
@@ -132,10 +133,10 @@ export function ChoreGuideSheet({ open, onClose, familyId, context = null, curre
   useAndroidBack(!!editRate, () => { setEditRate(null); setEditError(null); });
   useAndroidBack(newChoreOpen && !editRate, () => { setNewChoreOpen(false); setNewChoreError(null); });
 
-  const closeNewChore = () => { setNewChoreOpen(false); setNewChoreError(null); }
+  const closeNewChore = () => { void tick(); setNewChoreOpen(false); setNewChoreError(null); }
   const { sheetRef: newChoreSheetRef, handleProps: newChoreHandleProps } = useDragToClose(closeNewChore)
 
-  const closeEditRate = () => { setEditRate(null); setEditError(null); }
+  const closeEditRate = () => { void tick(); setEditRate(null); setEditError(null); }
   const { sheetRef: editRateSheetRef, handleProps: editRateHandleProps } = useDragToClose(closeEditRate)
 
   async function handleNewChoreSuggest() {
