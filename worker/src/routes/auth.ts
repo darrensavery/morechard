@@ -13,6 +13,7 @@
 
 import { Env } from '../types.js'
 import { EmailService, buildVerifyEmailHtml, buildVerifyEmailText } from '../lib/email.js';
+import { resolveReturnOrigin } from '../lib/appUrl.js';
 
 import { json, error, clientIp, parseBody } from '../lib/response.js';
 import { logger } from '../lib/logger.js';
@@ -84,7 +85,7 @@ export async function handleCreateFamily(request: Request, env: Env): Promise<Re
           .prepare('UPDATE magic_link_attempts SET attempts = attempts + 1 WHERE email = ?')
           .bind(normEmail).run().catch(() => null);
       }
-      const appUrl   = env.APP_URL ?? 'https://app.morechard.com';
+      const appUrl   = resolveReturnOrigin(request, env);
       const rawToken = nanoid(32);
       const tokenHash = await sha256(rawToken);
       const now = Math.floor(Date.now() / 1000);
@@ -363,7 +364,7 @@ export async function handleMagicLinkRequest(request: Request, env: Env): Promis
     .run();
 
   // Send via Resend
-  const appUrl  = env.APP_URL ?? 'https://app.morechard.com';
+  const appUrl  = resolveReturnOrigin(request, env);
   const link    = `${appUrl}/auth/verify?token=${rawToken}`;
 
   await sendMagicLinkEmail(normEmail, user.display_name, link, env);
@@ -378,7 +379,7 @@ export async function handleMagicLinkRequest(request: Request, env: Env): Promis
 export async function handleMagicLinkVerify(request: Request, env: Env): Promise<Response> {
   const url    = new URL(request.url);
   const token  = url.searchParams.get('token');
-  const appUrl = env.APP_URL ?? 'https://app.morechard.com';
+  const appUrl = resolveReturnOrigin(request, env);
 
   const redirect = (reason: string) => new Response(null, {
     status: 302,
