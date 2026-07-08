@@ -258,6 +258,13 @@ const NUDGES: Record<string, NudgeDef> = {
     clean:   'Your earnings have been inconsistent lately. In the real world, unpredictable income is much harder to manage than steady income — even if the totals are the same.',
   },
 
+  impulse_speed_bump: {
+    screen: 'money', pillar: 'OPPORTUNITY_COST', tone: 'honest',
+    parent_summary: 'Large spend flagged — impulse cooldown shown',
+    orchard: "We've noticed this harvest is very large! If you keep these seeds instead, your grove keeps growing. Are you sure?",
+    clean:   'This is 15% of your available balance. Delaying big spends by 48 hours usually feels better later. Shall we pause?',
+  },
+
   // ── Learning Lab reinforcement (fires once after act completion, bypasses throttle) ─
 
   lab_reinforced_M9b: {
@@ -676,4 +683,45 @@ async function checkPatterns(
       await maybeGenerateChildNudge(db, child_id, family_id, 'earnings_volatile');
     }
   }
+}
+
+// ── POST /api/child-nudges/impulse-outcome ────────────────────────────────────
+// Logs the outcome of an Impulse Speed Bump interstitial. Written once the
+// child acts — taps "Wait a bit" or "I'm sure, log it" — never merely when
+// the interstitial is shown, so one row always carries the full outcome.
+
+export function validateImpulseOutcomeBody(body: Record<string, unknown>): string | null {
+  if (!body.family_id || typeof body.family_id !== 'string') return 'family_id required';
+  if (!body.child_id  || typeof body.child_id  !== 'string') return 'child_id required';
+  if (!Number.isInteger(body.amount_pence) || (body.amount_pence as number) <= 0)
+    return 'amount_pence must be a positive integer';
+  if (!Number.isInteger(body.balance_pence) || (body.balance_pence as number) < 0)
+    return 'balance_pence must be a non-negative integer';
+  if (body.outcome !== 'waited' && body.outcome !== 'proceeded')
+    return 'outcome must be "waited" or "proceeded"';
+  return null;
+}
+
+export async function handleImpulseOutcome(request: Request, env: Env): Promise<Response> {
+  const auth = (request as AuthedRequest).auth;
+  if (auth.role !== 'child') return error('Only children can log this outcome', 403);
+
+  const body = await request.json<Record<string, unknown>>();
+
+  const validationError = validateImpulseOutcomeBody(body);
+  if (validationError) return error(validationError, 400);
+
+  const family_id    = body.family_id as string;
+  const child_id     = body.child_id as string;
+  const amount_pence  = body.amount_pence as number;
+  const balance_pence = body.balance_pence as number;
+  const outcome       = body.outcome as 'waited' | 'proceeded';
+
+  if (child_id !== auth.sub || family_id !== auth.family_id) return error('Forbidden', 403);
+
+  await generateChildNudge(env.DB, child_id, family_id, 'impulse_speed_bump', {
+    amount_pence, balance_pence, outcome,
+  });
+
+  return json({ ok: true });
 }

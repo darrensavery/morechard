@@ -193,7 +193,7 @@ import {
 import { handleConsentPost, handleConsentGet, handleAnalyticsConsentPost, handleAnalyticsEffectiveGet } from './routes/consent.js';
 import { handlePublicInterest } from './routes/public-interest.js';
 import { handleGetJars, handlePutJarConfig, handlePostJarMove, handleGetJarMovements } from './routes/jars.js';
-import { handleGetChildNudges, handleDismissChildNudge, runChildNudgeBackgroundChecks } from './routes/child-nudges.js';
+import { handleGetChildNudges, handleDismissChildNudge, handleImpulseOutcome, runChildNudgeBackgroundChecks } from './routes/child-nudges.js';
 import { handleGetFamilyAudit } from './routes/family-audit.js';
 import { handlePostGiveRequest, handleGetGiveRequests, handlePatchGiveRequest } from './routes/give-requests.js';
 import { json, error } from './lib/response.js';
@@ -634,6 +634,7 @@ async function route(request: Request, env: Env, method: string, path: string): 
   // Child nudges — AI Mentor inline coaching cards
   if (path === '/api/child-nudges'         && method === 'GET')  return withAuth(request, auth, env, handleGetChildNudges);
   if (path === '/api/child-nudges/dismiss' && method === 'POST') return withAuth(request, auth, env, handleDismissChildNudge);
+  if (path === '/api/child-nudges/impulse-outcome' && method === 'POST') return withAuth(request, auth, env, handleImpulseOutcome);
 
   // Streaks — child or parent (child restricted to own data, enforced in handler)
   const streaksMatch = path.match(/^\/api\/streaks\/([^/]+)$/)
