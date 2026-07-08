@@ -103,12 +103,12 @@ export function VerifyLedgerHashScreen() {
                 spellCheck={false}
               />
               {input.trim().length > 0 && !isValidHash(input) && (
-                <p className="text-xs text-amber-500">Hash must be exactly 64 lowercase hexadecimal characters.</p>
+                <p className="text-xs text-red-500">Hash must be exactly 64 lowercase hexadecimal characters.</p>
               )}
               <button
                 type="submit"
                 disabled={!isValidHash(input)}
-                className="w-full rounded-xl bg-[var(--brand-primary)] px-4 py-3 text-sm font-semibold text-white disabled:opacity-40 disabled:cursor-not-allowed transition-opacity"
+                className="w-full rounded-xl bg-[var(--brand-primary)] px-4 py-3 text-sm font-semibold text-white cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed transition-opacity"
               >
                 Verify
               </button>
@@ -196,7 +196,7 @@ export function VerifyLedgerHashScreen() {
                   </p>
                 </div>
               </div>
-              <button onClick={handleReset} className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text)] underline underline-offset-2">
+              <button onClick={handleReset} className="rounded-full bg-teal-500 px-4 py-2 text-xs font-semibold text-white cursor-pointer hover:bg-teal-600 transition-colors">
                 Try again
               </button>
             </div>
@@ -218,7 +218,7 @@ export function VerifyLedgerHashScreen() {
                   </p>
                 </div>
               </div>
-              <button onClick={handleReset} className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text)] underline underline-offset-2">
+              <button onClick={handleReset} className="rounded-full bg-teal-500 px-4 py-2 text-xs font-semibold text-white cursor-pointer hover:bg-teal-600 transition-colors">
                 Try again
               </button>
             </div>

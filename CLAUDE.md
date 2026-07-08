@@ -249,10 +249,10 @@ cd worker && npx wrangler d1 migrations apply morechard --remote --env productio
   - [x] Fast-Track suggestion flow (post-save prompt)
 - [x] An AI-driven "Audit" of monthly spending across all children to identify family-wide trends — Family Audit card in parent Insights tab (`GET /api/family-audit`, `family_audit_snapshots` cache table); shares the "Orchard Mentor" header/`ProBadge`/`AiDisclosurePill` design system with the per-child briefing card
 
-### **Phase 6: Compliance & Legal (The "Audit" Factor)**
-- [ ] Build 'Court-Ready' PDF Audit Export for co-parents
-- [ ] Implement Ledger 'Seal' (Verification page for the PDF)
-- [ ] Finalize COPPA/GDPR-K Privacy Controls (Nicknames only)
+### **Phase 6: Compliance & Legal (The "Audit" Factor)** — CLOSED (2026-07-08)
+- [x] Build 'Court-Ready' PDF Audit Export for co-parents — already shipped, roadmap was stale. `GET /api/export/pdf` (`export.ts`), tiered basic/behavioral/forensic reports with legal citations, tier-gated behind Shield AI; reachable via Settings → Data & Exports (`DataSettings.tsx`).
+- [x] Implement Ledger 'Seal' (Verification page for the PDF) — `VerifyLedgerHashScreen.tsx` + public `GET /api/verify/:hash` (`ledger-verify-public.ts`) already existed but weren't linked. Wired up: PDF exports now print the real chain-head hash as a scannable QR code + clickable `/verify/:hash` link (`export.ts`), so co-parents/courts can jump straight from the document to an auto-verified result with no manual hash entry.
+- [x] Finalize COPPA/GDPR-K Privacy Controls (Nicknames only) — confirmed. Registration only collects `display_name` ("nickname recommended" copy in `Stage3ChildOnboarding.tsx`); no `first_name`/`last_name`/`real_name` column exists anywhere in the schema. Soft control only (free-text field isn't validated against real names).
 - [x] Delete Account (Uproot) — `DELETE /auth/family`; lead-only; soft-deletes family row (`deleted_at`), anonymises all user PII (name/email/hashes → NULL), hard-deletes invite codes & registration progress; ledger rows retained anonymised for hash-chain integrity; UI requires typing `UPROOT` to confirm; co-parents must leave before lead can delete
 
 ### **Phase 7: Monetization & Global Scale**
