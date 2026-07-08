@@ -29,6 +29,16 @@ body:has(.blog-hub-hero) #nav:not(.scrolled):not(:has(.nav-group.is-expanded)) .
   color: #fff;
   background: rgba(255,255,255,0.12);
 }
+/* On mobile, restore dark text inside the open drawer (cream background) */
+@media (max-width: 919px) {
+  body:has(.blog-hub-hero) #nav.is-open:not(.scrolled):not(:has(.nav-group.is-expanded)) .nav-trigger,
+  body:has(.blog-hub-hero) #nav.is-open:not(.scrolled):not(:has(.nav-group.is-expanded)) .nav-item > a {
+    color: var(--text-dark);
+  }
+  body:has(.blog-hub-hero) #nav.is-open:not(.scrolled):not(:has(.nav-group.is-expanded)) .nav-trigger svg {
+    stroke: var(--text-dark);
+  }
+}
 #nav {
   transition-duration: 0.2s;
   transition-timing-function: ease-out;

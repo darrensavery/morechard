@@ -1078,6 +1078,17 @@ body.dark .sample-pdf .pdf-seal { border-top-color: var(--border-dark); }
 }
 #nav:not(.scrolled):not(:has(.nav-group.is-expanded)) [aria-current="page"]::after { background: #fff; }
 
+/* On mobile, restore dark text inside the open drawer (cream background) */
+@media (max-width: 919px) {
+  #nav.is-open:not(.scrolled):not(:has(.nav-group.is-expanded)) .nav-trigger,
+  #nav.is-open:not(.scrolled):not(:has(.nav-group.is-expanded)) .nav-item > a {
+    color: var(--text-dark);
+  }
+  #nav.is-open:not(.scrolled):not(:has(.nav-group.is-expanded)) .nav-trigger svg {
+    stroke: var(--text-dark);
+  }
+}
+
 /* Smooth colour swap when nav transitions to scrolled state */
 #nav .nav-trigger,
 #nav .nav-item > a,
