@@ -1,3 +1,4 @@
+// touch: trigger a Pages build now that functions/* is a watched build path
 export const onRequest: PagesFunction = async (context) => {
   const url = new URL(context.request.url);
   if (url.hostname === 'moneysteps.pages.dev') {
