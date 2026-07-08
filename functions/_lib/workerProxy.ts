@@ -33,7 +33,10 @@ export async function proxyToWorker(request: Request, env: Env): Promise<Respons
     url.port = '';
 
     try {
-      const res = await fetch(new Request(url.toString(), request));
+      // Clone before reading — request bodies can only be consumed once, and
+      // we may still need the original, untouched body for the env.API
+      // fallback below if this preview doesn't exist.
+      const res = await fetch(new Request(url.toString(), request.clone()));
       // No Worker preview exists for this branch yet (e.g. a frontend-only
       // branch that never touched worker/**) — Cloudflare's edge serves a
       // plain 404 HTML error page for the nonexistent workers.dev host,
