@@ -35,9 +35,14 @@ export async function proxyToWorker(request: Request, env: Env): Promise<Respons
     try {
       const res = await fetch(new Request(url.toString(), request));
       // No Worker preview exists for this branch yet (e.g. a frontend-only
-      // branch that never touched worker/**) — Cloudflare's edge returns an
-      // error page rather than failing the fetch. Fall back to production.
-      if (res.status !== 530) return res;
+      // branch that never touched worker/**) — Cloudflare's edge serves a
+      // plain 404 HTML error page for the nonexistent workers.dev host,
+      // rather than failing the fetch. Our real API never returns HTML on
+      // a 404 (only JSON, or occasionally a 200 HTML PDF-export fallback),
+      // so that combination is a reliable "no such preview" signal.
+      const isMissingPreview = res.status === 404 &&
+        (res.headers.get('content-type') ?? '').includes('text/html');
+      if (!isMissingPreview) return res;
     } catch {
       // DNS/network failure reaching the preview host — fall back below.
     }
