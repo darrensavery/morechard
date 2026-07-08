@@ -1323,6 +1323,17 @@ export async function dismissChildNudge(nudgeId: number): Promise<{ ok: boolean 
   });
 }
 
+export async function logImpulseOutcome(body: {
+  family_id: string; child_id: string;
+  amount_pence: number; balance_pence: number;
+  outcome: 'waited' | 'proceeded';
+}): Promise<{ ok: boolean }> {
+  return request('/api/child-nudges/impulse-outcome', {
+    method: 'POST',
+    body: JSON.stringify(body),
+  });
+}
+
 // ----------------------------------------------------------------
 // Family Audit
 // ----------------------------------------------------------------
