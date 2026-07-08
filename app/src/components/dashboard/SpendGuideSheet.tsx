@@ -252,7 +252,7 @@ export function SpendGuideSheet({ open, familyId, childId, currency, appView, av
       family_id: familyId, child_id: childId,
       amount_pence: cooldown.amountPence, balance_pence: availableBalancePence,
       outcome: 'waited',
-    }).catch(() => {})
+    }).catch((err) => console.warn('[ImpulseSpeedBump] failed to log outcome', err))
     setCooldown(null)
     closeEntry()
   }
@@ -265,7 +265,7 @@ export function SpendGuideSheet({ open, familyId, childId, currency, appView, av
       family_id: familyId, child_id: childId,
       amount_pence: amountPence, balance_pence: availableBalancePence,
       outcome: 'proceeded',
-    }).catch(() => {})
+    }).catch((err) => console.warn('[ImpulseSpeedBump] failed to log outcome', err))
     setCooldown(null)
     void doSave(amountPence, title)
   }
@@ -424,7 +424,7 @@ export function SpendGuideSheet({ open, familyId, childId, currency, appView, av
       {entry && cooldown && (
         <div className="absolute inset-0 z-10 flex flex-col justify-end">
           <div className="absolute inset-0 bg-black/40" onClick={handleCooldownWait} />
-          <div className="relative bg-[var(--color-surface)] rounded-t-2xl px-5 pt-2 pb-8 space-y-4">
+          <div className="relative bg-[var(--color-surface)] rounded-t-2xl px-5 pt-2 pb-8 space-y-4 max-h-[88%] overflow-y-auto">
             <div className="flex justify-center pt-3 pb-0">
               <div className="w-10 h-1 rounded-full bg-[var(--color-border)]" />
             </div>

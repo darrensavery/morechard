@@ -297,6 +297,7 @@ export async function generateChildNudge(
   family_id: string,
   trigger_type: string,
   meta?: Record<string, string | number>,
+  opts?: { silent?: boolean },
 ): Promise<void> {
   const def = NUDGES[trigger_type];
   if (!def) return;
@@ -315,14 +316,15 @@ export async function generateChildNudge(
     INSERT INTO child_nudges
       (child_id, family_id, trigger_type, screen_context,
        orchard_text, clean_text, pillar, tone, parent_summary,
-       source, trigger_meta, created_at, expires_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'rule_based', ?, ?, ?)
+       source, trigger_meta, created_at, expires_at, is_dismissed)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'rule_based', ?, ?, ?, ?)
   `).bind(
     child_id, family_id, trigger_type, def.screen,
     orchard_text, clean_text,
     def.pillar, def.tone, def.parent_summary,
     meta ? JSON.stringify(meta) : null,
     now, expires_at,
+    opts?.silent ? 1 : 0,
   ).run();
 }
 
@@ -721,7 +723,7 @@ export async function handleImpulseOutcome(request: Request, env: Env): Promise<
 
   await generateChildNudge(env.DB, child_id, family_id, 'impulse_speed_bump', {
     amount_pence, balance_pence, outcome,
-  });
+  }, { silent: true });
 
   return json({ ok: true });
 }
