@@ -4,6 +4,7 @@ import { createPortal } from 'react-dom';
 import { useMarketRates, fuzzyMatch } from '../../hooks/useMarketRates';
 import { ErrorBox } from '../ui/ErrorBox';
 import { useAndroidBack } from '../../hooks/useAndroidBack';
+import { useDragToClose } from '../../hooks/useDragToClose';
 import { createSuggestion, suggestChore, getSuggestions } from '../../lib/api';
 import type { MarketRate, Suggestion } from '../../lib/api';
 import { currencySymbol } from '../../lib/locale';
@@ -130,6 +131,12 @@ export function ChoreGuideSheet({ open, onClose, familyId, context = null, curre
   useAndroidBack(open && !editRate && !newChoreOpen, onClose);
   useAndroidBack(!!editRate, () => { setEditRate(null); setEditError(null); });
   useAndroidBack(newChoreOpen && !editRate, () => { setNewChoreOpen(false); setNewChoreError(null); });
+
+  const closeNewChore = () => { setNewChoreOpen(false); setNewChoreError(null); }
+  const { sheetRef: newChoreSheetRef, handleProps: newChoreHandleProps } = useDragToClose(closeNewChore)
+
+  const closeEditRate = () => { setEditRate(null); setEditError(null); }
+  const { sheetRef: editRateSheetRef, handleProps: editRateHandleProps } = useDragToClose(closeEditRate)
 
   async function handleNewChoreSuggest() {
     if (!familyId) return;
@@ -434,10 +441,10 @@ export function ChoreGuideSheet({ open, onClose, familyId, context = null, curre
       {/* ── Suggest-a-new-chore bottom sheet (modal) ──────────────── */}
       {newChoreOpen && (
         <div className="absolute inset-0 z-20 flex flex-col justify-end">
-          <div className="absolute inset-0 bg-black/40" onClick={() => { setNewChoreOpen(false); setNewChoreError(null); }} />
-          <div className="relative bg-[var(--color-surface)] rounded-t-2xl px-5 pt-2 pb-8 max-h-[88vh] overflow-y-auto overscroll-contain">
+          <div className="absolute inset-0 bg-black/40" onClick={closeNewChore} />
+          <div ref={newChoreSheetRef} className="relative bg-[var(--color-surface)] rounded-t-2xl px-5 pt-2 pb-8 max-h-[88vh] overflow-y-auto overscroll-contain">
             {/* Drag handle */}
-            <div className="flex justify-center pt-2 pb-1">
+            <div {...newChoreHandleProps}>
               <div className="w-10 h-1 rounded-full bg-[var(--color-border)]" />
             </div>
 
@@ -502,7 +509,7 @@ export function ChoreGuideSheet({ open, onClose, familyId, context = null, curre
               </div>
               <div className="flex gap-3">
                 <button
-                  onClick={() => { setNewChoreOpen(false); setNewChoreError(null); }}
+                  onClick={closeNewChore}
                   className="flex-1 border border-[var(--color-border)] rounded-xl py-2.5 text-[13px] font-semibold text-[var(--color-text-muted)] hover:bg-[var(--color-surface-alt)] cursor-pointer"
                 >
                   Cancel
@@ -523,10 +530,10 @@ export function ChoreGuideSheet({ open, onClose, familyId, context = null, curre
       {/* Amount-edit bottom sheet */}
       {editRate && (
         <div className="absolute inset-0 z-10 flex flex-col justify-end">
-          <div className="absolute inset-0 bg-black/40" onClick={() => { setEditRate(null); setEditError(null); }} />
-          <div className="relative bg-[var(--color-surface)] rounded-t-2xl px-5 pt-2 pb-8 space-y-4">
+          <div className="absolute inset-0 bg-black/40" onClick={closeEditRate} />
+          <div ref={editRateSheetRef} className="relative bg-[var(--color-surface)] rounded-t-2xl px-5 pt-2 pb-8 space-y-4">
             {/* Drag handle */}
-            <div className="flex justify-center pt-2 pb-1">
+            <div {...editRateHandleProps}>
               <div className="w-10 h-1 rounded-full bg-[var(--color-border)]" />
             </div>
 
@@ -578,7 +585,7 @@ export function ChoreGuideSheet({ open, onClose, familyId, context = null, curre
 
             <div className="flex gap-3">
               <button
-                onClick={() => { setEditRate(null); setEditError(null); }}
+                onClick={closeEditRate}
                 className="flex-1 border border-[var(--color-border)] rounded-xl py-3 text-[14px] font-semibold text-[var(--color-text-muted)] hover:bg-[var(--color-surface-alt)] cursor-pointer"
               >
                 Cancel
