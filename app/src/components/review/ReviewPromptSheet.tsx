@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { requestPublicReview, recordOutcome, submitFeedback, trackReviewPrompt } from '../../lib/reviewPrompt'
+import { BaseSheet } from '../ui/BaseSheet'
 
 interface Props {
   open:    boolean
@@ -52,88 +53,80 @@ export function ReviewPromptSheet({ open, onClose }: Props) {
   }
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/50"
-      onClick={handleDismiss}
-    >
-      <div
-        className="w-full max-w-md rounded-t-2xl bg-[var(--surface-card,#1a2a1f)] p-6 pb-8 shadow-2xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {step === 'question' && (
-          <>
-            <h2 className="mb-2 text-center text-lg font-semibold text-white">
-              Are you enjoying Morechard?
-            </h2>
-            <p className="mb-6 text-center text-sm text-white/60">
-              Takes 30 seconds and helps other families find us.
-            </p>
-            <div className="flex flex-col gap-3">
-              <button
-                onClick={handleLoveIt}
-                className="w-full rounded-xl bg-[var(--brand-primary,#4ade80)] py-3 font-semibold text-[#0f1a14]"
-              >
-                Love it!
-              </button>
-              <button
-                onClick={handleNotReally}
-                className="w-full rounded-xl border border-white/20 py-3 font-semibold text-white/80"
-              >
-                Not really
-              </button>
-            </div>
+    <BaseSheet onClose={handleDismiss} panelClassName="w-full max-w-md mx-auto rounded-t-2xl bg-[var(--surface-card,#1a2a1f)] p-6 pb-8 shadow-2xl">
+      {step === 'question' && (
+        <>
+          <h2 className="mb-2 text-center text-lg font-semibold text-white">
+            Are you enjoying Morechard?
+          </h2>
+          <p className="mb-6 text-center text-sm text-white/60">
+            Takes 30 seconds and helps other families find us.
+          </p>
+          <div className="flex flex-col gap-3">
             <button
-              onClick={handleMaybeLater}
-              className="mt-4 w-full text-center text-sm text-white/40 underline"
-            >
-              Maybe later
-            </button>
-          </>
-        )}
-
-        {step === 'feedback' && (
-          <>
-            <h2 className="mb-2 text-center text-lg font-semibold text-white">
-              Thanks for telling us
-            </h2>
-            <p className="mb-4 text-center text-sm text-white/60">
-              What could be better? (optional)
-            </p>
-            <textarea
-              value={feedbackMsg}
-              onChange={(e) => setFeedbackMsg(e.target.value.slice(0, 500))}
-              rows={4}
-              placeholder="Your feedback goes straight to Darren…"
-              className="w-full rounded-xl border border-white/20 bg-white/5 p-3 text-sm text-white placeholder-white/30 focus:outline-none focus:ring-1 focus:ring-[var(--brand-primary,#4ade80)]"
-            />
-            <p className="mb-4 text-right text-xs text-white/30">{feedbackMsg.length}/500</p>
-            <button
-              onClick={handleFeedbackSubmit}
-              disabled={submitting}
-              className="w-full rounded-xl bg-[var(--brand-primary,#4ade80)] py-3 font-semibold text-[#0f1a14] disabled:opacity-50"
-            >
-              {submitting ? 'Sending…' : 'Send feedback'}
-            </button>
-          </>
-        )}
-
-        {step === 'thanks' && (
-          <>
-            <h2 className="mb-2 text-center text-lg font-semibold text-white">
-              We'll look into it
-            </h2>
-            <p className="mb-6 text-center text-sm text-white/60">
-              Your feedback helps us improve Morechard for everyone.
-            </p>
-            <button
-              onClick={onClose}
+              onClick={handleLoveIt}
               className="w-full rounded-xl bg-[var(--brand-primary,#4ade80)] py-3 font-semibold text-[#0f1a14]"
             >
-              Done
+              Love it!
             </button>
-          </>
-        )}
-      </div>
-    </div>
+            <button
+              onClick={handleNotReally}
+              className="w-full rounded-xl border border-white/20 py-3 font-semibold text-white/80"
+            >
+              Not really
+            </button>
+          </div>
+          <button
+            onClick={handleMaybeLater}
+            className="mt-4 w-full text-center text-sm text-white/40 underline"
+          >
+            Maybe later
+          </button>
+        </>
+      )}
+
+      {step === 'feedback' && (
+        <>
+          <h2 className="mb-2 text-center text-lg font-semibold text-white">
+            Thanks for telling us
+          </h2>
+          <p className="mb-4 text-center text-sm text-white/60">
+            What could be better? (optional)
+          </p>
+          <textarea
+            value={feedbackMsg}
+            onChange={(e) => setFeedbackMsg(e.target.value.slice(0, 500))}
+            rows={4}
+            placeholder="Your feedback goes straight to Darren…"
+            className="w-full rounded-xl border border-white/20 bg-white/5 p-3 text-sm text-white placeholder-white/30 focus:outline-none focus:ring-1 focus:ring-[var(--brand-primary,#4ade80)]"
+          />
+          <p className="mb-4 text-right text-xs text-white/30">{feedbackMsg.length}/500</p>
+          <button
+            onClick={handleFeedbackSubmit}
+            disabled={submitting}
+            className="w-full rounded-xl bg-[var(--brand-primary,#4ade80)] py-3 font-semibold text-[#0f1a14] disabled:opacity-50"
+          >
+            {submitting ? 'Sending…' : 'Send feedback'}
+          </button>
+        </>
+      )}
+
+      {step === 'thanks' && (
+        <>
+          <h2 className="mb-2 text-center text-lg font-semibold text-white">
+            We'll look into it
+          </h2>
+          <p className="mb-6 text-center text-sm text-white/60">
+            Your feedback helps us improve Morechard for everyone.
+          </p>
+          <button
+            onClick={onClose}
+            className="w-full rounded-xl bg-[var(--brand-primary,#4ade80)] py-3 font-semibold text-[#0f1a14]"
+          >
+            Done
+          </button>
+        </>
+      )}
+    </BaseSheet>
   )
 }
