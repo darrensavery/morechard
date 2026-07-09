@@ -23,16 +23,17 @@
 <!-- BODY_START -->
 <main class="prose-page container">
   <h1>Privacy Policy</h1>
-  <p class="prose-meta">Transparent Data Management – Version 1.4 (UK, US, PL)</p>
+  <p class="prose-meta">Transparent Data Management – Version 1.5 (UK, US, PL)</p>
 
   <div class="prose-tldr">
     <h2>The Short Version</h2>
     <ul>
       <li><strong>Children:</strong> Nicknames only. We minimise children's data by design and never require legal names or dates of birth for child profiles.</li>
-      <li><strong>The Stack:</strong> We use premium tools like Cloudflare, PostHog, and Sentry to stay secure. Some are US-based; transfers are protected by Standard Contractual Clauses.</li>
+      <li><strong>The Stack:</strong> We use premium tools like Cloudflare, PostHog, Sentry, Stripe, and OpenAI to run the service and power AI Mentor. Some are US-based; transfers are protected by Standard Contractual Clauses.</li>
       <li><strong>Selling Data:</strong> Never. We sell software licences. You are the customer, not the product.</li>
       <li><strong>Cookies:</strong> Only analytics cookies, and only if you accept them. Decline anytime.</li>
-      <li><strong>Erasure:</strong> Delete your account and we purge your personal identifiers after 30 days. Pseudonymised ledger records are retained to preserve hash-chain integrity. They remain personal data under UK GDPR; we hold them under legitimate interests with strict access controls and no retained linkage key.</li>
+      <li><strong>Erasure:</strong> Delete your account and we purge your personal identifiers after 30 days. Pseudonymised ledger records are retained for up to 7 years (aligned with the UK Limitation Act 1980 civil-claims window) to preserve hash-chain integrity, then permanently hard-deleted. They remain personal data under UK GDPR; we hold them under legitimate interests with strict access controls and no retained linkage key.</li>
+      <li><strong>Bank/payout details:</strong> If you use Payment Bridge to save a child's sort code, account number, or Zelle handle for faster payouts, it's stored unencrypted in your browser's session storage only (not on our servers, not persisted between sessions) until we ship an encrypted vault.</li>
     </ul>
   </div>
 
@@ -94,7 +95,12 @@
   <ul>
     <li><strong>Google (US):</strong> Secure "one-tap" authentication. Transfer mechanism: EU SCCs with UK Addendum.</li>
     <li><strong>Resend (US):</strong> Transactional email delivery. Transfer mechanism: EU SCCs with UK Addendum.</li>
-    <li><strong>Paddle (UK):</strong> Merchant of Record handling all payments. UK-based — no international transfer. We never store full payment card details on our own servers.</li>
+    <li><strong>Stripe (US):</strong> Payment processor handling all one-time purchases. We never store full payment card details on our own servers. Transfer mechanism: EU SCCs with UK Addendum.</li>
+  </ul>
+
+  <h3>AI Mentor</h3>
+  <ul>
+    <li><strong>OpenAI (US):</strong> Generates the AI Mentor's coaching observations and weekly insight briefings. We send your child's nickname and minimised behavioural summaries (e.g. chore-completion patterns, savings-goal progress) — never a legal name, date of birth, or exact location. OpenAI does not use this data to train its models (see Section 13 of our Terms). Transfer mechanism: EU SCCs with UK Addendum.</li>
   </ul>
 
   <h2>5. Children's Privacy (COPPA, GDPR-K &amp; the Children's Code)</h2>
@@ -122,7 +128,11 @@
   <p>When you delete your account, a 30-day window begins. Your data is hidden immediately but retained for 30 days to prevent accidental loss and to allow co-parents to intervene if a deletion was unauthorised. After 30 days, personal identifiers — name, email, authentication hashes — are permanently purged from our active systems.</p>
 
   <h3>The family ledger</h3>
-  <p>Ledger transaction records (amounts, timestamps, chore identifiers, and the hash chain) are <strong>pseudonymised</strong> after account deletion — direct personal identifiers are removed and replaced with anonymous tokens. These records remain personal data under UK GDPR: the combination of amounts, timestamps, and chore patterns may constitute a unique behavioural fingerprint capable of singling out a household. We retain them under legitimate interests to preserve the cryptographic integrity of the ledger, with strict access controls and no retained linkage key. See Section 8 for how this interacts with your right to erasure.</p>
+  <p>Ledger transaction records (amounts, timestamps, chore identifiers, and the hash chain) are <strong>pseudonymised</strong> after account deletion — direct personal identifiers are removed and replaced with anonymous tokens. These records remain personal data under UK GDPR: the combination of amounts, timestamps, and chore patterns may constitute a unique behavioural fingerprint capable of singling out a household. We retain them under legitimate interests to preserve the cryptographic integrity of the ledger, with strict access controls and no retained linkage key.</p>
+  <p>We hold pseudonymised ledger records for a maximum of <strong>7 years</strong> after account deletion — a period aligned with the UK Limitation Act 1980 civil-claims window, reflecting the legitimate interest in preserving ledger integrity for that long and no longer. At the end of that period the records, the associated status log, and the payment audit log are permanently hard-deleted from our systems on an automated schedule. See Section 8 for how this interacts with your right to erasure.</p>
+
+  <h3>Bank and payout details (Payment Bridge)</h3>
+  <p>If you use Payment Bridge to store a child's payout details — sort code, account number, or Zelle handle — for faster reward payouts, those details are saved <strong>only in your browser's session storage on your own device</strong>, unencrypted, and are never transmitted to or stored on Morechard's servers. They are cleared automatically when you close the browser tab or app. This is a known interim measure while we build an encrypted vault for this data; if you share a device, avoid leaving payout details entered on a shared or public session.</p>
 
   <h3>Backups</h3>
   <p>Database backups are retained for up to 30 days, encrypted at rest, and then overwritten in rotation. Any personal data purged from active systems is not restored from backups.</p>
@@ -154,7 +164,7 @@
   <p>However, the combination of amounts, timestamps, and chore patterns may constitute a unique behavioural fingerprint. Under UK GDPR this means the retained records are <strong>pseudonymous personal data</strong> — not truly anonymous data. We rely on Article 17(3) to decline full erasure of the hash chain, specifically the legitimate interest in maintaining ledger integrity for audit and legal-claims purposes. We minimise re-identification risk through strict access controls, no indexing of behavioural fields, and no secondary dataset that could enable re-linkage.</p>
 
   <h2>9. Automated Decision-Making</h2>
-  <p>Morechard uses AI to generate coaching observations and financial literacy content personalised to your child's activity in the app. These AI observations are <strong>informational only</strong> — they are presented to parents as guidance and carry no binding effect on any account, access right, or entitlement. A parent reviews all chore approvals, reward payments, and account-level decisions. No purely automated decision that produces a legal or similarly significant effect on any user is made by Morechard.</p>
+  <p>Morechard uses AI (via our sub-processor OpenAI — see Section 4) to generate coaching observations and financial literacy content personalised to your child's activity in the app. These AI observations are <strong>informational only</strong> — they are presented to parents as guidance and carry no binding effect on any account, access right, or entitlement. A parent reviews all chore approvals, reward payments, and account-level decisions. No purely automated decision that produces a legal or similarly significant effect on any user is made by Morechard.</p>
 
   <h2 id="cookies">10. Cookies &amp; Similar Technologies</h2>
   <p>We keep cookies to a minimum. We do <strong>not</strong> use advertising or cross-site tracking cookies, and we never sell your data. On our public website, analytics cookies are <strong>only set after you accept them</strong> using our cookie banner &mdash; if you decline, none are stored. You can change your choice at any time via <a href="#" data-cookie-settings>Cookie settings</a> in the footer.</p>
