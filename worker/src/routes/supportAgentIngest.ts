@@ -7,7 +7,7 @@
 import { Env, IncidentQueueMessage } from '../types.js';
 import { json, error } from '../lib/response.js';
 import { nanoid } from '../lib/nanoid.js';
-import { verifySharedSecret, verifySentrySignature } from '../lib/agent/signatures.js';
+import { verifySentrySignature } from '../lib/agent/signatures.js';
 
 export function dedupeIncomingSentryEvent(input: { existingOpenIncidentId: string | null }): 'new' | 'duplicate' {
   return input.existingOpenIncidentId ? 'duplicate' : 'new';
@@ -50,13 +50,33 @@ export async function handleSentryWebhook(request: Request, env: Env): Promise<R
   }
 
   const incidentId = nanoid();
-  await env.DB
-    .prepare(`
-      INSERT INTO agent_incidents (id, source, source_ref, user_facing, raw_payload)
-      VALUES (?, 'sentry', ?, 0, ?)
-    `)
-    .bind(incidentId, issueId, rawBody)
-    .run();
+  try {
+    await env.DB
+      .prepare(`
+        INSERT INTO agent_incidents (id, source, source_ref, user_facing, raw_payload)
+        VALUES (?, 'sentry', ?, 0, ?)
+      `)
+      .bind(incidentId, issueId, rawBody)
+      .run();
+  } catch (err) {
+    // A concurrent delivery for the same issue can win the SELECT-then-INSERT
+    // race between this request's own dedup check and its INSERT — the
+    // partial unique index (migration 0078) then rejects the loser. Treat
+    // that as the duplicate path rather than letting it bubble up as a 500,
+    // mirroring the retry-on-UNIQUE-constraint pattern in actionLog.ts.
+    const msg = err instanceof Error ? err.message : String(err);
+    if (/UNIQUE constraint failed/i.test(msg)) {
+      await env.DB
+        .prepare(`
+          UPDATE agent_incidents SET occurrence_count = occurrence_count + 1
+          WHERE source = 'sentry' AND source_ref = ? AND status IN ('received','diagnosing','escalated')
+        `)
+        .bind(issueId)
+        .run();
+      return json({ received: true, deduplicated: true });
+    }
+    throw err;
+  }
 
   await env.INCIDENT_QUEUE.send({ incidentId } satisfies IncidentQueueMessage);
 
