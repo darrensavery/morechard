@@ -216,7 +216,7 @@ import {
   handleFeedbackDigest,
 } from './routes/reviewPrompt.js'
 import { handleDevRequest } from './routes/dev.js';
-import { handleSentryWebhook } from './routes/supportAgentIngest.js';
+import { handleSentryWebhook, handleFreshdeskWebhook } from './routes/supportAgentIngest.js';
 
 const SENSITIVE_FIELDS = new Set(['password', 'pin', 'token', 'secret', 'authorization', 'jwt', 'api_key', 'apikey']);
 
@@ -490,6 +490,9 @@ async function route(request: Request, env: Env, method: string, path: string): 
 
   // Sentry webhook — public but signature-verified internally
   if (path === '/api/support-agent/sentry-webhook' && method === 'POST') return handleSentryWebhook(request, env);
+
+  // Freshdesk webhook — public but signature-verified internally
+  if (path === '/api/support-agent/freshdesk-webhook' && method === 'POST') return handleFreshdeskWebhook(request, env);
 
   // Admin — self-contained browser panel (login gated client-side by X-Admin-Key)
   if (path === '/admin' && method === 'GET') return serveAdminUI();

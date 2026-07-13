@@ -7,7 +7,7 @@
 import { Env, IncidentQueueMessage } from '../types.js';
 import { json, error } from '../lib/response.js';
 import { nanoid } from '../lib/nanoid.js';
-import { verifySentrySignature } from '../lib/agent/signatures.js';
+import { verifySentrySignature, verifySharedSecret } from '../lib/agent/signatures.js';
 
 export function dedupeIncomingSentryEvent(input: { existingOpenIncidentId: string | null }): 'new' | 'duplicate' {
   return input.existingOpenIncidentId ? 'duplicate' : 'new';
@@ -77,6 +77,46 @@ export async function handleSentryWebhook(request: Request, env: Env): Promise<R
     }
     throw err;
   }
+
+  await env.INCIDENT_QUEUE.send({ incidentId } satisfies IncidentQueueMessage);
+
+  return json({ received: true, incident_id: incidentId });
+}
+
+// ── POST /api/support-agent/freshdesk-webhook ───────────────────────────
+// Configured as a Freshdesk Automation Rule action ("Trigger webhook") on
+// ticket-create and ticket-update. user_facing is HARD-CODED to 1.
+export async function handleFreshdeskWebhook(request: Request, env: Env): Promise<Response> {
+  const providedSecret = request.headers.get('X-Freshdesk-Webhook-Secret');
+  if (!verifySharedSecret(providedSecret, env.FRESHDESK_WEBHOOK_SECRET)) {
+    return error('Invalid webhook secret', 401);
+  }
+
+  const rawBody = await request.text();
+  let payload: { ticket_id?: string | number; requester_email?: string; subject?: string; description?: string };
+  try {
+    payload = JSON.parse(rawBody);
+  } catch {
+    return error('Invalid JSON body', 400);
+  }
+
+  const ticketId = payload.ticket_id != null ? String(payload.ticket_id) : null;
+  if (!ticketId) return error('Missing ticket_id', 400);
+
+  const incidentText = [
+    payload.requester_email ? `Requester: ${payload.requester_email}` : '',
+    payload.subject ? `Subject: ${payload.subject}` : '',
+    payload.description ?? '',
+  ].filter(Boolean).join('\n');
+
+  const incidentId = nanoid();
+  await env.DB
+    .prepare(`
+      INSERT INTO agent_incidents (id, source, source_ref, user_facing, raw_payload)
+      VALUES (?, 'freshdesk', ?, 1, ?)
+    `)
+    .bind(incidentId, ticketId, incidentText)
+    .run();
 
   await env.INCIDENT_QUEUE.send({ incidentId } satisfies IncidentQueueMessage);
 
