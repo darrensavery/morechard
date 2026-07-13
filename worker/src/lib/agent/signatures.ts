@@ -32,7 +32,9 @@ export async function verifyStripeSupportAgentSignature(
   const timestamp = parts['t'];
   const v1 = parts['v1'];
   if (!timestamp || !v1) return false;
-  if (Math.abs(Date.now() / 1000 - parseInt(timestamp, 10)) > 300) return false;
+  const ts = parseInt(timestamp, 10);
+  if (!Number.isFinite(ts)) return false;
+  if (Math.abs(Date.now() / 1000 - ts) > 300) return false;
 
   const expectedHex = await hmacSha256Hex(secret, `${timestamp}.${rawBody}`);
   return timingSafeEqual(new TextEncoder().encode(expectedHex), new TextEncoder().encode(v1));

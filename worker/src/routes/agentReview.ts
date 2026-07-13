@@ -34,6 +34,9 @@ export async function handleListAgentReviewItems(request: Request, env: Env): Pr
 
   const url = new URL(request.url);
   const status = url.searchParams.get('status') ?? 'pending';
+  if (!['pending', 'approved', 'edited_approved', 'declined', 'executed'].includes(status)) {
+    return error('Invalid status', 400);
+  }
 
   const { results } = await env.DB
     .prepare(`

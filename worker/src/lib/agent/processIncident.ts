@@ -59,16 +59,18 @@ interface IncidentRow {
   source_ref: string;
   user_facing: number;
   raw_payload: string;
+  status: string;
 }
 
 export async function processIncident(env: Env, incidentId: string): Promise<void> {
   ensureReadToolsRegistered();
 
   const incident = await env.DB
-    .prepare('SELECT id, source, source_ref, user_facing, raw_payload FROM agent_incidents WHERE id = ?')
+    .prepare('SELECT id, source, source_ref, user_facing, raw_payload, status FROM agent_incidents WHERE id = ?')
     .bind(incidentId)
     .first<IncidentRow>();
   if (!incident) return; // dedup or a race — nothing to process
+  if (incident.status === 'escalated') return; // already fully processed by a prior attempt (queue retry) — avoid duplicate review items/action-log entries/Claude calls
 
   await env.DB.prepare('UPDATE agent_incidents SET status = ? WHERE id = ?').bind('diagnosing', incidentId).run();
 

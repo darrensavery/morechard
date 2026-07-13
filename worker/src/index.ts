@@ -235,14 +235,19 @@ function scrubSentryEvent(event: Sentry.ErrorEvent): Sentry.ErrorEvent | null {
   return event;
 }
 
-export default {
-  ...Sentry.withSentry(
-    (env: Env) => ({
-      dsn: 'https://5c98bed7630910cc4fd178677dda8b33@o4511158328295424.ingest.de.sentry.io/4511158333997136',
-      tracesSampleRate: 0.1,
-      beforeSend: scrubSentryEvent,
-    }),
-    {
+// Shared Sentry init options — used for both the fetch/scheduled instrumentation
+// below and the queue handler (kept in the same handler object so withSentry's
+// internal instrumentExportedHandlerQueue() picks it up automatically; see the
+// note above the `queue` method).
+const sentryOptions = (env: Env) => ({
+  dsn: 'https://5c98bed7630910cc4fd178677dda8b33@o4511158328295424.ingest.de.sentry.io/4511158333997136',
+  tracesSampleRate: 0.1,
+  beforeSend: scrubSentryEvent,
+});
+
+export default Sentry.withSentry<Env, IncidentQueueMessage>(
+  sentryOptions,
+  {
     async fetch(request: Request, env: Env): Promise<Response> {
       const url    = new URL(request.url);
       const path   = url.pathname;
@@ -351,26 +356,39 @@ export default {
       await runSoftDeletePurge(env, now);
       await runLedgerPurge(env, now);
     },
-  } satisfies ExportedHandler<Env>,
-  ),
-  async queue(batch: MessageBatch<IncidentQueueMessage>, env: Env): Promise<void> {
-    for (const message of batch.messages) {
-      try {
-        await processIncident(env, message.body.incidentId);
-        message.ack();
-      } catch (err) {
-        console.error('processIncident failed:', err);
-        Sentry.captureException(err);
-        await env.DB
-          .prepare('UPDATE agent_incidents SET status = ? WHERE id = ?')
-          .bind('failed', message.body.incidentId)
-          .run()
-          .catch(() => null); // best-effort — don't mask the original error
-        message.retry();
+
+    // Kept in the same object passed to Sentry.withSentry() (rather than spread
+    // in separately) so it gets real Sentry instrumentation. `@sentry/cloudflare`
+    // does NOT publicly export a standalone `instrumentExportedHandlerQueue` —
+    // its package.json `exports` map only exposes "." and "./request", so a deep
+    // import of the internal instrumentQueue module isn't reachable from outside
+    // the package. Instead, `withSentry()`'s own implementation
+    // (build/esm/withSentry.js) already calls
+    // `instrumentExportedHandlerQueue(handler, optionsCallback)` internally on
+    // whatever handler object it's given — so simply including `queue` on the
+    // object passed to `withSentry()` (as done here) is how it picks up the same
+    // auto-instrumentation (span creation, isolated scope, captureException) that
+    // `fetch`/`scheduled` get. The explicit `Sentry.captureException(err)` below
+    // is kept as a defensive backup.
+    async queue(batch: MessageBatch<IncidentQueueMessage>, env: Env): Promise<void> {
+      for (const message of batch.messages) {
+        try {
+          await processIncident(env, message.body.incidentId);
+          message.ack();
+        } catch (err) {
+          console.error('processIncident failed:', err);
+          Sentry.captureException(err);
+          await env.DB
+            .prepare('UPDATE agent_incidents SET status = ? WHERE id = ?')
+            .bind('failed', message.body.incidentId)
+            .run()
+            .catch(() => null); // best-effort — don't mask the original error
+          message.retry();
+        }
       }
-    }
-  },
-};
+    },
+  } satisfies ExportedHandler<Env, IncidentQueueMessage>,
+);
 
 // ----------------------------------------------------------------
 // ISO week number helper (1–53)
@@ -567,6 +585,9 @@ async function route(request: Request, env: Env, method: string, path: string): 
 
   const removeCoParentMatch = path.match(/^\/auth\/family\/co-parent\/([^/]+)$/);
   if (removeCoParentMatch && method === 'DELETE') return withAuth(request, auth, env, (req, e) => handleRemoveCoParent(req, e, removeCoParentMatch[1]));
+
+  // In-app support request — placed before trial check so expired-trial users can still get help
+  if (path === '/api/support-agent/request' && method === 'POST') return withAuth(request, auth, env, handleSupportAgentRequest);
 
   // Settings (any role — children can update their own avatar/theme)
   if (path === '/api/consent/marketing' && method === 'POST') return withAuth(request, auth, env, handleConsentPost)
@@ -810,9 +831,6 @@ async function route(request: Request, env: Env, method: string, path: string): 
 
   // Parent message
   if (path === '/api/parent-message' && method === 'POST') return withAuth(request, auth, env, handleParentMessageSet);
-
-  // In-app support request
-  if (path === '/api/support-agent/request' && method === 'POST') return withAuth(request, auth, env, handleSupportAgentRequest);
 
   // Invite code generation + child onboarding + registration persistence
   if (path === '/auth/invite/generate'        && method === 'POST') return withAuth(request, auth, env, handleGenerateInvite);

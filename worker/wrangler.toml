@@ -107,6 +107,15 @@ bucket_name = "morechard-evidence"
 binding = "RECEIPTS"
 bucket_name = "morechard-receipts"
 
+[[env.production.queues.producers]]
+binding = "INCIDENT_QUEUE"
+queue = "support-agent-incidents"
+
+[[env.production.queues.consumers]]
+queue = "support-agent-incidents"
+max_batch_size = 5
+max_retries = 3
+
 [env.production.ai]
 binding = "AI"
 
