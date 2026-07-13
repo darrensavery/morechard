@@ -8,6 +8,7 @@ import { Env, IncidentQueueMessage } from '../types.js';
 import { json, error } from '../lib/response.js';
 import { nanoid } from '../lib/nanoid.js';
 import { verifySentrySignature, verifySharedSecret } from '../lib/agent/signatures.js';
+import type { JwtPayload } from '../lib/jwt.js';
 
 export function dedupeIncomingSentryEvent(input: { existingOpenIncidentId: string | null }): 'new' | 'duplicate' {
   return input.existingOpenIncidentId ? 'duplicate' : 'new';
@@ -116,6 +117,45 @@ export async function handleFreshdeskWebhook(request: Request, env: Env): Promis
       VALUES (?, 'freshdesk', ?, 1, ?)
     `)
     .bind(incidentId, ticketId, incidentText)
+    .run();
+
+  await env.INCIDENT_QUEUE.send({ incidentId } satisfies IncidentQueueMessage);
+
+  return json({ received: true, incident_id: incidentId });
+}
+
+type AuthedRequest = Request & { auth: JwtPayload };
+
+// ── POST /api/support-agent/request ──────────────────────────────────
+// Parent-only, authenticated. family_id comes from the verified JWT, not
+// from any text the parent typed — already a deterministic identity.
+export async function handleSupportAgentRequest(request: Request, env: Env): Promise<Response> {
+  const auth = (request as AuthedRequest).auth;
+  if (auth.role !== 'parent') return error('Only parents can submit a support request', 403);
+
+  let body: { description?: string; screen?: string };
+  try {
+    body = await request.json();
+  } catch {
+    return error('Invalid JSON body', 400);
+  }
+
+  const description = body.description?.trim();
+  if (!description) return error('description required', 400);
+
+  const incidentText = [
+    `Screen: ${body.screen ?? '(unknown)'}`,
+    `family_id: ${auth.family_id}`,
+    `Description: ${description}`,
+  ].join('\n');
+
+  const incidentId = nanoid();
+  await env.DB
+    .prepare(`
+      INSERT INTO agent_incidents (id, source, source_ref, user_facing, family_id, raw_payload)
+      VALUES (?, 'in_app', ?, 1, ?, ?)
+    `)
+    .bind(incidentId, incidentId, auth.family_id, incidentText)
     .run();
 
   await env.INCIDENT_QUEUE.send({ incidentId } satisfies IncidentQueueMessage);

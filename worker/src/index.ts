@@ -216,7 +216,7 @@ import {
   handleFeedbackDigest,
 } from './routes/reviewPrompt.js'
 import { handleDevRequest } from './routes/dev.js';
-import { handleSentryWebhook, handleFreshdeskWebhook } from './routes/supportAgentIngest.js';
+import { handleSentryWebhook, handleFreshdeskWebhook, handleSupportAgentRequest } from './routes/supportAgentIngest.js';
 
 const SENSITIVE_FIELDS = new Set(['password', 'pin', 'token', 'secret', 'authorization', 'jwt', 'api_key', 'apikey']);
 
@@ -796,6 +796,9 @@ async function route(request: Request, env: Env, method: string, path: string): 
 
   // Parent message
   if (path === '/api/parent-message' && method === 'POST') return withAuth(request, auth, env, handleParentMessageSet);
+
+  // In-app support request
+  if (path === '/api/support-agent/request' && method === 'POST') return withAuth(request, auth, env, handleSupportAgentRequest);
 
   // Invite code generation + child onboarding + registration persistence
   if (path === '/auth/invite/generate'        && method === 'POST') return withAuth(request, auth, env, handleGenerateInvite);
