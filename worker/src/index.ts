@@ -153,6 +153,7 @@ import {
   handleListPromotionCandidates, handlePromotePromotionCandidate, handleDismissPromotionCandidate,
   handleGetAdminExchangeRates, handleUpdateExchangeRate,
 } from './routes/admin.js';
+import { handleListAgentReviewItems, handleDeclineAgentReviewItem } from './routes/agentReview.js';
 import { serveAdminUI } from './routes/admin-ui.js';
 import {
   handleGenerateInvite,
@@ -520,6 +521,13 @@ async function route(request: Request, env: Env, method: string, path: string): 
   if (path === '/api/admin/exchange-rates' && method === 'GET') return handleGetAdminExchangeRates(request, env);
   const exchangeRateMatch = path.match(/^\/api\/admin\/exchange-rates\/([^/]+)$/);
   if (exchangeRateMatch && method === 'PUT') return handleUpdateExchangeRate(exchangeRateMatch[1], request, env);
+
+  // Admin — agent review queue (list + decline)
+  if (path === '/api/admin/agent-review' && method === 'GET')
+    return handleListAgentReviewItems(request, env);
+  const declineMatch = path.match(/^\/api\/admin\/agent-review\/([^/]+)\/decline$/);
+  if (declineMatch && method === 'POST')
+    return handleDeclineAgentReviewItem(request, env, declineMatch[1]);
 
   // Market rates — CRON health check (no user auth)
   if (path === '/api/market-rates/cron' && method === 'GET') return handleMarketRateCron(request, env);
