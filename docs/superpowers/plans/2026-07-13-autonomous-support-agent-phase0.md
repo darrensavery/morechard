@@ -2436,7 +2436,7 @@ Expected: FAIL — `Cannot find module './supportAgentIngest.js'`.
 import { Env, IncidentQueueMessage } from '../types.js';
 import { json, error } from '../lib/response.js';
 import { nanoid } from '../lib/nanoid.js';
-import { verifySharedSecret, verifySentrySignature } from '../lib/agent/signatures.js';
+import { verifySentrySignature } from '../lib/agent/signatures.js';
 
 export function dedupeIncomingSentryEvent(input: { existingOpenIncidentId: string | null }): 'new' | 'duplicate' {
   return input.existingOpenIncidentId ? 'duplicate' : 'new';
@@ -2479,13 +2479,33 @@ export async function handleSentryWebhook(request: Request, env: Env): Promise<R
   }
 
   const incidentId = nanoid();
-  await env.DB
-    .prepare(`
-      INSERT INTO agent_incidents (id, source, source_ref, user_facing, raw_payload)
-      VALUES (?, 'sentry', ?, 0, ?)
-    `)
-    .bind(incidentId, issueId, rawBody)
-    .run();
+  try {
+    await env.DB
+      .prepare(`
+        INSERT INTO agent_incidents (id, source, source_ref, user_facing, raw_payload)
+        VALUES (?, 'sentry', ?, 0, ?)
+      `)
+      .bind(incidentId, issueId, rawBody)
+      .run();
+  } catch (err) {
+    // A concurrent delivery for the same issue can win the SELECT-then-INSERT
+    // race between this request's own dedup check and its INSERT — the
+    // partial unique index (migration 0078) then rejects the loser. Treat
+    // that as the duplicate path rather than letting it bubble up as a 500,
+    // mirroring the retry-on-UNIQUE-constraint pattern in actionLog.ts.
+    const msg = err instanceof Error ? err.message : String(err);
+    if (/UNIQUE constraint failed/i.test(msg)) {
+      await env.DB
+        .prepare(`
+          UPDATE agent_incidents SET occurrence_count = occurrence_count + 1
+          WHERE source = 'sentry' AND source_ref = ? AND status IN ('received','diagnosing','escalated')
+        `)
+        .bind(issueId)
+        .run();
+      return json({ received: true, deduplicated: true });
+    }
+    throw err;
+  }
 
   await env.INCIDENT_QUEUE.send({ incidentId } satisfies IncidentQueueMessage);
 
@@ -2540,7 +2560,17 @@ No new pure logic to unit test beyond what Task 16 already covers
 (shared-secret verification is tested in Task 4) — this task is route
 wiring, verified manually per Task 24's checklist.
 
-- [ ] **Step 1: Add the handler**
+- [ ] **Step 1: Add the import**
+
+Task 16 imported only `verifySentrySignature` from `../lib/agent/signatures.js` (it's the
+only one that task uses). This task needs `verifySharedSecret` too — update the existing
+import line at the top of `worker/src/routes/supportAgentIngest.ts`:
+
+```typescript
+import { verifySentrySignature, verifySharedSecret } from '../lib/agent/signatures.js';
+```
+
+- [ ] **Step 2: Add the handler**
 
 Append to `worker/src/routes/supportAgentIngest.ts`:
 
@@ -2586,7 +2616,7 @@ export async function handleFreshdeskWebhook(request: Request, env: Env): Promis
 }
 ```
 
-- [ ] **Step 2: Wire the route in `index.ts`**
+- [ ] **Step 3: Wire the route in `index.ts`**
 
 Update the import from Task 16:
 
@@ -2601,7 +2631,7 @@ if (path === '/api/support-agent/freshdesk-webhook' && method === 'POST')
   return handleFreshdeskWebhook(request, env);
 ```
 
-- [ ] **Step 3: Run the full test suite**
+- [ ] **Step 4: Run the full test suite**
 
 ```bash
 cd worker
@@ -2610,7 +2640,7 @@ npx vitest run
 
 Expected: all tests still PASS.
 
-- [ ] **Step 4: Commit**
+- [ ] **Step 5: Commit**
 
 ```bash
 git add worker/src/routes/supportAgentIngest.ts worker/src/index.ts
