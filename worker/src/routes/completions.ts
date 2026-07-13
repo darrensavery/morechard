@@ -21,7 +21,7 @@ import type { ReviewPromptState } from '../types.js';
 
 import { json, error, clientIp, parseBody } from '../lib/response.js';
 import { evaluateEligibility } from '../lib/reviewPrompt.js';
-import { computeRecordHash, fetchAndVerifyChainTip } from '../lib/hash.js';
+import { writeLedgerEntry } from '../lib/hash.js';
 import { JwtPayload } from '../lib/jwt.js';
 import { getStreakState, buildStreakEvent, saveStreakEvent, allScheduledChoresDone } from '../lib/streaks.js';
 import { getBadgeStats, badgesToAward, insertBadges } from '../lib/badges.js';
@@ -191,49 +191,46 @@ export async function handleCompletionApprove(
   const now = Math.floor(Date.now() / 1000);
   const disputeBefore = verificationStatus === 'verified_auto' ? now + 172800 : null;
 
-  // Hash chain — verify the tip before extending it
-  let previousHash: string;
-  let newLedgerId: number;
-  try {
-    ({ previousHash, newId: newLedgerId } = await fetchAndVerifyChainTip(env.DB, comp.family_id));
-  } catch (err) {
-    console.error('[handleCompletionApprove] chain integrity failure:', err);
-    return error('Ledger chain integrity failure — contact support', 500);
+  // Atomically claim the completion — the WHERE guard is what actually makes this
+  // safe against two concurrent approvals (double-tap, or approve + approve-all
+  // racing); the earlier status read above is just a fast, friendly rejection.
+  const claim = await env.DB.prepare(`
+    UPDATE completions SET status = 'completed', resolved_at = ?, resolved_by = ?
+    WHERE id = ? AND status = 'awaiting_review'
+  `).bind(now, auth.sub, completionId).run();
+  if (claim.meta.changes === 0) {
+    return error('Cannot approve — completion is no longer awaiting review', 409);
   }
 
-  const recordHash = await computeRecordHash(
-    newLedgerId,
-    comp.family_id,
-    comp.child_id,
-    comp.reward_amount,
-    comp.currency,
-    'credit',
-    previousHash,
-  );
-
-  await env.DB.batch([
-    env.DB.prepare(`
-      INSERT INTO ledger
-        (id, family_id, child_id, chore_id, entry_type, amount, currency,
-         description, verification_status, authorised_by, verified_at, verified_by,
-         previous_hash, record_hash, ip_address, dispute_before)
-      VALUES (?,?,?,?,'credit',?,?,?,?,?,?,?,?,?,?,?)
-    `).bind(
-      newLedgerId,
-      comp.family_id, comp.child_id, comp.chore_id,
-      comp.reward_amount, comp.currency,
-      `Chore completed: ${comp.title}`,
-      verificationStatus,
-      auth.sub, now, auth.sub,
-      previousHash, recordHash, ip,
-      disputeBefore,
-    ),
-    env.DB.prepare(`
-      UPDATE completions
-      SET status = 'completed', resolved_at = ?, resolved_by = ?, ledger_id = ?
-      WHERE id = ?
-    `).bind(now, auth.sub, newLedgerId, completionId),
-  ]);
+  let newLedgerId: number;
+  let recordHash: string;
+  try {
+    ({ id: newLedgerId, recordHash } = await writeLedgerEntry(
+      env.DB, comp.family_id, comp.child_id, comp.reward_amount, comp.currency, 'credit',
+      ({ id, previousHash, recordHash }) => env.DB.batch([
+        env.DB.prepare(`
+          INSERT INTO ledger
+            (id, family_id, child_id, chore_id, entry_type, amount, currency,
+             description, verification_status, authorised_by, verified_at, verified_by,
+             previous_hash, record_hash, ip_address, dispute_before)
+          VALUES (?,?,?,?,'credit',?,?,?,?,?,?,?,?,?,?,?)
+        `).bind(
+          id,
+          comp.family_id, comp.child_id, comp.chore_id,
+          comp.reward_amount, comp.currency,
+          `Chore completed: ${comp.title}`,
+          verificationStatus,
+          auth.sub, now, auth.sub,
+          previousHash, recordHash, ip,
+          disputeBefore,
+        ),
+        env.DB.prepare(`UPDATE completions SET ledger_id = ? WHERE id = ?`).bind(id, completionId),
+      ]),
+    ));
+  } catch (err) {
+    console.error('[handleCompletionApprove] chain integrity/write failure:', err);
+    return error('Ledger chain integrity failure — contact support', 500);
+  }
 
   // Status log
   await env.DB.prepare(`
@@ -548,59 +545,55 @@ export async function handleApproveAll(request: Request, env: Env): Promise<Resp
   const verificationStatus = family.verify_mode === 'amicable' ? 'verified_auto' : 'verified_manual';
   const ip = clientIp(request);
   const now = Math.floor(Date.now() / 1000);
+  const disputeBefore = verificationStatus === 'verified_auto' ? now + 172800 : null;
 
-  // Read and verify the chain tip once, then thread state through the loop in memory.
-  let chainPreviousHash: string;
-  let chainNextId: number;
-  try {
-    const tip = await fetchAndVerifyChainTip(env.DB, family_id);
-    chainPreviousHash = tip.previousHash;
-    chainNextId       = tip.newId;
-  } catch (err) {
-    console.error('[handleApproveAll] chain integrity failure:', err);
-    return error('Ledger chain integrity failure — contact support', 500);
-  }
-
+  // Each completion is claimed atomically before its ledger entry is written, so a
+  // manual /approve racing this same completion can't double-process it, and
+  // writeLedgerEntry re-reads+retries the chain tip if another writer wins the race.
+  const approved: typeof pending = [];
   for (const comp of pending) {
-    const previousHash = chainPreviousHash;
-    const newLedgerId  = chainNextId;
-    const disputeBefore = verificationStatus === 'verified_auto' ? now + 172800 : null;
+    const claim = await env.DB.prepare(`
+      UPDATE completions SET status = 'completed', resolved_at = ?, resolved_by = ?
+      WHERE id = ? AND status = 'awaiting_review'
+    `).bind(now, auth.sub, comp.comp_id).run();
+    if (claim.meta.changes === 0) continue; // already actioned by a concurrent request
 
-    const recordHash = await computeRecordHash(
-      newLedgerId, family_id, comp.child_id,
-      comp.reward_amount, comp.currency, 'credit', previousHash,
-    );
+    try {
+      await writeLedgerEntry(
+        env.DB, family_id, comp.child_id, comp.reward_amount, comp.currency, 'credit',
+        ({ id, previousHash, recordHash }) => env.DB.batch([
+          env.DB.prepare(`
+            INSERT INTO ledger
+              (id, family_id, child_id, chore_id, entry_type, amount, currency,
+               description, verification_status, authorised_by, verified_at, verified_by,
+               previous_hash, record_hash, ip_address, dispute_before)
+            VALUES (?,?,?,?,'credit',?,?,?,?,?,?,?,?,?,?,?)
+          `).bind(
+            id, family_id, comp.child_id, comp.chore_id,
+            comp.reward_amount, comp.currency,
+            `Chore completed: ${comp.title}`,
+            verificationStatus, auth.sub, now, auth.sub,
+            previousHash, recordHash, ip, disputeBefore,
+          ),
+          env.DB.prepare(`UPDATE completions SET ledger_id = ? WHERE id = ?`).bind(id, comp.comp_id),
+        ]),
+      );
+    } catch (err) {
+      console.error('[handleApproveAll] chain integrity/write failure:', err);
+      return error('Ledger chain integrity failure — contact support', 500);
+    }
 
-    await env.DB.batch([
-      env.DB.prepare(`
-        INSERT INTO ledger
-          (id, family_id, child_id, chore_id, entry_type, amount, currency,
-           description, verification_status, authorised_by, verified_at, verified_by,
-           previous_hash, record_hash, ip_address, dispute_before)
-        VALUES (?,?,?,?,'credit',?,?,?,?,?,?,?,?,?,?,?)
-      `).bind(
-        newLedgerId, family_id, comp.child_id, comp.chore_id,
-        comp.reward_amount, comp.currency,
-        `Chore completed: ${comp.title}`,
-        verificationStatus, auth.sub, now, auth.sub,
-        previousHash, recordHash, ip, disputeBefore,
-      ),
-      env.DB.prepare(`
-        UPDATE completions SET status = 'completed', resolved_at = ?, resolved_by = ?, ledger_id = ?
-        WHERE id = ?
-      `).bind(now, auth.sub, newLedgerId, comp.comp_id),
-    ]);
-
-    chainPreviousHash = recordHash;
-    chainNextId       = newLedgerId + 1;
+    approved.push(comp);
   }
+
+  if (approved.length === 0) return json({ approved: 0 });
 
   // ── Gamification hook (approve-all) ───────────────────────────────
   try {
     const pendingCelebrations: string[] = []
 
     // Streak eval: check each unique submission date
-    const uniqueDates = [...new Set(pending.map(c =>
+    const uniqueDates = [...new Set(approved.map(c =>
       new Date(c.submitted_at * 1000).toISOString().slice(0, 10)
     ))]
 
@@ -642,9 +635,9 @@ export async function handleApproveAll(request: Request, env: Env): Promise<Resp
       for (const key of newBadges) pendingCelebrations.push(`BADGE_${key}`)
     }
 
-    return json({ approved: pending.length, pending_celebrations: pendingCelebrations })
+    return json({ approved: approved.length, pending_celebrations: pendingCelebrations })
   } catch {
-    return json({ approved: pending.length, pending_celebrations: [] })
+    return json({ approved: approved.length, pending_celebrations: [] })
   }
   // ── End gamification hook (approve-all) ───────────────────────────
 }

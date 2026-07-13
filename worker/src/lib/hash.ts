@@ -86,6 +86,45 @@ export async function fetchAndVerifyChainTip(
   return { previousHash: tip.record_hash, newId: tip.id + 1 };
 }
 
+const MAX_LEDGER_WRITE_ATTEMPTS = 3;
+
+/**
+ * Fetches the chain tip, computes the next record's hash, and runs the
+ * caller's insert — retrying if a concurrent writer for the same family won
+ * the race for the same `id` (surfaces as a UNIQUE constraint violation on
+ * `ledger.id`, since IDs are computed in JS rather than left to autoincrement).
+ *
+ * This closes the read-tip-then-insert race for a single family without
+ * needing a Durable Object: the loser of the race simply re-reads the new
+ * tip and retries, rather than corrupting the chain or failing the request.
+ */
+export async function writeLedgerEntry(
+  db: D1Database,
+  familyId: string,
+  childId: string,
+  amount: number,
+  currency: string,
+  entryType: string,
+  insert: (ctx: { id: number; previousHash: string; recordHash: string }) => Promise<unknown>,
+): Promise<{ id: number; previousHash: string; recordHash: string }> {
+  for (let attempt = 1; attempt <= MAX_LEDGER_WRITE_ATTEMPTS; attempt++) {
+    const { previousHash, newId } = await fetchAndVerifyChainTip(db, familyId);
+    const recordHash = await computeRecordHash(newId, familyId, childId, amount, currency, entryType, previousHash);
+
+    try {
+      await insert({ id: newId, previousHash, recordHash });
+      return { id: newId, previousHash, recordHash };
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (attempt < MAX_LEDGER_WRITE_ATTEMPTS && /UNIQUE constraint failed/i.test(msg)) {
+        continue;
+      }
+      throw err;
+    }
+  }
+  throw new Error(`Ledger write for family ${familyId} failed after ${MAX_LEDGER_WRITE_ATTEMPTS} attempts — concurrent writer contention`);
+}
+
 export async function verifyChain(entries: Array<{
   id: number;
   family_id: string;

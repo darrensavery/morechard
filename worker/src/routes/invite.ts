@@ -160,6 +160,14 @@ async function redeemChildInvite(
 
   const jti = nanoid();
 
+  // Atomically claim the code first — the WHERE guard is what actually prevents
+  // two near-simultaneous redemptions (double-tap, or opened on two devices)
+  // from both creating an account off the same invite.
+  const claim = await env.DB.prepare(`
+    UPDATE invite_codes SET redeemed_by = ?, redeemed_at = ? WHERE code = ? AND redeemed_at IS NULL
+  `).bind(preCreatedChildId ?? 'pending', now, code).run();
+  if (claim.meta.changes === 0) return error('Invite code already used', 409);
+
   let userId: string;
 
   if (preCreatedChildId) {
@@ -170,9 +178,6 @@ async function redeemChildInvite(
     await env.DB.batch([
       env.DB.prepare(`UPDATE users SET display_name = ? WHERE id = ?`)
         .bind(display_name, userId),
-
-      env.DB.prepare(`UPDATE invite_codes SET redeemed_by = ?, redeemed_at = ? WHERE code = ?`)
-        .bind(userId, now, code),
 
       env.DB.prepare(`
         INSERT INTO sessions (jti, user_id, family_id, role, expires_at, ip_address)
@@ -192,8 +197,8 @@ async function redeemChildInvite(
       env.DB.prepare(`INSERT INTO family_roles (user_id, family_id, role) VALUES (?, ?, 'child')`)
         .bind(userId, familyId),
 
-      env.DB.prepare(`UPDATE invite_codes SET redeemed_by = ?, redeemed_at = ? WHERE code = ?`)
-        .bind(userId, now, code),
+      env.DB.prepare(`UPDATE invite_codes SET redeemed_by = ? WHERE code = ?`)
+        .bind(userId, code),
 
       env.DB.prepare(`
         INSERT INTO sessions (jti, user_id, family_id, role, expires_at, ip_address)
@@ -237,6 +242,13 @@ async function redeemCoParentInvite(
     .prepare('SELECT id FROM users WHERE email = ?').bind(email).first();
   if (existing) return error('Email already registered', 409);
 
+  // Atomically claim the code first — see redeemChildInvite for why this
+  // guard (not the earlier read) is what prevents a double redemption.
+  const claim = await env.DB.prepare(`
+    UPDATE invite_codes SET redeemed_by = ?, redeemed_at = ? WHERE code = ? AND redeemed_at IS NULL
+  `).bind('pending', now, code).run();
+  if (claim.meta.changes === 0) return error('Invite code already used', 409);
+
   const userId       = nanoid();
   const jti          = nanoid();
   const passwordHash = await hashPassword(password);
@@ -250,8 +262,8 @@ async function redeemCoParentInvite(
     env.DB.prepare(`INSERT INTO family_roles (user_id, family_id, role, parent_role) VALUES (?, ?, 'parent', 'co_parent')`)
       .bind(userId, familyId),
 
-    env.DB.prepare(`UPDATE invite_codes SET redeemed_by = ?, redeemed_at = ? WHERE code = ?`)
-      .bind(userId, now, code),
+    env.DB.prepare(`UPDATE invite_codes SET redeemed_by = ? WHERE code = ?`)
+      .bind(userId, code),
 
     env.DB.prepare(`
       INSERT INTO sessions (jti, user_id, family_id, role, expires_at, ip_address)
@@ -314,7 +326,7 @@ export async function handleAddChild(request: Request, env: Env): Promise<Respon
   // If a non-zero opening balance is provided, record it as an immutable ledger entry.
   // Done after the batch so the child row exists before the FK reference.
   if (opening_balance_pence > 0) {
-    const { computeRecordHash, fetchAndVerifyChainTip } = await import('../lib/hash.js');
+    const { writeLedgerEntry } = await import('../lib/hash.js');
 
     const family = await env.DB
       .prepare('SELECT base_currency, verify_mode FROM families WHERE id = ?')
@@ -325,23 +337,19 @@ export async function handleAddChild(request: Request, env: Env): Promise<Respon
     const verificationStatus = family?.verify_mode === 'standard' ? 'verified_manual' : 'verified_auto';
     const ip                 = clientIp(request);
 
-    const { previousHash, newId } = await fetchAndVerifyChainTip(env.DB, caller.family_id);
-
-    const recordHash = await computeRecordHash(
-      newId, caller.family_id, childId,
-      opening_balance_pence, currency, 'credit', previousHash,
+    await writeLedgerEntry(
+      env.DB, caller.family_id, childId, opening_balance_pence, currency, 'credit',
+      ({ id, previousHash, recordHash }) => env.DB.prepare(`
+        INSERT INTO ledger
+          (id, family_id, child_id, entry_type, amount, currency,
+           description, verification_status, previous_hash, record_hash, ip_address)
+        VALUES (?, ?, ?, 'credit', ?, ?, 'Opening balance', ?, ?, ?, ?)
+      `).bind(
+        id, caller.family_id, childId,
+        opening_balance_pence, currency,
+        verificationStatus, previousHash, recordHash, ip,
+      ).run(),
     );
-
-    await env.DB.prepare(`
-      INSERT INTO ledger
-        (id, family_id, child_id, entry_type, amount, currency,
-         description, verification_status, previous_hash, record_hash, ip_address)
-      VALUES (?, ?, ?, 'credit', ?, ?, 'Opening balance', ?, ?, ?, ?)
-    `).bind(
-      newId, caller.family_id, childId,
-      opening_balance_pence, currency,
-      verificationStatus, previousHash, recordHash, ip,
-    ).run();
   }
 
   await env.CACHE.delete(`family:children:${caller.family_id}`);

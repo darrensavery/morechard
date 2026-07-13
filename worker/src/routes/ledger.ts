@@ -20,7 +20,7 @@
  */
 
 import { Env } from '../types.js';
-import { computeRecordHash, fetchAndVerifyChainTip } from '../lib/hash.js';
+import { writeLedgerEntry } from '../lib/hash.js';
 import { json, error, clientIp } from '../lib/response.js';
 import type { JwtPayload } from '../lib/jwt.js';
 
@@ -69,52 +69,42 @@ export async function handleLedgerPost(request: Request, env: Env): Promise<Resp
   const now = Math.floor(Date.now() / 1000);
   const disputeBefore = verificationStatus === 'verified_auto' ? now + 172800 : null; // 48h window
 
-  // --- Verify and extend the hash chain ---
-  let previousHash: string;
+  // --- Verify and extend the hash chain (retries if a concurrent writer wins the race) ---
   let newId: number;
+  let recordHash: string;
   try {
-    ({ previousHash, newId } = await fetchAndVerifyChainTip(env.DB, family_id));
+    ({ id: newId, recordHash } = await writeLedgerEntry(
+      env.DB, family_id, child_id, amount as number, currency as string, entry_type as string,
+      ({ id, previousHash, recordHash }) => env.DB
+        .prepare(`
+          INSERT INTO ledger
+            (id, family_id, child_id, chore_id, entry_type, amount, currency,
+             description, verification_status, authorised_by,
+             previous_hash, record_hash, ip_address, dispute_before)
+          VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+        `)
+        .bind(
+          id,
+          family_id,
+          child_id,
+          chore_id ?? null,
+          entry_type,
+          amount,
+          currency,
+          description,
+          verificationStatus,
+          (verificationStatus === 'verified_auto' ? (authorised_by ?? null) : null),
+          previousHash,
+          recordHash,
+          ip,
+          disputeBefore,
+        )
+        .run(),
+    ));
   } catch (err) {
-    console.error('[handleLedgerPost] chain integrity failure:', err);
+    console.error('[handleLedgerPost] chain integrity/write failure:', err);
     return error('Ledger chain integrity failure — contact support', 500);
   }
-
-  const recordHash = await computeRecordHash(
-    newId,
-    family_id,
-    child_id,
-    amount as number,
-    currency as string,
-    entry_type as string,
-    previousHash,
-  );
-
-  // --- Insert ---
-  await env.DB
-    .prepare(`
-      INSERT INTO ledger
-        (id, family_id, child_id, chore_id, entry_type, amount, currency,
-         description, verification_status, authorised_by,
-         previous_hash, record_hash, ip_address, dispute_before)
-      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)
-    `)
-    .bind(
-      newId,
-      family_id,
-      child_id,
-      chore_id ?? null,
-      entry_type,
-      amount,
-      currency,
-      description,
-      verificationStatus,
-      (verificationStatus === 'verified_auto' ? (authorised_by ?? null) : null),
-      previousHash,
-      recordHash,
-      ip,
-      disputeBefore,
-    )
-    .run();
 
   return json({ id: newId, record_hash: recordHash, verification_status: verificationStatus, dispute_before: disputeBefore }, 201);
 }
