@@ -10,13 +10,10 @@
  *   node scripts/sync-playbook.mjs --env production
  */
 import { readdirSync, readFileSync, writeFileSync, mkdtempSync } from 'node:fs';
-import { join, dirname } from 'node:path';
+import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { fileURLToPath } from 'node:url';
-import { execSync } from 'node:child_process';
+import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-
-const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const isProd = process.argv.includes('--env') && process.argv[process.argv.indexOf('--env') + 1] === 'production';
 const supportDocsDir = join(process.cwd(), '..', 'docs', 'support');
@@ -37,24 +34,16 @@ const tmpDir = mkdtempSync(join(tmpdir(), 'playbook-'));
 const bundlePath = join(tmpDir, 'bundle.md');
 writeFileSync(bundlePath, bundle, 'utf-8');
 
-const envFlag = isProd ? '--env production' : '';
-
-// Helper to escape double quotes in shell strings
-function escapeShellArg(arg) {
-  return `"${arg.replace(/"/g, '\\"')}"`;
-}
-
-// Helper to run wrangler with proper shell escaping
+// shell: true is required so `npx` resolves on Windows (it's a .cmd shim;
+// execFileSync without a shell fails with EINVAL). Passing args as a real
+// ARRAY here — never a pre-joined string — lets Node apply its own correct
+// per-platform argument quoting internally, unlike a hand-built shell
+// string with custom escaping, which is what created the injection risk
+// this rewrite removes.
 function runWrangler(...args) {
-  const escapedArgs = args.map(arg => {
-    // Quote arguments that contain spaces or special characters
-    if (arg.includes(' ') || arg.includes('"') || arg.includes("'")) {
-      return escapeShellArg(arg);
-    }
-    return arg;
-  });
-  const cmd = `npx wrangler ${escapedArgs.join(' ')} ${envFlag}`.trim();
-  execSync(cmd, { stdio: 'inherit', shell: true });
+  const fullArgs = ['wrangler', ...args];
+  if (isProd) fullArgs.push('--env', 'production');
+  execFileSync('npx', fullArgs, { stdio: 'inherit', shell: true });
 }
 
 runWrangler('kv', 'key', 'put', '--binding=CACHE', 'agent:playbook:bundle', '--path', bundlePath);
@@ -67,7 +56,9 @@ for (const file of files) {
   const fileHash = createHash('sha256').update(fileContent, 'utf-8').digest('hex');
   const docPath = `docs/support/${file}`;
   const sqlStatement = `INSERT INTO playbook_sync (doc_path, content_hash, last_synced_at) VALUES ('${docPath}', '${fileHash}', ${now}) ON CONFLICT(doc_path) DO UPDATE SET content_hash = excluded.content_hash, last_synced_at = excluded.last_synced_at;`;
-  runWrangler('d1', 'execute', dbName, '--remote', '--command', sqlStatement);
+  const sqlPath = join(tmpDir, `sync-${file}.sql`);
+  writeFileSync(sqlPath, sqlStatement, 'utf-8');
+  runWrangler('d1', 'execute', dbName, '--remote', '--file', sqlPath);
 }
 
 console.log(`Playbook synced: ${files.length} files, bundle hash ${hash.slice(0, 12)}...`);
