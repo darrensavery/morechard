@@ -2116,9 +2116,22 @@ function ensureReadToolsRegistered(): void {
   readToolsRegistered = true;
 }
 
-/** Extracts the body of a top-level (#) markdown section whose heading contains the given slug. */
+/**
+ * Extracts the body of a top-level (#) markdown section matching the given
+ * category slug. Matches on the LEADING NUMBER (e.g. '06' from
+ * '06-billing-payments-stripe'), not fuzzy text containment — every
+ * docs/support/*.md file's H1 heading starts with the same two-digit
+ * number as its filename, so number matching is exact and unambiguous,
+ * unlike substring matching (which can false-positive across sections
+ * sharing a common word, or fail to match at all if the heading text is
+ * shorter than the full slug — see plan corrections for the original bug).
+ */
 export function extractPlaybookSection(bundle: string, categorySlug: string): string {
   if (categorySlug === 'novel') return '(no matching playbook section — novel incident)';
+
+  const slugNumberMatch = categorySlug.match(/^(\d+)-/);
+  if (!slugNumberMatch) return '(no matching playbook section — novel incident)';
+  const slugNumber = slugNumberMatch[1];
 
   const lines = bundle.split('\n');
   const sectionStarts: number[] = [];
@@ -2126,7 +2139,8 @@ export function extractPlaybookSection(bundle: string, categorySlug: string): st
 
   for (let s = 0; s < sectionStarts.length; s++) {
     const start = sectionStarts[s];
-    if (lines[start].toLowerCase().includes(categorySlug.toLowerCase().replace(/^\d+-/, ''))) {
+    const headingNumberMatch = lines[start].match(/^#\s*(\d+)/);
+    if (headingNumberMatch && headingNumberMatch[1] === slugNumber) {
       const end = s + 1 < sectionStarts.length ? sectionStarts[s + 1] : lines.length;
       return lines.slice(start, end).join('\n').trim();
     }
