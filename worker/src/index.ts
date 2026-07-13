@@ -216,7 +216,10 @@ import {
   handleFeedbackDigest,
 } from './routes/reviewPrompt.js'
 import { handleDevRequest } from './routes/dev.js';
-import { handleSentryWebhook, handleFreshdeskWebhook, handleSupportAgentRequest } from './routes/supportAgentIngest.js';
+import {
+  handleSentryWebhook, handleFreshdeskWebhook,
+  handleSupportAgentRequest, handleSupportAgentStripeWebhook,
+} from './routes/supportAgentIngest.js';
 
 const SENSITIVE_FIELDS = new Set(['password', 'pin', 'token', 'secret', 'authorization', 'jwt', 'api_key', 'apikey']);
 
@@ -493,6 +496,9 @@ async function route(request: Request, env: Env, method: string, path: string): 
 
   // Freshdesk webhook — public but signature-verified internally
   if (path === '/api/support-agent/freshdesk-webhook' && method === 'POST') return handleFreshdeskWebhook(request, env);
+
+  // Stripe webhook — public but signature-verified internally (support-agent isolated endpoint)
+  if (path === '/api/support-agent/stripe-webhook' && method === 'POST') return handleSupportAgentStripeWebhook(request, env);
 
   // Admin — self-contained browser panel (login gated client-side by X-Admin-Key)
   if (path === '/admin' && method === 'GET') return serveAdminUI();

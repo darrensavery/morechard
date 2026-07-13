@@ -7,7 +7,7 @@
 import { Env, IncidentQueueMessage } from '../types.js';
 import { json, error } from '../lib/response.js';
 import { nanoid } from '../lib/nanoid.js';
-import { verifySentrySignature, verifySharedSecret } from '../lib/agent/signatures.js';
+import { verifySentrySignature, verifySharedSecret, verifyStripeSupportAgentSignature } from '../lib/agent/signatures.js';
 import type { JwtPayload } from '../lib/jwt.js';
 
 export function dedupeIncomingSentryEvent(input: { existingOpenIncidentId: string | null }): 'new' | 'duplicate' {
@@ -156,6 +156,52 @@ export async function handleSupportAgentRequest(request: Request, env: Env): Pro
       VALUES (?, 'in_app', ?, 1, ?, ?)
     `)
     .bind(incidentId, incidentId, auth.family_id, incidentText)
+    .run();
+
+  await env.INCIDENT_QUEUE.send({ incidentId } satisfies IncidentQueueMessage);
+
+  return json({ received: true, incident_id: incidentId });
+}
+
+const STRIPE_SUPPORT_AGENT_EVENT_TYPES = new Set([
+  'charge.failed',
+  'charge.dispute.created',
+  'radar.early_fraud_warning.created',
+]);
+
+// ── POST /api/support-agent/stripe-webhook ───────────────────────────────
+// Separate endpoint + secret from the payment-critical handleStripeWebhook
+// in stripe.ts — isolates the agent's ingest surface from the live payment
+// path. user_facing defaults to 0; only becomes true if this later
+// correlates to an actual Freshdesk ticket (handled in processIncident's
+// related_incident_id linkage, not here).
+export async function handleSupportAgentStripeWebhook(request: Request, env: Env): Promise<Response> {
+  const signature = request.headers.get('stripe-signature');
+  if (!signature) return error('Missing stripe-signature header', 400);
+
+  const rawBody = await request.text();
+  const verified = await verifyStripeSupportAgentSignature(rawBody, signature, env.STRIPE_SUPPORT_AGENT_WEBHOOK_SECRET);
+  if (!verified) return error('Invalid webhook signature', 401);
+
+  let event: { id?: string; type?: string };
+  try {
+    event = JSON.parse(rawBody);
+  } catch {
+    return error('Invalid JSON body', 400);
+  }
+
+  if (!event.type || !STRIPE_SUPPORT_AGENT_EVENT_TYPES.has(event.type)) {
+    return json({ received: true, ignored: true });
+  }
+  if (!event.id) return error('Missing event id', 400);
+
+  const incidentId = nanoid();
+  await env.DB
+    .prepare(`
+      INSERT INTO agent_incidents (id, source, source_ref, user_facing, raw_payload)
+      VALUES (?, 'stripe', ?, 0, ?)
+    `)
+    .bind(incidentId, event.id, rawBody)
     .run();
 
   await env.INCIDENT_QUEUE.send({ incidentId } satisfies IncidentQueueMessage);
