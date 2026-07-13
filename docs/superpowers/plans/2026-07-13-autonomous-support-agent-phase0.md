@@ -2823,12 +2823,18 @@ git commit -m "feat: add isolated Stripe ingest route for the support agent"
 - Produces: `HARASSMENT_WATCH_WINDOW_DAYS`, `HARASSMENT_WATCH_THRESHOLD`,
   `classifyHarassmentSignal(distinctTicketCount): boolean` (pure),
   `countDistinctMagicLinkTriggerTickets(db, email, windowDays): Promise<number>`
-  — consumed by Task 21 (Review Queue API, to annotate list items).
+  — **not wired into any route in this plan.** See the note below.
 
 Per the design spec: informational only, no auto-lockout. This module is
-built now (Phase 0) even though `resend_magic_link` itself won't execute
-until Phase 1, so the signal exists from day one of the AUTO tier going
-live rather than being retrofitted.
+built and unit-tested now (Phase 0) so the logic exists before Phase 1
+needs it, but it is **not** called from `agentReview.ts` or the admin UI
+in this plan — the count would always read `0` in Phase 0, since
+`resend_magic_link` has no live handler yet and can never write the
+`agent_action_log` rows this query counts. Wiring it into
+`GET /api/admin/agent-review` and the Review Queue UI is Phase 1 work,
+once `resend_magic_link` actually executes — tracked in this plan's
+Post-plan note alongside the other Phase-1 carry-forward guardrails
+(child-contact ban, AUTO cooldown cap, global daily budget).
 
 - [ ] **Step 1: Write the failing test**
 
@@ -3565,3 +3571,9 @@ for Phase 1 and must not be skipped when that plan is written:
 - **Global daily AUTO budget (spec §4.2):** the fleet-wide ceiling that
   flips the entire AUTO tier to shadow mode if breached. Same reasoning —
   meaningless until AUTO executions exist to count.
+- **Harassment-watch UI wiring (Task 20, spec §2 AUTO tier note):**
+  `countDistinctMagicLinkTriggerTickets` is built and tested in Phase 0 but
+  not called from any route — wire it into
+  `GET /api/admin/agent-review` (and surface it in the Review Queue UI)
+  once `resend_magic_link` has a live handler and can actually produce
+  rows for it to count.
