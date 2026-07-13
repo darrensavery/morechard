@@ -82,6 +82,7 @@ which /docs/notebooklm files were consulted.
 - `app/src/lib/biometrics.ts` — WebAuthn biometric wrapper (Face ID / Touch ID)
 - `app/src/screens/LockScreen.tsx` — Auto-challenges biometrics on app open
 - `app/src/components/registration/Stage3SecureApp.tsx` — Biometric + PIN setup
+- `worker/src/lib/agent/` — Autonomous support agent (Phase 0: shadow mode, diagnosis-only). See `docs/dev/support-agent-runbook.md` for operations and `docs/superpowers/specs/2026-07-13-autonomous-support-agent-design.md` for the authority model.
 
 ## Navigation Rule
 - **Stack Reset on Registration Complete:** Once registration is complete, transition to `/parent` using `window.location.href = '/parent'` (never `navigate('/parent')`). This performs a full-page navigation that clears the history stack so the user cannot swipe/go back to onboarding screens.
