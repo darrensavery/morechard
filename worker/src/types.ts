@@ -27,6 +27,18 @@ export interface Env {
   FRESHDESK_SSO_SECRET:  string;
   BREVO_API_KEY:         string;
   ADMIN_SECRET:          string;
+  // ── Autonomous Support Agent (Phase 0) ──────────────────────────────────
+  ANTHROPIC_API_KEY: string;
+  FRESHDESK_API_KEY: string;
+  FRESHDESK_WEBHOOK_SECRET: string;
+  STRIPE_SUPPORT_AGENT_WEBHOOK_SECRET: string;
+  SENTRY_WEBHOOK_SECRET: string;
+  INCIDENT_QUEUE: Queue<IncidentQueueMessage>;
+}
+
+/** Message shape enqueued by every support-agent ingest route (Tasks 16–19). */
+export interface IncidentQueueMessage {
+  incidentId: string;
 }
 
 // Completion lifecycle statuses

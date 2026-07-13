@@ -24,6 +24,15 @@ binding = "AI"
 [browser]
 binding = "BROWSER"
 
+[[queues.producers]]
+binding = "INCIDENT_QUEUE"
+queue = "support-agent-incidents-dev"
+
+[[queues.consumers]]
+queue = "support-agent-incidents-dev"
+max_batch_size = 5
+max_retries = 3
+
 [[r2_buckets]]
 binding = "EVIDENCE"
 bucket_name = "morechard-evidence"
