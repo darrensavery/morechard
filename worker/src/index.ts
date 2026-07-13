@@ -64,7 +64,8 @@
  */
 
 import * as Sentry from '@sentry/cloudflare';
-import { Env } from './types.js';
+import { Env, IncidentQueueMessage } from './types.js';
+import { processIncident } from './lib/agent/processIncident.js';
 import {
   handleChoreCreate, handleChoreList, handleChoreUpdate,
   handleChoreArchive, handleChoreRestore, handleChoreSubmit, handleChoreClaim,
@@ -229,123 +230,142 @@ function scrubSentryEvent(event: Sentry.ErrorEvent): Sentry.ErrorEvent | null {
   return event;
 }
 
-export default Sentry.withSentry(
-  (env: Env) => ({
-    dsn: 'https://5c98bed7630910cc4fd178677dda8b33@o4511158328295424.ingest.de.sentry.io/4511158333997136',
-    tracesSampleRate: 0.1,
-    beforeSend: scrubSentryEvent,
-  }),
-  {
-  async fetch(request: Request, env: Env): Promise<Response> {
-    const url    = new URL(request.url);
-    const path   = url.pathname;
-    const method = request.method.toUpperCase();
+export default {
+  ...Sentry.withSentry(
+    (env: Env) => ({
+      dsn: 'https://5c98bed7630910cc4fd178677dda8b33@o4511158328295424.ingest.de.sentry.io/4511158333997136',
+      tracesSampleRate: 0.1,
+      beforeSend: scrubSentryEvent,
+    }),
+    {
+    async fetch(request: Request, env: Env): Promise<Response> {
+      const url    = new URL(request.url);
+      const path   = url.pathname;
+      const method = request.method.toUpperCase();
 
-    if (method === 'OPTIONS') {
-      return new Response(null, { status: 204, headers: corsHeaders() });
-    }
+      if (method === 'OPTIONS') {
+        return new Response(null, { status: 204, headers: corsHeaders() });
+      }
 
-    let response: Response;
-    try {
-      response = await route(request, env, method, path);
-    } catch (err) {
-      // D1 Durable Object reset — transient platform error, not a code bug.
-      // Return 503 so clients can retry; suppress from Sentry to avoid noise.
-      if (err instanceof Error && err.message.includes('D1 DB storage operation exceeded timeout')) {
-        response = new Response(
-          JSON.stringify({ error: 'Database temporarily unavailable — please retry' }),
-          { status: 503, headers: { 'Content-Type': 'application/json', 'Retry-After': '2' } },
-        );
-      } else {
-        console.error(err);
+      let response: Response;
+      try {
+        response = await route(request, env, method, path);
+      } catch (err) {
+        // D1 Durable Object reset — transient platform error, not a code bug.
+        // Return 503 so clients can retry; suppress from Sentry to avoid noise.
+        if (err instanceof Error && err.message.includes('D1 DB storage operation exceeded timeout')) {
+          response = new Response(
+            JSON.stringify({ error: 'Database temporarily unavailable — please retry' }),
+            { status: 503, headers: { 'Content-Type': 'application/json', 'Retry-After': '2' } },
+          );
+        } else {
+          console.error(err);
+          Sentry.captureException(err);
+          response = error('Internal server error', 500);
+        }
+      }
+
+      const headers = new Headers(response.headers);
+      for (const [k, v] of Object.entries(corsHeaders())) headers.set(k, v);
+      return new Response(response.body, { status: response.status, headers });
+    },
+
+    async scheduled(_event: ScheduledController, env: Env): Promise<void> {
+      const now = Math.floor(Date.now() / 1000);
+
+      // ── 1. Expire stale governance requests ────────────────────
+      await env.DB
+        .prepare(`UPDATE family_governance_log SET status = 'expired' WHERE status = 'pending' AND expires_at < ?`)
+        .bind(now).run();
+
+      // ── 2. Weekly allowance payday sweep ───────────────────────
+      // Runs every Saturday. For each child with allowance_amount > 0,
+      // check if they have already been paid this week (payday_log UNIQUE
+      // constraint is the idempotency key — safe on cron retry).
+      await runPaydaySweep(env, now);
+
+      // ── 3. Clean up expired SLT tokens and unblocked IP attempts ──
+      await env.DB.prepare('DELETE FROM slt_tokens WHERE expires_at < ?').bind(now).run();
+      await env.DB.prepare('DELETE FROM slt_attempts WHERE blocked_until IS NOT NULL AND blocked_until < ?').bind(now).run();
+
+      // ── 4. Weekly market rate aggregation ──────────────────────
+      await runMarketRateAggregation(env);
+
+      // ── 4b. Weekly suggestion-promotion sweep ──────────────────
+      // Clusters novel child suggestions, parks any that clear the distinct-family
+      // threshold as pending candidates, and emails the operator a review digest.
+      // Gated to the Monday 03:00 UTC tick so it (and its email) runs once a week.
+      {
+        const d = new Date(now * 1000);
+        if (d.getUTCDay() === 1 && d.getUTCHours() === 3) {
+          await runSuggestionPromotion(env);
+        }
+      }
+
+      // ── 5. Marketing re-engagement emails ──────────────────────
+      await runMarketingEmails(env);
+
+      // ── 6. Nightly demo reset (Thomson family) ─────────────────
+      await runDemoReset(env);
+
+      // ── 7. Learning Lab passive-unlock sweep ───────────────────
+      // Re-evaluates inactivity/balance/streak unlock conditions for every active
+      // child, so triggers that depend on the absence of activity (e.g. M14
+      // Inflation, 21 days with no transactions) fire even when the app is closed.
+      // evaluatePassive is idempotent. Gated to the 00:00 UTC tick so this per-child
+      // sweep runs once daily rather than on every cron tick.
+      if (new Date(now * 1000).getUTCHours() === 0) {
+        await runPassiveUnlockSweep(env);
+      }
+
+      // ── 8. Review feedback email digest ────────────────────────
+      if (new Date(now * 1000).getUTCHours() === 7) {
+        await handleFeedbackDigest(env);
+      }
+
+      // ── 9. Child nudge background checks (Sunday 20:00 UTC) ────
+      // Pattern-based nudges: low consistency, spend-heavy, goal at risk,
+      // give jar stagnant, Pillar 5 (high balance + no giving), etc.
+      {
+        const d = new Date(now * 1000);
+        if (d.getUTCDay() === 0 && d.getUTCHours() === 20) {
+          await runChildNudgeBackgroundChecks(env);
+        }
+      }
+
+      // ── 10. Family data purge — two-stage GDPR retention enforcement ─
+      //
+      // Stage 1 (daily): hard-delete operational data for families whose 30-day
+      // soft-delete window has closed. Ledger rows are kept as pseudonymised
+      // personal data (Art. 6(1)(f), LIA-3). Families row is reduced to a
+      // tombstone (id + deleted_at) to gate Stage 2.
+      //
+      // Stage 2 (daily): hard-delete pseudonymised ledger rows and tombstones
+      // for families deleted more than 7 years ago (UK Limitation Act 1980,
+      // civil-claims window — see docs/governance/lia/lia.md LIA-3).
+      await runSoftDeletePurge(env, now);
+      await runLedgerPurge(env, now);
+    },
+  } satisfies ExportedHandler<Env>,
+  ),
+  async queue(batch: MessageBatch<IncidentQueueMessage>, env: Env): Promise<void> {
+    for (const message of batch.messages) {
+      try {
+        await processIncident(env, message.body.incidentId);
+        message.ack();
+      } catch (err) {
+        console.error('processIncident failed:', err);
         Sentry.captureException(err);
-        response = error('Internal server error', 500);
+        await env.DB
+          .prepare('UPDATE agent_incidents SET status = ? WHERE id = ?')
+          .bind('failed', message.body.incidentId)
+          .run()
+          .catch(() => null); // best-effort — don't mask the original error
+        message.retry();
       }
     }
-
-    const headers = new Headers(response.headers);
-    for (const [k, v] of Object.entries(corsHeaders())) headers.set(k, v);
-    return new Response(response.body, { status: response.status, headers });
   },
-
-  async scheduled(_event: ScheduledController, env: Env): Promise<void> {
-    const now = Math.floor(Date.now() / 1000);
-
-    // ── 1. Expire stale governance requests ────────────────────
-    await env.DB
-      .prepare(`UPDATE family_governance_log SET status = 'expired' WHERE status = 'pending' AND expires_at < ?`)
-      .bind(now).run();
-
-    // ── 2. Weekly allowance payday sweep ───────────────────────
-    // Runs every Saturday. For each child with allowance_amount > 0,
-    // check if they have already been paid this week (payday_log UNIQUE
-    // constraint is the idempotency key — safe on cron retry).
-    await runPaydaySweep(env, now);
-
-    // ── 3. Clean up expired SLT tokens and unblocked IP attempts ──
-    await env.DB.prepare('DELETE FROM slt_tokens WHERE expires_at < ?').bind(now).run();
-    await env.DB.prepare('DELETE FROM slt_attempts WHERE blocked_until IS NOT NULL AND blocked_until < ?').bind(now).run();
-
-    // ── 4. Weekly market rate aggregation ──────────────────────
-    await runMarketRateAggregation(env);
-
-    // ── 4b. Weekly suggestion-promotion sweep ──────────────────
-    // Clusters novel child suggestions, parks any that clear the distinct-family
-    // threshold as pending candidates, and emails the operator a review digest.
-    // Gated to the Monday 03:00 UTC tick so it (and its email) runs once a week.
-    {
-      const d = new Date(now * 1000);
-      if (d.getUTCDay() === 1 && d.getUTCHours() === 3) {
-        await runSuggestionPromotion(env);
-      }
-    }
-
-    // ── 5. Marketing re-engagement emails ──────────────────────
-    await runMarketingEmails(env);
-
-    // ── 6. Nightly demo reset (Thomson family) ─────────────────
-    await runDemoReset(env);
-
-    // ── 7. Learning Lab passive-unlock sweep ───────────────────
-    // Re-evaluates inactivity/balance/streak unlock conditions for every active
-    // child, so triggers that depend on the absence of activity (e.g. M14
-    // Inflation, 21 days with no transactions) fire even when the app is closed.
-    // evaluatePassive is idempotent. Gated to the 00:00 UTC tick so this per-child
-    // sweep runs once daily rather than on every cron tick.
-    if (new Date(now * 1000).getUTCHours() === 0) {
-      await runPassiveUnlockSweep(env);
-    }
-
-    // ── 8. Review feedback email digest ────────────────────────
-    if (new Date(now * 1000).getUTCHours() === 7) {
-      await handleFeedbackDigest(env);
-    }
-
-    // ── 9. Child nudge background checks (Sunday 20:00 UTC) ────
-    // Pattern-based nudges: low consistency, spend-heavy, goal at risk,
-    // give jar stagnant, Pillar 5 (high balance + no giving), etc.
-    {
-      const d = new Date(now * 1000);
-      if (d.getUTCDay() === 0 && d.getUTCHours() === 20) {
-        await runChildNudgeBackgroundChecks(env);
-      }
-    }
-
-    // ── 10. Family data purge — two-stage GDPR retention enforcement ─
-    //
-    // Stage 1 (daily): hard-delete operational data for families whose 30-day
-    // soft-delete window has closed. Ledger rows are kept as pseudonymised
-    // personal data (Art. 6(1)(f), LIA-3). Families row is reduced to a
-    // tombstone (id + deleted_at) to gate Stage 2.
-    //
-    // Stage 2 (daily): hard-delete pseudonymised ledger rows and tombstones
-    // for families deleted more than 7 years ago (UK Limitation Act 1980,
-    // civil-claims window — see docs/governance/lia/lia.md LIA-3).
-    await runSoftDeletePurge(env, now);
-    await runLedgerPurge(env, now);
-  },
-} satisfies ExportedHandler<Env>,
-);
+};
 
 // ----------------------------------------------------------------
 // ISO week number helper (1–53)
