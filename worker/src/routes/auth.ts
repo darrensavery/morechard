@@ -1798,7 +1798,7 @@ export async function sendApprovalEmail(
 
   if (!res.ok) {
     const body = await res.text();
-    logger.error('sendApprovalEmail', 'Resend API error', { status: res.status });
+    logger.error('sendApprovalEmail', 'Resend API error', { status: res.status, body });
     // Non-fatal: expense is already recorded; email failure should not roll back the row.
   }
 }

@@ -33,11 +33,13 @@ export class ToolTierNotEnabledError extends Error {
 
 let registry = new Map<string, ToolDefinition>();
 
-export function registerTool(def: ToolDefinition): void {
+export function registerTool<TPayload = unknown, TResult = unknown>(
+  def: ToolDefinition<TPayload, TResult>,
+): void {
   if (registry.has(def.name)) {
     throw new Error(`Tool "${def.name}" is already registered`);
   }
-  registry.set(def.name, def);
+  registry.set(def.name, def as unknown as ToolDefinition);
 }
 
 export function getTool(name: string): ToolDefinition | undefined {

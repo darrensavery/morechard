@@ -7,7 +7,7 @@ describe('sortReviewItems', () => {
       { id: 'a', queue_bucket: 'needs_review', category: 'x' },
       { id: 'b', queue_bucket: 'recommended_approve', category: 'x' },
     ];
-    expect(sortReviewItems(items as never).map(i => i.id)).toEqual(['b', 'a']);
+    expect(sortReviewItems(items).map(i => i.id)).toEqual(['b', 'a']);
   });
 
   it('is stable for items already in the same bucket', () => {
@@ -15,6 +15,6 @@ describe('sortReviewItems', () => {
       { id: 'a', queue_bucket: 'needs_review', category: 'x' },
       { id: 'b', queue_bucket: 'needs_review', category: 'y' },
     ];
-    expect(sortReviewItems(items as never).map(i => i.id)).toEqual(['a', 'b']);
+    expect(sortReviewItems(items).map(i => i.id)).toEqual(['a', 'b']);
   });
 });

@@ -65,7 +65,6 @@ describe('buildRuleBasedFamilyAudit', () => {
   const totals = { total_earned_pence: 5000, total_spent_pence: 2000, total_saved_pence: 1500, total_given_pence: 500 };
 
   it('names the correct Pillar for each flagged pillar type', () => {
-    const cases: Array<[ChildMonthSignal['planning_horizon'] extends never ? never : string, string]> = [] as never;
     const pillars = ['PILLAR_5_SOCIAL_RESPONSIBILITY', 'PILLAR_3_OPPORTUNITY_COST', 'PILLAR_1_LABOUR_VALUE', 'PILLAR_4_CAPITAL_MANAGEMENT'] as const;
     for (const pillar of pillars) {
       const content = buildRuleBasedFamilyAudit(totals, { child_id: 'c1', child_name: 'Logan', pillar }, 'Thomson');

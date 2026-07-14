@@ -2,7 +2,11 @@ name: Worker — Version Upload & Deploy
 
 # What this does, in plain terms:
 #
-#   On every push/PR that touches worker/**  -> uploads a new "version" of the
+#   On every push/PR that touches worker/**  -> first runs `tsc --noEmit` and
+#     the vitest suite (job "test"). Nothing below deploys or uploads a
+#     preview until that job is green.
+#
+#   Then, on every push/PR that touches worker/**  -> uploads a new "version" of the
 #     Worker. This does NOT go live. It's a snapshot you can test against the
 #     REAL production database, at its own private preview URL, before anyone
 #     else sees it (the "green" environment).
@@ -23,10 +27,36 @@ on:
     paths: ['worker/**']
 
 jobs:
+  # Runs for every push/PR. Type-checks and runs the worker test suite.
+  # Both preview and deploy are gated on this passing.
+  test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install worker dependencies
+        working-directory: worker
+        run: npm ci
+
+      - name: Type-check
+        working-directory: worker
+        run: npx tsc --noEmit
+
+      - name: Run tests
+        working-directory: worker
+        run: npx vitest run
+
   # Runs for every push/PR. Uploads a new version and prints its preview URL.
   # Never touches live traffic.
   preview:
     if: github.ref != 'refs/heads/main'
+    needs: test
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -66,6 +96,7 @@ jobs:
   # immediately promotes it to 100% of live traffic.
   deploy:
     if: github.ref == 'refs/heads/main'
+    needs: test
     runs-on: ubuntu-latest
     permissions:
       contents: read
