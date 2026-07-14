@@ -13,6 +13,7 @@
 import { Env } from '../types.js';
 import { checkApprovalToken, consumeApprovalToken } from '../lib/agent/approvalTokens.js';
 import { invokeAutoTool } from '../lib/agent/registry.js';
+import { registerAutoTools } from '../lib/agent/tools/autoTools.js';
 import { writeAgentActionLogEntry } from '../lib/agent/actionLog.js';
 
 interface ReviewItemRow {
@@ -68,6 +69,7 @@ export async function handleApproveReviewItem(
     return htmlResponse('Not one-tap eligible', 'This item requires review in /admin instead.', 409);
   }
 
+  registerAutoTools();
   const payload = JSON.parse(item.recommended_payload) as { email: string };
   const result = await invokeAutoTool('resend_magic_link', env, payload);
 

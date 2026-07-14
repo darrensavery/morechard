@@ -13,7 +13,7 @@
  * email) rather than risk touching it.
  */
 import { Env } from '../../../types.js';
-import { registerTool } from '../registry.js';
+import { registerTool, getTool } from '../registry.js';
 import { nanoid } from '../../nanoid.js';
 import { sha256 } from '../../hash.js';
 import { EmailService } from '../../email.js';
@@ -117,7 +117,16 @@ async function resendMagicLinkHandler(
   return { sent: true };
 }
 
+/**
+ * Idempotent — safe to call from every request path that might need to
+ * invoke an AUTO tool (processIncident.ts's queue consumer AND
+ * routes/agentApprove.ts's standalone fetch handler both call this; they
+ * don't share module state across isolate boundaries, so each call site
+ * must be able to call this without risking the "already registered"
+ * throw from a prior call in the same isolate).
+ */
 export function registerAutoTools(): void {
+  if (getTool('resend_magic_link')) return;
   registerTool({
     name: 'resend_magic_link',
     tier: 'auto',
