@@ -1,5 +1,5 @@
 /**
- * Passive cross-ticket signal for resend_magic_link — a Freshdesk ticket
+ * Passive cross-ticket signal for resend_magic_link — a Zoho Desk ticket
  * is not an authenticated channel, so a bad actor could open ticket after
  * ticket claiming a victim's email to spam their inbox with magic links,
  * staying under the per-request rate cap. This surfaces a count; it never
@@ -26,7 +26,7 @@ export async function countDistinctMagicLinkTriggerTickets(
       FROM agent_action_log aal
       JOIN agent_incidents ai ON ai.id = aal.incident_id
       WHERE aal.tool_name = 'resend_magic_link'
-        AND ai.source = 'freshdesk'
+        AND ai.source = 'zoho_desk'
         AND json_extract(aal.payload, '$.email') = ?
         AND aal.created_at > unixepoch() - (? * 86400)
     `)

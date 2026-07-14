@@ -8,7 +8,6 @@ import { apiUrl } from './lib/api'
 import { AppUrlListener } from './components/AppUrlListener'
 import { AndroidBackController } from './components/AndroidBackController'
 import { AppAutoLock } from './components/AppAutoLock'
-import { FreshdeskWidget } from './components/FreshdeskWidget'
 import { hasSeenOnboarding }  from './lib/onboarding'
 // Sentry is deferred via requestIdleCallback in main.tsx — import lazily here too
 // so vendor-sentry stays out of the initial module graph
@@ -202,7 +201,6 @@ export default function App() {
       <AppUrlListener />
       <AndroidBackController />
       <AppAutoLock />
-      <FreshdeskWidget />
       <Suspense fallback={<SuspenseFallback />}>
         <Routes>
           <Route path="/"           element={<RootGate />} />

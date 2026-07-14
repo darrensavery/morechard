@@ -133,7 +133,7 @@ export async function handleSupportAgentRequest(request: Request, env: Env): Pro
       subject: `Support request from app (${body.screen ?? 'unknown screen'})`,
       description,
       email: user.email,
-      lastName: user.name,
+      lastName: user.name?.trim() || 'Morechard Parent',
     });
   }
 
@@ -150,7 +150,7 @@ const STRIPE_SUPPORT_AGENT_EVENT_TYPES = new Set([
 // Separate endpoint + secret from the payment-critical handleStripeWebhook
 // in stripe.ts — isolates the agent's ingest surface from the live payment
 // path. user_facing defaults to 0; only becomes true if this later
-// correlates to an actual Freshdesk ticket (handled in processIncident's
+// correlates to an actual Zoho Desk ticket (handled in processIncident's
 // related_incident_id linkage, not here).
 export async function handleSupportAgentStripeWebhook(request: Request, env: Env): Promise<Response> {
   const signature = request.headers.get('stripe-signature');
