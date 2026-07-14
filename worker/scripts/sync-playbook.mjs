@@ -46,8 +46,11 @@ function runWrangler(...args) {
   execFileSync('npx', fullArgs, { stdio: 'inherit', shell: true });
 }
 
-runWrangler('kv', 'key', 'put', '--binding=CACHE', 'agent:playbook:bundle', '--path', bundlePath);
-runWrangler('kv', 'key', 'put', '--binding=CACHE', 'agent:playbook:hash', hash);
+// --remote is required or these silently write to wrangler's local KV
+// emulation instead of the real namespace (unlike `d1 execute` below, which
+// already passes --remote).
+runWrangler('kv', 'key', 'put', '--binding=CACHE', '--remote', 'agent:playbook:bundle', '--path', bundlePath);
+runWrangler('kv', 'key', 'put', '--binding=CACHE', '--remote', 'agent:playbook:hash', hash);
 
 const dbName = isProd ? 'morechard' : 'morechard-dev';
 const now = Math.floor(Date.now() / 1000);
