@@ -5,6 +5,44 @@ import { CURRENT_CONSENT_VERSION, ANALYTICS_CONSENT_VERSION } from '../lib/conse
 
 type AuthedRequest = Request & { auth: JwtPayload }
 
+// Brevo list ID for registered-user marketing opt-ins — distinct from list 4,
+// which is the unauthenticated pre-launch "register your interest" list
+// (see routes/public-interest.ts).
+const BREVO_MARKETING_LIST_ID = 5
+
+/**
+ * Best-effort Brevo sync — the marketing_consents row (written by the caller
+ * before this runs) is the first-party source of truth, so a Brevo outage or
+ * error must never fail the request or block recording the parent's choice.
+ */
+async function syncBrevoMarketingConsent(env: Env, email: string, consented: boolean): Promise<void> {
+  if (!env.BREVO_API_KEY) return
+  try {
+    if (consented) {
+      const res = await fetch('https://api.brevo.com/v3/contacts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'api-key': env.BREVO_API_KEY },
+        body: JSON.stringify({ email, listIds: [BREVO_MARKETING_LIST_ID], updateEnabled: true }),
+      })
+      if (res.status !== 201 && res.status !== 204) {
+        console.error(`[consent] Brevo subscribe failed (${res.status}): ${await res.text().catch(() => '')}`)
+      }
+    } else {
+      const res = await fetch(`https://api.brevo.com/v3/contacts/${encodeURIComponent(email)}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'api-key': env.BREVO_API_KEY },
+        body: JSON.stringify({ unlinkListIds: [BREVO_MARKETING_LIST_ID] }),
+      })
+      // 404 means the contact was never subscribed — nothing to unlink, not an error.
+      if (res.status !== 204 && res.status !== 404) {
+        console.error(`[consent] Brevo unsubscribe failed (${res.status}): ${await res.text().catch(() => '')}`)
+      }
+    }
+  } catch (err) {
+    console.error('[consent] Brevo sync failed', err)
+  }
+}
+
 // POST /api/consent/marketing
 export async function handleConsentPost(request: Request, env: Env): Promise<Response> {
   const auth = (request as AuthedRequest).auth
@@ -26,6 +64,15 @@ export async function handleConsentPost(request: Request, env: Env): Promise<Res
               VALUES (?, ?, ?, ?)`)
     .bind(auth.sub, body.consented ? 1 : 0, CURRENT_CONSENT_VERSION, ip)
     .run()
+
+  const user = await env.DB
+    .prepare('SELECT email FROM users WHERE id = ?')
+    .bind(auth.sub)
+    .first<{ email: string }>()
+
+  if (user?.email) {
+    await syncBrevoMarketingConsent(env, user.email, body.consented)
+  }
 
   return json({ ok: true })
 }

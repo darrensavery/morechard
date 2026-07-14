@@ -179,7 +179,6 @@ import {
 import { runMarketRateAggregation } from './jobs/marketRateAggregation.js';
 import { runSuggestionPromotion } from './jobs/suggestionPromotion.js';
 import { runSoftDeletePurge, runLedgerPurge } from './jobs/familyPurge.js';
-import { runMarketingEmails } from './cron/marketing-emails.js';
 import { runDemoReset } from './cron/demo-reset.js';
 import { runPassiveUnlockSweep } from './cron/passive-unlocks.js';
 import { handleChildChat } from './routes/chat.js';
@@ -311,9 +310,6 @@ export default Sentry.withSentry<Env, IncidentQueueMessage>(
           await runSuggestionPromotion(env);
         }
       }
-
-      // ── 5. Marketing re-engagement emails ──────────────────────
-      await runMarketingEmails(env);
 
       // ── 6. Nightly demo reset (Thomson family) ─────────────────
       await runDemoReset(env);
