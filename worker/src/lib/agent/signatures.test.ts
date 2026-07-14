@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest';
 import {
-  verifySharedSecret,
   verifyStripeSupportAgentSignature,
   verifySentrySignature,
 } from './signatures.js';
@@ -12,24 +11,6 @@ async function hmacHex(secret: string, message: string): Promise<string> {
   const sig = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(message));
   return Array.from(new Uint8Array(sig)).map(b => b.toString(16).padStart(2, '0')).join('');
 }
-
-describe('verifySharedSecret', () => {
-  it('returns true for a matching secret', () => {
-    expect(verifySharedSecret('abc123', 'abc123')).toBe(true);
-  });
-
-  it('returns false for a mismatched secret', () => {
-    expect(verifySharedSecret('abc123', 'wrong')).toBe(false);
-  });
-
-  it('returns false when provided is null', () => {
-    expect(verifySharedSecret(null, 'abc123')).toBe(false);
-  });
-
-  it('returns false when expected is empty', () => {
-    expect(verifySharedSecret('abc123', '')).toBe(false);
-  });
-});
 
 describe('verifyStripeSupportAgentSignature', () => {
   it('accepts a correctly signed, fresh payload', async () => {

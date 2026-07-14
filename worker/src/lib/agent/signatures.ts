@@ -6,13 +6,6 @@
  */
 import { timingSafeEqual } from '../crypto.js';
 
-export function verifySharedSecret(provided: string | null, expected: string): boolean {
-  if (!provided || !expected) return false;
-  const a = new TextEncoder().encode(provided);
-  const b = new TextEncoder().encode(expected);
-  return timingSafeEqual(a, b);
-}
-
 async function hmacSha256Hex(secret: string, message: string): Promise<string> {
   const key = await crypto.subtle.importKey(
     'raw', new TextEncoder().encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign'],

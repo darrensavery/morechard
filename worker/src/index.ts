@@ -218,9 +218,10 @@ import {
 } from './routes/reviewPrompt.js'
 import { handleDevRequest } from './routes/dev.js';
 import {
-  handleSentryWebhook, handleFreshdeskWebhook,
+  handleSentryWebhook,
   handleSupportAgentRequest, handleSupportAgentStripeWebhook,
 } from './routes/supportAgentIngest.js';
+import { pollZohoDeskTickets } from './lib/agent/zohoPoll.js';
 
 const SENSITIVE_FIELDS = new Set(['password', 'pin', 'token', 'secret', 'authorization', 'jwt', 'api_key', 'apikey']);
 
@@ -280,7 +281,7 @@ export default Sentry.withSentry<Env, IncidentQueueMessage>(
       return new Response(response.body, { status: response.status, headers });
     },
 
-    async scheduled(_event: ScheduledController, env: Env): Promise<void> {
+    async scheduled(event: ScheduledController, env: Env): Promise<void> {
       const now = Math.floor(Date.now() / 1000);
 
       // ── 1. Expire stale governance requests ────────────────────
@@ -355,6 +356,14 @@ export default Sentry.withSentry<Env, IncidentQueueMessage>(
       // civil-claims window — see docs/governance/lia/lia.md LIA-3).
       await runSoftDeletePurge(env, now);
       await runLedgerPurge(env, now);
+
+      // ── 11. Zoho Desk ticket poll (support agent ingestion) ────
+      // Runs every 5-minute tick only — the other cron entries fire on
+      // this same handler at daily/weekly cadence, so gate on
+      // event.cron to avoid polling on every tick.
+      if (event.cron === '*/5 * * * *') {
+        await pollZohoDeskTickets(env);
+      }
     },
 
     // Kept in the same object passed to Sentry.withSentry() (rather than spread
@@ -512,9 +521,6 @@ async function route(request: Request, env: Env, method: string, path: string): 
 
   // Sentry webhook — public but signature-verified internally
   if (path === '/api/support-agent/sentry-webhook' && method === 'POST') return handleSentryWebhook(request, env);
-
-  // Freshdesk webhook — public but signature-verified internally
-  if (path === '/api/support-agent/freshdesk-webhook' && method === 'POST') return handleFreshdeskWebhook(request, env);
 
   // Stripe webhook — public but signature-verified internally (support-agent isolated endpoint)
   if (path === '/api/support-agent/stripe-webhook' && method === 'POST') return handleSupportAgentStripeWebhook(request, env);
