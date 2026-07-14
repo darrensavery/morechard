@@ -443,6 +443,11 @@ function buildHtml(): string {
     return new Date(ts * 1000).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
   }
 
+  function fmtDateTime(ts) {
+    if (!ts) return '—';
+    return new Date(ts * 1000).toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  }
+
   var toastTimer;
   function toast(msg, type) {
     var el = document.getElementById('toast');
@@ -843,7 +848,7 @@ function buildHtml(): string {
 
     var category = document.createElement('div');
     category.className = 'review-category';
-    setText(category, 'Category: ' + (item.category || 'unknown') + ' — confidence ' + Math.round((item.confidence || 0) * 100) + '%');
+    setText(category, 'Category: ' + (item.category || 'unknown') + ' — confidence ' + Math.round((item.confidence || 0) * 100) + '%' + ' — ' + fmtDateTime(item.created_at));
     card.appendChild(category);
 
     var diagnosis = document.createElement('pre');
