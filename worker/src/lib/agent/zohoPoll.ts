@@ -80,6 +80,13 @@ export async function pollZohoDeskTickets(
       // partial unique index rejects the loser; treat it as a dedupe.
       const msg = err instanceof Error ? err.message : String(err);
       if (/UNIQUE constraint failed/i.test(msg)) {
+        await env.DB
+          .prepare(`
+            UPDATE agent_incidents SET occurrence_count = occurrence_count + 1
+            WHERE source = 'zoho_desk' AND source_ref = ? AND status IN ('received','diagnosing','escalated')
+          `)
+          .bind(ticket.id)
+          .run();
         deduplicated++;
         continue;
       }
