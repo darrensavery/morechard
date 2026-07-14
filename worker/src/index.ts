@@ -165,7 +165,6 @@ import {
 } from './routes/invite.js';
 import { handleInsights } from './routes/insights.js';
 import { handleGetStreaks } from './routes/streaks.js';
-import { handleFreshdeskSso } from './routes/freshdesk-sso.js';
 import {
   handleDemoRegister,
   handleDemoEnter,
@@ -707,9 +706,6 @@ async function route(request: Request, env: Env, method: string, path: string): 
   // Streaks — child or parent (child restricted to own data, enforced in handler)
   const streaksMatch = path.match(/^\/api\/streaks\/([^/]+)$/)
   if (streaksMatch && method === 'GET') return withAuth(request, auth, env, (req, e) => handleGetStreaks(req, e, streaksMatch[1]));
-
-  // Freshdesk SSO — parent only
-  if (path === '/api/freshdesk-sso' && method === 'GET') return handleFreshdeskSso(request, env);
 
   // Chat — child mentor (role check enforced in handler)
   if (path === '/api/chat' && method === 'POST') return withAuth(request, auth, env, (req, e) => handleChildChat(req, e));

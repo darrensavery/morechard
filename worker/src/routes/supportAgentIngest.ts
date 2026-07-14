@@ -8,6 +8,7 @@ import { Env, IncidentQueueMessage } from '../types.js';
 import { json, error } from '../lib/response.js';
 import { nanoid } from '../lib/nanoid.js';
 import { verifySentrySignature, verifyStripeSupportAgentSignature } from '../lib/agent/signatures.js';
+import { createZohoTicket } from '../lib/agent/zoho.js';
 import type { JwtPayload } from '../lib/jwt.js';
 
 export function dedupeIncomingSentryEvent(input: { existingOpenIncidentId: string | null }): 'new' | 'duplicate' {
@@ -89,6 +90,8 @@ type AuthedRequest = Request & { auth: JwtPayload };
 // ── POST /api/support-agent/request ──────────────────────────────────
 // Parent-only, authenticated. family_id comes from the verified JWT, not
 // from any text the parent typed — already a deterministic identity.
+// Best-effort also creates a real Zoho Desk ticket so a human agent has
+// something to work from; failure there never blocks the local incident.
 export async function handleSupportAgentRequest(request: Request, env: Env): Promise<Response> {
   const auth = (request as AuthedRequest).auth;
   if (auth.role !== 'parent') return error('Only parents can submit a support request', 403);
@@ -119,6 +122,20 @@ export async function handleSupportAgentRequest(request: Request, env: Env): Pro
     .run();
 
   await env.INCIDENT_QUEUE.send({ incidentId } satisfies IncidentQueueMessage);
+
+  const user = await env.DB
+    .prepare('SELECT display_name AS name, email FROM users WHERE id = ?')
+    .bind(auth.sub)
+    .first<{ name: string; email: string }>();
+
+  if (user) {
+    await createZohoTicket(env, {
+      subject: `Support request from app (${body.screen ?? 'unknown screen'})`,
+      description,
+      email: user.email,
+      lastName: user.name,
+    });
+  }
 
   return json({ received: true, incident_id: incidentId });
 }
