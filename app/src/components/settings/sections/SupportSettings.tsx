@@ -240,7 +240,7 @@ export function SupportSettings({ toast, onBack }: Props) {
       <SectionCard>
         <button
           type="button"
-          onClick={() => { setShowContactModal(true); setContactSent(false); setContactError(null) }}
+          onClick={() => { setShowContactModal(true); setContactSent(false); setContactError(null); setContactText('') }}
           className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-[var(--color-surface-alt)] active:bg-[var(--color-surface-alt)] transition-colors cursor-pointer"
         >
           <span className="shrink-0 w-8 h-8 rounded-xl flex items-center justify-center bg-[color-mix(in_srgb,var(--brand-primary)_10%,transparent)] text-[var(--brand-primary)]">
@@ -317,7 +317,7 @@ export function SupportSettings({ toast, onBack }: Props) {
             <div className="flex items-center justify-between">
               <p className="text-[15px] font-bold text-[var(--color-text)]">Contact Support</p>
               <button
-                onClick={() => setShowContactModal(false)}
+                onClick={() => { setShowContactModal(false); setContactText('') }}
                 className="tap-target-44 text-[var(--color-text-muted)] cursor-pointer"
               >
                 ✕
