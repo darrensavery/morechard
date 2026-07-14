@@ -14,6 +14,9 @@ import { Env } from '../types.js';
 import { json, error } from '../lib/response.js';
 import { requireAdmin } from '../lib/adminAuth.js';
 import { executeReviewItemAutoTool } from '../lib/agent/reviewExecution.js';
+import { postZohoTicketReply } from '../lib/agent/zoho.js';
+import { draftReplyToHtml } from '../lib/agent/replyFormat.js';
+import { writeAgentActionLogEntry } from '../lib/agent/actionLog.js';
 
 interface ReviewItemRow {
   id: string;
@@ -32,6 +35,7 @@ interface ReviewItemRow {
   decision_note: string | null;
   created_at: number;
   source: string;
+  reply_sent_at: number | null;
 }
 
 export function sortReviewItems<T extends { queue_bucket: string }>(items: T[]): T[] {
@@ -54,7 +58,7 @@ export async function handleListAgentReviewItems(request: Request, env: Env): Pr
     .prepare(`
       SELECT ari.id, ari.incident_id, ari.diagnosis, ari.recommended_tier, ari.recommended_tool, ari.recommended_payload,
              ari.draft_reply, ari.confidence, ari.category, ari.queue_bucket, ari.status,
-             ari.decided_by, ari.decided_at, ari.decision_note, ari.created_at, ai.source
+             ari.decided_by, ari.decided_at, ari.decision_note, ari.created_at, ai.source, ari.reply_sent_at
       FROM agent_review_items ari
       JOIN agent_incidents ai ON ai.id = ari.incident_id
       WHERE ari.status = ? ORDER BY ari.created_at DESC
@@ -119,4 +123,51 @@ export async function handleApproveAgentReviewItem(request: Request, env: Env, i
   );
 
   return json({ ok: true, result });
+}
+
+// ── POST /api/admin/agent-review/:id/send-reply ────────────────────────────
+// Posts the LLM-drafted reply as a real customer-facing email on the
+// originating Zoho Desk ticket. Deliberately independent of Approve/Decline
+// (a reply can be sent with or without the recommended AUTO tool having
+// run) — always human-triggered via this button, never autonomous.
+export async function handleSendReplyAgentReviewItem(request: Request, env: Env, id: string): Promise<Response> {
+  const authErr = requireAdmin(request, env);
+  if (authErr) return authErr;
+
+  const item = await env.DB
+    .prepare(`
+      SELECT ari.id, ari.incident_id, ari.draft_reply, ari.status, ari.reply_sent_at, ai.source, ai.source_ref
+      FROM agent_review_items ari
+      JOIN agent_incidents ai ON ai.id = ari.incident_id
+      WHERE ari.id = ?
+    `)
+    .bind(id)
+    .first<{ id: string; incident_id: string; draft_reply: string | null; status: string; reply_sent_at: number | null; source: string; source_ref: string }>();
+
+  if (!item) return error('Review item not found', 404);
+  if (item.status === 'declined') return error('Cannot send a reply for a declined item', 409);
+  if (item.reply_sent_at) return error('Reply already sent', 409);
+  if (!item.draft_reply) return error('This item has no draft reply', 409);
+  if (item.source !== 'zoho_desk') return error(`Sending replies is only supported for Zoho Desk tickets (this incident's source is "${item.source}")`, 409);
+
+  const html = draftReplyToHtml(item.draft_reply);
+  const result = await postZohoTicketReply(env, item.source_ref, html);
+
+  if (!result.ok) return error(result.error, 502);
+
+  await writeAgentActionLogEntry(env.DB, {
+    incidentId: item.incident_id,
+    actor: 'human:admin-approval',
+    toolName: 'zoho_send_reply',
+    tier: 'auto',
+    payload: { ticketId: item.source_ref },
+    result: { ok: true },
+  });
+
+  await env.DB
+    .prepare(`UPDATE agent_review_items SET reply_sent_at = unixepoch() WHERE id = ?`)
+    .bind(id)
+    .run();
+
+  return json({ ok: true });
 }

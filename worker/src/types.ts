@@ -35,6 +35,7 @@ export interface Env {
   ZOHO_DEPARTMENT_ID: string;
   ZOHO_API_DOMAIN: string;
   ZOHO_ACCOUNTS_DOMAIN: string;
+  ZOHO_FROM_EMAIL: string;
   STRIPE_SUPPORT_AGENT_WEBHOOK_SECRET: string;
   SENTRY_WEBHOOK_SECRET: string;
   INCIDENT_QUEUE: Queue<IncidentQueueMessage>;

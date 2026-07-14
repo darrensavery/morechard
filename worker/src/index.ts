@@ -154,7 +154,7 @@ import {
   handleListPromotionCandidates, handlePromotePromotionCandidate, handleDismissPromotionCandidate,
   handleGetAdminExchangeRates, handleUpdateExchangeRate,
 } from './routes/admin.js';
-import { handleListAgentReviewItems, handleDeclineAgentReviewItem, handleApproveAgentReviewItem } from './routes/agentReview.js';
+import { handleListAgentReviewItems, handleDeclineAgentReviewItem, handleApproveAgentReviewItem, handleSendReplyAgentReviewItem } from './routes/agentReview.js';
 import { handleApproveReviewItem } from './routes/agentApprove.js';
 import { serveAdminUI } from './routes/admin-ui.js';
 import {
@@ -552,6 +552,9 @@ async function route(request: Request, env: Env, method: string, path: string): 
   const adminApproveMatch = path.match(/^\/api\/admin\/agent-review\/([^/]+)\/approve$/);
   if (adminApproveMatch && method === 'POST')
     return handleApproveAgentReviewItem(request, env, adminApproveMatch[1]);
+  const sendReplyMatch = path.match(/^\/api\/admin\/agent-review\/([^/]+)\/send-reply$/);
+  if (sendReplyMatch && method === 'POST')
+    return handleSendReplyAgentReviewItem(request, env, sendReplyMatch[1]);
 
   // Market rates — CRON health check (no user auth)
   if (path === '/api/market-rates/cron' && method === 'GET') return handleMarketRateCron(request, env);

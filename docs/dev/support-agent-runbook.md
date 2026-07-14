@@ -90,6 +90,13 @@ Set via `wrangler secret put <NAME> --env production` from `worker/`:
 For local dev, add real values to `worker/.dev.vars` (gitignored — see
 `.dev.vars.example` for the placeholder list).
 
+`ZOHO_FROM_EMAIL` (used by the "Send Reply" feature) is a plain, non-secret
+var set directly in `wrangler.toml` — currently `support@morechard.com`.
+It must exactly match a sender address verified on the Zoho Desk
+department's email configuration (Zoho Desk → Setup → Email), or
+`sendReply` calls will fail with a 4xx. If it's wrong, just edit the value
+in `wrangler.toml` and push — no secret rotation needed.
+
 ## One-time manual setup (external dashboards)
 
 These are dashboard configuration steps, not code — do them once per
@@ -166,8 +173,13 @@ least 2 weeks of shadow-mode traffic:
 - No GATED tool has a live handler — `invokeGatedTool` doesn't exist.
   `resend_magic_link` is the only AUTO tool, and even it never fires
   without a human clicking the one-tap approve link (see above).
-- No customer message is ever sent, including for AUTO-eligible
-  diagnoses — everything lands in the review queue.
+- No customer message is ever sent autonomously, including for
+  AUTO-eligible diagnoses — everything lands in the review queue. A human
+  can send the drafted reply for a Zoho Desk-sourced item via the /admin
+  "Send Reply" button (`routes/agentReview.ts`'s `/send-reply` endpoint,
+  `lib/agent/zoho.ts`'s `postZohoTicketReply`) — this is a human-triggered
+  action (the click is the approval), not autonomous send, and is
+  independent of the Approve/Decline AUTO-tool flow.
 - Playbook sync is manual.
 - Zoho Desk ingestion is poll-based (every 5 minutes), not webhook-push,
   because Zoho's free tier doesn't support outgoing webhooks — expect up to

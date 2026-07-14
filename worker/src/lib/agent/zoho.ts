@@ -153,3 +153,67 @@ export async function createZohoTicket(
     return null;
   }
 }
+
+/** Fetches a single ticket's requester email — needed as the `to` address
+ * for sendReply, since agent_incidents only stores the email as free text
+ * inside raw_payload, not as a structured field. */
+export async function getZohoTicketContactEmail(env: Env, ticketId: string): Promise<string | null> {
+  const accessToken = await getZohoAccessToken(env);
+  const res = await fetch(`${env.ZOHO_API_DOMAIN}/api/v1/tickets/${encodeURIComponent(ticketId)}`, {
+    headers: {
+      Authorization: `Zoho-oauthtoken ${accessToken}`,
+      orgId: env.ZOHO_ORG_ID,
+    },
+  });
+  if (!res.ok) {
+    throw new Error(`Zoho ticket fetch failed (${res.status}): ${await res.text()}`);
+  }
+  const data = await res.json() as { email?: string; contact?: { email?: string } };
+  return data.email ?? data.contact?.email ?? null;
+}
+
+export type ZohoSendReplyResult =
+  | { ok: true }
+  | { ok: false; error: string };
+
+/**
+ * Sends a real, customer-facing email reply on an existing Zoho Desk
+ * ticket via the sendReply API — as opposed to createZohoTicket (which
+ * opens a brand-new ticket). Always human-triggered (the /admin "Send
+ * Reply" button), matching the AUTO-tool authority model documented in
+ * tools/autoTools.ts: the AI drafts, a human clicks, this just does the
+ * deed. Never throws — callers surface `.error` back to the admin UI.
+ */
+export async function postZohoTicketReply(
+  env: Env,
+  ticketId: string,
+  contentHtml: string,
+): Promise<ZohoSendReplyResult> {
+  try {
+    const to = await getZohoTicketContactEmail(env, ticketId);
+    if (!to) return { ok: false, error: 'Could not determine the ticket requester’s email address' };
+
+    const accessToken = await getZohoAccessToken(env);
+    const res = await fetch(`${env.ZOHO_API_DOMAIN}/api/v1/tickets/${encodeURIComponent(ticketId)}/sendReply`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Zoho-oauthtoken ${accessToken}`,
+        orgId: env.ZOHO_ORG_ID,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        fromEmailAddress: env.ZOHO_FROM_EMAIL,
+        to,
+        content: contentHtml,
+        contentType: 'html',
+        channel: 'EMAIL',
+      }),
+    });
+    if (!res.ok) {
+      return { ok: false, error: `Zoho sendReply failed (${res.status}): ${await res.text()}` };
+    }
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : String(err) };
+  }
+}

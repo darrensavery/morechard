@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { buildZohoSearchUrl, parseZohoSearchResponse, buildZohoCreateTicketBody, searchZohoTicketsModifiedBetween } from './zoho.js';
+import { buildZohoSearchUrl, parseZohoSearchResponse, buildZohoCreateTicketBody, searchZohoTicketsModifiedBetween, getZohoTicketContactEmail, postZohoTicketReply } from './zoho.js';
 
 const fakeEnv = {
   ZOHO_API_DOMAIN: 'https://desk.zoho.com',
@@ -83,6 +83,115 @@ describe('searchZohoTicketsModifiedBetween', () => {
 
     const result = await searchZohoTicketsModifiedBetween(env, '2026-07-14T00:00:00.000Z', '2026-07-14T00:05:00.000Z');
     expect(result).toEqual([]);
+  });
+});
+
+describe('getZohoTicketContactEmail', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  const baseEnv = {
+    CACHE: { get: async () => 'fake-token', put: async () => undefined },
+    ZOHO_ACCOUNTS_DOMAIN: 'https://accounts.zoho.eu',
+    ZOHO_API_DOMAIN: 'https://desk.zoho.eu',
+    ZOHO_ORG_ID: 'x',
+  } as never;
+
+  it('returns the top-level email field when present', async () => {
+    const fetchMock = vi.fn().mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ email: 'parent@example.com' }),
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const email = await getZohoTicketContactEmail(baseEnv, '31138000011969204');
+    expect(email).toBe('parent@example.com');
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://desk.zoho.eu/api/v1/tickets/31138000011969204',
+      expect.objectContaining({ headers: expect.objectContaining({ orgId: 'x' }) }),
+    );
+  });
+
+  it('falls back to the nested contact.email field', async () => {
+    const fetchMock = vi.fn().mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ contact: { email: 'parent@example.com' } }),
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    expect(await getZohoTicketContactEmail(baseEnv, '1')).toBe('parent@example.com');
+  });
+
+  it('returns null when no email is present anywhere', async () => {
+    const fetchMock = vi.fn().mockResolvedValueOnce({ ok: true, json: async () => ({}) });
+    vi.stubGlobal('fetch', fetchMock);
+
+    expect(await getZohoTicketContactEmail(baseEnv, '1')).toBeNull();
+  });
+
+  it('throws with the response body when the fetch fails', async () => {
+    const fetchMock = vi.fn().mockResolvedValueOnce({ ok: false, status: 404, text: async () => 'not found' });
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(getZohoTicketContactEmail(baseEnv, '1')).rejects.toThrow('Zoho ticket fetch failed (404): not found');
+  });
+});
+
+describe('postZohoTicketReply', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  const baseEnv = {
+    CACHE: { get: async () => 'fake-token', put: async () => undefined },
+    ZOHO_ACCOUNTS_DOMAIN: 'https://accounts.zoho.eu',
+    ZOHO_API_DOMAIN: 'https://desk.zoho.eu',
+    ZOHO_ORG_ID: 'x',
+    ZOHO_FROM_EMAIL: 'support@morechard.com',
+  } as never;
+
+  it('fetches the contact email then posts sendReply with the html content', async () => {
+    const fetchMock = vi.fn()
+      // ticket fetch (for contact email)
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ email: 'parent@example.com' }) })
+      // sendReply
+      .mockResolvedValueOnce({ ok: true, json: async () => ({}) });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const result = await postZohoTicketReply(baseEnv, '31138000011969204', '<p>Hi</p>');
+    expect(result).toEqual({ ok: true });
+
+    const sendReplyCall = fetchMock.mock.calls[1];
+    expect(sendReplyCall[0]).toBe('https://desk.zoho.eu/api/v1/tickets/31138000011969204/sendReply');
+    const body = JSON.parse(sendReplyCall[1].body);
+    expect(body).toEqual({
+      fromEmailAddress: 'support@morechard.com',
+      to: 'parent@example.com',
+      content: '<p>Hi</p>',
+      contentType: 'html',
+      channel: 'EMAIL',
+    });
+  });
+
+  it('returns an error result (does not throw) when no contact email can be found', async () => {
+    const fetchMock = vi.fn().mockResolvedValueOnce({ ok: true, json: async () => ({}) });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const result = await postZohoTicketReply(baseEnv, '1', '<p>Hi</p>');
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.error).toMatch(/email address/);
+  });
+
+  it('returns an error result when the sendReply call fails', async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ email: 'parent@example.com' }) })
+      .mockResolvedValueOnce({ ok: false, status: 422, text: async () => 'invalid fromEmailAddress' });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const result = await postZohoTicketReply(baseEnv, '1', '<p>Hi</p>');
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.error).toContain('invalid fromEmailAddress');
   });
 });
 

@@ -1105,18 +1105,34 @@ function buildHtml(): string {
       draft.className = 'review-draft';
 
       var draftHeader = document.createElement('div');
-      draftHeader.style.cssText = 'display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:8px';
+      draftHeader.style.cssText = 'display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:8px;flex-wrap:wrap';
       var label = document.createElement('strong');
-      label.textContent = 'Draft reply (not sent):';
+      setText(label, item.reply_sent_at ? 'Draft reply:' : 'Draft reply (not sent):');
       draftHeader.appendChild(label);
+
       var draftReplyText = item.draft_reply;
-      draftHeader.appendChild(btn('Copy HTML', 'btn-ghost btn-sm', function () { copyDraftReplyHtml(body, draftReplyText); }));
+      var draftActions = document.createElement('div');
+      draftActions.style.cssText = 'display:flex;gap:8px';
+      draftActions.appendChild(btn('Copy HTML', 'btn-ghost btn-sm', function () { copyDraftReplyHtml(body, draftReplyText); }));
+      if (item.source === 'zoho_desk' && !item.reply_sent_at && item.status !== 'declined') {
+        var reviewItemId = item.id; // capture for closure
+        draftActions.appendChild(btn('Send Reply', 'btn-primary btn-sm', function () { sendReviewItemReply(reviewItemId); }));
+      }
+      draftHeader.appendChild(draftActions);
       draft.appendChild(draftHeader);
 
       var body = document.createElement('div');
       body.className = 'review-draft-body';
       renderFormattedReply(body, item.draft_reply);
       draft.appendChild(body);
+
+      if (item.reply_sent_at) {
+        var sentNote = document.createElement('div');
+        sentNote.className = 'review-category';
+        sentNote.style.marginTop = '8px';
+        setText(sentNote, 'Reply sent to customer — ' + fmtDateTime(item.reply_sent_at));
+        draft.appendChild(sentNote);
+      }
 
       card.appendChild(draft);
     }
@@ -1170,6 +1186,17 @@ function buildHtml(): string {
       .then(function (res) {
         if (res.ok) { toast('Declined', 'ok'); loadAgentReviewItems(); }
         else toast((res.d && res.d.error) || 'Decline failed', 'err');
+      })
+      .catch(function () { toast('Network error', 'err'); });
+  }
+
+  function sendReviewItemReply(id) {
+    if (!confirm('Send this draft as a real reply to the customer on their Zoho ticket now? This cannot be undone.')) return;
+    apiFetch('/api/admin/agent-review/' + encodeURIComponent(id) + '/send-reply', { method: 'POST', body: '{}' })
+      .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
+      .then(function (res) {
+        if (res.ok) { toast('Reply sent', 'ok'); loadAgentReviewItems(); }
+        else toast((res.d && res.d.error) || 'Send failed', 'err');
       })
       .catch(function () { toast('Network error', 'err'); });
   }
