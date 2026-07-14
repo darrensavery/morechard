@@ -45,7 +45,7 @@ export function buildMagicLinkResendEmail(
   const html = `<div style="font-family:system-ui,sans-serif;font-size:14px;color:#1a1a1a">
     <p style="font-size:16px;font-weight:700">🌱 Morechard sign-in link</p>
     <p>Hi ${safeName},</p>
-    <p><a href="${link}" style="display:inline-block;background:#0f6b4f;color:#ffffff;font-weight:700;text-decoration:none;padding:14px 28px;border-radius:10px">Sign in to Morechard</a></p>
+    <p><a href="${link}" style="display:inline-block;background:#00959c;color:#ffffff;font-weight:700;text-decoration:none;padding:14px 28px;border-radius:10px">Sign in to Morechard</a></p>
     <p style="color:#999;font-size:12px">This link expires in 15 minutes. If you didn't request this, you can ignore this email.</p>
   </div>`;
   return { subject, text, html };

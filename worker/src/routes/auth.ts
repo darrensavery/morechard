@@ -1656,25 +1656,33 @@ async function sendMagicLinkEmail(
 }
 
 function buildMagicLinkHtml(name: string, link: string): string {
+  const TEAL = '#00959c';
+  const CREAM = '#f9f7f2';
+  const LOGO_URL = 'https://app.morechard.com/icons/icon-192.png';
+
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Sign in to Morechard</title>
+  <!--[if !mso]><!-->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <!--<![endif]-->
 </head>
-<body style="margin:0;padding:0;background-color:#f4f7f6;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;">
-  <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color:#f4f7f6;padding:40px 20px;">
+<body style="margin:0;padding:0;background-color:${CREAM};font-family:'Manrope',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;">
+  <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color:${CREAM};padding:40px 20px;">
     <tr>
       <td align="center">
         <!-- Main Email Container -->
-        <table width="100%" id="email-card" border="0" cellspacing="0" cellpadding="0" style="max-width:520px;background-color:#ffffff;border:1px solid #e2e8f0;border-radius:16px;box-shadow:0 4px 6px -1px rgba(0,0,0,0.05);overflow:hidden;">
+        <table width="100%" id="email-card" border="0" cellspacing="0" cellpadding="0" style="max-width:520px;background-color:#ffffff;border:1px solid #e2e8e2;border-radius:16px;box-shadow:0 4px 6px -1px rgba(0,0,0,0.05);overflow:hidden;">
 
           <!-- Top Header Band -->
           <tr>
-            <td style="background-color:#0f6b4f;padding:24px;text-align:center;">
-              <span style="font-size:24px;line-height:1;vertical-align:middle;margin-right:8px;">🌱</span>
-              <span style="color:#ffffff;font-size:20px;font-weight:700;letter-spacing:-0.5px;vertical-align:middle;font-family:inherit;">Morechard</span>
+            <td style="background-color:${CREAM};padding:28px 24px;text-align:center;border-bottom:1px solid #e2e8e2;">
+              <img src="${LOGO_URL}" width="36" height="36" alt="Morechard" style="display:inline-block;vertical-align:middle;margin-right:10px;border-radius:8px;">
+              <span style="vertical-align:middle;font-family:'Manrope',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:22px;font-weight:800;letter-spacing:-0.3px;color:#1b2d2e;">Morechard</span>
             </td>
           </tr>
 
@@ -1692,7 +1700,7 @@ function buildMagicLinkHtml(name: string, link: string): string {
                   <td align="center">
                     <a href="${link}"
                        target="_blank"
-                       style="display:inline-block;background-color:#0f6b4f;color:#ffffff;font-size:16px;font-weight:600;text-decoration:none;padding:14px 32px;border-radius:8px;box-shadow:0 2px 4px rgba(15,107,79,0.2);">
+                       style="display:inline-block;background-color:${TEAL};color:#ffffff;font-size:16px;font-weight:700;text-decoration:none;padding:14px 32px;border-radius:8px;box-shadow:0 2px 4px rgba(0,149,156,0.25);">
                       Sign in to Morechard
                     </a>
                   </td>
@@ -1702,7 +1710,7 @@ function buildMagicLinkHtml(name: string, link: string): string {
               <!-- Fallback Link -->
               <p style="margin:0 0 24px 0;font-size:13px;line-height:1.5;color:#718096;text-align:center;">
                 Button not working? Copy and paste this URL into your browser:<br>
-                <a href="${link}" style="color:#0f6b4f;text-decoration:underline;word-break:break-all;">
+                <a href="${link}" style="color:${TEAL};text-decoration:underline;word-break:break-all;">
                   ${link}
                 </a>
               </p>
