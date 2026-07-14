@@ -980,14 +980,14 @@ function buildHtml(): string {
      from the draft text — so it stays safe even though the text originates
      from an LLM response to a potentially attacker-influenced support ticket. */
   function parseReplyBlocks(text) {
-    var lines = String(text).replace(/\r\n/g, '\n').split('\n');
+    var lines = String(text).replace(/\\r\\n/g, '\\n').split('\\n');
     var blocks = [];
     var current = null;
     lines.forEach(function (line) {
       var trimmed = line.trim();
       if (!trimmed) { current = null; return; }
-      var bulletMatch = /^[-*]\s+(.*)$/.exec(trimmed);
-      var numMatch = /^\d+\.\s+(.*)$/.exec(trimmed);
+      var bulletMatch = /^[-*]\\s+(.*)$/.exec(trimmed);
+      var numMatch = /^\\d+\\.\\s+(.*)$/.exec(trimmed);
       if (bulletMatch) {
         if (!current || current.type !== 'ul') { current = { type: 'ul', items: [] }; blocks.push(current); }
         current.items.push(bulletMatch[1]);
@@ -1003,7 +1003,7 @@ function buildHtml(): string {
   }
 
   function appendInlineMarkdown(parentEl, text) {
-    var re = /\*\*(.+?)\*\*/g;
+    var re = /\\*\\*(.+?)\\*\\*/g;
     var lastIndex = 0;
     var match;
     while ((match = re.exec(text))) {
