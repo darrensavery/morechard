@@ -1,7 +1,8 @@
 /**
- * Review Queue API — GET (list) and POST decline. NO approve/execute
- * endpoint in Phase 0: nothing is executable yet (no AUTO/GATED tool has a
- * live handler). That arrives with Phase 1's tool implementations.
+ * Review Queue API — GET (list) and POST decline. The approve/execute path
+ * for one-tap-eligible items lives separately in routes/agentApprove.ts
+ * (token-authenticated, not X-Admin-Key — it's clicked from an email, not
+ * called from /admin). Everything else still has no execute path.
  */
 import { Env } from '../types.js';
 import { json, error } from '../lib/response.js';

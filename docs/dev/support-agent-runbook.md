@@ -1,17 +1,53 @@
-# Autonomous Support Agent — Runbook (Phase 0: Shadow Mode)
+# Autonomous Support Agent — Runbook
 
 Operational reference for the autonomous support agent. Architecture and
 authority model: `docs/superpowers/specs/2026-07-13-autonomous-support-agent-design.md`.
 Implementation plan: `docs/superpowers/plans/2026-07-13-autonomous-support-agent-phase0.md`.
 
-## What Phase 0 actually does
+## What Phase 0 does
 
 Ingests incidents from four sources, runs the full diagnosis pipeline
 (Haiku triage → deterministic identity resolution → Opus diagnosis using
 only read-only production queries), and writes every result to the Review
-Queue (`/admin` → Agent Review tab). **Nothing executes. No customer
-message is ever sent.** This phase exists purely to validate diagnosis
-quality before Phase 1 turns any AUTO tool live.
+Queue (`/admin` → Agent Review tab). Nothing executes autonomously and no
+customer message is ever sent. This phase exists purely to validate
+diagnosis quality before any AUTO tool goes live.
+
+## What Phase 1 adds: one-tap approve
+
+For a single narrow case — `resend_magic_link`, the only AUTO-tier tool
+that exists — an eligible diagnosis gets a one-tap "Approve" link in the
+review-item email instead of requiring a trip to `/admin`. This is **not**
+zero-touch execution: a human still has to physically click the link.
+Nothing fires from confidence score or queue placement alone.
+
+A diagnosis is one-tap eligible (`isOneTapEligible()` in
+`worker/src/lib/agent/processIncident.ts`) only when **all** of:
+- the recommended tool is `resend_magic_link`
+- the queue bucket is `recommended_approve`
+- a real identity was deterministically resolved (`resolveFamilyIdentity`
+  exact-match email — never the model's free-text guess)
+- the harassment-watch signal (`harassmentWatch.ts`) is not tripped for
+  that email — routes to a normal human-reviewed item instead
+
+The email link (`GET /api/support-agent/review/:id/approve?token=...`,
+`worker/src/routes/agentApprove.ts`) is public — the token itself is the
+auth, same model as `auth.ts`'s magic-link verify. Tokens
+(`agent_approval_tokens`, `worker/src/lib/agent/approvalTokens.ts`) are
+single-use, 48-hour expiry, and hashed at rest. Clicking:
+1. Verifies the token (not found / expired / already used → an HTML error
+   page, no execution)
+2. Executes `resend_magic_link` via `invokeAutoTool()` — using the payload
+   `processIncident.ts` already deterministically constructed from
+   `resolved.email` at diagnosis time, never anything from the click
+   request itself
+3. Writes an `agent_action_log` entry (`actor: 'human:one-tap-approval'`)
+4. Marks the review item `executed` and consumes the token
+
+Every other diagnosis — including every other AUTO/GATED tool that gets
+built later — still requires a normal `/admin` review. There is still no
+`invokeGatedTool`; GATED tools remain human-only with no auto-execution
+path.
 
 ## New secrets (production)
 
@@ -99,10 +135,11 @@ least 2 weeks of shadow-mode traffic:
 - [ ] Declined items (bad diagnoses) are reviewed for playbook gaps —
       candidates for new `docs/support/*.md` entries
 
-## Known Phase 0 limitations (by design, not bugs)
+## Known limitations (by design, not bugs)
 
-- No AUTO or GATED tool has a live handler — `invokeReadTool` is the only
-  dispatcher that exists.
+- No GATED tool has a live handler — `invokeGatedTool` doesn't exist.
+  `resend_magic_link` is the only AUTO tool, and even it never fires
+  without a human clicking the one-tap approve link (see above).
 - No customer message is ever sent, including for AUTO-eligible
   diagnoses — everything lands in the review queue.
 - Playbook sync is manual.

@@ -1,25 +1,59 @@
 /**
- * Phase 0 orchestrator. Runs the full diagnosis pipeline for one incident
- * and writes the outcome to agent_review_items. NEVER executes an AUTO or
- * GATED tool, and NEVER sends a customer message — Phase 0 is shadow mode
- * (design spec §9). Only invokeReadTool is ever called.
+ * Orchestrator. Runs the full diagnosis pipeline for one incident and
+ * writes the outcome to agent_review_items. Still never sends a customer
+ * message and never executes a GATED tool — but for the single AUTO-tier
+ * tool that exists (resend_magic_link), an eligible diagnosis gets a
+ * one-tap "Approve" link in the review email (reviewNotify.ts). The tool
+ * itself only ever fires when that link is clicked — nothing in this file
+ * calls invokeAutoTool directly. A human still taps approve every time;
+ * the AI does everything up to that point. See gating.ts's docstring for
+ * why: "never whether something executes without a human."
  */
 import { Env } from '../../types.js';
 import { nanoid } from '../nanoid.js';
 import { resolveFamilyIdentity } from './identity.js';
 import { invokeReadTool } from './registry.js';
 import { registerReadTools } from './tools/readTools.js';
+import { registerAutoTools } from './tools/autoTools.js';
 import { getPlaybookBundle } from './playbook.js';
 import { writeAgentActionLogEntry } from './actionLog.js';
 import { runTriage } from './triage.js';
 import { runDiagnosis } from './diagnose.js';
 import { notifyNewReviewItem } from './reviewNotify.js';
+import { generateApprovalToken } from './approvalTokens.js';
+import { countDistinctMagicLinkTriggerTickets, classifyHarassmentSignal } from './harassmentWatch.js';
+import { computeDeterministicPayloadHash } from './gating.js';
 
-let readToolsRegistered = false;
-function ensureReadToolsRegistered(): void {
-  if (readToolsRegistered) return;
+let toolsRegistered = false;
+function ensureToolsRegistered(): void {
+  if (toolsRegistered) return;
   registerReadTools();
-  readToolsRegistered = true;
+  registerAutoTools();
+  toolsRegistered = true;
+}
+
+export interface OneTapEligibilityInput {
+  recommendedTool: string | null;
+  queueBucket: 'recommended_approve' | 'needs_review';
+  resolvedEmail: string | null;
+  harassmentSignalTripped: boolean;
+}
+
+/**
+ * Whether a diagnosis qualifies for the one-tap "Approve" link. Deliberately
+ * narrow: only the one AUTO-tier tool that exists, only the confidence
+ * bucket gating.ts already reserves for pre-filled approval, only when a
+ * real identity was resolved (never act on an unresolved email), and never
+ * when the harassment-watch signal is tripped for this email (routes to a
+ * normal human-reviewed item instead — the signal is a passive routing
+ * hint, never a hard block, per harassmentWatch.ts's own design note).
+ */
+export function isOneTapEligible(input: OneTapEligibilityInput): boolean {
+  if (input.recommendedTool !== 'resend_magic_link') return false;
+  if (input.queueBucket !== 'recommended_approve') return false;
+  if (!input.resolvedEmail) return false;
+  if (input.harassmentSignalTripped) return false;
+  return true;
 }
 
 /**
@@ -64,7 +98,7 @@ interface IncidentRow {
 }
 
 export async function processIncident(env: Env, incidentId: string): Promise<void> {
-  ensureReadToolsRegistered();
+  ensureToolsRegistered();
 
   const incident = await env.DB
     .prepare('SELECT id, source, source_ref, user_facing, raw_payload, status FROM agent_incidents WHERE id = ?')
@@ -123,6 +157,36 @@ export async function processIncident(env: Env, incidentId: string): Promise<voi
     incidentText,
   });
 
+  // For resend_magic_link specifically, the EXECUTION payload is always
+  // code-constructed from the deterministically-resolved identity, never
+  // from the model's recommended_payload — the model's output there is
+  // display-only. Without a resolved identity, this tool can never be
+  // one-tap eligible, regardless of what the model claimed.
+  let recommendedPayload = diagnosis.recommendedPayload;
+  let payloadHash = diagnosis.payloadHash;
+  let queueBucket = diagnosis.queueBucket;
+  if (diagnosis.recommendedTool === 'resend_magic_link') {
+    if (resolved) {
+      recommendedPayload = { email: resolved.email };
+      payloadHash = await computeDeterministicPayloadHash(recommendedPayload);
+    } else {
+      recommendedPayload = null;
+      payloadHash = null;
+      queueBucket = 'needs_review';
+    }
+  }
+
+  const harassmentSignalTripped = resolved
+    ? classifyHarassmentSignal(await countDistinctMagicLinkTriggerTickets(env, resolved.email))
+    : false;
+
+  const oneTapEligible = isOneTapEligible({
+    recommendedTool: diagnosis.recommendedTool,
+    queueBucket,
+    resolvedEmail: resolved?.email ?? null,
+    harassmentSignalTripped,
+  });
+
   const reviewItemId = nanoid();
   await env.DB
     .prepare(`
@@ -133,12 +197,12 @@ export async function processIncident(env: Env, incidentId: string): Promise<voi
     `)
     .bind(
       reviewItemId, incidentId, diagnosis.diagnosis, diagnosis.recommendedTier, diagnosis.recommendedTool,
-      diagnosis.recommendedPayload ? JSON.stringify(diagnosis.recommendedPayload) : null,
-      diagnosis.payloadHash,
-      // Phase 0 never sends a reply — a draft is still stored for reviewer validation,
-      // but ONLY when the source incident is user_facing (Sentry incidents never get one).
+      recommendedPayload ? JSON.stringify(recommendedPayload) : null,
+      payloadHash,
+      // A draft is still stored for reviewer validation, but ONLY when the
+      // source incident is user_facing (Sentry incidents never get one).
       incident.user_facing === 1 ? diagnosis.draftReply : null,
-      diagnosis.confidence, diagnosis.category, diagnosis.queueBucket,
+      diagnosis.confidence, diagnosis.category, queueBucket,
     )
     .run();
 
@@ -149,12 +213,16 @@ export async function processIncident(env: Env, incidentId: string): Promise<voi
   // Immediate, per-item notification — not a scheduled digest. Best-effort:
   // notifyNewReviewItem never throws, so a mail failure can't undo the
   // review item already written above.
+  const approveToken = oneTapEligible ? await generateApprovalToken(env, reviewItemId) : null;
   await notifyNewReviewItem(env, {
     incidentId,
     source: incident.source,
     category: diagnosis.category,
     confidence: diagnosis.confidence,
-    queueBucket: diagnosis.queueBucket,
+    queueBucket,
     diagnosis: diagnosis.diagnosis,
+    approveUrl: approveToken
+      ? `${env.WORKER_URL}/api/support-agent/review/${reviewItemId}/approve?token=${approveToken}`
+      : null,
   });
 }

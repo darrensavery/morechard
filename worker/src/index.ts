@@ -57,6 +57,7 @@
  *   POST   /api/referrals/click         Record a referral link click
  *   POST   /api/public/interest         Register pre-launch interest → Brevo list 4
  *   GET    /api/verify/:hash            Public chain-head hash verification (no PII returned)
+ *   GET    /api/support-agent/review/:id/approve  One-tap approval link (email-only auth via token)
  *
  * Public — invite redemption:
  *   POST   /auth/invite/peek            Validate code without redeeming → { role }
@@ -154,6 +155,7 @@ import {
   handleGetAdminExchangeRates, handleUpdateExchangeRate,
 } from './routes/admin.js';
 import { handleListAgentReviewItems, handleDeclineAgentReviewItem } from './routes/agentReview.js';
+import { handleApproveReviewItem } from './routes/agentApprove.js';
 import { serveAdminUI } from './routes/admin-ui.js';
 import {
   handleGenerateInvite,
@@ -563,6 +565,10 @@ async function route(request: Request, env: Env, method: string, path: string): 
   // Public ledger chain verification — no auth, no PII returned
   const verifyHashMatch = path.match(/^\/api\/verify\/([a-f0-9]{64})$/);
   if (verifyHashMatch && method === 'GET') return handlePublicLedgerVerify(request, env, verifyHashMatch[1]);
+
+  // One-tap approval link (clicked from an email) — public, the token IS the auth
+  const approveMatch = path.match(/^\/api\/support-agent\/review\/([^/]+)\/approve$/);
+  if (approveMatch && method === 'GET') return handleApproveReviewItem(request, env, approveMatch[1]);
 
   // ── All authenticated routes require a valid JWT ─────────────
   const auth = await requireAuth(request, env);

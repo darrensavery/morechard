@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import {
-  registerTool, getTool, invokeReadTool, resetRegistryForTests,
+  registerTool, getTool, invokeReadTool, invokeAutoTool, resetRegistryForTests,
   ToolNotRegisteredError, ToolTierNotEnabledError,
 } from './registry.js';
 
@@ -41,5 +41,25 @@ describe('tool registry', () => {
   it('invokeReadTool throws ToolTierNotEnabledError for a registered GATED tool', async () => {
     registerTool({ name: 'grant_license', tier: 'gated', description: 'test', handler: async () => 'granted' });
     await expect(invokeReadTool('grant_license', {} as never, {})).rejects.toBeInstanceOf(ToolTierNotEnabledError);
+  });
+
+  it('invokeAutoTool executes a registered auto-tier tool', async () => {
+    registerTool({ name: 'resend_magic_link', tier: 'auto', description: 'test', handler: async (_env, payload) => ({ echoed: payload }) });
+    const result = await invokeAutoTool('resend_magic_link', {} as never, { email: 'a@b.com' });
+    expect(result).toEqual({ echoed: { email: 'a@b.com' } });
+  });
+
+  it('invokeAutoTool throws ToolNotRegisteredError for an unknown tool (default-deny)', async () => {
+    await expect(invokeAutoTool('nope', {} as never, {})).rejects.toBeInstanceOf(ToolNotRegisteredError);
+  });
+
+  it('invokeAutoTool throws ToolTierNotEnabledError for a registered READ tool', async () => {
+    registerTool({ name: 'foo', tier: 'read', description: 'test', handler: async () => 'ok' });
+    await expect(invokeAutoTool('foo', {} as never, {})).rejects.toBeInstanceOf(ToolTierNotEnabledError);
+  });
+
+  it('invokeAutoTool throws ToolTierNotEnabledError for a registered GATED tool', async () => {
+    registerTool({ name: 'grant_license', tier: 'gated', description: 'test', handler: async () => 'granted' });
+    await expect(invokeAutoTool('grant_license', {} as never, {})).rejects.toBeInstanceOf(ToolTierNotEnabledError);
   });
 });

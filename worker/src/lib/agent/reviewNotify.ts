@@ -18,6 +18,8 @@ export interface ReviewItemEmailInput {
   confidence: number;
   queueBucket: 'recommended_approve' | 'needs_review';
   diagnosis: string;
+  /** One-tap approval link — present only when isOneTapEligible() was true. */
+  approveUrl?: string | null;
 }
 
 function escapeHtml(s: string): string {
@@ -30,10 +32,14 @@ export function buildReviewItemEmail(
   const confidencePct = Math.round(item.confidence * 100);
   const bucketLabel = item.queueBucket === 'recommended_approve' ? 'Recommended: Approve' : 'Needs Review';
 
-  const subject = `[Morechard] Support ticket to review — ${bucketLabel} (${item.source})`;
+  const subject = item.approveUrl
+    ? `[Morechard] One-tap fix ready — ${item.source}`
+    : `[Morechard] Support ticket to review — ${bucketLabel} (${item.source})`;
 
   const text = [
-    `A new support ticket has been diagnosed and is waiting for review.`,
+    item.approveUrl
+      ? `A support ticket was diagnosed and a fix is ready — approve it with one tap, no need to open /admin.`
+      : `A new support ticket has been diagnosed and is waiting for review.`,
     '',
     `Source:      ${item.source}`,
     `Category:    ${item.category}`,
@@ -43,15 +49,21 @@ export function buildReviewItemEmail(
     `Diagnosis:`,
     item.diagnosis,
     '',
+    item.approveUrl ? `Approve: ${item.approveUrl}` : '',
     `Review it: ${ADMIN_URL} (Agent Review tab)`,
-  ].join('\n');
+  ].filter(Boolean).join('\n');
+
+  const approveButton = item.approveUrl
+    ? `<p><a href="${item.approveUrl}" style="display:inline-block;background:#0f6b4f;color:#ffffff;font-weight:700;text-decoration:none;padding:14px 28px;border-radius:10px">Approve →</a></p>`
+    : '';
 
   const html = `<div style="font-family:system-ui,sans-serif;font-size:14px;color:#1a1a1a">
-    <p style="font-size:16px;font-weight:700">🌱 Support ticket to review</p>
+    <p style="font-size:16px;font-weight:700">🌱 ${item.approveUrl ? 'One-tap fix ready' : 'Support ticket to review'}</p>
     <p style="color:#555">
       <strong>${escapeHtml(bucketLabel)}</strong> — ${escapeHtml(item.source)} / ${escapeHtml(item.category)} / ${confidencePct}% confidence
     </p>
     <pre style="background:#f5f5f0;padding:16px;border-radius:8px;white-space:pre-wrap;font-size:12px">${escapeHtml(item.diagnosis)}</pre>
+    ${approveButton}
     <p><a href="${ADMIN_URL}" style="color:#0f6b4f;font-weight:700">Review it in /admin →</a></p>
   </div>`;
 

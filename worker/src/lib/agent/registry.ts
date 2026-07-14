@@ -1,9 +1,10 @@
 /**
  * Default-deny tool registry. A tool with no registered tier cannot be
- * invoked at all. In Phase 0, only invokeReadTool exists — there is no
- * invokeAutoTool or invokeGatedTool anywhere in this codebase yet. That's
- * deliberate: those dispatchers, and the execution endpoints that call
- * them, are Phase 1/Phase-frictionless-gate work, not Phase 0.
+ * invoked at all — invokeReadTool only ever dispatches to 'read' tools,
+ * invokeAutoTool only ever dispatches to 'auto' tools; each throws on a
+ * tier mismatch rather than silently falling through. There is still no
+ * invokeGatedTool — the frictionless-GATED queue (design spec §4.3/§4.4)
+ * remains human-only, no auto-execution path exists for it.
  */
 import { Env } from '../../types.js';
 
@@ -51,6 +52,24 @@ export async function invokeReadTool<TPayload, TResult>(
   const def = registry.get(name);
   if (!def) throw new ToolNotRegisteredError(name);
   if (def.tier !== 'read') throw new ToolTierNotEnabledError(name, def.tier);
+  return def.handler(env, payload) as Promise<TResult>;
+}
+
+/**
+ * Dispatches to a registered 'auto' tool. Every AUTO-tier tool's payload
+ * must be constructed by application code from deterministically-resolved
+ * data (e.g. resolveFamilyIdentity's exact-match email) — never passed
+ * through from model-generated text — enforced by convention at each
+ * call site, not by this dispatcher.
+ */
+export async function invokeAutoTool<TPayload, TResult>(
+  name: string,
+  env: Env,
+  payload: TPayload,
+): Promise<TResult> {
+  const def = registry.get(name);
+  if (!def) throw new ToolNotRegisteredError(name);
+  if (def.tier !== 'auto') throw new ToolTierNotEnabledError(name, def.tier);
   return def.handler(env, payload) as Promise<TResult>;
 }
 

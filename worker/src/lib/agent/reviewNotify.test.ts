@@ -65,4 +65,35 @@ describe('buildReviewItemEmail', () => {
     expect(text).toContain('https://api.morechard.com/admin');
     expect(html).toContain('https://api.morechard.com/admin');
   });
+
+  it('includes a one-tap approve link and a distinct subject when approveUrl is set', () => {
+    const approveUrl = 'https://api.morechard.com/api/support-agent/review/rev_1/approve?token=abc123';
+    const { subject, text, html } = buildReviewItemEmail({
+      incidentId: 'inc_5',
+      source: 'zoho_desk',
+      category: '01-accounts-login-sessions',
+      confidence: 0.95,
+      queueBucket: 'recommended_approve',
+      diagnosis: 'Parent locked out, resend magic link.',
+      approveUrl,
+    });
+
+    expect(subject).toContain('One-tap fix ready');
+    expect(text).toContain(approveUrl);
+    expect(html).toContain(approveUrl);
+    expect(html).toContain('Approve');
+  });
+
+  it('does not render an approve button when approveUrl is absent', () => {
+    const { html } = buildReviewItemEmail({
+      incidentId: 'inc_6',
+      source: 'sentry',
+      category: 'novel',
+      confidence: 0.3,
+      queueBucket: 'needs_review',
+      diagnosis: 'x',
+    });
+
+    expect(html).not.toContain('/approve?token=');
+  });
 });
