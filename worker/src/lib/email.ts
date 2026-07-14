@@ -4,7 +4,7 @@ export class EmailNotConfiguredError extends Error {
   constructor() { super('Email provider not configured') }
 }
 
-const FROM_ADDRESS = 'Morechard <hello@morechard.com>'
+const FROM_ADDRESS = 'Morechard <noreply@mail.morechard.com>'
 
 export class EmailService {
   constructor(private env: Env) {}
