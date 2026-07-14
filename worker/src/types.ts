@@ -24,13 +24,17 @@ export interface Env {
   POSTHOG_API_KEY:      string;
   POSTHOG_HOST:         string;
   OPENAI_API_KEY:        string;
-  FRESHDESK_SSO_SECRET:  string;
   BREVO_API_KEY:         string;
   ADMIN_SECRET:          string;
   // ── Autonomous Support Agent (Phase 0) ──────────────────────────────────
   ANTHROPIC_API_KEY: string;
-  FRESHDESK_API_KEY: string;
-  FRESHDESK_WEBHOOK_SECRET: string;
+  ZOHO_CLIENT_ID: string;
+  ZOHO_CLIENT_SECRET: string;
+  ZOHO_REFRESH_TOKEN: string;
+  ZOHO_ORG_ID: string;
+  ZOHO_DEPARTMENT_ID: string;
+  ZOHO_API_DOMAIN: string;
+  ZOHO_ACCOUNTS_DOMAIN: string;
   STRIPE_SUPPORT_AGENT_WEBHOOK_SECRET: string;
   SENTRY_WEBHOOK_SECRET: string;
   INCIDENT_QUEUE: Queue<IncidentQueueMessage>;

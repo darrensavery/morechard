@@ -53,6 +53,8 @@ STRIPE_PRICE_AI_UPGRADE  = "price_1TQVViKGVFJVwtJFLhSnEuh7"
 # Stripe product ID for Shield AI (used for upgrade credit dynamic pricing)
 # Find in Stripe Dashboard → Product catalogue → Morechard Shield AI → copy the prod_... ID
 STRIPE_SHIELD_PRODUCT_ID = "prod_UOe8ZtEJmwuNj6"
+ZOHO_API_DOMAIN = "https://desk.zoho.com"
+ZOHO_ACCOUNTS_DOMAIN = "https://accounts.zoho.com"
 
 # Secrets — set via: wrangler secret put JWT_SECRET
 #                    wrangler secret put RESEND_API_KEY
@@ -71,8 +73,9 @@ STRIPE_SHIELD_PRODUCT_ID = "prod_UOe8ZtEJmwuNj6"
 #   "0 6 * * *" — Daily   06:00 UTC: marketing re-engagement emails
 #   "0 0 * * *" — Daily   00:00 UTC: demo family nightly reset (Thomson)
 #                                    + Learning Lab passive-unlock sweep (inactivity/balance/streak)
+#   "*/5 * * * *" — Every 5 minutes:  Zoho Desk ticket poll (support agent ingestion)
 [triggers]
-crons = ["0 8 * * 6", "0 3 * * 1", "0 6 * * *", "0 0 * * *"]
+crons = ["0 8 * * 6", "0 3 * * 1", "0 6 * * *", "0 0 * * *", "*/5 * * * *"]
 
 # ── Production environment ────────────────────────────────────────────────────
 # GitHub Actions (.github/workflows/worker-deploy.yml) handles this automatically
@@ -86,7 +89,7 @@ crons = ["0 8 * * 6", "0 3 * * 1", "0 6 * * *", "0 0 * * *"]
 #   npx wrangler deploy --env production
 [env.production]
 name = "morechard-api"
-vars = { ENVIRONMENT = "production", APP_URL = "https://app.morechard.com", WORKER_URL = "https://api.morechard.com", POSTHOG_HOST = "https://eu.i.posthog.com", STRIPE_PRICE_COMPLETE = "price_REPLACE_WITH_LIVE_COMPLETE", STRIPE_PRICE_COMPLETE_AI = "price_REPLACE_WITH_LIVE_COMPLETE_AI", STRIPE_PRICE_SHIELD_AI = "price_REPLACE_WITH_LIVE_SHIELD_AI", STRIPE_PRICE_AI_UPGRADE = "price_REPLACE_WITH_LIVE_AI_UPGRADE", STRIPE_SHIELD_PRODUCT_ID = "prod_REPLACE_WITH_LIVE_SHIELD_PRODUCT_ID" }
+vars = { ENVIRONMENT = "production", APP_URL = "https://app.morechard.com", WORKER_URL = "https://api.morechard.com", POSTHOG_HOST = "https://eu.i.posthog.com", STRIPE_PRICE_COMPLETE = "price_REPLACE_WITH_LIVE_COMPLETE", STRIPE_PRICE_COMPLETE_AI = "price_REPLACE_WITH_LIVE_COMPLETE_AI", STRIPE_PRICE_SHIELD_AI = "price_REPLACE_WITH_LIVE_SHIELD_AI", STRIPE_PRICE_AI_UPGRADE = "price_REPLACE_WITH_LIVE_AI_UPGRADE", STRIPE_SHIELD_PRODUCT_ID = "prod_REPLACE_WITH_LIVE_SHIELD_PRODUCT_ID", ZOHO_API_DOMAIN = "https://desk.zoho.com", ZOHO_ACCOUNTS_DOMAIN = "https://accounts.zoho.com" }
 
 [[env.production.kv_namespaces]]
 binding = "CACHE"
