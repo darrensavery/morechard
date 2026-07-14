@@ -1659,74 +1659,74 @@ function buildMagicLinkHtml(name: string, link: string): string {
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Sign in to Morechard</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign in to Morechard</title>
 </head>
-<body style="margin:0;padding:0;background:#F5F4F0;font-family:'Manrope','Segoe UI',Arial,sans-serif;">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F5F4F0;padding:40px 16px;">
+<body style="margin:0;padding:0;background-color:#f4f7f6;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;">
+  <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color:#f4f7f6;padding:40px 20px;">
     <tr>
       <td align="center">
-        <table role="presentation" width="100%" style="max-width:520px;">
+        <!-- Main Email Container -->
+        <table width="100%" id="email-card" border="0" cellspacing="0" cellpadding="0" style="max-width:520px;background-color:#ffffff;border:1px solid #e2e8f0;border-radius:16px;box-shadow:0 4px 6px -1px rgba(0,0,0,0.05);overflow:hidden;">
 
-          <!-- Header -->
+          <!-- Top Header Band -->
           <tr>
-            <td align="center" style="background:#0f1a14;border-radius:16px 16px 0 0;padding:32px 40px 28px;">
-              <!-- Leaf icon -->
-              <div style="display:inline-block;margin-bottom:14px;">
-                <div style="width:48px;height:48px;border-radius:12px;background:rgba(13,148,136,0.18);display:flex;align-items:center;justify-content:center;margin:0 auto;">
-                  <img src="https://morechard.com/icon-192.png" width="32" height="32" alt="" style="border-radius:6px;display:block;" />
-                </div>
-              </div>
-              <div style="font-size:22px;font-weight:800;letter-spacing:-0.5px;color:#f0fdf4;line-height:1.2;margin-bottom:4px;">Morechard</div>
-              <div style="font-size:12px;font-weight:600;letter-spacing:1.2px;text-transform:uppercase;color:#8ab8a4;">Family chore tracker</div>
+            <td style="background-color:#0f6b4f;padding:24px;text-align:center;">
+              <span style="font-size:24px;line-height:1;vertical-align:middle;margin-right:8px;">🌱</span>
+              <span style="color:#ffffff;font-size:20px;font-weight:700;letter-spacing:-0.5px;vertical-align:middle;font-family:inherit;">Morechard</span>
             </td>
           </tr>
 
-          <!-- Body card -->
+          <!-- Main Content -->
           <tr>
-            <td style="background:#ffffff;border-left:1px solid #D3D1C7;border-right:1px solid #D3D1C7;padding:36px 40px 32px;">
-              <p style="margin:0 0 8px;font-size:15px;font-weight:600;color:#1C1C1A;">Hi ${name},</p>
-              <p style="margin:0 0 28px;font-size:15px;color:#5F5E5A;line-height:1.6;">
-                Here's your sign-in link for Morechard. It's valid for&nbsp;<strong style="color:#1C1C1A;">15&nbsp;minutes</strong> and can only be used once.
+            <td style="padding:40px 32px;text-align:left;">
+              <h1 style="margin:0 0 16px 0;font-size:22px;font-weight:700;color:#1a202c;line-height:1.3;">Hello ${name},</h1>
+              <p style="margin:0 0 28px 0;font-size:16px;line-height:1.6;color:#4a5568;">
+                Click the button below to instantly sign in to your Morechard account. This link is secure and will sign you in automatically.
               </p>
 
-              <!-- CTA button -->
-              <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto 28px;">
+              <!-- CTA Button -->
+              <table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin-bottom:28px;">
                 <tr>
-                  <td align="center" style="border-radius:10px;background:#2E7A33;">
+                  <td align="center">
                     <a href="${link}"
-                       style="display:inline-block;padding:15px 36px;font-size:16px;font-weight:700;color:#ffffff;text-decoration:none;border-radius:10px;letter-spacing:-0.2px;white-space:nowrap;">
-                      Sign in to Morechard →
+                       target="_blank"
+                       style="display:inline-block;background-color:#0f6b4f;color:#ffffff;font-size:16px;font-weight:600;text-decoration:none;padding:14px 32px;border-radius:8px;box-shadow:0 2px 4px rgba(15,107,79,0.2);">
+                      Sign in to Morechard
                     </a>
                   </td>
                 </tr>
               </table>
 
-              <!-- Divider -->
-              <hr style="border:none;border-top:1px solid #D3D1C7;margin:0 0 24px;" />
+              <!-- Fallback Link -->
+              <p style="margin:0 0 24px 0;font-size:13px;line-height:1.5;color:#718096;text-align:center;">
+                Button not working? Copy and paste this URL into your browser:<br>
+                <a href="${link}" style="color:#0f6b4f;text-decoration:underline;word-break:break-all;">
+                  ${link}
+                </a>
+              </p>
 
-              <!-- Fallback link -->
-              <p style="margin:0 0 6px;font-size:12px;font-weight:600;color:#888780;text-transform:uppercase;letter-spacing:0.6px;">Button not working?</p>
-              <p style="margin:0;font-size:12px;color:#888780;word-break:break-all;line-height:1.6;">
-                <a href="${link}" style="color:#0F766E;text-decoration:none;">${link}</a>
+              <hr style="border:0;border-top:1px solid #edf2f7;margin:24px 0;">
+
+              <!-- Security Footer inside card -->
+              <p style="margin:0;font-size:12px;line-height:1.5;color:#a0aec0;text-align:center;">
+                This secure sign-in link expires in <strong>15 minutes</strong>.<br>
+                If you didn't request this email, you can safely ignore it.
               </p>
             </td>
           </tr>
-
-          <!-- Footer -->
-          <tr>
-            <td style="background:#F1EFE8;border:1px solid #D3D1C7;border-top:none;border-radius:0 0 16px 16px;padding:20px 40px;">
-              <p style="margin:0;font-size:12px;color:#888780;line-height:1.6;">
-                If you didn't ask for this link, you can safely ignore this email — your account is fine.
-              </p>
-              <p style="margin:10px 0 0;font-size:11px;color:#B8B6AE;">
-                © Morechard · <a href="https://morechard.com" style="color:#888780;text-decoration:none;">morechard.com</a>
-              </p>
-            </td>
-          </tr>
-
         </table>
+
+        <!-- Outside Footer -->
+        <table width="100%" border="0" cellspacing="0" cellpadding="0" style="max-width:520px;margin-top:24px;">
+          <tr>
+            <td style="text-align:center;font-size:12px;color:#a0aec0;">
+              <p style="margin:0 0 8px 0;">&copy; 2026 Morechard. Helping families grow financial confidence.</p>
+            </td>
+          </tr>
+        </table>
+
       </td>
     </tr>
   </table>
