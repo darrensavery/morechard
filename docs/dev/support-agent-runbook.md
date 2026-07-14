@@ -20,8 +20,8 @@ Set via `wrangler secret put <NAME> --env production` from `worker/`:
 | Secret | Purpose |
 |---|---|
 | `ANTHROPIC_API_KEY` | Claude API — triage (Haiku) + diagnosis (Opus) |
-| `FRESHDESK_API_KEY` | Reserved for Phase 1 (reading ticket history, posting replies). Not required for Phase 0's webhook-only ingestion. |
-| `FRESHDESK_WEBHOOK_SECRET` | Shared secret checked against the `X-Freshdesk-Webhook-Secret` header on inbound ticket webhooks |
+| `ZOHO_CLIENT_ID` / `ZOHO_CLIENT_SECRET` / `ZOHO_REFRESH_TOKEN` | Zoho Desk API — self-client OAuth (Task 1 of the migration plan) |
+| `ZOHO_ORG_ID` / `ZOHO_DEPARTMENT_ID` | Zoho account/department identifiers |
 | `STRIPE_SUPPORT_AGENT_WEBHOOK_SECRET` | Separate from `STRIPE_WEBHOOK_SECRET` (the payment-critical one) — isolates the agent's ingest surface |
 | `SENTRY_WEBHOOK_SECRET` | HMAC secret configured in the Sentry alert rule's webhook action |
 
@@ -33,12 +33,9 @@ For local dev, add real values to `worker/.dev.vars` (gitignored — see
 These are dashboard configuration steps, not code — do them once per
 environment.
 
-**Freshdesk** (Admin → Automations → Ticket Create/Update rules):
-Add an action "Trigger Webhook" → `POST https://api.morechard.com/api/support-agent/freshdesk-webhook`,
-header `X-Freshdesk-Webhook-Secret: <FRESHDESK_WEBHOOK_SECRET value>`,
-JSON body including `ticket_id`, `requester_email`, `subject`,
-`description`. Configure one rule for ticket creation and one for
-customer-reply updates.
+**Zoho Desk** (Client OAuth & poll setup):
+See Task 1 of `docs/superpowers/plans/2026-07-14-freshdesk-to-zoho-desk-migration.md`
+for the Self Client creation and refresh-token generation steps.
 
 **Sentry** (Alerts → Alert Rules → new/existing rule → Actions):
 Add action "Send a notification via a webhook" →
@@ -109,5 +106,7 @@ least 2 weeks of shadow-mode traffic:
 - No customer message is ever sent, including for AUTO-eligible
   diagnoses — everything lands in the review queue.
 - Playbook sync is manual.
-- No Freshdesk reply-posting integration yet (`FRESHDESK_API_KEY` is
-  provisioned but unused until Phase 1).
+- Zoho Desk ingestion is poll-based (every 5 minutes), not webhook-push,
+  because Zoho's free tier doesn't support outgoing webhooks — expect up to
+  a ~5–10 minute delay between a ticket landing in Zoho and its incident
+  appearing in the review queue, not the near-instant delivery Sentry/Stripe get.
