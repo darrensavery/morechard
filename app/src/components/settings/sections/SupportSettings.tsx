@@ -184,6 +184,31 @@ interface Props {
 
 export function SupportSettings({ toast, onBack }: Props) {
   const [sub, setSub] = useState<SubView>('menu')
+  const [showContactModal, setShowContactModal] = useState(false)
+  const [contactText, setContactText] = useState('')
+  const [contactSubmitting, setContactSubmitting] = useState(false)
+  const [contactError, setContactError] = useState<string | null>(null)
+  const [contactSent, setContactSent] = useState(false)
+
+  async function submitContactRequest() {
+    const description = contactText.trim()
+    if (!description) return
+    setContactSubmitting(true)
+    setContactError(null)
+    try {
+      const res = await fetch(apiUrl('/api/support-agent/request'), {
+        method: 'POST',
+        headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+        body: JSON.stringify({ description, screen: 'SupportSettings' }),
+      })
+      if (!res.ok) throw new Error('Request failed')
+      setContactSent(true)
+    } catch {
+      setContactError('Could not send your message — please try again.')
+    } finally {
+      setContactSubmitting(false)
+    }
+  }
 
   if (sub === 'whats-new') {
     return (
@@ -201,33 +226,35 @@ export function SupportSettings({ toast, onBack }: Props) {
       {toast && <Toast message={toast} />}
       <SectionHeader title="Help & Support" onBack={onBack} />
 
-      {/* ── Search the help desk — SSO into Freshdesk portal ── */}
-      <button
-        type="button"
-        onClick={async () => {
-          try {
-            const res = await fetch(apiUrl('/api/freshdesk-sso'), { headers: authHeaders() })
-            if (res.ok) {
-              const { url } = await res.json() as { url: string }
-              window.open(url, '_blank', 'noopener,noreferrer')
-            } else {
-              window.open('https://support.morechard.com', '_blank', 'noopener,noreferrer')
-            }
-          } catch {
-            window.open('https://support.morechard.com', '_blank', 'noopener,noreferrer')
-          }
-        }}
-        className="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] hover:bg-[var(--color-surface-alt)] active:bg-[var(--color-surface-alt)] transition-colors cursor-pointer"
-      >
-        <span className="shrink-0 w-9 h-9 rounded-xl flex items-center justify-center bg-[color-mix(in_srgb,var(--brand-primary)_15%,transparent)] text-[var(--brand-primary)]">
-          <Search size={17} />
-        </span>
-        <div className="flex-1 min-w-0 text-left">
-          <p className="text-[14px] font-bold text-[var(--color-text)]">Search the Help Desk</p>
-          <p className="text-[12px] text-[var(--color-text-muted)] mt-0.5">Browse guides, FAQs, and tutorials</p>
-        </div>
-        <ExternalLink size={14} className="shrink-0 text-[var(--brand-primary)]" />
-      </button>
+      {/* ── Search the help desk ── */}
+      <SectionCard>
+        <LinkRow
+          icon={<Search size={15} />}
+          label="Search the Help Desk"
+          description="Browse guides, FAQs, and tutorials"
+          href="https://support.morechard.com"
+        />
+      </SectionCard>
+
+      {/* ── Contact support ── */}
+      <SectionCard>
+        <button
+          type="button"
+          onClick={() => { setShowContactModal(true); setContactSent(false); setContactError(null) }}
+          className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-[var(--color-surface-alt)] active:bg-[var(--color-surface-alt)] transition-colors cursor-pointer"
+        >
+          <span className="shrink-0 w-8 h-8 rounded-xl flex items-center justify-center bg-[color-mix(in_srgb,var(--brand-primary)_10%,transparent)] text-[var(--brand-primary)]">
+            <Search size={15} />
+          </span>
+          <div className="flex-1 min-w-0">
+            <p className="text-[14px] font-semibold text-[var(--color-text)]">Contact Support</p>
+            <p className="text-[12px] text-[var(--color-text-muted)] mt-0.5 leading-snug">
+              Send us a message — we'll get back to you by email
+            </p>
+          </div>
+          <ChevronRight size={15} className="shrink-0 text-[var(--color-text-muted)]" />
+        </button>
+      </SectionCard>
 
       {/* ── App updates ── */}
       <div>
@@ -282,6 +309,50 @@ export function SupportSettings({ toast, onBack }: Props) {
           <p className="text-[13px] font-bold text-[var(--color-text)] tabular-nums">{version}</p>
         </div>
       </SectionCard>
+
+      {/* Contact Support Modal */}
+      {showContactModal && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-sm bg-[var(--color-surface)] rounded-2xl p-5 space-y-4">
+            <div className="flex items-center justify-between">
+              <p className="text-[15px] font-bold text-[var(--color-text)]">Contact Support</p>
+              <button
+                onClick={() => setShowContactModal(false)}
+                className="tap-target-44 text-[var(--color-text-muted)] cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            {contactSent ? (
+              <p className="text-[13px] text-[var(--color-text-muted)]">
+                Thanks — we've received your message and will get back to you by email.
+              </p>
+            ) : (
+              <>
+                <textarea
+                  value={contactText}
+                  onChange={(e) => setContactText(e.target.value)}
+                  placeholder="What's going on?"
+                  rows={4}
+                  className="w-full rounded-xl border border-[var(--color-border)] px-3 py-2 text-[13px] text-[var(--color-text)] bg-[var(--color-surface)]"
+                />
+                {contactError && (
+                  <p className="text-[12px] text-red-600">{contactError}</p>
+                )}
+                <button
+                  type="button"
+                  disabled={contactSubmitting || !contactText.trim()}
+                  onClick={submitContactRequest}
+                  className="w-full py-3 rounded-xl bg-[var(--brand-primary)] text-white text-[14px] font-bold disabled:opacity-50 cursor-pointer"
+                >
+                  {contactSubmitting ? 'Sending…' : 'Send'}
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   )
 }
