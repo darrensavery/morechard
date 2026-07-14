@@ -96,6 +96,24 @@ crons = ["0 8 * * 6", "0 3 * * 1", "0 6 * * *", "0 0 * * *", "*/5 * * * *"]
 name = "morechard-api"
 vars = { ENVIRONMENT = "production", APP_URL = "https://app.morechard.com", WORKER_URL = "https://api.morechard.com", POSTHOG_HOST = "https://eu.i.posthog.com", STRIPE_PRICE_COMPLETE = "price_REPLACE_WITH_LIVE_COMPLETE", STRIPE_PRICE_COMPLETE_AI = "price_REPLACE_WITH_LIVE_COMPLETE_AI", STRIPE_PRICE_SHIELD_AI = "price_REPLACE_WITH_LIVE_SHIELD_AI", STRIPE_PRICE_AI_UPGRADE = "price_REPLACE_WITH_LIVE_AI_UPGRADE", STRIPE_SHIELD_PRODUCT_ID = "prod_REPLACE_WITH_LIVE_SHIELD_PRODUCT_ID", ZOHO_API_DOMAIN = "https://desk.zoho.eu", ZOHO_ACCOUNTS_DOMAIN = "https://accounts.zoho.eu" }
 
+# Enabled via the Cloudflare dashboard while diagnosing the Zoho Desk cron
+# poll (2026-07-14) — mirrored here so a future declarative deploy doesn't
+# silently reset it back to defaults.
+[env.production.observability]
+enabled = false
+head_sampling_rate = 1
+
+[env.production.observability.logs]
+enabled = true
+head_sampling_rate = 1
+persist = true
+invocation_logs = true
+
+[env.production.observability.traces]
+enabled = false
+persist = true
+head_sampling_rate = 1
+
 [[env.production.kv_namespaces]]
 binding = "CACHE"
 # Create once with: wrangler kv namespace create CACHE --env production
