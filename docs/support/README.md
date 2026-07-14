@@ -1,6 +1,6 @@
 # Morechard Support Playbook
 
-> **Audience:** Support agents handling Morechard tickets (Zoho Desk portal at `desk.zoho.eu`).
+> **Audience:** Support agents handling Morechard tickets (Zoho Desk portal — see `docs/superpowers/plans/2026-07-14-freshdesk-to-zoho-desk-migration.md` Task 1 for the account's data-center domain and portal URL).
 > **Purpose:** One authoritative place to diagnose and resolve every category of user problem, mapped to how the product actually behaves in code — not how it's described in marketing.
 
 This playbook covers **every major feature area** in Morechard. Each domain file lists the common failure modes, how to diagnose them, the resolution steps, and when to escalate.
@@ -39,7 +39,7 @@ validation checklist: `docs/dev/support-agent-runbook.md`.
 
 ## The support model
 
-- **Ticketing:** Zoho Desk (`desk.zoho.eu`). Agent SSO into the Zoho portal isn't available on the free tier. Parents raise support requests via **Settings → Help → Contact Support** in-app, which submits a ticket directly without browser navigation.
+- **Ticketing:** Zoho Desk (see `docs/superpowers/plans/2026-07-14-freshdesk-to-zoho-desk-migration.md` Task 1 for the portal URL). Agent SSO into the Zoho portal isn't available on the free tier. Parents raise support requests via **Settings → Help → Contact Support** in-app, which submits a ticket directly without browser navigation.
 - **Children never raise tickets.** Child accounts have no email and no self-service auth recovery. Every child-account issue is resolved through the **parent**.
 - **No human-to-human chat exists in the product** (hard product ban). If a user asks "how do I message the other parent in-app," the answer is: the app deliberately has no messaging. This is by design, not a missing feature.
 
