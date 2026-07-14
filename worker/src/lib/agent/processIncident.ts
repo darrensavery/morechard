@@ -13,6 +13,7 @@ import { getPlaybookBundle } from './playbook.js';
 import { writeAgentActionLogEntry } from './actionLog.js';
 import { runTriage } from './triage.js';
 import { runDiagnosis } from './diagnose.js';
+import { notifyNewReviewItem } from './reviewNotify.js';
 
 let readToolsRegistered = false;
 function ensureReadToolsRegistered(): void {
@@ -144,4 +145,16 @@ export async function processIncident(env: Env, incidentId: string): Promise<voi
   await env.DB.prepare('UPDATE agent_incidents SET status = ?, resolved_at = unixepoch() WHERE id = ?')
     .bind('escalated', incidentId)
     .run();
+
+  // Immediate, per-item notification — not a scheduled digest. Best-effort:
+  // notifyNewReviewItem never throws, so a mail failure can't undo the
+  // review item already written above.
+  await notifyNewReviewItem(env, {
+    incidentId,
+    source: incident.source,
+    category: diagnosis.category,
+    confidence: diagnosis.confidence,
+    queueBucket: diagnosis.queueBucket,
+    diagnosis: diagnosis.diagnosis,
+  });
 }
