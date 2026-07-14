@@ -170,6 +170,14 @@ function buildHtml(): string {
   /* ── Filter bar ── */
   .filter-bar { display: flex; gap: 8px; margin-bottom: 20px; }
   .filter-bar button.active { border-color: var(--brand-primary); color: var(--brand-primary); background: rgba(0,149,156,.06); }
+  .filter-bar .field { display: flex; flex-direction: column; gap: 6px; }
+  .filter-bar select {
+    background: var(--brand-parchment); border: 1px solid var(--border); border-radius: 8px;
+    color: var(--text); padding: 8px 12px; font-size: 13px; font-family: var(--font); outline: none;
+    min-width: 150px; transition: border-color .15s, box-shadow .15s;
+  }
+  .filter-bar select:focus { border-color: var(--brand-primary); box-shadow: 0 0 0 3px rgba(0,149,156,.12); }
+  .review-source { display: inline-block; font-size: 11px; font-weight: 600; color: var(--muted); background: var(--surface-alt); border: 1px solid var(--border); border-radius: 6px; padding: 2px 8px; margin-left: 8px; text-transform: capitalize; letter-spacing: .02em; }
 
   /* ── Agent Review ── */
   .review-card { border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 12px; background: var(--surface); }
@@ -348,6 +356,42 @@ function buildHtml(): string {
           <button class="btn-ghost btn-sm active" data-review-status="pending">Pending</button>
           <button class="btn-ghost btn-sm" data-review-status="declined">Declined</button>
           <button class="btn-ghost btn-sm" data-review-status="executed">Executed</button>
+        </div>
+        <div class="filter-bar" id="review-refine-bar" style="flex-wrap:wrap;gap:12px;align-items:flex-end">
+          <div class="field">
+            <label for="review-filter-category">Category</label>
+            <select id="review-filter-category"><option value="">All</option></select>
+          </div>
+          <div class="field">
+            <label for="review-filter-source">Source</label>
+            <select id="review-filter-source"><option value="">All</option></select>
+          </div>
+          <div class="field">
+            <label for="review-filter-bucket">Recommendation</label>
+            <select id="review-filter-bucket">
+              <option value="">All</option>
+              <option value="recommended_approve">Recommended: Approve</option>
+              <option value="needs_review">Needs Review</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="review-filter-confidence">Min confidence</label>
+            <select id="review-filter-confidence">
+              <option value="0">Any</option>
+              <option value="0.5">50%+</option>
+              <option value="0.75">75%+</option>
+              <option value="0.9">90%+</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="review-sort">Sort</label>
+            <select id="review-sort">
+              <option value="created_desc">Newest first</option>
+              <option value="created_asc">Oldest first</option>
+              <option value="confidence_desc">Confidence: high to low</option>
+              <option value="confidence_asc">Confidence: low to high</option>
+            </select>
+          </div>
         </div>
         <div id="agent-review-list"></div>
       </div>
@@ -821,6 +865,8 @@ function buildHtml(): string {
   }
 
   /* ── Agent Review ─────────────────────────────────────────────────────── */
+  var reviewItemsStore = []; // raw items for the current status, before filtering/sorting
+
   document.querySelectorAll('button[data-review-status]').forEach(function (filterBtn) {
     filterBtn.addEventListener('click', function () {
       document.querySelectorAll('button[data-review-status]').forEach(function (b) { b.classList.remove('active'); });
@@ -828,6 +874,10 @@ function buildHtml(): string {
       reviewStatus = filterBtn.dataset.reviewStatus;
       loadAgentReviewItems();
     });
+  });
+
+  ['review-filter-category', 'review-filter-source', 'review-filter-bucket', 'review-filter-confidence', 'review-sort'].forEach(function (id) {
+    document.getElementById(id).addEventListener('change', renderFilteredReviewItems);
   });
 
   function loadAgentReviewItems() {
@@ -844,12 +894,79 @@ function buildHtml(): string {
         return r.json();
       })
       .then(function (data) {
-        list.innerHTML = '';
-        var items = data.items || [];
-        if (!items.length) { setEmpty('agent-review-list', 'No ' + reviewStatus + ' items'); return; }
-        items.forEach(function (item) { list.appendChild(renderReviewItemCard(item)); });
+        reviewItemsStore = data.items || [];
+        populateReviewFilterOptions(reviewItemsStore);
+        renderFilteredReviewItems();
       })
-      .catch(function () { setEmpty('agent-review-list', 'Failed to load review items'); });
+      .catch(function () {
+        reviewItemsStore = [];
+        setEmpty('agent-review-list', 'Failed to load review items');
+      });
+  }
+
+  function populateReviewFilterOptions(items) {
+    fillSelectOptions('review-filter-category', uniqueSorted(items.map(function (i) { return i.category; })));
+    fillSelectOptions('review-filter-source', uniqueSorted(items.map(function (i) { return i.source; })));
+  }
+
+  function fillSelectOptions(selectId, values) {
+    var select = document.getElementById(selectId);
+    var current = select.value;
+    select.innerHTML = '';
+    var allOpt = document.createElement('option');
+    allOpt.value = '';
+    allOpt.textContent = 'All';
+    select.appendChild(allOpt);
+    values.forEach(function (v) {
+      var opt = document.createElement('option');
+      opt.value = v;
+      opt.textContent = v;
+      select.appendChild(opt);
+    });
+    if (values.indexOf(current) !== -1) select.value = current;
+  }
+
+  function uniqueSorted(values) {
+    var seen = {};
+    var out = [];
+    values.forEach(function (v) {
+      if (!v || seen[v]) return;
+      seen[v] = true;
+      out.push(v);
+    });
+    out.sort();
+    return out;
+  }
+
+  function renderFilteredReviewItems() {
+    var list = document.getElementById('agent-review-list');
+    var category   = document.getElementById('review-filter-category').value;
+    var source     = document.getElementById('review-filter-source').value;
+    var bucket     = document.getElementById('review-filter-bucket').value;
+    var minConf    = parseFloat(document.getElementById('review-filter-confidence').value) || 0;
+    var sortMode   = document.getElementById('review-sort').value;
+
+    var items = reviewItemsStore.filter(function (i) {
+      if (category && i.category !== category) return false;
+      if (source && i.source !== source) return false;
+      if (bucket && i.queue_bucket !== bucket) return false;
+      if ((i.confidence || 0) < minConf) return false;
+      return true;
+    });
+
+    items.sort(function (a, b) {
+      if (sortMode === 'created_asc') return a.created_at - b.created_at;
+      if (sortMode === 'confidence_desc') return (b.confidence || 0) - (a.confidence || 0);
+      if (sortMode === 'confidence_asc') return (a.confidence || 0) - (b.confidence || 0);
+      return b.created_at - a.created_at; // created_desc (default)
+    });
+
+    list.innerHTML = '';
+    if (!items.length) {
+      setEmpty('agent-review-list', reviewItemsStore.length ? 'No items match the selected filters' : 'No ' + reviewStatus + ' items');
+      return;
+    }
+    items.forEach(function (item) { list.appendChild(renderReviewItemCard(item)); });
   }
 
   function renderReviewItemCard(item) {
@@ -860,6 +977,13 @@ function buildHtml(): string {
     badge.className = 'review-badge ' + (item.queue_bucket === 'recommended_approve' ? 'badge-approve' : 'badge-review');
     setText(badge, item.queue_bucket === 'recommended_approve' ? 'Recommended: Approve' : 'Needs Review');
     card.appendChild(badge);
+
+    if (item.source) {
+      var sourcePill = document.createElement('span');
+      sourcePill.className = 'review-source';
+      setText(sourcePill, item.source.replace(/_/g, ' '));
+      card.appendChild(sourcePill);
+    }
 
     var category = document.createElement('div');
     category.className = 'review-category';

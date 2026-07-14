@@ -31,6 +31,7 @@ interface ReviewItemRow {
   decided_at: number | null;
   decision_note: string | null;
   created_at: number;
+  source: string;
 }
 
 export function sortReviewItems<T extends { queue_bucket: string }>(items: T[]): T[] {
@@ -51,10 +52,12 @@ export async function handleListAgentReviewItems(request: Request, env: Env): Pr
 
   const { results } = await env.DB
     .prepare(`
-      SELECT id, incident_id, diagnosis, recommended_tier, recommended_tool, recommended_payload,
-             draft_reply, confidence, category, queue_bucket, status,
-             decided_by, decided_at, decision_note, created_at
-      FROM agent_review_items WHERE status = ? ORDER BY created_at DESC
+      SELECT ari.id, ari.incident_id, ari.diagnosis, ari.recommended_tier, ari.recommended_tool, ari.recommended_payload,
+             ari.draft_reply, ari.confidence, ari.category, ari.queue_bucket, ari.status,
+             ari.decided_by, ari.decided_at, ari.decision_note, ari.created_at, ai.source
+      FROM agent_review_items ari
+      JOIN agent_incidents ai ON ai.id = ari.incident_id
+      WHERE ari.status = ? ORDER BY ari.created_at DESC
     `)
     .bind(status)
     .all<ReviewItemRow>();
