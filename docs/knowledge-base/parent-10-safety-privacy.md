@@ -18,7 +18,7 @@ No action required. Data handling is managed by Morechard automatically.
 - The AI Mentor sends only the minimum necessary context to generate a response. Conversations are not retained beyond the session.
 - You can export or delete all family data at any time (see: Settings & Account).
 
-**Still need help?** [Contact our support team](https://morechard.freshdesk.com/support/tickets/new)
+**Still need help?** Use the **Contact Support** option in Settings → Help & Support within the app, or [browse the help desk](https://support.morechard.com).
 
 ---
 ### [PL] Jak przetwarzane są dane dziecka
@@ -42,7 +42,7 @@ _Tone: Mistrz Sadu — direct, formal, no small talk. Financial literacy as seri
 - If you no longer have access to your registered email, contact support.
 - PIN and biometric settings can be updated from **Settings** → **Security** once you are logged in.
 
-**Still need help?** [Contact our support team](https://morechard.freshdesk.com/support/tickets/new)
+**Still need help?** Use the **Contact Support** option in Settings → Help & Support within the app, or [browse the help desk](https://support.morechard.com).
 
 ---
 ### [PL] Resetowanie hasła i dostęp do konta
@@ -66,7 +66,7 @@ _Tone: Mistrz Sadu — direct, formal, no small talk. Financial literacy as seri
 - Co-parents cannot change the Lead Parent's security settings.
 - To remove a co-parent, go to **Settings** → **Family** → tap their name → **Remove**.
 
-**Still need help?** [Contact our support team](https://morechard.freshdesk.com/support/tickets/new)
+**Still need help?** Use the **Contact Support** option in Settings → Help & Support within the app, or [browse the help desk](https://support.morechard.com).
 
 ---
 ### [PL] Zarządzanie uprawnieniami współrodzica
@@ -87,7 +87,7 @@ No action required. Visibility is managed by Morechard's role-based access.
 - Children cannot see: other children's data, parent billing information, co-parent details, the full family ledger, or parent-only settings.
 - Children cannot approve or reject chores, create chores, or access the Shield Plan export.
 
-**Still need help?** [Contact our support team](https://morechard.freshdesk.com/support/tickets/new)
+**Still need help?** Use the **Contact Support** option in Settings → Help & Support within the app, or [browse the help desk](https://support.morechard.com).
 
 ---
 ### [PL] Co dzieci mogą, a czego nie mogą widzieć

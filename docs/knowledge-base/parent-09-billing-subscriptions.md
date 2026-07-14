@@ -19,7 +19,7 @@ View your current plan under **Settings** → **Billing**.
 - All prices shown in GBP. USD and PLN equivalents shown at checkout.
 - All plans are one-time payments — no subscriptions, no renewals.
 
-**Still need help?** [Contact our support team](https://morechard.freshdesk.com/support/tickets/new)
+**Still need help?** Use the **Contact Support** option in Settings → Help & Support within the app, or [browse the help desk](https://support.morechard.com).
 
 ---
 ### [PL] Przegląd planów
@@ -44,7 +44,7 @@ _Tone: Mistrz Sadu — direct, formal, no small talk. Financial literacy as seri
 - If you already hold Morechard Core, you can add AI Mentor + Learning Lab for £29.99 rather than purchasing Core AI at full price.
 - Shield unlocks the full cryptographic PDF export suite for use with solicitors, mediators, and co-parent legal proceedings.
 
-**Still need help?** [Contact our support team](https://morechard.freshdesk.com/support/tickets/new)
+**Still need help?** Use the **Contact Support** option in Settings → Help & Support within the app, or [browse the help desk](https://support.morechard.com).
 
 ---
 ### [PL] Jak zaktualizować plan
@@ -67,7 +67,7 @@ _Tone: Mistrz Sadu — direct, formal, no small talk. Financial literacy as seri
 - Morechard does not store your card details — all payment data is held by Stripe.
 - If you cannot access the portal, ensure you are using the same email address registered with Morechard.
 
-**Still need help?** [Contact our support team](https://morechard.freshdesk.com/support/tickets/new)
+**Still need help?** Use the **Contact Support** option in Settings → Help & Support within the app, or [browse the help desk](https://support.morechard.com).
 
 ---
 ### [PL] Jak uzyskać dostęp do portalu rozliczeniowego Stripe
@@ -91,7 +91,7 @@ _Tone: Mistrz Sadu — direct, formal, no small talk. Financial literacy as seri
 - One upgrade covers all children on your family account.
 - Alternatively, purchase Morechard Core AI (£64.99) which includes Core + AI Mentor + Learning Lab in one purchase.
 
-**Still need help?** [Contact our support team](https://morechard.freshdesk.com/support/tickets/new)
+**Still need help?** Use the **Contact Support** option in Settings → Help & Support within the app, or [browse the help desk](https://support.morechard.com).
 
 ---
 ### [PL] Aktywowanie dodatku Mentor AI

@@ -21,7 +21,7 @@ _Tone: Professional, precise, concise. Bank-grade authority. Technical terms exp
 - Your email address is your identity — keep it accessible.
 - Magic links expire after 15 minutes. Request a new one if yours expires.
 
-**Still need help?** [Contact our support team](https://morechard.freshdesk.com/support/tickets/new)
+**Still need help?** Use the **Contact Support** option in Settings → Help & Support within the app, or [browse the help desk](https://support.morechard.com).
 
 ---
 ### [PL] Jak założyć konto Morechard
@@ -46,7 +46,7 @@ _Tone: Mistrz Sadu — direct, formal, no small talk. Financial literacy as seri
 - The join code is single-use. If it expires, generate a new one from Settings.
 - You can add multiple children to one family account.
 
-**Still need help?** [Contact our support team](https://morechard.freshdesk.com/support/tickets/new)
+**Still need help?** Use the **Contact Support** option in Settings → Help & Support within the app, or [browse the help desk](https://support.morechard.com).
 
 ---
 ### [PL] Jak dodać dziecko do konta
@@ -68,7 +68,7 @@ _Tone: Mistrz Sadu — direct, formal, no small talk. Financial literacy as seri
 - You do not need a debit card or bank integration — Morechard tracks earnings virtually.
 - You can invite a co-parent later from the Settings screen.
 
-**Still need help?** [Contact our support team](https://morechard.freshdesk.com/support/tickets/new)
+**Still need help?** Use the **Contact Support** option in Settings → Help & Support within the app, or [browse the help desk](https://support.morechard.com).
 
 ---
 ### [PL] Jak skonfigurować rodzinę (pierwsze kroki)
@@ -91,7 +91,7 @@ _Tone: Mistrz Sadu — direct, formal, no small talk. Financial literacy as seri
 - The Mentor communicates with your child through the app only — it does not send emails or notifications outside the app.
 - You can cancel the AI Mentor add-on at any time without affecting your core plan.
 
-**Still need help?** [Contact our support team](https://morechard.freshdesk.com/support/tickets/new)
+**Still need help?** Use the **Contact Support** option in Settings → Help & Support within the app, or [browse the help desk](https://support.morechard.com).
 
 ---
 ### [PL] Poznaj swojego Mentora AI

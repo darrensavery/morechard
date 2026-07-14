@@ -20,7 +20,7 @@ _Tone: Professional, precise, concise. Bank-grade authority. Technical terms exp
 - A chore stays active until you archive or delete it.
 - Frequency controls how often the chore appears in your child's list.
 
-**Still need help?** [Contact our support team](https://morechard.freshdesk.com/support/tickets/new)
+**Still need help?** Use the **Contact Support** option in Settings → Help & Support within the app, or [browse the help desk](https://support.morechard.com).
 
 ---
 ### [PL] Jak utworzyć zadanie
@@ -44,7 +44,7 @@ _Tone: Mistrz Sadu — direct, formal, no small talk. Financial literacy as seri
 - On the Shield Plan, approved entries are cryptographically locked for legal integrity.
 - You will receive a notification when your child marks a chore done (requires notifications to be enabled).
 
-**Still need help?** [Contact our support team](https://morechard.freshdesk.com/support/tickets/new)
+**Still need help?** Use the **Contact Support** option in Settings → Help & Support within the app, or [browse the help desk](https://support.morechard.com).
 
 ---
 ### [PL] Jak zatwierdzić wykonanie zadania
@@ -67,7 +67,7 @@ _Tone: Mistrz Sadu — direct, formal, no small talk. Financial literacy as seri
 - The chore remains active — your child can mark it done again once they have completed it properly.
 - Be consistent with your standards so your child can predict what earns approval.
 
-**Still need help?** [Contact our support team](https://morechard.freshdesk.com/support/tickets/new)
+**Still need help?** Use the **Contact Support** option in Settings → Help & Support within the app, or [browse the help desk](https://support.morechard.com).
 
 ---
 ### [PL] Jak odrzucić wykonanie zadania
@@ -90,7 +90,7 @@ _Tone: Mistrz Sadu — direct, formal, no small talk. Financial literacy as seri
 - Rates are benchmarked from family finance research and updated periodically.
 - You are not obligated to use the suggested rate — it is a reference point only.
 
-**Still need help?** [Contact our support team](https://morechard.freshdesk.com/support/tickets/new)
+**Still need help?** Use the **Contact Support** option in Settings → Help & Support within the app, or [browse the help desk](https://support.morechard.com).
 
 ---
 ### [PL] Jak korzystać z Przewodnika Stawek
@@ -114,7 +114,7 @@ _Tone: Mistrz Sadu — direct, formal, no small talk. Financial literacy as seri
 - If disputes are frequent, use the Rate Guide and chore descriptions to set clearer expectations upfront.
 - For unresolved escalations, see: **We still can't agree — what now?** in Troubleshooting.
 
-**Still need help?** [Contact our support team](https://morechard.freshdesk.com/support/tickets/new)
+**Still need help?** Use the **Contact Support** option in Settings → Help & Support within the app, or [browse the help desk](https://support.morechard.com).
 
 ---
 ### [PL] Jak rozwiązać spór dotyczący zadania

@@ -13,7 +13,7 @@ _Tone: Orchard Lead — warm, direct, treats the child as capable. Short sentenc
 2. You will see your available modules.
 3. Tap any module to start.
 
-**Still confused?** Ask a parent to check the app, or they can [contact our support team](https://morechard.freshdesk.com/support/tickets/new).
+**Still confused?** Ask a parent to use the **Contact Support** option in Settings → Help & Support, or [browse the help desk](https://support.morechard.com).
 
 ---
 ### [PL] Czym jest Learning Lab
@@ -33,7 +33,7 @@ _Tone: Mistrz Sadu — direct, formal, no small talk. Financial literacy as seri
 4. Complete the quiz at the end to finish the module.
 5. Your progress is saved automatically.
 
-**Still confused?** Ask a parent to check the app, or they can [contact our support team](https://morechard.freshdesk.com/support/tickets/new).
+**Still confused?** Ask a parent to use the **Contact Support** option in Settings → Help & Support, or [browse the help desk](https://support.morechard.com).
 
 ---
 ### [PL] Jak ukończyć moduł
@@ -51,7 +51,7 @@ _Tone: Mistrz Sadu — direct, formal, no small talk. Financial literacy as seri
 2. Your result is saved and shown in your Learning Lab history.
 3. Your parent can see your progress in their Insights tab.
 
-**Still confused?** Ask a parent to check the app, or they can [contact our support team](https://morechard.freshdesk.com/support/tickets/new).
+**Still confused?** Ask a parent to use the **Contact Support** option in Settings → Help & Support, or [browse the help desk](https://support.morechard.com).
 
 ---
 ### [PL] Quizy i nagrody
@@ -71,7 +71,7 @@ _Tone: Mistrz Sadu — direct, formal, no small talk. Financial literacy as seri
 
 The Mentor does not test you or mark you. It is there to help you think, not to grade you. You are in charge of what you do with what you learn.
 
-**Still confused?** Ask a parent to check the app, or they can [contact our support team](https://morechard.freshdesk.com/support/tickets/new).
+**Still confused?** Ask a parent to use the **Contact Support** option in Settings → Help & Support, or [browse the help desk](https://support.morechard.com).
 
 ---
 ### [PL] Kim jest Mentor AI?

@@ -18,7 +18,7 @@ _Tone: Professional, precise, concise. Bank-grade authority. Technical terms exp
 - Use the **Pay Out** feature (Payment tab) when you physically hand over cash or transfer money. This marks the balance as settled without affecting the Permanent Record.
 - Earnings are recorded in your chosen currency (GBP, USD, or PLN) set at registration.
 
-**Still need help?** [Contact our support team](https://morechard.freshdesk.com/support/tickets/new)
+**Still need help?** Use the **Contact Support** option in Settings → Help & Support within the app, or [browse the help desk](https://support.morechard.com).
 
 ---
 ### [PL] Jak działają zarobki
@@ -41,7 +41,7 @@ _Tone: Mistrz Sadu — direct, formal, no small talk. Financial literacy as seri
 - Each entry shows the chore name, amount, date, and approval status.
 - You cannot delete individual entries — the ledger is append-only by design.
 
-**Still need help?** [Contact our support team](https://morechard.freshdesk.com/support/tickets/new)
+**Still need help?** Use the **Contact Support** option in Settings → Help & Support within the app, or [browse the help desk](https://support.morechard.com).
 
 ---
 ### [PL] Co pokazuje Księga
@@ -62,7 +62,7 @@ There is nothing to configure. Tamper-proofing is automatic on every approved tr
 - If you are on the Complete Plan, records are stored securely but not cryptographically sealed for legal use. Upgrade to Shield for full legal integrity.
 - The hash chain can be verified independently — the PDF export includes verification data.
 
-**Still need help?** [Contact our support team](https://morechard.freshdesk.com/support/tickets/new)
+**Still need help?** Use the **Contact Support** option in Settings → Help & Support within the app, or [browse the help desk](https://support.morechard.com).
 
 ---
 ### [PL] Wyjaśnienie niezmiennej historii
@@ -84,7 +84,7 @@ This article is a warning, not a how-to. To delete your account, see: **Deleting
 - If you are a co-parent on the Shield Plan, both parties lose access to the shared record. Coordinate with your co-parent before proceeding.
 - Export your data first if you need to retain any records: see **Data export** in Settings & Account.
 
-**Still need help?** [Contact our support team](https://morechard.freshdesk.com/support/tickets/new)
+**Still need help?** Use the **Contact Support** option in Settings → Help & Support within the app, or [browse the help desk](https://support.morechard.com).
 
 ---
 ### [PL] Ostrzeżenie: Co dzieje się z Twoim Trwałym Rekordem po Wykarczowaniu konta

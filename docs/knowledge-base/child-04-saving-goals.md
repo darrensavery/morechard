@@ -15,7 +15,7 @@ _Tone: Orchard Lead — warm, direct, treats the child as capable. Short sentenc
 4. Tap **Save Goal**.
 5. Every time you earn money, you can choose to put some toward this goal.
 
-**Still confused?** Ask a parent to check the app, or they can [contact our support team](https://morechard.freshdesk.com/support/tickets/new).
+**Still confused?** Ask a parent to use the **Contact Support** option in Settings → Help & Support, or [browse the help desk](https://support.morechard.com).
 
 ---
 ### [PL] Jak utworzyć cel oszczędnościowy
@@ -33,7 +33,7 @@ _Tone: Mistrz Sadu — direct, formal, no small talk. Financial literacy as seri
 2. Tap the goal you want to check.
 3. You will see a progress bar, the amount saved so far, and the amount remaining.
 
-**Still confused?** Ask a parent to check the app, or they can [contact our support team](https://morechard.freshdesk.com/support/tickets/new).
+**Still confused?** Ask a parent to use the **Contact Support** option in Settings → Help & Support, or [browse the help desk](https://support.morechard.com).
 
 ---
 ### [PL] Jak śledzić postępy w realizacji celu
@@ -51,7 +51,7 @@ _Tone: Mistrz Sadu — direct, formal, no small talk. Financial literacy as seri
 2. Tell your parent — they will mark the goal as purchased in the app once they have got it for you.
 3. The goal amount is deducted from your balance, and the goal moves to your history.
 
-**Still confused?** Ask a parent to check the app, or they can [contact our support team](https://morechard.freshdesk.com/support/tickets/new).
+**Still confused?** Ask a parent to use the **Contact Support** option in Settings → Help & Support, or [browse the help desk](https://support.morechard.com).
 
 ---
 ### [PL] Co się dzieje, gdy osiągnę swój cel

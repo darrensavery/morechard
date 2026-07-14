@@ -18,7 +18,7 @@ _Tone: Professional, precise, concise. Bank-grade authority. Technical terms exp
 - Changing your email address triggers a verification email to the new address. The change takes effect after verification.
 - Your display name is visible to your children and co-parents within the app.
 
-**Still need help?** [Contact our support team](https://morechard.freshdesk.com/support/tickets/new)
+**Still need help?** Use the **Contact Support** option in Settings → Help & Support within the app, or [browse the help desk](https://support.morechard.com).
 
 ---
 ### [PL] Jak zmienić dane konta
@@ -42,7 +42,7 @@ _Tone: Mistrz Sadu — direct, formal, no small talk. Financial literacy as seri
 - Export your data before uprooting your account — deletion is immediate and export is not possible afterwards.
 - PDF exports from the Shield Plan include hash verification data for legal use.
 
-**Still need help?** [Contact our support team](https://morechard.freshdesk.com/support/tickets/new)
+**Still need help?** Use the **Contact Support** option in Settings → Help & Support within the app, or [browse the help desk](https://support.morechard.com).
 
 ---
 ### [PL] Jak wyeksportować swoje dane
@@ -70,7 +70,7 @@ _Tone: Mistrz Sadu — direct, formal, no small talk. Financial literacy as seri
 - Co-parents must leave the family account before the Lead Parent can Uproot. Go to **Settings** → **Family** → remove co-parents first.
 - Ledger transaction rows are retained in anonymised form for hash-chain integrity purposes, but all personally identifiable information (name, email, device data) is deleted.
 
-**Still need help?** [Contact our support team](https://morechard.freshdesk.com/support/tickets/new)
+**Still need help?** Use the **Contact Support** option in Settings → Help & Support within the app, or [browse the help desk](https://support.morechard.com).
 
 ---
 ### [PL] Usuwanie konta (Wykarczowanie)

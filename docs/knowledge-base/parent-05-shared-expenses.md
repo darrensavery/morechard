@@ -16,7 +16,7 @@ Shared expenses are logged manually. See: How to log a shared expense.
 - On the Shield Plan, shared expense entries are part of the cryptographically sealed record and can appear in court-ready PDF exports.
 - Both co-parents can view shared expenses if they are both members of the family account.
 
-**Still need help?** [Contact our support team](https://morechard.freshdesk.com/support/tickets/new)
+**Still need help?** Use the **Contact Support** option in Settings → Help & Support within the app, or [browse the help desk](https://support.morechard.com).
 
 ---
 ### [PL] Czym są wspólne wydatki
@@ -40,7 +40,7 @@ _Tone: Mistrz Sadu — direct, formal, no small talk. Financial literacy as seri
 - Entries cannot be deleted after saving — this protects the integrity of the shared record.
 - Export shared expenses as part of a PDF report via Co-Parenting & The Shield Plan.
 
-**Still need help?** [Contact our support team](https://morechard.freshdesk.com/support/tickets/new)
+**Still need help?** Use the **Contact Support** option in Settings → Help & Support within the app, or [browse the help desk](https://support.morechard.com).
 
 ---
 ### [PL] Jak zarejestrować wspólny wydatek

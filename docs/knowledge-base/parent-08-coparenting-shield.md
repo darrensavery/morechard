@@ -17,7 +17,7 @@ Upgrade to the Shield Plan via **Settings** → **Billing** → **Upgrade to Shi
 - It is designed for families who may need to present financial records in legal proceedings, mediation, or court.
 - The Shield Plan does not require a debit card or bank integration.
 
-**Still need help?** [Contact our support team](https://morechard.freshdesk.com/support/tickets/new)
+**Still need help?** Use the **Contact Support** option in Settings → Help & Support within the app, or [browse the help desk](https://support.morechard.com).
 
 ---
 ### [PL] Wyjaśnienie Planu Shield
@@ -48,7 +48,7 @@ Review the comparison below, then upgrade from **Settings** → **Billing** if n
 
 Choose Complete if you are an intact family with no need for legal-grade records. Choose Shield if you are separated, co-parenting, or want your records to be admissible in legal proceedings.
 
-**Still need help?** [Contact our support team](https://morechard.freshdesk.com/support/tickets/new)
+**Still need help?** Use the **Contact Support** option in Settings → Help & Support within the app, or [browse the help desk](https://support.morechard.com).
 
 ---
 ### [PL] Plan Complete vs Plan Shield — który wybrać?
@@ -70,7 +70,7 @@ No configuration required. Sealing is automatic on the Shield Plan.
 - Morechard does not modify, delete, or alter sealed records under any circumstances.
 - If you Uproot your account, sealed records are permanently deleted. Export your PDF before uprooting if you need to retain them.
 
-**Still need help?** [Contact our support team](https://morechard.freshdesk.com/support/tickets/new)
+**Still need help?** Use the **Contact Support** option in Settings → Help & Support within the app, or [browse the help desk](https://support.morechard.com).
 
 ---
 ### [PL] Nienaruszalne zapisy do celów prawnych
@@ -96,7 +96,7 @@ _Tone: Mistrz Sadu — direct, formal, no small talk. Financial literacy as seri
 - Morechard does not store your exported PDFs — download and save them securely.
 - If you are submitting records to a solicitor or court, share the PDF directly. The verification data within it allows independent confirmation of authenticity.
 
-**Still need help?** [Contact our support team](https://morechard.freshdesk.com/support/tickets/new)
+**Still need help?** Use the **Contact Support** option in Settings → Help & Support within the app, or [browse the help desk](https://support.morechard.com).
 
 ---
 ### [PL] Jak wygenerować eksport PDF gotowy do użycia w sądzie

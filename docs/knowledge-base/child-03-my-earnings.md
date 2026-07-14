@@ -15,7 +15,7 @@ There is nothing to set up. Your balance updates automatically when your parent 
 2. Your current balance shows what you are owed.
 3. As you earn more, the balance grows. When you are paid out or reach a goal, it decreases.
 
-**Still confused?** Ask a parent to check the app, or they can [contact our support team](https://morechard.freshdesk.com/support/tickets/new).
+**Still confused?** Ask a parent to use the **Contact Support** option in Settings → Help & Support, or [browse the help desk](https://support.morechard.com).
 
 ---
 ### [PL] Jak działa moje saldo
@@ -32,7 +32,7 @@ _Tone: Mistrz Sadu — direct, formal, no small talk. Financial literacy as seri
 1. Tap **Activity** on your dashboard.
 2. Scroll through your history to see every approved chore, the amount earned, and the date.
 
-**Still confused?** Ask a parent to check the app, or they can [contact our support team](https://morechard.freshdesk.com/support/tickets/new).
+**Still confused?** Ask a parent to use the **Contact Support** option in Settings → Help & Support, or [browse the help desk](https://support.morechard.com).
 
 ---
 ### [PL] Co pokazuje Trwały Rekord

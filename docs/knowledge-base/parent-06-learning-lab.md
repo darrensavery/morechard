@@ -16,7 +16,7 @@ No setup required. The Learning Lab is available to all children on your account
 - Modules are age-tiered: Sprout (younger), Sapling, Oak, and Canopy (most advanced). The app selects the right tier based on your child's age.
 - The AI Mentor add-on (£19.99/yr) unlocks personalised coaching alongside the curriculum. Without it, the curriculum remains accessible but without personalised guidance.
 
-**Still need help?** [Contact our support team](https://morechard.freshdesk.com/support/tickets/new)
+**Still need help?** Use the **Contact Support** option in Settings → Help & Support within the app, or [browse the help desk](https://support.morechard.com).
 
 ---
 ### [PL] Przegląd programu nauczania
@@ -38,7 +38,7 @@ No action required. Alignment is built into the curriculum design.
 - US content aligns with the Jump$tart Coalition's national standards.
 - The curriculum does not replicate school teaching — it applies concepts to your child's real Morechard activity.
 
-**Still need help?** [Contact our support team](https://morechard.freshdesk.com/support/tickets/new)
+**Still need help?** Use the **Contact Support** option in Settings → Help & Support within the app, or [browse the help desk](https://support.morechard.com).
 
 ---
 ### [PL] Zgodność z krajowymi standardami edukacji finansowej
@@ -59,7 +59,7 @@ Modules include: Effort vs Reward, Taxes & Net Pay, Entrepreneurship, Needs vs W
 
 Modules unlock progressively as your child's activity in the app provides real data to ground them.
 
-**Still need help?** [Contact our support team](https://morechard.freshdesk.com/support/tickets/new)
+**Still need help?** Use the **Contact Support** option in Settings → Help & Support within the app, or [browse the help desk](https://support.morechard.com).
 
 ---
 ### [PL] Przegląd biblioteki modułów
@@ -82,7 +82,7 @@ _Tone: Mistrz Sadu — direct, formal, no small talk. Financial literacy as seri
 - You can copy a summary to share with your child directly — tap **Copy for Child** on any briefing card.
 - Detailed module content is not shown to parents — the briefing provides a summary view only.
 
-**Still need help?** [Contact our support team](https://morechard.freshdesk.com/support/tickets/new)
+**Still need help?** Use the **Contact Support** option in Settings → Help & Support within the app, or [browse the help desk](https://support.morechard.com).
 
 ---
 ### [PL] Jak śledzić postępy dziecka w nauce
@@ -103,7 +103,7 @@ Quizzes appear automatically at the end of a module. Your child completes them o
 - Rewards are in-app recognition only — they do not add to the child's virtual balance.
 - The AI Mentor (if active) references quiz performance in its weekly briefings.
 
-**Still need help?** [Contact our support team](https://morechard.freshdesk.com/support/tickets/new)
+**Still need help?** Use the **Contact Support** option in Settings → Help & Support within the app, or [browse the help desk](https://support.morechard.com).
 
 ---
 ### [PL] Quizy i nagrody

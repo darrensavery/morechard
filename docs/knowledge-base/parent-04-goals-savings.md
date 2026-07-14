@@ -20,7 +20,7 @@ _Tone: Professional, precise, concise. Bank-grade authority. Technical terms exp
 - Goals are visible to the child on their dashboard — they can track progress in real time.
 - You can edit the target amount or deadline after creation.
 
-**Still need help?** [Contact our support team](https://morechard.freshdesk.com/support/tickets/new)
+**Still need help?** Use the **Contact Support** option in Settings → Help & Support within the app, or [browse the help desk](https://support.morechard.com).
 
 ---
 ### [PL] Jak utworzyć cel oszczędnościowy dla dziecka
@@ -44,7 +44,7 @@ _Tone: Mistrz Sadu — direct, formal, no small talk. Financial literacy as seri
 - Boosts do not come from the child's earned balance — they are an addition to it.
 - On the Shield Plan, boosts are cryptographically sealed like all other entries.
 
-**Still need help?** [Contact our support team](https://morechard.freshdesk.com/support/tickets/new)
+**Still need help?** Use the **Contact Support** option in Settings → Help & Support within the app, or [browse the help desk](https://support.morechard.com).
 
 ---
 ### [PL] Jak doładować cel oszczędnościowy dziecka
@@ -65,7 +65,7 @@ There is no automatic interest calculation. You manually boost a goal at any tim
 - The AI Mentor (if active) will explain the concept of interest and savings rewards to your child when boosting activity occurs.
 - There is no obligation to boost — it is an optional parental tool.
 
-**Still need help?** [Contact our support team](https://morechard.freshdesk.com/support/tickets/new)
+**Still need help?** Use the **Contact Support** option in Settings → Help & Support within the app, or [browse the help desk](https://support.morechard.com).
 
 ---
 ### [PL] Jak działa doładowanie (odsetki i zachęty)
@@ -89,7 +89,7 @@ _Tone: Mistrz Sadu — direct, formal, no small talk. Financial literacy as seri
 - Archived goals remain visible in the goal history for reference.
 - The AI Mentor (if active) delivers a lesson on delayed gratification when a goal is reached.
 
-**Still need help?** [Contact our support team](https://morechard.freshdesk.com/support/tickets/new)
+**Still need help?** Use the **Contact Support** option in Settings → Help & Support within the app, or [browse the help desk](https://support.morechard.com).
 
 ---
 ### [PL] Co się dzieje, gdy dziecko osiągnie swój cel

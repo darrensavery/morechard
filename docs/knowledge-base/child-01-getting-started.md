@@ -15,7 +15,7 @@ _Tone: Orchard Lead — warm, direct, treats the child as capable. Short sentenc
 4. Enter your name and tap **Join**.
 5. You are in — your chores and earnings will start appearing here.
 
-**Still confused?** Ask a parent to check the app, or they can [contact our support team](https://morechard.freshdesk.com/support/tickets/new).
+**Still confused?** Ask a parent to use the **Contact Support** option in Settings → Help & Support, or [browse the help desk](https://support.morechard.com).
 
 ---
 ### [PL] Jak dołączyć do rodziny w Morechard
@@ -36,7 +36,7 @@ There is nothing to set up — your parent creates the chores and you mark them 
 3. Wait for your parent to approve it.
 4. Watch your balance grow.
 
-**Still confused?** Ask a parent to check the app, or they can [contact our support team](https://morechard.freshdesk.com/support/tickets/new).
+**Still confused?** Ask a parent to use the **Contact Support** option in Settings → Help & Support, or [browse the help desk](https://support.morechard.com).
 
 ---
 ### [PL] Co robi Morechard
@@ -54,7 +54,7 @@ _Tone: Mistrz Sadu — direct, formal, no small talk. Financial literacy as seri
 2. Your Mentor will introduce itself the first time you visit.
 3. Start with whichever module is suggested — your Mentor picks based on what you have been earning and saving.
 
-**Still confused?** Ask a parent to check the app, or they can [contact our support team](https://morechard.freshdesk.com/support/tickets/new).
+**Still confused?** Ask a parent to use the **Contact Support** option in Settings → Help & Support, or [browse the help desk](https://support.morechard.com).
 
 ---
 ### [PL] Poznaj swojego Mentora

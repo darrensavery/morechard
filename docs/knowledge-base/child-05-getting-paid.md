@@ -15,7 +15,7 @@ There is nothing for you to do in the app. Your parent handles the payment step.
 2. They tap **Pay Out** in the app to record that they have paid you.
 3. Your balance decreases by the paid amount.
 
-**Still confused?** Ask a parent to check the app, or they can [contact our support team](https://morechard.freshdesk.com/support/tickets/new).
+**Still confused?** Ask a parent to use the **Contact Support** option in Settings → Help & Support, or [browse the help desk](https://support.morechard.com).
 
 ---
 ### [PL] Jak działa wypłata
@@ -35,7 +35,7 @@ Check your **Activity** tab — any pay-out appears as an entry showing the amou
 - A pay-out does not happen automatically. Your parent has to record it.
 - If you have been paid but your balance has not changed, ask your parent to mark the pay-out in the app.
 
-**Still confused?** Ask a parent to check the app, or they can [contact our support team](https://morechard.freshdesk.com/support/tickets/new).
+**Still confused?** Ask a parent to use the **Contact Support** option in Settings → Help & Support, or [browse the help desk](https://support.morechard.com).
 
 ---
 ### [PL] Co oznacza "wypłacono"

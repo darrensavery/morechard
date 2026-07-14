@@ -14,7 +14,7 @@ _Tone: Orchard Lead — warm, direct, treats the child as capable. Short sentenc
 3. Tap **Mark as Done**.
 4. Your parent will receive a notification to approve it.
 
-**Still confused?** Ask a parent to check the app, or they can [contact our support team](https://morechard.freshdesk.com/support/tickets/new).
+**Still confused?** Ask a parent to use the **Contact Support** option in Settings → Help & Support, or [browse the help desk](https://support.morechard.com).
 
 ---
 ### [PL] Jak oznaczyć zadanie jako wykonane
@@ -34,7 +34,7 @@ There is nothing you need to do — just wait for your parent to review it.
 2. When your parent approves it, the amount is added to your balance straight away.
 3. If they reject it, you will see a note explaining why.
 
-**Still confused?** Ask a parent to check the app, or they can [contact our support team](https://morechard.freshdesk.com/support/tickets/new).
+**Still confused?** Ask a parent to use the **Contact Support** option in Settings → Help & Support, or [browse the help desk](https://support.morechard.com).
 
 ---
 ### [PL] Co się dzieje po oznaczeniu zadania jako wykonane
@@ -52,7 +52,7 @@ _Tone: Mistrz Sadu — direct, formal, no small talk. Financial literacy as seri
 2. Fix the issue (e.g., redo the part that was not done properly).
 3. Mark the chore done again once it is fully finished.
 
-**Still confused?** Ask a parent to check the app, or they can [contact our support team](https://morechard.freshdesk.com/support/tickets/new).
+**Still confused?** Ask a parent to use the **Contact Support** option in Settings → Help & Support, or [browse the help desk](https://support.morechard.com).
 
 ---
 ### [PL] Dlaczego moje zadanie zostało odrzucone?
@@ -70,7 +70,7 @@ _Tone: Mistrz Sadu — direct, formal, no small talk. Financial literacy as seri
 2. Talk to your parent about what "done" looks like for this chore — come to an agreement on what the standard is.
 3. If you still disagree, ask your parent to show you the chore description together and agree on clear rules going forward.
 
-**Still confused?** Ask a parent to check the app, or they can [contact our support team](https://morechard.freshdesk.com/support/tickets/new).
+**Still confused?** Ask a parent to use the **Contact Support** option in Settings → Help & Support, or [browse the help desk](https://support.morechard.com).
 
 ---
 ### [PL] Nie zgadzam się z decyzją rodzica dotyczącą zadania

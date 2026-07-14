@@ -18,7 +18,7 @@ _Tone: Professional, precise, concise. Bank-grade authority. Technical terms exp
 - PWA notifications on Android require the app to be installed to the home screen (not just opened in a browser).
 - Notification delivery is not guaranteed on low-battery or Do Not Disturb modes.
 
-**Still need help?** [Contact our support team](https://morechard.freshdesk.com/support/tickets/new)
+**Still need help?** Use the **Contact Support** option in Settings → Help & Support within the app, or [browse the help desk](https://support.morechard.com).
 
 ---
 ### [PL] Powiadomienia nie pojawiają się
@@ -41,7 +41,7 @@ _Tone: Mistrz Sadu — direct, formal, no small talk. Financial literacy as seri
 - Morechard requires an active internet connection for most features. Offline mode is limited.
 - If you see a blank screen after updating the app, a hard refresh (close fully and reopen) usually resolves it.
 
-**Still need help?** [Contact our support team](https://morechard.freshdesk.com/support/tickets/new)
+**Still need help?** Use the **Contact Support** option in Settings → Help & Support within the app, or [browse the help desk](https://support.morechard.com).
 
 ---
 ### [PL] Aplikacja nie ładuje się lub działa nieprawidłowo
@@ -64,7 +64,7 @@ _Tone: Mistrz Sadu — direct, formal, no small talk. Financial literacy as seri
 - Morechard support cannot alter ledger entries — the record is immutable by design.
 - On the Shield Plan, the ledger can be exported as a PDF if a formal record is needed for mediation or legal proceedings.
 
-**Still need help?** [Contact our support team](https://morechard.freshdesk.com/support/tickets/new)
+**Still need help?** Use the **Contact Support** option in Settings → Help & Support within the app, or [browse the help desk](https://support.morechard.com).
 
 ---
 ### [PL] Nadal nie możemy dojść do porozumienia — co teraz?
@@ -88,7 +88,7 @@ _Tone: Mistrz Sadu — direct, formal, no small talk. Financial literacy as seri
 - If you are submitting a deletion request (Uproot), read the Uproot warning articles first — deletion is immediate and irreversible.
 - For billing issues, include your registered email address and the last 4 digits of your payment method to help us locate your account.
 
-**Still need help?** [Contact our support team](https://morechard.freshdesk.com/support/tickets/new)
+**Still need help?** Use the **Contact Support** option in Settings → Help & Support within the app, or [browse the help desk](https://support.morechard.com).
 
 ---
 ### [PL] Jak skontaktować się z pomocą techniczną

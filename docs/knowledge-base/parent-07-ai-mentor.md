@@ -16,7 +16,7 @@ The Mentor is activated via Billing (see: Activating the AI Mentor). Once active
 - It communicates with your child through the Learning Lab in the app only. It does not send emails, push notifications, or messages outside the app.
 - The Mentor uses your child's earning, saving, and spending history to make lessons relevant. It does not access data outside of Morechard.
 
-**Still need help?** [Contact our support team](https://morechard.freshdesk.com/support/tickets/new)
+**Still need help?** Use the **Contact Support** option in Settings → Help & Support within the app, or [browse the help desk](https://support.morechard.com).
 
 ---
 ### [PL] Czym jest Mentor AI
@@ -41,7 +41,7 @@ _Tone: Mistrz Sadu — direct, formal, no small talk. Financial literacy as seri
 - Cancelling stops the Mentor at the end of your current billing period. Your core plan (Complete or Shield) is unaffected.
 - If you have multiple children, one subscription covers all of them.
 
-**Still need help?** [Contact our support team](https://morechard.freshdesk.com/support/tickets/new)
+**Still need help?** Use the **Contact Support** option in Settings → Help & Support within the app, or [browse the help desk](https://support.morechard.com).
 
 ---
 ### [PL] Aktywowanie Mentora AI (19,99 £/rok)
@@ -63,7 +63,7 @@ No action required. The Mentor selects topics based on your child's activity.
 - The Mentor does not discuss topics unrelated to financial literacy. It does not offer personal, medical, or legal advice.
 - Parents receive a weekly summary of Mentor activity in the Insights tab.
 
-**Still need help?** [Contact our support team](https://morechard.freshdesk.com/support/tickets/new)
+**Still need help?** Use the **Contact Support** option in Settings → Help & Support within the app, or [browse the help desk](https://support.morechard.com).
 
 ---
 ### [PL] O czym Mentor AI rozmawia z Twoimi dziećmi
@@ -85,7 +85,7 @@ No action required. Safety boundaries are built into the Mentor by design.
 - The Mentor is designed for ages 10–16. It does not generate adult content and does not engage with topics outside its financial literacy scope.
 - Your child's name and profile data are not shared with third-party AI providers beyond what is necessary to generate a response.
 
-**Still need help?** [Contact our support team](https://morechard.freshdesk.com/support/tickets/new)
+**Still need help?** Use the **Contact Support** option in Settings → Help & Support within the app, or [browse the help desk](https://support.morechard.com).
 
 ---
 ### [PL] Prywatność i bezpieczeństwo Mentora AI

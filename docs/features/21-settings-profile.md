@@ -23,10 +23,10 @@ Provides parents with a unified control plane to manage their own account identi
 - `FamilySettings` — renders children list with quick-lock toggles, co-parent invite flow (generates a shareable 6-digit code), shared expense split selector, pocket money day picker, and overdraft policy radio group
 - `AppearanceSettings` — theme (light/dark/system) and language stored in `localStorage`/context; no API call
 - `ActiveSessionsSettings` — polls `GET /sessions`, displays device icon + relative timestamp, issues `DELETE` on revoke with immediate optimistic removal from list
-- `SupportSettings` — static links to Freshdesk, privacy policy, terms; reads `VITE_APP_VERSION` for display
+- `SupportSettings` — in-app "Contact Support" form (posts to support-agent backend, creates Zoho Desk ticket), external help desk link to `https://support.morechard.com`, privacy policy, terms; reads `VITE_APP_VERSION` for display
 
 ### Dependencies
 
-- **External packages**: `date-fns` (relative time in session list), DiceBear avatar API (CDN image URLs), Freshdesk (external support widget link)
+- **External packages**: `date-fns` (relative time in session list), DiceBear avatar API (CDN image URLs)
 - **Internal modules**: `app/src/lib/api.ts` (authenticated fetch wrapper), `useAuth` hook (JWT + family context), `useToast` (feedback on PATCH success/failure), shared `Sheet`/`Dialog` UI primitives
 - **APIs / services**: Cloudflare D1 (all reads/writes via Worker), Cloudflare Workers JWT validation on every settings endpoint; no external payment or AI calls in this feature
