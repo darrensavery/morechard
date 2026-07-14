@@ -12,9 +12,7 @@
  */
 import { Env } from '../types.js';
 import { checkApprovalToken, consumeApprovalToken } from '../lib/agent/approvalTokens.js';
-import { invokeAutoTool } from '../lib/agent/registry.js';
-import { registerAutoTools } from '../lib/agent/tools/autoTools.js';
-import { writeAgentActionLogEntry } from '../lib/agent/actionLog.js';
+import { executeReviewItemAutoTool } from '../lib/agent/reviewExecution.js';
 
 interface ReviewItemRow {
   id: string;
@@ -69,27 +67,11 @@ export async function handleApproveReviewItem(
     return htmlResponse('Not one-tap eligible', 'This item requires review in /admin instead.', 409);
   }
 
-  registerAutoTools();
-  const payload = JSON.parse(item.recommended_payload) as { email: string };
-  const result = await invokeAutoTool('resend_magic_link', env, payload);
-
-  await writeAgentActionLogEntry(env.DB, {
-    incidentId: item.incident_id,
-    actor: 'human:one-tap-approval',
-    toolName: 'resend_magic_link',
-    tier: 'auto',
-    payload,
-    result,
-  });
-
-  await env.DB
-    .prepare(`
-      UPDATE agent_review_items
-      SET status = 'executed', decided_by = 'human:one-tap-approval', decided_at = unixepoch()
-      WHERE id = ? AND status = 'pending'
-    `)
-    .bind(reviewItemId)
-    .run();
+  await executeReviewItemAutoTool(
+    env,
+    { id: item.id, incident_id: item.incident_id, recommended_tool: item.recommended_tool, recommended_payload: item.recommended_payload },
+    'human:one-tap-approval',
+  );
 
   await consumeApprovalToken(env, token);
 

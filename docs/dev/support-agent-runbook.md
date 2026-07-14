@@ -49,6 +49,32 @@ built later — still requires a normal `/admin` review. There is still no
 `invokeGatedTool`; GATED tools remain human-only with no auto-execution
 path.
 
+## `/admin` → Agent Review tab
+
+Three filter tabs: **Pending**, **Declined**, **Executed** — the API
+already supported all `agent_review_items.status` values, the UI just
+didn't expose non-pending ones before.
+
+Pending items get up to two buttons:
+- **Approve** — shown whenever `recommended_tier === 'auto'` and a
+  payload exists (currently only `resend_magic_link`). Deliberately
+  **not** restricted to the `recommended_approve` queue bucket the way
+  the emailed one-tap link is — an admin reading the full diagnosis in
+  `/admin` before clicking is the safety valve `needs_review` exists for;
+  the emailed link stays narrower because clicking it requires no
+  context-reading. `POST /api/admin/agent-review/:id/approve`
+  (`X-Admin-Key`-authenticated) and the emailed link
+  (`GET .../review/:id/approve?token=...`, token-authenticated) share the
+  same execution tail (`lib/agent/reviewExecution.ts`) — same
+  `invokeAutoTool` call, same `agent_action_log` entry, same
+  `status = 'executed'` update. `decided_by` records which path was used
+  (`human:admin-approval` vs `human:one-tap-approval`).
+- **Decline (bad diagnosis)** — unchanged from Phase 0; prompts for a
+  note, sets `status = 'declined'`.
+
+Declined/Executed items are read-only — no buttons, just who
+decided (`decided_by`), when (`decided_at`), and the decline note if any.
+
 ## New secrets (production)
 
 Set via `wrangler secret put <NAME> --env production` from `worker/`:

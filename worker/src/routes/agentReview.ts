@@ -1,12 +1,19 @@
 /**
- * Review Queue API — GET (list) and POST decline. The approve/execute path
- * for one-tap-eligible items lives separately in routes/agentApprove.ts
- * (token-authenticated, not X-Admin-Key — it's clicked from an email, not
- * called from /admin). Everything else still has no execute path.
+ * Review Queue API — GET (list), POST decline, POST approve. Approve is
+ * also reachable via the emailed one-tap link (routes/agentApprove.ts,
+ * token-authenticated — for clicking straight out of an email). This
+ * endpoint is the X-Admin-Key-authenticated equivalent for approving from
+ * within /admin itself, and deliberately allows approving items in EITHER
+ * queue bucket (not just recommended_approve) — an admin reading the full
+ * diagnosis in context is the safety valve the needs_review bucket exists
+ * for; the emailed link stays narrower because clicking it requires no
+ * context-reading. Both paths share the same execution tail
+ * (lib/agent/reviewExecution.ts).
  */
 import { Env } from '../types.js';
 import { json, error } from '../lib/response.js';
 import { requireAdmin } from '../lib/adminAuth.js';
+import { executeReviewItemAutoTool } from '../lib/agent/reviewExecution.js';
 
 interface ReviewItemRow {
   id: string;
@@ -20,6 +27,9 @@ interface ReviewItemRow {
   category: string | null;
   queue_bucket: 'recommended_approve' | 'needs_review';
   status: string;
+  decided_by: string | null;
+  decided_at: number | null;
+  decision_note: string | null;
   created_at: number;
 }
 
@@ -42,7 +52,8 @@ export async function handleListAgentReviewItems(request: Request, env: Env): Pr
   const { results } = await env.DB
     .prepare(`
       SELECT id, incident_id, diagnosis, recommended_tier, recommended_tool, recommended_payload,
-             draft_reply, confidence, category, queue_bucket, status, created_at
+             draft_reply, confidence, category, queue_bucket, status,
+             decided_by, decided_at, decision_note, created_at
       FROM agent_review_items WHERE status = ? ORDER BY created_at DESC
     `)
     .bind(status)
@@ -77,4 +88,32 @@ export async function handleDeclineAgentReviewItem(request: Request, env: Env, i
 
   if (result.meta.changes === 0) return error('Review item not found or already decided', 404);
   return json({ ok: true });
+}
+
+// ── POST /api/admin/agent-review/:id/approve ──────────────────────────────
+export async function handleApproveAgentReviewItem(request: Request, env: Env, id: string): Promise<Response> {
+  const authErr = requireAdmin(request, env);
+  if (authErr) return authErr;
+
+  const item = await env.DB
+    .prepare(`
+      SELECT id, incident_id, recommended_tier, recommended_tool, recommended_payload, status
+      FROM agent_review_items WHERE id = ?
+    `)
+    .bind(id)
+    .first<{ id: string; incident_id: string; recommended_tier: string | null; recommended_tool: string | null; recommended_payload: string | null; status: string }>();
+
+  if (!item) return error('Review item not found', 404);
+  if (item.status !== 'pending') return error(`Review item already ${item.status}`, 409);
+  if (item.recommended_tier !== 'auto' || !item.recommended_tool || !item.recommended_payload) {
+    return error('This item has no executable AUTO-tier tool', 409);
+  }
+
+  const result = await executeReviewItemAutoTool(
+    env,
+    { id: item.id, incident_id: item.incident_id, recommended_tool: item.recommended_tool, recommended_payload: item.recommended_payload },
+    'human:admin-approval',
+  );
+
+  return json({ ok: true, result });
 }

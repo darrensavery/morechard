@@ -343,7 +343,12 @@ function buildHtml(): string {
     <div id="tab-agent-review" class="tab-panel">
       <div class="card">
         <h2>Agent Review Queue</h2>
-        <p class="desc">Every incident the support agent diagnosed in shadow mode. Nothing here has been sent or executed.</p>
+        <p class="desc">Every incident the support agent diagnosed. Approve executes the recommended tool immediately — no customer message is ever sent automatically.</p>
+        <div class="filter-bar">
+          <button class="btn-ghost btn-sm active" data-review-status="pending">Pending</button>
+          <button class="btn-ghost btn-sm" data-review-status="declined">Declined</button>
+          <button class="btn-ghost btn-sm" data-review-status="executed">Executed</button>
+        </div>
         <div id="agent-review-list"></div>
       </div>
     </div>
@@ -404,6 +409,7 @@ function buildHtml(): string {
   /* ── State ────────────────────────────────────────────────────────────── */
   var adminKey = sessionStorage.getItem('morechard_admin_key') || '';
   var candidateStatus = 'pending';
+  var reviewStatus = 'pending';
 
   // Data stores — keyed by locale / id so onclick handlers never embed data in HTML
   var ratesStore = {};      // locale -> rate object
@@ -815,6 +821,15 @@ function buildHtml(): string {
   }
 
   /* ── Agent Review ─────────────────────────────────────────────────────── */
+  document.querySelectorAll('button[data-review-status]').forEach(function (filterBtn) {
+    filterBtn.addEventListener('click', function () {
+      document.querySelectorAll('button[data-review-status]').forEach(function (b) { b.classList.remove('active'); });
+      filterBtn.classList.add('active');
+      reviewStatus = filterBtn.dataset.reviewStatus;
+      loadAgentReviewItems();
+    });
+  });
+
   function loadAgentReviewItems() {
     var list = document.getElementById('agent-review-list');
     list.innerHTML = '';
@@ -823,7 +838,7 @@ function buildHtml(): string {
     spinner.appendChild(document.createElement('span')).className = 'spinner';
     list.appendChild(spinner);
 
-    apiFetch('/api/admin/agent-review?status=pending')
+    apiFetch('/api/admin/agent-review?status=' + encodeURIComponent(reviewStatus))
       .then(function (r) {
         if (!r.ok) throw new Error('bad response');
         return r.json();
@@ -831,7 +846,7 @@ function buildHtml(): string {
       .then(function (data) {
         list.innerHTML = '';
         var items = data.items || [];
-        if (!items.length) { setEmpty('agent-review-list', 'No pending items'); return; }
+        if (!items.length) { setEmpty('agent-review-list', 'No ' + reviewStatus + ' items'); return; }
         items.forEach(function (item) { list.appendChild(renderReviewItemCard(item)); });
       })
       .catch(function () { setEmpty('agent-review-list', 'Failed to load review items'); });
@@ -876,9 +891,44 @@ function buildHtml(): string {
     }
 
     var itemId = item.id; // capture for closure
-    card.appendChild(btn('Decline (bad diagnosis)', 'btn-ghost btn-sm', function () { declineReviewItem(itemId); }));
+
+    if (item.status === 'pending') {
+      var actions = document.createElement('div');
+      actions.style.cssText = 'display:flex;gap:8px;margin-top:12px';
+      if (item.recommended_tier === 'auto' && item.recommended_tool && item.recommended_payload) {
+        actions.appendChild(btn('Approve', 'btn-primary btn-sm', function () { approveReviewItem(itemId); }));
+      }
+      actions.appendChild(btn('Decline (bad diagnosis)', 'btn-ghost btn-sm', function () { declineReviewItem(itemId); }));
+      card.appendChild(actions);
+    } else {
+      var decision = document.createElement('div');
+      decision.className = 'review-category';
+      var decisionParts = [
+        (item.status === 'executed' ? 'Executed' : 'Declined') + ' by ' + (item.decided_by || 'unknown'),
+        fmtDateTime(item.decided_at),
+      ];
+      setText(decision, decisionParts.join(' — '));
+      card.appendChild(decision);
+      if (item.decision_note) {
+        var noteEl = document.createElement('div');
+        noteEl.className = 'review-draft';
+        setText(noteEl, item.decision_note);
+        card.appendChild(noteEl);
+      }
+    }
 
     return card;
+  }
+
+  function approveReviewItem(id) {
+    if (!confirm('Execute the recommended tool now? This cannot be undone.')) return;
+    apiFetch('/api/admin/agent-review/' + encodeURIComponent(id) + '/approve', { method: 'POST', body: '{}' })
+      .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
+      .then(function (res) {
+        if (res.ok) { toast('Approved and executed', 'ok'); loadAgentReviewItems(); }
+        else toast((res.d && res.d.error) || 'Approve failed', 'err');
+      })
+      .catch(function () { toast('Network error', 'err'); });
   }
 
   function declineReviewItem(id) {
