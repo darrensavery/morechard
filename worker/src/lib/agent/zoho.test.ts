@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
-import { buildZohoSearchUrl, parseZohoSearchResponse, buildZohoCreateTicketBody } from './zoho.js';
+import { describe, it, expect, vi, afterEach } from 'vitest';
+import { buildZohoSearchUrl, parseZohoSearchResponse, buildZohoCreateTicketBody, searchZohoTicketsModifiedBetween } from './zoho.js';
 
 const fakeEnv = {
   ZOHO_API_DOMAIN: 'https://desk.zoho.com',
@@ -45,6 +45,44 @@ describe('parseZohoSearchResponse', () => {
     expect(parseZohoSearchResponse(body)).toEqual([
       { id: '1', subject: 'x', description: 'y', contactEmail: null },
     ]);
+  });
+});
+
+describe('searchZohoTicketsModifiedBetween', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('returns an empty array (not a throw) when Zoho responds 204 No Content with an empty body', async () => {
+    // Zoho's real behavior for a zero-match search — confirmed via live
+    // reproduction against production: HTTP 204 with an empty body, NOT
+    // 200 with {"data": []}. Calling res.json() on this response throws
+    // "Unexpected end of JSON input", which silently crashed every poll
+    // in production until this fix (the crash happened before the KV
+    // cursor write, so it was invisible without a live API reproduction).
+    const fetchMock = vi.fn()
+      // 1st call: OAuth token refresh
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ access_token: 'fake-token', expires_in: 3600 }),
+      })
+      // 2nd call: ticket search, zero matches
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 204,
+        text: async () => '',
+      });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const env = {
+      CACHE: { get: async () => null, put: async () => undefined },
+      ZOHO_ACCOUNTS_DOMAIN: 'https://accounts.zoho.eu',
+      ZOHO_API_DOMAIN: 'https://desk.zoho.eu',
+      ZOHO_CLIENT_ID: 'x', ZOHO_CLIENT_SECRET: 'x', ZOHO_REFRESH_TOKEN: 'x', ZOHO_ORG_ID: 'x',
+    } as never;
+
+    const result = await searchZohoTicketsModifiedBetween(env, '2026-07-14T00:00:00.000Z', '2026-07-14T00:05:00.000Z');
+    expect(result).toEqual([]);
   });
 });
 

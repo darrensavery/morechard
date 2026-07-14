@@ -99,7 +99,12 @@ export async function searchZohoTicketsModifiedBetween(
     if (!res.ok) {
       throw new Error(`Zoho ticket search failed (${res.status}): ${await res.text()}`);
     }
-    const page = parseZohoSearchResponse(await res.json());
+    // Zoho returns 204 No Content (empty body) when a search matches zero
+    // tickets, rather than 200 with {"data": []} — calling res.json() on
+    // that empty body throws. Read as text first and treat an empty body
+    // as an empty page.
+    const rawBody = await res.text();
+    const page = rawBody ? parseZohoSearchResponse(JSON.parse(rawBody)) : [];
     results.push(...page);
     if (page.length < pageSize) break;
     from += pageSize;
