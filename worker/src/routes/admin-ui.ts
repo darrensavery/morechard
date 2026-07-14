@@ -188,6 +188,11 @@ function buildHtml(): string {
   .review-diagnosis { white-space: pre-wrap; font-family: var(--font); font-size: 13px; background: var(--brand-parchment); padding: 12px; border-radius: 8px; margin: 8px 0; }
   .review-tool { font-family: var(--mono); font-size: 12px; margin: 8px 0; }
   .review-draft { background: #f0f7f7; border-radius: 8px; padding: 12px; margin: 8px 0; font-size: 13px; }
+  .review-draft-body { line-height: 1.6; }
+  .review-draft-body p, .review-draft-body ul, .review-draft-body ol { margin: 0 0 10px; }
+  .review-draft-body ul, .review-draft-body ol { padding-left: 20px; }
+  .review-draft-body li { margin-bottom: 4px; }
+  .review-draft-body > :last-child { margin-bottom: 0; }
 
   /* ── Toast ── */
   #toast {
@@ -969,6 +974,99 @@ function buildHtml(): string {
     items.forEach(function (item) { list.appendChild(renderReviewItemCard(item)); });
   }
 
+  /* Lightweight markdown -> DOM renderer for LLM-drafted reply text
+     (paragraphs, blank-line-separated numbered/bulleted lists, **bold**).
+     Builds elements via createElement/textContent only — never innerHTML
+     from the draft text — so it stays safe even though the text originates
+     from an LLM response to a potentially attacker-influenced support ticket. */
+  function parseReplyBlocks(text) {
+    var lines = String(text).replace(/\r\n/g, '\n').split('\n');
+    var blocks = [];
+    var current = null;
+    lines.forEach(function (line) {
+      var trimmed = line.trim();
+      if (!trimmed) { current = null; return; }
+      var bulletMatch = /^[-*]\s+(.*)$/.exec(trimmed);
+      var numMatch = /^\d+\.\s+(.*)$/.exec(trimmed);
+      if (bulletMatch) {
+        if (!current || current.type !== 'ul') { current = { type: 'ul', items: [] }; blocks.push(current); }
+        current.items.push(bulletMatch[1]);
+      } else if (numMatch) {
+        if (!current || current.type !== 'ol') { current = { type: 'ol', items: [] }; blocks.push(current); }
+        current.items.push(numMatch[1]);
+      } else {
+        if (!current || current.type !== 'p') { current = { type: 'p', items: [] }; blocks.push(current); }
+        current.items.push(trimmed);
+      }
+    });
+    return blocks;
+  }
+
+  function appendInlineMarkdown(parentEl, text) {
+    var re = /\*\*(.+?)\*\*/g;
+    var lastIndex = 0;
+    var match;
+    while ((match = re.exec(text))) {
+      if (match.index > lastIndex) parentEl.appendChild(document.createTextNode(text.slice(lastIndex, match.index)));
+      var strong = document.createElement('strong');
+      strong.textContent = match[1];
+      parentEl.appendChild(strong);
+      lastIndex = re.lastIndex;
+    }
+    if (lastIndex < text.length) parentEl.appendChild(document.createTextNode(text.slice(lastIndex)));
+  }
+
+  function renderFormattedReply(container, text) {
+    container.innerHTML = '';
+    parseReplyBlocks(text).forEach(function (block) {
+      if (block.type === 'p') {
+        var p = document.createElement('p');
+        block.items.forEach(function (line, idx) {
+          if (idx > 0) p.appendChild(document.createElement('br'));
+          appendInlineMarkdown(p, line);
+        });
+        container.appendChild(p);
+      } else {
+        var listEl = document.createElement(block.type);
+        block.items.forEach(function (itemText) {
+          var li = document.createElement('li');
+          appendInlineMarkdown(li, itemText);
+          listEl.appendChild(li);
+        });
+        container.appendChild(listEl);
+      }
+    });
+  }
+
+  function copyDraftReplyHtml(bodyEl, plainText) {
+    var html = bodyEl.innerHTML; // built entirely via createElement/textContent above — safe to read back
+    if (navigator.clipboard && window.ClipboardItem) {
+      var item = new ClipboardItem({
+        'text/html':  new Blob([html], { type: 'text/html' }),
+        'text/plain': new Blob([plainText], { type: 'text/plain' }),
+      });
+      navigator.clipboard.write([item]).then(function () {
+        toast('Copied formatted reply to clipboard', 'ok');
+      }).catch(function () {
+        copyDraftReplyPlain(plainText);
+      });
+    } else {
+      copyDraftReplyPlain(plainText);
+    }
+  }
+
+  function copyDraftReplyPlain(plainText) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(plainText).then(function () {
+        toast('Copied reply (plain text) to clipboard', 'ok');
+      }).catch(function () {
+        toast('Copy failed — select and copy manually', 'err');
+      });
+    } else {
+      toast('Copy not supported in this browser', 'err');
+    }
+  }
+
   function renderReviewItemCard(item) {
     var card = document.createElement('div');
     card.className = 'review-card';
@@ -1005,12 +1103,21 @@ function buildHtml(): string {
     if (item.draft_reply) {
       var draft = document.createElement('div');
       draft.className = 'review-draft';
+
+      var draftHeader = document.createElement('div');
+      draftHeader.style.cssText = 'display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:8px';
       var label = document.createElement('strong');
       label.textContent = 'Draft reply (not sent):';
-      draft.appendChild(label);
-      var p = document.createElement('p');
-      setText(p, item.draft_reply);
-      draft.appendChild(p);
+      draftHeader.appendChild(label);
+      var draftReplyText = item.draft_reply;
+      draftHeader.appendChild(btn('Copy HTML', 'btn-ghost btn-sm', function () { copyDraftReplyHtml(body, draftReplyText); }));
+      draft.appendChild(draftHeader);
+
+      var body = document.createElement('div');
+      body.className = 'review-draft-body';
+      renderFormattedReply(body, item.draft_reply);
+      draft.appendChild(body);
+
       card.appendChild(draft);
     }
 
