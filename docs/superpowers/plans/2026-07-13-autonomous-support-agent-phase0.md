@@ -2116,9 +2116,22 @@ function ensureReadToolsRegistered(): void {
   readToolsRegistered = true;
 }
 
-/** Extracts the body of a top-level (#) markdown section whose heading contains the given slug. */
+/**
+ * Extracts the body of a top-level (#) markdown section matching the given
+ * category slug. Matches on the LEADING NUMBER (e.g. '06' from
+ * '06-billing-payments-stripe'), not fuzzy text containment — every
+ * docs/support/*.md file's H1 heading starts with the same two-digit
+ * number as its filename, so number matching is exact and unambiguous,
+ * unlike substring matching (which can false-positive across sections
+ * sharing a common word, or fail to match at all if the heading text is
+ * shorter than the full slug — see plan corrections for the original bug).
+ */
 export function extractPlaybookSection(bundle: string, categorySlug: string): string {
   if (categorySlug === 'novel') return '(no matching playbook section — novel incident)';
+
+  const slugNumberMatch = categorySlug.match(/^(\d+)-/);
+  if (!slugNumberMatch) return '(no matching playbook section — novel incident)';
+  const slugNumber = slugNumberMatch[1];
 
   const lines = bundle.split('\n');
   const sectionStarts: number[] = [];
@@ -2126,7 +2139,8 @@ export function extractPlaybookSection(bundle: string, categorySlug: string): st
 
   for (let s = 0; s < sectionStarts.length; s++) {
     const start = sectionStarts[s];
-    if (lines[start].toLowerCase().includes(categorySlug.toLowerCase().replace(/^\d+-/, ''))) {
+    const headingNumberMatch = lines[start].match(/^#\s*(\d+)/);
+    if (headingNumberMatch && headingNumberMatch[1] === slugNumber) {
       const end = s + 1 < sectionStarts.length ? sectionStarts[s + 1] : lines.length;
       return lines.slice(start, end).join('\n').trim();
     }
@@ -2422,7 +2436,7 @@ Expected: FAIL — `Cannot find module './supportAgentIngest.js'`.
 import { Env, IncidentQueueMessage } from '../types.js';
 import { json, error } from '../lib/response.js';
 import { nanoid } from '../lib/nanoid.js';
-import { verifySharedSecret, verifySentrySignature } from '../lib/agent/signatures.js';
+import { verifySentrySignature } from '../lib/agent/signatures.js';
 
 export function dedupeIncomingSentryEvent(input: { existingOpenIncidentId: string | null }): 'new' | 'duplicate' {
   return input.existingOpenIncidentId ? 'duplicate' : 'new';
@@ -2465,13 +2479,33 @@ export async function handleSentryWebhook(request: Request, env: Env): Promise<R
   }
 
   const incidentId = nanoid();
-  await env.DB
-    .prepare(`
-      INSERT INTO agent_incidents (id, source, source_ref, user_facing, raw_payload)
-      VALUES (?, 'sentry', ?, 0, ?)
-    `)
-    .bind(incidentId, issueId, rawBody)
-    .run();
+  try {
+    await env.DB
+      .prepare(`
+        INSERT INTO agent_incidents (id, source, source_ref, user_facing, raw_payload)
+        VALUES (?, 'sentry', ?, 0, ?)
+      `)
+      .bind(incidentId, issueId, rawBody)
+      .run();
+  } catch (err) {
+    // A concurrent delivery for the same issue can win the SELECT-then-INSERT
+    // race between this request's own dedup check and its INSERT — the
+    // partial unique index (migration 0078) then rejects the loser. Treat
+    // that as the duplicate path rather than letting it bubble up as a 500,
+    // mirroring the retry-on-UNIQUE-constraint pattern in actionLog.ts.
+    const msg = err instanceof Error ? err.message : String(err);
+    if (/UNIQUE constraint failed/i.test(msg)) {
+      await env.DB
+        .prepare(`
+          UPDATE agent_incidents SET occurrence_count = occurrence_count + 1
+          WHERE source = 'sentry' AND source_ref = ? AND status IN ('received','diagnosing','escalated')
+        `)
+        .bind(issueId)
+        .run();
+      return json({ received: true, deduplicated: true });
+    }
+    throw err;
+  }
 
   await env.INCIDENT_QUEUE.send({ incidentId } satisfies IncidentQueueMessage);
 
@@ -2526,7 +2560,17 @@ No new pure logic to unit test beyond what Task 16 already covers
 (shared-secret verification is tested in Task 4) — this task is route
 wiring, verified manually per Task 24's checklist.
 
-- [ ] **Step 1: Add the handler**
+- [ ] **Step 1: Add the import**
+
+Task 16 imported only `verifySentrySignature` from `../lib/agent/signatures.js` (it's the
+only one that task uses). This task needs `verifySharedSecret` too — update the existing
+import line at the top of `worker/src/routes/supportAgentIngest.ts`:
+
+```typescript
+import { verifySentrySignature, verifySharedSecret } from '../lib/agent/signatures.js';
+```
+
+- [ ] **Step 2: Add the handler**
 
 Append to `worker/src/routes/supportAgentIngest.ts`:
 
@@ -2572,7 +2616,7 @@ export async function handleFreshdeskWebhook(request: Request, env: Env): Promis
 }
 ```
 
-- [ ] **Step 2: Wire the route in `index.ts`**
+- [ ] **Step 3: Wire the route in `index.ts`**
 
 Update the import from Task 16:
 
@@ -2587,7 +2631,7 @@ if (path === '/api/support-agent/freshdesk-webhook' && method === 'POST')
   return handleFreshdeskWebhook(request, env);
 ```
 
-- [ ] **Step 3: Run the full test suite**
+- [ ] **Step 4: Run the full test suite**
 
 ```bash
 cd worker
@@ -2596,7 +2640,7 @@ npx vitest run
 
 Expected: all tests still PASS.
 
-- [ ] **Step 4: Commit**
+- [ ] **Step 5: Commit**
 
 ```bash
 git add worker/src/routes/supportAgentIngest.ts worker/src/index.ts
@@ -2823,12 +2867,18 @@ git commit -m "feat: add isolated Stripe ingest route for the support agent"
 - Produces: `HARASSMENT_WATCH_WINDOW_DAYS`, `HARASSMENT_WATCH_THRESHOLD`,
   `classifyHarassmentSignal(distinctTicketCount): boolean` (pure),
   `countDistinctMagicLinkTriggerTickets(db, email, windowDays): Promise<number>`
-  — consumed by Task 21 (Review Queue API, to annotate list items).
+  — **not wired into any route in this plan.** See the note below.
 
 Per the design spec: informational only, no auto-lockout. This module is
-built now (Phase 0) even though `resend_magic_link` itself won't execute
-until Phase 1, so the signal exists from day one of the AUTO tier going
-live rather than being retrofitted.
+built and unit-tested now (Phase 0) so the logic exists before Phase 1
+needs it, but it is **not** called from `agentReview.ts` or the admin UI
+in this plan — the count would always read `0` in Phase 0, since
+`resend_magic_link` has no live handler yet and can never write the
+`agent_action_log` rows this query counts. Wiring it into
+`GET /api/admin/agent-review` and the Review Queue UI is Phase 1 work,
+once `resend_magic_link` actually executes — tracked in this plan's
+Post-plan note alongside the other Phase-1 carry-forward guardrails
+(child-contact ban, AUTO cooldown cap, global daily budget).
 
 - [ ] **Step 1: Write the failing test**
 
@@ -3565,3 +3615,9 @@ for Phase 1 and must not be skipped when that plan is written:
 - **Global daily AUTO budget (spec §4.2):** the fleet-wide ceiling that
   flips the entire AUTO tier to shadow mode if breached. Same reasoning —
   meaningless until AUTO executions exist to count.
+- **Harassment-watch UI wiring (Task 20, spec §2 AUTO tier note):**
+  `countDistinctMagicLinkTriggerTickets` is built and tested in Phase 0 but
+  not called from any route — wire it into
+  `GET /api/admin/agent-review` (and surface it in the Review Queue UI)
+  once `resend_magic_link` has a live handler and can actually produce
+  rows for it to count.

@@ -171,6 +171,16 @@ function buildHtml(): string {
   .filter-bar { display: flex; gap: 8px; margin-bottom: 20px; }
   .filter-bar button.active { border-color: var(--brand-primary); color: var(--brand-primary); background: rgba(0,149,156,.06); }
 
+  /* ── Agent Review ── */
+  .review-card { border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 12px; background: var(--surface); }
+  .review-badge { display: inline-block; font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 999px; text-transform: uppercase; letter-spacing: .04em; }
+  .badge-approve { background: #d6f5e3; color: #0a6b3d; }
+  .badge-review  { background: #fdf0d5; color: #92620a; }
+  .review-category { color: var(--muted); font-size: 12px; margin: 8px 0 4px; }
+  .review-diagnosis { white-space: pre-wrap; font-family: var(--font); font-size: 13px; background: var(--brand-parchment); padding: 12px; border-radius: 8px; margin: 8px 0; }
+  .review-tool { font-family: var(--mono); font-size: 12px; margin: 8px 0; }
+  .review-draft { background: #f0f7f7; border-radius: 8px; padding: 12px; margin: 8px 0; font-size: 13px; }
+
   /* ── Toast ── */
   #toast {
     position: fixed; bottom: 28px; right: 28px;
@@ -277,6 +287,7 @@ function buildHtml(): string {
       <button class="active" data-tab="rates">Exchange Rates</button>
       <button data-tab="promos">Promo Codes</button>
       <button data-tab="candidates">Chore Candidates</button>
+      <button data-tab="agent-review">Agent Review</button>
     </div>
   </nav>
   <main>
@@ -326,6 +337,15 @@ function buildHtml(): string {
         <button class="info-btn" id="candidates-info-btn" title="What is this?">?</button>
       </div>
       <div id="candidates-list"></div>
+    </div>
+
+    <!-- Agent Review -->
+    <div id="tab-agent-review" class="tab-panel">
+      <div class="card">
+        <h2>Agent Review Queue</h2>
+        <p class="desc">Every incident the support agent diagnosed in shadow mode. Nothing here has been sent or executed.</p>
+        <div id="agent-review-list"></div>
+      </div>
     </div>
 
   </div><!-- /.content-inner -->
@@ -509,6 +529,7 @@ function buildHtml(): string {
     loadRates();
     loadPromos();
     loadCandidates();
+    loadAgentReviewItems();
   }
 
   if (adminKey) showApp();
@@ -784,6 +805,85 @@ function buildHtml(): string {
       .then(function (res) {
         if (res.ok) { toast('Dismissed', 'ok'); loadCandidates(); }
         else toast((res.d && res.d.error) || 'Dismiss failed', 'err');
+      })
+      .catch(function () { toast('Network error', 'err'); });
+  }
+
+  /* ── Agent Review ─────────────────────────────────────────────────────── */
+  function loadAgentReviewItems() {
+    var list = document.getElementById('agent-review-list');
+    list.innerHTML = '';
+    var spinner = document.createElement('div');
+    spinner.className = 'empty';
+    spinner.appendChild(document.createElement('span')).className = 'spinner';
+    list.appendChild(spinner);
+
+    apiFetch('/api/admin/agent-review?status=pending')
+      .then(function (r) {
+        if (!r.ok) throw new Error('bad response');
+        return r.json();
+      })
+      .then(function (data) {
+        list.innerHTML = '';
+        var items = data.items || [];
+        if (!items.length) { setEmpty('agent-review-list', 'No pending items'); return; }
+        items.forEach(function (item) { list.appendChild(renderReviewItemCard(item)); });
+      })
+      .catch(function () { setEmpty('agent-review-list', 'Failed to load review items'); });
+  }
+
+  function renderReviewItemCard(item) {
+    var card = document.createElement('div');
+    card.className = 'review-card';
+
+    var badge = document.createElement('span');
+    badge.className = 'review-badge ' + (item.queue_bucket === 'recommended_approve' ? 'badge-approve' : 'badge-review');
+    setText(badge, item.queue_bucket === 'recommended_approve' ? 'Recommended: Approve' : 'Needs Review');
+    card.appendChild(badge);
+
+    var category = document.createElement('div');
+    category.className = 'review-category';
+    setText(category, 'Category: ' + (item.category || 'unknown') + ' — confidence ' + Math.round((item.confidence || 0) * 100) + '%');
+    card.appendChild(category);
+
+    var diagnosis = document.createElement('pre');
+    diagnosis.className = 'review-diagnosis';
+    setText(diagnosis, item.diagnosis);
+    card.appendChild(diagnosis);
+
+    if (item.recommended_tool) {
+      var tool = document.createElement('div');
+      tool.className = 'review-tool';
+      setText(tool, 'Recommended tool: ' + item.recommended_tool + ' (' + item.recommended_tier + ')');
+      card.appendChild(tool);
+    }
+
+    if (item.draft_reply) {
+      var draft = document.createElement('div');
+      draft.className = 'review-draft';
+      var label = document.createElement('strong');
+      label.textContent = 'Draft reply (not sent):';
+      draft.appendChild(label);
+      var p = document.createElement('p');
+      setText(p, item.draft_reply);
+      draft.appendChild(p);
+      card.appendChild(draft);
+    }
+
+    var itemId = item.id; // capture for closure
+    card.appendChild(btn('Decline (bad diagnosis)', 'btn-ghost btn-sm', function () { declineReviewItem(itemId); }));
+
+    return card;
+  }
+
+  function declineReviewItem(id) {
+    var note = prompt('Why was this diagnosis wrong? (feeds playbook tuning)');
+    if (!note) return;
+    apiFetch('/api/admin/agent-review/' + encodeURIComponent(id) + '/decline', { method: 'POST', body: JSON.stringify({ note: note }) })
+      .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
+      .then(function (res) {
+        if (res.ok) { toast('Declined', 'ok'); loadAgentReviewItems(); }
+        else toast((res.d && res.d.error) || 'Decline failed', 'err');
       })
       .catch(function () { toast('Network error', 'err'); });
   }

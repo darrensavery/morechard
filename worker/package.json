@@ -7,6 +7,8 @@
     "deploy": "wrangler deploy --env production",
     "deploy:preview": "wrangler versions upload --env production",
     "deploy:promote": "wrangler versions deploy --env production",
+    "sync:playbook": "node scripts/sync-playbook.mjs",
+    "sync:playbook:prod": "node scripts/sync-playbook.mjs --env production",
     "test": "vitest"
   },
   "devDependencies": {

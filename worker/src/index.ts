@@ -64,7 +64,8 @@
  */
 
 import * as Sentry from '@sentry/cloudflare';
-import { Env } from './types.js';
+import { Env, IncidentQueueMessage } from './types.js';
+import { processIncident } from './lib/agent/processIncident.js';
 import {
   handleChoreCreate, handleChoreList, handleChoreUpdate,
   handleChoreArchive, handleChoreRestore, handleChoreSubmit, handleChoreClaim,
@@ -152,6 +153,7 @@ import {
   handleListPromotionCandidates, handlePromotePromotionCandidate, handleDismissPromotionCandidate,
   handleGetAdminExchangeRates, handleUpdateExchangeRate,
 } from './routes/admin.js';
+import { handleListAgentReviewItems, handleDeclineAgentReviewItem } from './routes/agentReview.js';
 import { serveAdminUI } from './routes/admin-ui.js';
 import {
   handleGenerateInvite,
@@ -215,6 +217,10 @@ import {
   handleFeedbackDigest,
 } from './routes/reviewPrompt.js'
 import { handleDevRequest } from './routes/dev.js';
+import {
+  handleSentryWebhook, handleFreshdeskWebhook,
+  handleSupportAgentRequest, handleSupportAgentStripeWebhook,
+} from './routes/supportAgentIngest.js';
 
 const SENSITIVE_FIELDS = new Set(['password', 'pin', 'token', 'secret', 'authorization', 'jwt', 'api_key', 'apikey']);
 
@@ -229,122 +235,159 @@ function scrubSentryEvent(event: Sentry.ErrorEvent): Sentry.ErrorEvent | null {
   return event;
 }
 
-export default Sentry.withSentry(
-  (env: Env) => ({
-    dsn: 'https://5c98bed7630910cc4fd178677dda8b33@o4511158328295424.ingest.de.sentry.io/4511158333997136',
-    tracesSampleRate: 0.1,
-    beforeSend: scrubSentryEvent,
-  }),
+// Shared Sentry init options — used for both the fetch/scheduled instrumentation
+// below and the queue handler (kept in the same handler object so withSentry's
+// internal instrumentExportedHandlerQueue() picks it up automatically; see the
+// note above the `queue` method).
+const sentryOptions = (env: Env) => ({
+  dsn: 'https://5c98bed7630910cc4fd178677dda8b33@o4511158328295424.ingest.de.sentry.io/4511158333997136',
+  tracesSampleRate: 0.1,
+  beforeSend: scrubSentryEvent,
+});
+
+export default Sentry.withSentry<Env, IncidentQueueMessage>(
+  sentryOptions,
   {
-  async fetch(request: Request, env: Env): Promise<Response> {
-    const url    = new URL(request.url);
-    const path   = url.pathname;
-    const method = request.method.toUpperCase();
+    async fetch(request: Request, env: Env): Promise<Response> {
+      const url    = new URL(request.url);
+      const path   = url.pathname;
+      const method = request.method.toUpperCase();
 
-    if (method === 'OPTIONS') {
-      return new Response(null, { status: 204, headers: corsHeaders() });
-    }
-
-    let response: Response;
-    try {
-      response = await route(request, env, method, path);
-    } catch (err) {
-      // D1 Durable Object reset — transient platform error, not a code bug.
-      // Return 503 so clients can retry; suppress from Sentry to avoid noise.
-      if (err instanceof Error && err.message.includes('D1 DB storage operation exceeded timeout')) {
-        response = new Response(
-          JSON.stringify({ error: 'Database temporarily unavailable — please retry' }),
-          { status: 503, headers: { 'Content-Type': 'application/json', 'Retry-After': '2' } },
-        );
-      } else {
-        console.error(err);
-        Sentry.captureException(err);
-        response = error('Internal server error', 500);
+      if (method === 'OPTIONS') {
+        return new Response(null, { status: 204, headers: corsHeaders() });
       }
-    }
 
-    const headers = new Headers(response.headers);
-    for (const [k, v] of Object.entries(corsHeaders())) headers.set(k, v);
-    return new Response(response.body, { status: response.status, headers });
-  },
-
-  async scheduled(_event: ScheduledController, env: Env): Promise<void> {
-    const now = Math.floor(Date.now() / 1000);
-
-    // ── 1. Expire stale governance requests ────────────────────
-    await env.DB
-      .prepare(`UPDATE family_governance_log SET status = 'expired' WHERE status = 'pending' AND expires_at < ?`)
-      .bind(now).run();
-
-    // ── 2. Weekly allowance payday sweep ───────────────────────
-    // Runs every Saturday. For each child with allowance_amount > 0,
-    // check if they have already been paid this week (payday_log UNIQUE
-    // constraint is the idempotency key — safe on cron retry).
-    await runPaydaySweep(env, now);
-
-    // ── 3. Clean up expired SLT tokens and unblocked IP attempts ──
-    await env.DB.prepare('DELETE FROM slt_tokens WHERE expires_at < ?').bind(now).run();
-    await env.DB.prepare('DELETE FROM slt_attempts WHERE blocked_until IS NOT NULL AND blocked_until < ?').bind(now).run();
-
-    // ── 4. Weekly market rate aggregation ──────────────────────
-    await runMarketRateAggregation(env);
-
-    // ── 4b. Weekly suggestion-promotion sweep ──────────────────
-    // Clusters novel child suggestions, parks any that clear the distinct-family
-    // threshold as pending candidates, and emails the operator a review digest.
-    // Gated to the Monday 03:00 UTC tick so it (and its email) runs once a week.
-    {
-      const d = new Date(now * 1000);
-      if (d.getUTCDay() === 1 && d.getUTCHours() === 3) {
-        await runSuggestionPromotion(env);
+      let response: Response;
+      try {
+        response = await route(request, env, method, path);
+      } catch (err) {
+        // D1 Durable Object reset — transient platform error, not a code bug.
+        // Return 503 so clients can retry; suppress from Sentry to avoid noise.
+        if (err instanceof Error && err.message.includes('D1 DB storage operation exceeded timeout')) {
+          response = new Response(
+            JSON.stringify({ error: 'Database temporarily unavailable — please retry' }),
+            { status: 503, headers: { 'Content-Type': 'application/json', 'Retry-After': '2' } },
+          );
+        } else {
+          console.error(err);
+          Sentry.captureException(err);
+          response = error('Internal server error', 500);
+        }
       }
-    }
 
-    // ── 5. Marketing re-engagement emails ──────────────────────
-    await runMarketingEmails(env);
+      const headers = new Headers(response.headers);
+      for (const [k, v] of Object.entries(corsHeaders())) headers.set(k, v);
+      return new Response(response.body, { status: response.status, headers });
+    },
 
-    // ── 6. Nightly demo reset (Thomson family) ─────────────────
-    await runDemoReset(env);
+    async scheduled(_event: ScheduledController, env: Env): Promise<void> {
+      const now = Math.floor(Date.now() / 1000);
 
-    // ── 7. Learning Lab passive-unlock sweep ───────────────────
-    // Re-evaluates inactivity/balance/streak unlock conditions for every active
-    // child, so triggers that depend on the absence of activity (e.g. M14
-    // Inflation, 21 days with no transactions) fire even when the app is closed.
-    // evaluatePassive is idempotent. Gated to the 00:00 UTC tick so this per-child
-    // sweep runs once daily rather than on every cron tick.
-    if (new Date(now * 1000).getUTCHours() === 0) {
-      await runPassiveUnlockSweep(env);
-    }
+      // ── 1. Expire stale governance requests ────────────────────
+      await env.DB
+        .prepare(`UPDATE family_governance_log SET status = 'expired' WHERE status = 'pending' AND expires_at < ?`)
+        .bind(now).run();
 
-    // ── 8. Review feedback email digest ────────────────────────
-    if (new Date(now * 1000).getUTCHours() === 7) {
-      await handleFeedbackDigest(env);
-    }
+      // ── 2. Weekly allowance payday sweep ───────────────────────
+      // Runs every Saturday. For each child with allowance_amount > 0,
+      // check if they have already been paid this week (payday_log UNIQUE
+      // constraint is the idempotency key — safe on cron retry).
+      await runPaydaySweep(env, now);
 
-    // ── 9. Child nudge background checks (Sunday 20:00 UTC) ────
-    // Pattern-based nudges: low consistency, spend-heavy, goal at risk,
-    // give jar stagnant, Pillar 5 (high balance + no giving), etc.
-    {
-      const d = new Date(now * 1000);
-      if (d.getUTCDay() === 0 && d.getUTCHours() === 20) {
-        await runChildNudgeBackgroundChecks(env);
+      // ── 3. Clean up expired SLT tokens and unblocked IP attempts ──
+      await env.DB.prepare('DELETE FROM slt_tokens WHERE expires_at < ?').bind(now).run();
+      await env.DB.prepare('DELETE FROM slt_attempts WHERE blocked_until IS NOT NULL AND blocked_until < ?').bind(now).run();
+
+      // ── 4. Weekly market rate aggregation ──────────────────────
+      await runMarketRateAggregation(env);
+
+      // ── 4b. Weekly suggestion-promotion sweep ──────────────────
+      // Clusters novel child suggestions, parks any that clear the distinct-family
+      // threshold as pending candidates, and emails the operator a review digest.
+      // Gated to the Monday 03:00 UTC tick so it (and its email) runs once a week.
+      {
+        const d = new Date(now * 1000);
+        if (d.getUTCDay() === 1 && d.getUTCHours() === 3) {
+          await runSuggestionPromotion(env);
+        }
       }
-    }
 
-    // ── 10. Family data purge — two-stage GDPR retention enforcement ─
-    //
-    // Stage 1 (daily): hard-delete operational data for families whose 30-day
-    // soft-delete window has closed. Ledger rows are kept as pseudonymised
-    // personal data (Art. 6(1)(f), LIA-3). Families row is reduced to a
-    // tombstone (id + deleted_at) to gate Stage 2.
-    //
-    // Stage 2 (daily): hard-delete pseudonymised ledger rows and tombstones
-    // for families deleted more than 7 years ago (UK Limitation Act 1980,
-    // civil-claims window — see docs/governance/lia/lia.md LIA-3).
-    await runSoftDeletePurge(env, now);
-    await runLedgerPurge(env, now);
-  },
-} satisfies ExportedHandler<Env>,
+      // ── 5. Marketing re-engagement emails ──────────────────────
+      await runMarketingEmails(env);
+
+      // ── 6. Nightly demo reset (Thomson family) ─────────────────
+      await runDemoReset(env);
+
+      // ── 7. Learning Lab passive-unlock sweep ───────────────────
+      // Re-evaluates inactivity/balance/streak unlock conditions for every active
+      // child, so triggers that depend on the absence of activity (e.g. M14
+      // Inflation, 21 days with no transactions) fire even when the app is closed.
+      // evaluatePassive is idempotent. Gated to the 00:00 UTC tick so this per-child
+      // sweep runs once daily rather than on every cron tick.
+      if (new Date(now * 1000).getUTCHours() === 0) {
+        await runPassiveUnlockSweep(env);
+      }
+
+      // ── 8. Review feedback email digest ────────────────────────
+      if (new Date(now * 1000).getUTCHours() === 7) {
+        await handleFeedbackDigest(env);
+      }
+
+      // ── 9. Child nudge background checks (Sunday 20:00 UTC) ────
+      // Pattern-based nudges: low consistency, spend-heavy, goal at risk,
+      // give jar stagnant, Pillar 5 (high balance + no giving), etc.
+      {
+        const d = new Date(now * 1000);
+        if (d.getUTCDay() === 0 && d.getUTCHours() === 20) {
+          await runChildNudgeBackgroundChecks(env);
+        }
+      }
+
+      // ── 10. Family data purge — two-stage GDPR retention enforcement ─
+      //
+      // Stage 1 (daily): hard-delete operational data for families whose 30-day
+      // soft-delete window has closed. Ledger rows are kept as pseudonymised
+      // personal data (Art. 6(1)(f), LIA-3). Families row is reduced to a
+      // tombstone (id + deleted_at) to gate Stage 2.
+      //
+      // Stage 2 (daily): hard-delete pseudonymised ledger rows and tombstones
+      // for families deleted more than 7 years ago (UK Limitation Act 1980,
+      // civil-claims window — see docs/governance/lia/lia.md LIA-3).
+      await runSoftDeletePurge(env, now);
+      await runLedgerPurge(env, now);
+    },
+
+    // Kept in the same object passed to Sentry.withSentry() (rather than spread
+    // in separately) so it gets real Sentry instrumentation. `@sentry/cloudflare`
+    // does NOT publicly export a standalone `instrumentExportedHandlerQueue` —
+    // its package.json `exports` map only exposes "." and "./request", so a deep
+    // import of the internal instrumentQueue module isn't reachable from outside
+    // the package. Instead, `withSentry()`'s own implementation
+    // (build/esm/withSentry.js) already calls
+    // `instrumentExportedHandlerQueue(handler, optionsCallback)` internally on
+    // whatever handler object it's given — so simply including `queue` on the
+    // object passed to `withSentry()` (as done here) is how it picks up the same
+    // auto-instrumentation (span creation, isolated scope, captureException) that
+    // `fetch`/`scheduled` get. The explicit `Sentry.captureException(err)` below
+    // is kept as a defensive backup.
+    async queue(batch: MessageBatch<IncidentQueueMessage>, env: Env): Promise<void> {
+      for (const message of batch.messages) {
+        try {
+          await processIncident(env, message.body.incidentId);
+          message.ack();
+        } catch (err) {
+          console.error('processIncident failed:', err);
+          Sentry.captureException(err);
+          await env.DB
+            .prepare('UPDATE agent_incidents SET status = ? WHERE id = ?')
+            .bind('failed', message.body.incidentId)
+            .run()
+            .catch(() => null); // best-effort — don't mask the original error
+          message.retry();
+        }
+      }
+    },
+  } satisfies ExportedHandler<Env, IncidentQueueMessage>,
 );
 
 // ----------------------------------------------------------------
@@ -467,6 +510,15 @@ async function route(request: Request, env: Env, method: string, path: string): 
   // Stripe webhook — public but signature-verified internally
   if (path === '/api/stripe/webhook' && method === 'POST') return handleStripeWebhook(request, env);
 
+  // Sentry webhook — public but signature-verified internally
+  if (path === '/api/support-agent/sentry-webhook' && method === 'POST') return handleSentryWebhook(request, env);
+
+  // Freshdesk webhook — public but signature-verified internally
+  if (path === '/api/support-agent/freshdesk-webhook' && method === 'POST') return handleFreshdeskWebhook(request, env);
+
+  // Stripe webhook — public but signature-verified internally (support-agent isolated endpoint)
+  if (path === '/api/support-agent/stripe-webhook' && method === 'POST') return handleSupportAgentStripeWebhook(request, env);
+
   // Admin — self-contained browser panel (login gated client-side by X-Admin-Key)
   if (path === '/admin' && method === 'GET') return serveAdminUI();
 
@@ -487,6 +539,13 @@ async function route(request: Request, env: Env, method: string, path: string): 
   if (path === '/api/admin/exchange-rates' && method === 'GET') return handleGetAdminExchangeRates(request, env);
   const exchangeRateMatch = path.match(/^\/api\/admin\/exchange-rates\/([^/]+)$/);
   if (exchangeRateMatch && method === 'PUT') return handleUpdateExchangeRate(exchangeRateMatch[1], request, env);
+
+  // Admin — agent review queue (list + decline)
+  if (path === '/api/admin/agent-review' && method === 'GET')
+    return handleListAgentReviewItems(request, env);
+  const declineMatch = path.match(/^\/api\/admin\/agent-review\/([^/]+)\/decline$/);
+  if (declineMatch && method === 'POST')
+    return handleDeclineAgentReviewItem(request, env, declineMatch[1]);
 
   // Market rates — CRON health check (no user auth)
   if (path === '/api/market-rates/cron' && method === 'GET') return handleMarketRateCron(request, env);
@@ -526,6 +585,9 @@ async function route(request: Request, env: Env, method: string, path: string): 
 
   const removeCoParentMatch = path.match(/^\/auth\/family\/co-parent\/([^/]+)$/);
   if (removeCoParentMatch && method === 'DELETE') return withAuth(request, auth, env, (req, e) => handleRemoveCoParent(req, e, removeCoParentMatch[1]));
+
+  // In-app support request — placed before trial check so expired-trial users can still get help
+  if (path === '/api/support-agent/request' && method === 'POST') return withAuth(request, auth, env, handleSupportAgentRequest);
 
   // Settings (any role — children can update their own avatar/theme)
   if (path === '/api/consent/marketing' && method === 'POST') return withAuth(request, auth, env, handleConsentPost)

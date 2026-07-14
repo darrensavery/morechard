@@ -17,22 +17,8 @@
 import { Env } from '../types.js';
 import { json, error } from '../lib/response.js';
 import { nanoid } from '../lib/nanoid.js';
+import { requireAdmin } from '../lib/adminAuth.js';
 import { loadMultipliers, bustExchangeRatesCache } from './exchange-rates.js';
-
-// ----------------------------------------------------------------
-// Auth guard
-// ----------------------------------------------------------------
-
-function requireAdmin(request: Request, env: Env): Response | null {
-  const key = request.headers.get('X-Admin-Key');
-  if (!key || !env.ADMIN_SECRET) return error('Unauthorised', 401);
-  const a = new TextEncoder().encode(key);
-  const b = new TextEncoder().encode(env.ADMIN_SECRET);
-  if (a.length !== b.length) return error('Unauthorised', 401);
-  let diff = 0;
-  for (let i = 0; i < a.length; i++) diff |= a[i] ^ b[i];
-  return diff === 0 ? null : error('Unauthorised', 401);
-}
 
 // ----------------------------------------------------------------
 // POST /api/admin/promo-codes

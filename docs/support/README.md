@@ -29,6 +29,14 @@ This playbook covers **every major feature area** in Morechard. Each domain file
 
 ---
 
+## For engineers: the automated agent
+
+An AI agent reads this playbook and diagnoses incoming incidents in shadow
+mode (Phase 0 — nothing executes yet). Architecture, secrets, and the
+validation checklist: `docs/dev/support-agent-runbook.md`.
+
+---
+
 ## The support model
 
 - **Ticketing:** Freshdesk (`eagereverest.freshdesk.com`). Parents can be dropped straight into the portal as an authenticated contact via **Settings → Help → Contact Support**, which calls `GET /api/freshdesk-sso` (parent-only, SSO JWT). If SSO returns `503 Freshdesk SSO not configured`, the `FRESHDESK_SSO_SECRET` env var is missing — this is an ops issue, escalate to engineering.
