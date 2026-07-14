@@ -91,11 +91,13 @@ For local dev, add real values to `worker/.dev.vars` (gitignored — see
 `.dev.vars.example` for the placeholder list).
 
 `ZOHO_FROM_EMAIL` (used by the "Send Reply" feature) is a plain, non-secret
-var set directly in `wrangler.toml` — currently `support@morechard.com`.
-It must exactly match a sender address verified on the Zoho Desk
-department's email configuration (Zoho Desk → Setup → Email), or
-`sendReply` calls will fail with a 4xx. If it's wrong, just edit the value
-in `wrangler.toml` and push — no secret rotation needed.
+var set directly in `wrangler.toml` — currently `support@morechard.zohodesk.eu`,
+the department's auto-generated EU sender address (the `support@morechard.com`
+alias isn't editable to this on the current plan). It must exactly match
+the sender verified on the Zoho Desk department's email configuration
+(Zoho Desk → Setup → Email), or `sendReply` calls will fail with a 4xx.
+If it's wrong, just edit the value in `wrangler.toml` and push — no secret
+rotation needed.
 
 ## One-time manual setup (external dashboards)
 
