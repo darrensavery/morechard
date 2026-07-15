@@ -29,11 +29,15 @@ CLI doesn't surface the retention window directly.
   continuous (per-write), not snapshot-interval based — you can restore to
   any point in time within the retention window, not just to a daily/hourly
   snapshot boundary.
-- **RTO (Recovery Time Objective): untested, budget 15–30 minutes.** The
-  restore command itself runs in seconds to low minutes depending on
-  database size, but this has never been exercised end-to-end in this
-  project. Treat the estimate below as unverified until a real drill is run
-  (see "Open item" at the bottom).
+- **RTO (Recovery Time Objective): ~5 seconds for the restore itself,
+  measured.** Drilled against `morechard-dev` on 2026-07-15: restored to a
+  ~1hr-old bookmark, verified queryable, then restored forward again to
+  undo — each `time-travel restore` call completed in ~5 seconds regardless
+  of direction. Budget more for the surrounding process in a real incident
+  (finding the right bookmark, running the post-restore checklist below,
+  notifying anyone affected) — call it 10–15 minutes end-to-end for a human
+  operator working through this runbook under pressure, but the database
+  operation itself is not the bottleneck.
 
 ## Restore procedure
 
@@ -54,32 +58,39 @@ This returns the bookmark closest to (but not after) that timestamp. Omit
 `--timestamp` to get the current bookmark (useful before making a risky
 change, as a rollback point).
 
-### 2. (Recommended) Fork to a new database first, don't restore in place
+### 2. Correction from the 2026-07-15 drill: there is no fork-first option
 
-Time Travel can restore into a **brand new database** instead of overwriting
-the existing one — this lets you inspect the restored data before deciding
-to cut traffic over, and never destroys the current (possibly-corrupted but
-possibly-still-partially-good) state:
+This runbook originally recommended restoring into a new forked database
+first to verify before committing. **That capability does not exist** —
+verified by actually running the commands against `morechard-dev`, not just
+reading docs. `wrangler d1 time-travel restore` (wrangler 4.79.0) takes no
+`--name`/fork flag, and `wrangler d1 export` has no bookmark/timestamp
+option either — there is no way to materialise a past point-in-time into a
+*separate* database via the CLI. **`time-travel restore` always restores
+the named database in place.** Treat this as a hard fact about the tool,
+not a missing flag to work around.
+
+Given that, take a safety export of the *current* (pre-restore) state first
+— not point-in-time, just "now" — so a bad restore decision can at least be
+partially recovered by re-importing this dump, even though you'd lose
+further Time Travel reach on the timeline you're stepping away from:
 
 ```bash
-npx wrangler d1 time-travel restore morechard --env production \
-  --bookmark=<bookmark-from-step-1> \
-  --name morechard-restore-check
+npx wrangler d1 export morechard --env production --remote \
+  --output="./pre-restore-safety-$(date +%Y%m%d-%H%M%S).sql"
 ```
 
-Query `morechard-restore-check` to verify it looks right before doing
-anything else.
-
-### 3. Restore in place (only once verified via step 2, or in a true emergency)
+### 3. Restore in place
 
 ```bash
 npx wrangler d1 time-travel restore morechard --env production \
   --bookmark=<bookmark-from-step-1>
 ```
 
-This restores `morechard` itself back to that point in time. Any writes
-between the restore bookmark and "now" are lost — this is why step 2's
-fork-and-verify is the safer default when there's any time to spare.
+This restores `morechard` itself back to that point in time immediately —
+there is no preview/confirm step. Any writes between the restore bookmark
+and "now" are lost. This is why step 2's safety export matters: it's the
+only rollback available if the bookmark chosen turns out to be wrong.
 
 ### 4. Post-restore checklist
 
@@ -111,11 +122,13 @@ window. Mitigations:
 
 ## Open items (deliberately out of scope for this pass)
 
-- **Untested restore drill.** This runbook has not been exercised against
-  `morechard-dev`. Recommended next step: pick a low-traffic window, restore
-  `morechard-dev` to an hour-old bookmark into a forked database, and time
-  the actual process to replace the "budget 15–30 minutes" RTO estimate
-  above with a measured one.
+- **Restore drill: done (2026-07-15), on a schedule going forward.** Ran a
+  real restore-and-undo against `morechard-dev` — see RTO above. This
+  should be re-run periodically (e.g. every 6 months, or after any wrangler
+  major-version upgrade) since the 2026-07-15 drill is exactly what caught
+  this doc's original "fork-and-verify" recommendation as wrong — the tool
+  doesn't support it. A runbook nobody re-tests goes stale the same way the
+  false fork-and-verify claim did.
 - **Off-platform export backstop.** A scheduled `wrangler d1 export` to R2
   would survive even a deleted D1 resource, which Time Travel alone would
   not. This needs a decision on frequency/retention/storage cost before

@@ -6,9 +6,11 @@
  * POST /auth/child/add         Parent adds a child (display_name → child user + child invite code)
  */
 
+import { z } from 'zod';
 import { Env, InviteRole } from '../types.js';
 
 import { json, error, clientIp, parseBody } from '../lib/response.js';
+import { parseValidatedBody } from '../lib/validate.js';
 import { nanoid } from '../lib/nanoid.js';
 import { hashPassword } from '../lib/crypto.js';
 import { signJwt } from '../lib/jwt.js';
@@ -17,6 +19,12 @@ import { AuthedRequest } from './auth.js';
 const INVITE_TTL = 72 * 60 * 60; // 72 hours in seconds
 const CHILD_JWT_EXPIRY = 90 * 24 * 3600;  // 90 days — children have no re-auth mechanism
 const PARENT_JWT_EXPIRY = 365 * 24 * 3600;
+
+// These two are unauthenticated (anyone with a code can call them) — good
+// first candidates for schema validation over the ad hoc checks elsewhere.
+const codeSchema = z.object({
+  code: z.string().trim().length(6, 'code must be 6 characters'),
+}).passthrough(); // redeem's role-specific fields (display_name/email/password) are validated further down, per-role
 
 // Rate limiting for invite peek/redeem — codes are 6 chars (~30 bits) with a
 // 72h TTL, so an unthrottled caller could grind through the keyspace.
@@ -143,11 +151,9 @@ export async function handlePeekInvite(request: Request, env: Env): Promise<Resp
   if (rateLimited) return rateLimited;
   await recordInviteAttempt(env, ip);
 
-  const body = await parseBody(request);
-  if (!body) return error('Invalid JSON body');
-
-  const code = (body['code'] as string | undefined)?.trim().toUpperCase();
-  if (!code || code.length !== 6) return error('code must be 6 characters');
+  const parsed = await parseValidatedBody(request, codeSchema);
+  if (parsed instanceof Response) return parsed;
+  const code = parsed.code.toUpperCase();
 
   const now = Math.floor(Date.now() / 1000);
 
@@ -179,11 +185,10 @@ export async function handleRedeemInvite(request: Request, env: Env): Promise<Re
   if (rateLimited) return rateLimited;
   await recordInviteAttempt(env, ip);
 
-  const body = await parseBody(request);
-  if (!body) return error('Invalid JSON body');
-
-  const code = (body['code'] as string | undefined)?.trim().toUpperCase();
-  if (!code || code.length !== 6) return error('code must be 6 characters');
+  const parsed = await parseValidatedBody(request, codeSchema);
+  if (parsed instanceof Response) return parsed;
+  const body = parsed as Record<string, unknown>;
+  const code = parsed.code.toUpperCase();
 
   const now = Math.floor(Date.now() / 1000);
 

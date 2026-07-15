@@ -18,7 +18,7 @@ docs/security/
 
 | Date | Audit | Scope | Result |
 |------|-------|-------|--------|
-| 2026-07-15 | [Production security audit](audits/2026-07-15-production-security-audit.md) | 13-domain review ahead of a potential school endorsement (auth, database, app security, hosting, deployment, scaling, recovery, monitoring, secrets, supply chain, compliance) | 8 gaps closed same-day; 5 items explicitly deferred (see doc) |
+| 2026-07-15 | [Production security audit](audits/2026-07-15-production-security-audit.md) | 13-domain review ahead of a potential school endorsement (auth, database, app security, hosting, deployment, scaling, recovery, monitoring, secrets, supply chain, compliance) | 3 remediation passes same-day: ~15 gaps closed (headers, admin/governance auth, PIN lockout, invite rate limiting, PII truncation, payment alerting, D1 recovery + drilled, gitleaks + dependency-review CI, zod adoption started); WebAuthn/JWT redesign and a few org-level items (MFA, CF token scope) explicitly deferred — see doc |
 
 ## Related documents (not moved here — cross-referenced)
 

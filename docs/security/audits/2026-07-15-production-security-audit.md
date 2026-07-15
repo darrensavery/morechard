@@ -47,7 +47,7 @@ Confirmed, not just claimed:
 | # | Finding | Status |
 |---|---|---|
 | 1 | WebAuthn/biometric check (`app/src/lib/biometrics.ts`) is client-side only — the challenge/signature is never sent to or verified by the worker. Trivially bypassable; presented to users as a real security control. | **Deferred.** Architecture-level auth redesign, not a quick fix. User explicitly declined this scope for now — flagged as the highest-value remaining item. |
-| 2 | No D1 backup strategy documented or tested — no Time Travel usage, no RTO/RPO, no restore runbook. | **Fixed 2026-07-15.** See [`docs/dev/d1-backup-recovery-runbook.md`](../../dev/d1-backup-recovery-runbook.md). Turned out Time Travel was already live on both databases automatically — the gap was documentation/testing, not missing infrastructure. RTO is still an *estimate* (15–30min) pending a real drill — see Open Items below. |
+| 2 | No D1 backup strategy documented or tested — no Time Travel usage, no RTO/RPO, no restore runbook. | **Fixed and drilled 2026-07-15.** See [`docs/dev/d1-backup-recovery-runbook.md`](../../dev/d1-backup-recovery-runbook.md). Time Travel was already live on both databases automatically — the gap was documentation/testing, not missing infrastructure. Restore-and-undo drilled for real against `morechard-dev`: ~5 seconds per restore call, measured, not estimated. The drill also caught and corrected a factual error in the original runbook (no fork-to-new-database capability actually exists) — see Pass 3 in the remediation log below. |
 | 3 | No MFA on Cloudflare, GitHub, Stripe, OpenAI, Sentry, PostHog. | **Not code-fixable — org-level.** Already tracked in [`docs/governance/cyber-essentials-checklist.md`](../../governance/cyber-essentials-checklist.md). User elected to leave as-is (self-actioned outside of Claude Code). |
 
 ### 🟠 High
@@ -76,18 +76,19 @@ Confirmed, not just claimed:
 | 18 | No documented D1/Worker scaling ceilings or growth plan. | **Not addressed.** Flagged, no action taken this pass. |
 | 19 | No validation library (zod) — ad hoc `typeof x !== 'string'` checks per-route. | **Not addressed.** Works today; flagged as a nice-to-have, not urgent. |
 | 20 | Rollback is manual (`wrangler versions deploy <id>@100`), not scripted. | **Not addressed.** |
-| 21 | Uproot's 7-year pseudonymised ledger retention isn't clearly disclosed in the privacy policy/deletion UI. | **Not addressed.** Small doc fix, still open. |
+| 21 | Uproot's 7-year pseudonymised ledger retention isn't clearly disclosed in the privacy policy/deletion UI. | **Fixed (finding was partially stale).** The marketing privacy policy (Section 6) already disclosed this in full detail — that part of the original finding was wrong. The in-app Uproot confirmation modal, however, only said "anonymised but structurally preserved" with no timeframe — updated to state the 7-year window explicitly and link to the policy section. |
 | 22 | `display_name` isn't validated against real names — free-text, soft control only. | **Not addressed** — by design (`CLAUDE.md` §6, confirmed deliberate). |
 
 ### 🟢 Low
 
 | # | Finding | Status |
 |---|---|---|
-| 23 | No full git-history secret scan (gitleaks/trufflehog) — current tree confirmed clean, history unverified. | Not addressed. |
-| 24 | Cloudflare API token scope unverified (should be Workers Scripts: Edit only). | Not addressed — needs dashboard check. |
-| 25 | No SBOM/dependency-review CI step. | Not addressed. |
+| 23 | No full git-history secret scan (gitleaks/trufflehog) — current tree confirmed clean, history unverified. | **Fixed.** `.github/workflows/gitleaks.yml` — no local binary was available, so this runs as a CI check on push/PR/manual dispatch (full history via `fetch-depth: 0`) instead. |
+| 24 | Cloudflare API token scope unverified (should be Workers Scripts: Edit only). | **Still open — needs manual dashboard check.** Not verifiable from this environment (see Pass 3 in the remediation log). |
+| 25 | No SBOM/dependency-review CI step. | **Fixed.** `.github/workflows/dependency-review.yml` (`actions/dependency-review-action`, blocks PRs introducing high/critical-severity dependencies). |
 | 26 | No load testing / capacity planning doc. | Not addressed. |
 | 27 | Caret-ranged dependency versions (standard practice, but no CI audit signal before this pass). | Superseded by the Dependabot/audit fix above. |
+| 28 | No validation library (zod) — ad hoc `typeof x !== 'string'` checks per-route. | **Partially fixed.** `worker/src/lib/validate.ts` added; applied to `/auth/invite/peek`, `/auth/invite/redeem`, `/auth/child/login`. Broader route-by-route adoption is intentionally incremental, not a single sweep. |
 
 ---
 
@@ -112,6 +113,16 @@ Confirmed, not just claimed:
 
 Both passes verified: `tsc --noEmit` clean, `vitest run` 333/333 passing, both migrations applied to dev and production D1 before commit.
 
+**Pass 3 (same day follow-up — privacy disclosure, D1 drill, CI hardening batch):**
+- `app/src/components/settings/sections/ProfileSettings.tsx` — in-app Uproot confirmation modal now states the 7-year pseudonymised retention window explicitly (the marketing privacy policy already disclosed this in full — that finding in Pass 1/2's table above was stale; only the in-app copy needed the update).
+- **D1 restore drill executed for real** against `morechard-dev` (not production): restored to a ~1hr-old bookmark, verified queryable, restored forward again to undo. Measured RTO: ~5 seconds per restore call. In doing this, found and corrected a factual error in the runbook — Cloudflare D1 Time Travel has **no fork-to-a-new-database option**; `wrangler d1 time-travel restore` only restores in place, and `wrangler d1 export` has no bookmark/timestamp parameter. The runbook's original "fork and verify first" recommendation didn't exist as a real capability — corrected in `docs/dev/d1-backup-recovery-runbook.md`.
+- `.github/workflows/gitleaks.yml` — new. No local gitleaks/trufflehog binary was available to run an ad hoc history scan, so it runs as a CI check instead (full-history `fetch-depth: 0`, on push to main, PRs, and manual dispatch) — same coverage, plus it's now continuous rather than a one-time check.
+- `.github/workflows/dependency-review.yml` — new. `actions/dependency-review-action` blocks a PR that introduces a new dependency with a known high/critical vulnerability, scoped to just the PR's diff (complements the broader non-blocking `dependency-audit.yml` sweep from Pass 1).
+- **Cloudflare API token scope** — could not be verified from this environment. The local `wrangler whoami` OAuth session has broad account-wide write access, but that's a *different* credential from the `CLOUDFLARE_API_TOKEN` GitHub Actions secret used in CI, which isn't inspectable via CLI/API without the token value itself (and shouldn't be extracted to check). **Needs manual verification**: Cloudflare dashboard → My Profile → API Tokens → confirm the CI token is scoped to Workers Scripts: Edit only, not broader.
+- `worker/src/lib/validate.ts` — new shared zod-based body-validation helper (`parseValidatedBody`). Applied to `/auth/invite/peek`, `/auth/invite/redeem` (code validation only — role-specific fields still validated per-branch further down), and `/auth/child/login`, replacing ad hoc `typeof x !== 'string'` checks on these three unauthenticated/high-risk endpoints specifically. Deliberately **not** a repo-wide refactor — the pattern is established for incremental adoption on new routes and further hardening passes, not a single mechanical sweep across every existing route in the same change as unrelated security fixes.
+
+All Pass 3 code changes verified: `tsc --noEmit` clean, `vitest run` 333/333 passing.
+
 ---
 
 ## Open items for the next audit pass
@@ -119,9 +130,10 @@ Both passes verified: `tsc --noEmit` clean, `vitest run` 333/333 passing, both m
 Roughly in priority order:
 1. **WebAuthn server-side verification** and **JWT storage model** (httpOnly cookie) — the two remaining architecture-level auth gaps. These are the highest-value items left; both need a proposed design before implementation, not a silent code change.
 2. **Sentry Alert Rule for Stripe payment failures** — code-side capture is done, the dashboard rule isn't created yet.
-3. **D1 restore drill** — run the documented runbook against `morechard-dev` for real, replace the 15–30min RTO estimate with a measured number.
+3. **Cloudflare API token scope** — verify the CI secret is minimally scoped (dashboard check, see Pass 3 above).
 4. **Off-platform D1 export backstop** (`wrangler d1 export` to R2) — Time Travel doesn't cover a deleted D1 resource; needs a decision on frequency/retention/cost before building.
 5. Bank-details encrypted vault (Spec B, already tracked separately).
 6. WAF/bot protection (Cloudflare Turnstile or rate-limiting rules) if abuse patterns emerge.
 7. Formal infra incident-response runbook beyond the D1-specific one.
-8. Privacy policy: explicit disclosure of the 7-year pseudonymised retention post-Uproot.
+8. Broader zod adoption across remaining routes, incrementally.
+9. Re-run the D1 restore drill periodically (every 6 months, or after any wrangler major-version upgrade) — see `docs/dev/d1-backup-recovery-runbook.md`.

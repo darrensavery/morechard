@@ -416,7 +416,7 @@ export function ProfileSettings({
               </button>
             </div>
             <p className="text-[13px] text-[var(--color-text-muted)] leading-relaxed">
-              This will permanently uproot your orchard. All family data, chores, and goals will be deleted. The ledger will be anonymised but structurally preserved.
+              This will permanently uproot your orchard. All family data, chores, and goals will be deleted. The ledger is anonymised immediately, but pseudonymised transaction records are retained for up to 7 years to preserve the hash chain's integrity (see our Privacy Policy, Section 6), then permanently deleted.
             </p>
             <input
               type="text"

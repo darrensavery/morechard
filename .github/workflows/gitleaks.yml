@@ -1,0 +1,27 @@
+name: Secret Scan (gitleaks)
+
+# Scans the full git history for accidentally-committed secrets (API keys,
+# private keys, tokens). No local gitleaks/trufflehog binary was available
+# to run this ad hoc, so it runs here instead — same result, plus it now
+# runs on every future push/PR rather than being a one-time check.
+
+on:
+  push:
+    branches: ['main']
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # full history, not just the latest commit
+
+      - name: gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

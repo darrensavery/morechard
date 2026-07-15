@@ -23,6 +23,8 @@ import type { JwtPayload } from '../lib/jwt.js';
 import { nanoid } from '../lib/nanoid.js';
 import { sha256, computeRecordHash, GENESIS_HASH } from '../lib/hash.js';
 import { recordPinFailure, clearPinLockout } from '../lib/pinLockout.js';
+import { z } from 'zod';
+import { parseValidatedBody } from '../lib/validate.js';
 
 const MAGIC_LINK_EXPIRY  = 15 * 60;         // 15 minutes
 const PARENT_JWT_EXPIRY  = 365 * 24 * 3600; // 1 year
@@ -468,14 +470,16 @@ export async function handleSetChildPin(request: Request, env: Env): Promise<Res
 // Child logs in with family_id + child_id + PIN.
 // Body: { family_id, child_id, pin }
 // ----------------------------------------------------------------
-export async function handleChildLogin(request: Request, env: Env): Promise<Response> {
-  const body = await parseBody(request);
-  if (!body) return error('Invalid JSON body');
+const childLoginSchema = z.object({
+  family_id: z.string().min(1, 'family_id required'),
+  child_id:  z.string().min(1, 'child_id required'),
+  pin:       z.string().min(1, 'pin required'),
+});
 
-  const { family_id, child_id, pin } = body;
-  if (!family_id || typeof family_id !== 'string') return error('family_id required');
-  if (!child_id  || typeof child_id  !== 'string') return error('child_id required');
-  if (!pin       || typeof pin       !== 'string') return error('pin required');
+export async function handleChildLogin(request: Request, env: Env): Promise<Response> {
+  const parsed = await parseValidatedBody(request, childLoginSchema);
+  if (parsed instanceof Response) return parsed;
+  const { family_id, child_id, pin } = parsed;
 
   const user = await env.DB
     .prepare(`SELECT u.id, u.pin_hash, u.pin_attempt_count, u.pin_locked_until, u.pin_lockout_tier
@@ -498,7 +502,7 @@ export async function handleChildLogin(request: Request, env: Env): Promise<Resp
     return error(`Too many attempts. Try again in ${seconds} seconds.`, 429);
   }
 
-  const valid = await verifyPassword(pin as string, user.pin_hash);
+  const valid = await verifyPassword(pin, user.pin_hash);
 
   if (!valid) {
     await recordPinFailure(env, user.id, user.pin_attempt_count ?? 0, user.pin_lockout_tier ?? 0, now, 5);
