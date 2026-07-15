@@ -262,7 +262,8 @@ export function ChildDashboard() {
   // Fetch streak + badge data on mount
   useEffect(() => {
     if (!userId) return
-    fetch(apiUrl(`/api/streaks/${userId}`), { headers: authHeaders() })
+    authHeaders()
+      .then(headers => fetch(apiUrl(`/api/streaks/${userId}`), { headers }))
       .then(r => r.ok ? r.json() : null)
       .then((data: { current_streak: number; longest_streak: number; earned_badge_keys: string[]; total_approved_chores: number; total_goals_completed: number; total_saved_pence: number } | null) => {
         if (data) setStreakData(data)

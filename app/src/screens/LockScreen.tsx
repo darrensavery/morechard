@@ -17,7 +17,8 @@ import { AvatarSVG } from '@/lib/avatars'
 import { challengeBiometrics, hasBiometricCredential, clearBiometricCredential } from '@/lib/biometrics'
 import { analytics, track } from '@/lib/analytics'
 import { FullLogo } from '@/components/ui/Logo'
-import { childLogin, setToken } from '@/lib/api'
+import { childLogin, setToken, clearToken } from '@/lib/api'
+import { isAuthenticated } from '@/lib/authState'
 import * as Sentry from '@sentry/react'
 
 const PIN_LENGTH    = 4
@@ -38,7 +39,7 @@ export function LockScreen() {
   const [pinAttempts,         setPinAttempts]        = useState(0)
   const [lockedUntil,         setLockedUntil]        = useState<number | null>(null)
   // Tracks whether the JWT was absent when this screen mounted — drives re-auth logic
-  const [tokenMissingOnMount] = useState(() => !localStorage.getItem('mc_token'))
+  const [tokenMissingOnMount] = useState(() => !isAuthenticated())
   // Parent-specific: shown after biometrics/PIN succeed but JWT is gone (rare — ~annual)
   const [sessionExpiredForParent, setSessionExpiredForParent] = useState(false)
   const inputRefs = useRef<(HTMLInputElement | null)[]>([])
@@ -60,7 +61,7 @@ export function LockScreen() {
         }
         try {
           const result = await childLogin(identity.family_id, identity.user_id, rawPin)
-          setToken(result.token)
+          await setToken(result.token)
         } catch {
           setError('Could not reconnect — check your internet and try again.')
           setUnlocking(false)
@@ -230,12 +231,13 @@ export function LockScreen() {
     await unlock('pin', entered)
   }
 
-  function handleLogout() {
+  async function handleLogout() {
     if (!identity) return
     if (!window.confirm(
       `Log out of ${identity.display_name}'s account?\n\nYour family's data stays safe — you'll need to log back in to use Morechard on this phone.`
     )) return
     clearDeviceIdentity()
+    await clearToken()
     navigate('/', { replace: true })
   }
 

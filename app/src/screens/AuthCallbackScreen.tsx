@@ -37,8 +37,8 @@ export default function AuthCallbackScreen() {
     }
 
     exchangeSlt(slt)
-      .then(result => {
-        setToken(result.token)
+      .then(async result => {
+        await setToken(result.token)
 
         // Flush any pending marketing consent recorded during registration
         const pendingConsent = localStorage.getItem('mc_pending_consent')

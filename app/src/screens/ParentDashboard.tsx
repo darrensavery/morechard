@@ -152,11 +152,11 @@ export function ParentDashboard() {
         setActiveChild(saved ?? r.children[0])
       }
       setChildrenLoaded(true)
-    }).catch((err: unknown) => {
+    }).catch(async (err: unknown) => {
       setChildrenLoaded(true)
       const msg = err instanceof Error ? err.message : String(err)
       if (msg.includes('401') || msg.toLowerCase().includes('unauthorized') || msg.toLowerCase().includes('invalid') || msg.toLowerCase().includes('expired')) {
-        clearToken()
+        await clearToken()
         navigate('/lock', { replace: true })
       }
       // Non-auth errors (network, server): stay on the page, don't redirect
@@ -166,22 +166,27 @@ export function ParentDashboard() {
   // Fetch streak data for all children (non-blocking — degrades gracefully)
   useEffect(() => {
     if (children.length === 0) return
-    const headers = authHeaders()
-    Promise.allSettled(
-      children.map(child =>
-        fetch(apiUrl(`/api/streaks/${child.id}`), { headers })
-          .then(r => (r.ok ? r.json() : Promise.reject(r.status)))
-          .then((data: { current_streak: number; grace_days_remaining: number; consistency_score: number }) => ({ id: child.id, data }))
-      )
-    ).then(results => {
-      const map: Record<string, { current_streak: number; grace_days_remaining: number; consistency_score: number }> = {}
-      for (const result of results) {
-        if (result.status === 'fulfilled') {
-          map[result.value.id] = result.value.data
+    let cancelled = false
+    authHeaders().then(headers => {
+      if (cancelled) return
+      Promise.allSettled(
+        children.map(child =>
+          fetch(apiUrl(`/api/streaks/${child.id}`), { headers })
+            .then(r => (r.ok ? r.json() : Promise.reject(r.status)))
+            .then((data: { current_streak: number; grace_days_remaining: number; consistency_score: number }) => ({ id: child.id, data }))
+        )
+      ).then(results => {
+        if (cancelled) return
+        const map: Record<string, { current_streak: number; grace_days_remaining: number; consistency_score: number }> = {}
+        for (const result of results) {
+          if (result.status === 'fulfilled') {
+            map[result.value.id] = result.value.data
+          }
         }
-      }
-      setStreaksByChild(map)
+        setStreaksByChild(map)
+      })
     })
+    return () => { cancelled = true }
   }, [children])
 
   // Track online status

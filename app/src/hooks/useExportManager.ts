@@ -25,7 +25,8 @@ export function useExportManager(familyId: string): UseExportManager {
 
   useEffect(() => {
     if (!familyId) return
-    fetch(apiUrl('/api/export/prune-check'), { headers: authHeaders() })
+    authHeaders()
+      .then(headers => fetch(apiUrl('/api/export/prune-check'), { headers }))
       .then(r => r.ok ? r.json() : null)
       .then((body: { has_prunable?: boolean } | null) => {
         if (body?.has_prunable) setHasPrunableData(true)
@@ -99,7 +100,7 @@ export function useExportManager(familyId: string): UseExportManager {
         const params = new URLSearchParams({ tier, family_id: familyId })
         const url = apiUrl(`/api/export/${format}`) + '?' + params.toString()
 
-        const res = await fetch(url, { headers: authHeaders() })
+        const res = await fetch(url, { headers: await authHeaders() })
 
         if (!res.ok) {
           const body = await res.json().catch(() => ({})) as { error?: string }
@@ -145,7 +146,7 @@ export function useExportManager(familyId: string): UseExportManager {
     try {
       const res = await fetch(apiUrl('/api/export/prune'), {
         method: 'POST',
-        headers: authHeaders('application/json'),
+        headers: await authHeaders('application/json'),
         body: JSON.stringify({ family_id: familyId }),
       })
 

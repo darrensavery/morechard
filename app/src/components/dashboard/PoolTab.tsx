@@ -87,18 +87,18 @@ export function PoolTab({ familyId, currentUserId, parentingMode, refreshKey, on
   useEffect(() => { load(); }, [familyId, refreshKey]);
 
   async function handleApprove(id: number) {
-    await fetch(apiUrl(`/api/shared-expenses/${id}/approve`), { method: 'POST', headers: authHeaders() });
+    await fetch(apiUrl(`/api/shared-expenses/${id}/approve`), { method: 'POST', headers: await authHeaders() });
     load();
   }
 
   async function handleReject(id: number) {
-    await fetch(apiUrl(`/api/shared-expenses/${id}/reject`), { method: 'POST', headers: authHeaders() });
+    await fetch(apiUrl(`/api/shared-expenses/${id}/reject`), { method: 'POST', headers: await authHeaders() });
     load();
   }
 
   async function handleRemove(id: number) {
     if (!confirm('Remove this flagged expense?')) return;
-    await fetch(apiUrl(`/api/shared-expenses/${id}`), { method: 'DELETE', headers: authHeaders() });
+    await fetch(apiUrl(`/api/shared-expenses/${id}`), { method: 'DELETE', headers: await authHeaders() });
     load();
   }
 

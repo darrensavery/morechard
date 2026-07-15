@@ -64,7 +64,8 @@ export function updateDeviceIdentity(patch: Partial<DeviceIdentity>): void {
 
 export function clearDeviceIdentity(): void {
   localStorage.removeItem(STORAGE_KEY)
-  localStorage.removeItem('mc_token')
+  // mc_token is no longer read here — callers already call clearToken()
+  // separately (it's now async and platform-aware; see lib/api.ts).
 }
 
 // ── PIN hashing helpers ──────────────────────────────────────────────────────

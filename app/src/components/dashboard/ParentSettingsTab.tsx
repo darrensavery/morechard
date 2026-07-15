@@ -78,7 +78,7 @@ import {
   getChildGrowth, updateChildGrowth,
   getMe, updateProfile, getLeadCount, getTrialStatus,
   getShieldUpgradePrice,
-  apiUrl, authHeaders,
+  apiUrl, authHeaders, clearToken,
   type MeResult, type TrialStatus, type ShieldUpgradePrice,
 } from '../../lib/api'
 import { track } from '../../lib/analytics'
@@ -329,7 +329,7 @@ export function ParentSettingsTab({ familyId, online, onChildrenChange, onClose 
     try {
       await fetch(apiUrl('/api/family/settings'), {
         method: 'PATCH',
-        headers: authHeaders('application/json'),
+        headers: await authHeaders('application/json'),
         body: JSON.stringify({
           shared_expense_threshold: threshold,
           shared_expense_split_bp:  splitBp,
@@ -573,11 +573,12 @@ onCoParentRemoved={handleCoParentRemoved} /></ProfileSection>
           <div className="rounded-2xl bg-[var(--color-surface-alt)] border border-[var(--color-border)] overflow-hidden">
             <button
               type="button"
-              onClick={() => {
+              onClick={async () => {
                 if (!window.confirm(pl ? 'Wylogować się? Dane rodziny są bezpieczne.' : "Log out? Your family's data stays safe.")) return
                 clearDeviceIdentity()
                 localStorage.removeItem('mc_parent_tab')
                 localStorage.removeItem('mc_parent_avatar')
+                await clearToken()
                 window.location.replace('/')
               }}
               className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-red-50 active:bg-red-50 cursor-pointer transition-colors text-left"

@@ -47,7 +47,7 @@ export function DevTriggerPanel({ childId }: { childId: string }) {
     try {
       const res = await fetch(
         apiUrl(`/dev/trigger-status?child_id=${childId}`),
-        { headers: authHeaders() }
+        { headers: await authHeaders() }
       )
       if (!res.ok) throw new Error(`${res.status}`)
       setStatus(await res.json() as TriggerStatus)
@@ -64,7 +64,7 @@ export function DevTriggerPanel({ childId }: { childId: string }) {
     try {
       const res = await fetch(
         apiUrl(`/dev/run-passive?child_id=${childId}`),
-        { method: 'POST', headers: authHeaders() }
+        { method: 'POST', headers: await authHeaders() }
       )
       if (!res.ok) throw new Error(`${res.status}`)
       const data = await res.json() as { ok: boolean; newlyUnlocked: string[] }

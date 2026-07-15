@@ -167,7 +167,7 @@ function SuspenseFallback() {
 export default function App() {
   async function handleRegistrationComplete(
     familyId: string,
-    _token: string,
+    _token: string | null,
     displayName: string,
     userId: string,
     authMethod: 'biometrics' | 'pin' | null,

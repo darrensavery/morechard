@@ -51,7 +51,7 @@ export default function DemoRegisterScreen() {
       const data = await res.json() as { token?: string; error?: string }
       if (!res.ok) throw new Error(data.error ?? 'Registration failed')
 
-      setToken(data.token!)
+      await setToken(data.token!)
       setDeviceIdentity({
         user_id:       'demo-user-sarah',
         family_id:     'demo-family-thomson',
