@@ -284,82 +284,107 @@ export default Sentry.withSentry<Env, IncidentQueueMessage>(
     async scheduled(event: ScheduledController, env: Env): Promise<void> {
       const now = Math.floor(Date.now() / 1000);
 
-      // ── 1. Expire stale governance requests ────────────────────
-      await env.DB
-        .prepare(`UPDATE family_governance_log SET status = 'expired' WHERE status = 'pending' AND expires_at < ?`)
-        .bind(now).run();
+      const runScheduledJobs = async (): Promise<void> => {
+        // ── 1. Expire stale governance requests ────────────────────
+        await env.DB
+          .prepare(`UPDATE family_governance_log SET status = 'expired' WHERE status = 'pending' AND expires_at < ?`)
+          .bind(now).run();
 
-      // ── 2. Weekly allowance payday sweep ───────────────────────
-      // Runs every Saturday. For each child with allowance_amount > 0,
-      // check if they have already been paid this week (payday_log UNIQUE
-      // constraint is the idempotency key — safe on cron retry).
-      await runPaydaySweep(env, now);
+        // ── 2. Weekly allowance payday sweep ───────────────────────
+        // Runs every Saturday. For each child with allowance_amount > 0,
+        // check if they have already been paid this week (payday_log UNIQUE
+        // constraint is the idempotency key — safe on cron retry).
+        await runPaydaySweep(env, now);
 
-      // ── 3. Clean up expired SLT tokens and unblocked IP attempts ──
-      await env.DB.prepare('DELETE FROM slt_tokens WHERE expires_at < ?').bind(now).run();
-      await env.DB.prepare('DELETE FROM slt_attempts WHERE blocked_until IS NOT NULL AND blocked_until < ?').bind(now).run();
+        // ── 3. Clean up expired SLT tokens and unblocked IP attempts ──
+        await env.DB.prepare('DELETE FROM slt_tokens WHERE expires_at < ?').bind(now).run();
+        await env.DB.prepare('DELETE FROM slt_attempts WHERE blocked_until IS NOT NULL AND blocked_until < ?').bind(now).run();
 
-      // ── 4. Weekly market rate aggregation ──────────────────────
-      await runMarketRateAggregation(env);
+        // ── 4. Weekly market rate aggregation ──────────────────────
+        await runMarketRateAggregation(env);
 
-      // ── 4b. Weekly suggestion-promotion sweep ──────────────────
-      // Clusters novel child suggestions, parks any that clear the distinct-family
-      // threshold as pending candidates, and emails the operator a review digest.
-      // Gated to the Monday 03:00 UTC tick so it (and its email) runs once a week.
-      {
-        const d = new Date(now * 1000);
-        if (d.getUTCDay() === 1 && d.getUTCHours() === 3) {
-          await runSuggestionPromotion(env);
+        // ── 4b. Weekly suggestion-promotion sweep ──────────────────
+        // Clusters novel child suggestions, parks any that clear the distinct-family
+        // threshold as pending candidates, and emails the operator a review digest.
+        // Gated to the Monday 03:00 UTC tick so it (and its email) runs once a week.
+        {
+          const d = new Date(now * 1000);
+          if (d.getUTCDay() === 1 && d.getUTCHours() === 3) {
+            await runSuggestionPromotion(env);
+          }
         }
-      }
 
-      // ── 6. Nightly demo reset (Thomson family) ─────────────────
-      await runDemoReset(env);
+        // ── 6. Nightly demo reset (Thomson family) ─────────────────
+        await runDemoReset(env);
 
-      // ── 7. Learning Lab passive-unlock sweep ───────────────────
-      // Re-evaluates inactivity/balance/streak unlock conditions for every active
-      // child, so triggers that depend on the absence of activity (e.g. M14
-      // Inflation, 21 days with no transactions) fire even when the app is closed.
-      // evaluatePassive is idempotent. Gated to the 00:00 UTC tick so this per-child
-      // sweep runs once daily rather than on every cron tick.
-      if (new Date(now * 1000).getUTCHours() === 0) {
-        await runPassiveUnlockSweep(env);
-      }
-
-      // ── 8. Review feedback email digest ────────────────────────
-      if (new Date(now * 1000).getUTCHours() === 7) {
-        await handleFeedbackDigest(env);
-      }
-
-      // ── 9. Child nudge background checks (Sunday 20:00 UTC) ────
-      // Pattern-based nudges: low consistency, spend-heavy, goal at risk,
-      // give jar stagnant, Pillar 5 (high balance + no giving), etc.
-      {
-        const d = new Date(now * 1000);
-        if (d.getUTCDay() === 0 && d.getUTCHours() === 20) {
-          await runChildNudgeBackgroundChecks(env);
+        // ── 7. Learning Lab passive-unlock sweep ───────────────────
+        // Re-evaluates inactivity/balance/streak unlock conditions for every active
+        // child, so triggers that depend on the absence of activity (e.g. M14
+        // Inflation, 21 days with no transactions) fire even when the app is closed.
+        // evaluatePassive is idempotent. Gated to the 00:00 UTC tick so this per-child
+        // sweep runs once daily rather than on every cron tick.
+        if (new Date(now * 1000).getUTCHours() === 0) {
+          await runPassiveUnlockSweep(env);
         }
-      }
 
-      // ── 10. Family data purge — two-stage GDPR retention enforcement ─
-      //
-      // Stage 1 (daily): hard-delete operational data for families whose 30-day
-      // soft-delete window has closed. Ledger rows are kept as pseudonymised
-      // personal data (Art. 6(1)(f), LIA-3). Families row is reduced to a
-      // tombstone (id + deleted_at) to gate Stage 2.
-      //
-      // Stage 2 (daily): hard-delete pseudonymised ledger rows and tombstones
-      // for families deleted more than 7 years ago (UK Limitation Act 1980,
-      // civil-claims window — see docs/governance/lia/lia.md LIA-3).
-      await runSoftDeletePurge(env, now);
-      await runLedgerPurge(env, now);
+        // ── 8. Review feedback email digest ────────────────────────
+        if (new Date(now * 1000).getUTCHours() === 7) {
+          await handleFeedbackDigest(env);
+        }
 
-      // ── 11. Zoho Desk ticket poll (support agent ingestion) ────
-      // Runs every 5-minute tick only — the other cron entries fire on
-      // this same handler at daily/weekly cadence, so gate on
-      // event.cron to avoid polling on every tick.
+        // ── 9. Child nudge background checks (Sunday 20:00 UTC) ────
+        // Pattern-based nudges: low consistency, spend-heavy, goal at risk,
+        // give jar stagnant, Pillar 5 (high balance + no giving), etc.
+        {
+          const d = new Date(now * 1000);
+          if (d.getUTCDay() === 0 && d.getUTCHours() === 20) {
+            await runChildNudgeBackgroundChecks(env);
+          }
+        }
+
+        // ── 10. Family data purge — two-stage GDPR retention enforcement ─
+        //
+        // Stage 1 (daily): hard-delete operational data for families whose 30-day
+        // soft-delete window has closed. Ledger rows are kept as pseudonymised
+        // personal data (Art. 6(1)(f), LIA-3). Families row is reduced to a
+        // tombstone (id + deleted_at) to gate Stage 2.
+        //
+        // Stage 2 (daily): hard-delete pseudonymised ledger rows and tombstones
+        // for families deleted more than 7 years ago (UK Limitation Act 1980,
+        // civil-claims window — see docs/governance/lia/lia.md LIA-3).
+        await runSoftDeletePurge(env, now);
+        await runLedgerPurge(env, now);
+
+        // ── 11. Zoho Desk ticket poll (support agent ingestion) ────
+        // Runs every 5-minute tick only — the other cron entries fire on
+        // this same handler at daily/weekly cadence, so gate on
+        // event.cron to avoid polling on every tick.
+        if (event.cron === '*/5 * * * *') {
+          await pollZohoDeskTickets(env);
+        }
+      };
+
+      // Sentry Cron Monitor "canary": the 5-minute tick runs this same
+      // function body, and item 11 (the Zoho poll) is the last thing it
+      // does — so a crash anywhere earlier in runScheduledJobs() (like the
+      // ledger_old FK bug that silently broke every single tick for months)
+      // means this tick never checks in "ok", and Sentry alerts on the
+      // missed check-in rather than relying on someone noticing a captured
+      // exception. Auto-instrumentation (upsert) creates/updates the
+      // monitor definition from this config — no manual dashboard setup.
       if (event.cron === '*/5 * * * *') {
-        await pollZohoDeskTickets(env);
+        await Sentry.withMonitor(
+          'worker-scheduled-heartbeat',
+          runScheduledJobs,
+          {
+            schedule: { type: 'crontab', value: '*/5 * * * *' },
+            checkinMargin: 5,
+            maxRuntime: 5,
+            timezone: 'UTC',
+          },
+        );
+      } else {
+        await runScheduledJobs();
       }
     },
 
@@ -499,7 +524,18 @@ async function runPaydaySweep(env: Env, nowEpoch: number): Promise<void> {
 async function route(request: Request, env: Env, method: string, path: string): Promise<Response> {
 
   // ── Public ──────────────────────────────────────────────────
-  if (path === '/api/health') return json({ ok: true });
+  // Touches D1 (not just process liveness) so an Uptime Monitor pinging
+  // this catches a broken D1 binding/connectivity — a Worker can be up
+  // and routing fine while every query fails.
+  if (path === '/api/health') {
+    try {
+      await env.DB.prepare('SELECT 1').first();
+      return json({ ok: true });
+    } catch (err) {
+      Sentry.captureException(err);
+      return json({ ok: false, error: 'database unreachable' }, 503);
+    }
+  }
 
   if (path === '/auth/create-family' && method === 'POST') return handleCreateFamily(request, env);
   if (path === '/auth/register'      && method === 'POST') return handleRegister(request, env);
