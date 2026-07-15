@@ -6,6 +6,9 @@ A running log of notable engineering work, grouped by day, for future reference.
 
 ## 2026-07-15
 
+### Cloudflare API token rotated to least privilege
+The CI `CLOUDFLARE_API_TOKEN` was auditing as over-scoped: the existing candidate tokens each bundled 13-24 permissions (Workers Agents Configuration, Containers, Connectivity Directory, etc.) with "All accounts"/"All zones" resource scope, when CI only actually needs three specific Account-level permissions. Created a new token — `Workers Scripts: Edit`, `D1: Edit`, `Workers R2 Storage: Edit` only, one account, zero zone access (D1/R2 needed because the new backup-export workflow shares this same secret) — and rotated it into the GitHub secret via `gh secret set`. Verified end-to-end: a real `wrangler d1 export` + `wrangler r2 object put` run against production succeeded with the new token (`d1-backup-export.yml` manual dispatch); documented the required scope directly in `wrangler.toml` so it isn't lost to tribal knowledge. Old broad tokens left in place pending confidence, not deleted immediately.
+
 ### Turnstile activated
 Created the Cloudflare Turnstile site (`app.morechard.com`, Managed mode) and wired in both keys: `TURNSTILE_SECRET_KEY` set on the production Worker (`wrangler secret put`), `VITE_TURNSTILE_SITE_KEY` added to `app/.env.production` (public key, safe to commit — same pattern as the existing `VITE_POSTHOG_KEY`). The plumbing from the fourth security-audit pass earlier today is now live rather than a no-op — login, magic-link request, and invite redemption are all actually challenge-protected. Also documented the test-key pattern for local dev in `worker/.dev.vars.example`.
 

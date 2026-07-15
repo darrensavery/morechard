@@ -74,8 +74,15 @@ ZOHO_FROM_EMAIL = "support@morechard.zohodesk.eu"
 #                    wrangler secret put POSTHOG_API_KEY
 #                    wrangler secret put OPENAI_API_KEY
 #                    wrangler secret put ADMIN_SECRET
+#                    wrangler secret put TURNSTILE_SECRET_KEY
 # Do NOT put real values here. This file is committed to git.
 # For local dev, add to .dev.vars (see .dev.vars.example)
+#
+# CI's CLOUDFLARE_API_TOKEN (GitHub secret) is scoped to exactly three
+# Account-level permissions, minimally, per docs/security/audits/2026-07-15-production-security-audit.md:
+#   Workers Scripts: Edit, D1: Edit, Workers R2 Storage: Edit — one account,
+# zero zone access. Rotated 2026-07-15 after the audit found the prior token
+# bundled 13+ permissions and "All accounts"/"All zones" resource scope.
 
 # ── Cron triggers ────────────────────────────────────────────────────────────
 # All run through the same scheduled() handler in index.ts:

@@ -51,6 +51,9 @@ Server-side `sessions` table keyed by JWT `jti`; individually revocable, revocab
 **Do you have a CI/CD pipeline with automated testing before production deploys?**
 Yes — every push/PR touching the worker runs `tsc --noEmit` + the full vitest suite (333 tests); both the preview and production-promotion jobs depend on that passing. Deploys use Cloudflare Worker Versions (blue/green) — a bad version can be rolled back by re-promoting the prior version ID, though this is currently a manual step, not scripted. *(Verified 2026-07-15)*
 
+**Are your CI/CD credentials scoped to least privilege?**
+Yes as of 2026-07-15 — the Cloudflare API token used by GitHub Actions is scoped to exactly three Account-level permissions (Workers Scripts: Edit, D1: Edit, Workers R2 Storage: Edit), one specific account, zero zone access. Previously this token bundled 13+ permissions with "All accounts"/"All zones" resource scope — found during this audit and rotated same-day. *(Verified and rotated 2026-07-15)*
+
 **Do you have a documented incident response process?**
 Yes — [`docs/dev/infra-incident-response-runbook.md`](../dev/infra-incident-response-runbook.md) covers detection signals (what actually pages today vs. known gaps), triage steps, and response procedures by category (bad deploy, database issue, payment issue, platform outage). Written for a solo-operator setup — there's no on-call rotation. Not yet drilled end-to-end (unlike the D1 restore procedure, which was). *(Verified 2026-07-15)*
 

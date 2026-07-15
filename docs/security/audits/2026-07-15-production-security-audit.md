@@ -84,7 +84,7 @@ Confirmed, not just claimed:
 | # | Finding | Status |
 |---|---|---|
 | 23 | No full git-history secret scan (gitleaks/trufflehog) — current tree confirmed clean, history unverified. | **Fixed.** `.github/workflows/gitleaks.yml` — no local binary was available, so this runs as a CI check on push/PR/manual dispatch (full history via `fetch-depth: 0`) instead. |
-| 24 | Cloudflare API token scope unverified (should be Workers Scripts: Edit only). | **Still open — needs manual dashboard check.** Not verifiable from this environment (see Pass 3 in the remediation log). |
+| 24 | Cloudflare API token scope unverified (should be Workers Scripts: Edit only). | **Fixed and rotated 2026-07-15.** The existing tokens (`Edit Cloudflare Workers` ×2, `moneysteps-deploy`, `moneysteps build token`) each bundled 13–24 permissions with "All accounts"/"All zones" resource scope. Created a new minimal token — `Workers Scripts: Edit`, `D1: Edit`, `Workers R2 Storage: Edit` only, scoped to the single account, zero zone access (the D1/R2 permissions are needed because the Pass 4 backup-export workflow reuses this same secret) — rotated into the `CLOUDFLARE_API_TOKEN` GitHub secret via `gh secret set`. Verified: a real `wrangler d1 export` + `wrangler r2 object put` run succeeded end-to-end against production with the new token via `d1-backup-export.yml`; the Worker-deploy step (`Workers Scripts: Edit`) is verified by this very commit's own CI run. Old broad tokens still exist in the dashboard — pending manual deletion once confidence in the new one is fully established. |
 | 25 | No SBOM/dependency-review CI step. | **Fixed.** `.github/workflows/dependency-review.yml` (`actions/dependency-review-action`, blocks PRs introducing high/critical-severity dependencies). |
 | 26 | No load testing / capacity planning doc. | **Fixed (Pass 4), baseline only.** `docs/dev/capacity-planning.md` + `worker/scripts/load-test.mjs`. Only tests the public `/api/health` endpoint — real authenticated-route numbers are still an open item. |
 | 27 | Caret-ranged dependency versions (standard practice, but no CI audit signal before this pass). | Superseded by the Dependabot/audit fix above. |
@@ -142,9 +142,9 @@ All Pass 4 changes verified: `tsc --noEmit` clean and full test suite passing in
 Roughly in priority order:
 1. **WebAuthn server-side verification** and **JWT storage model** (httpOnly cookie) — the two remaining architecture-level auth gaps. These are the highest-value items left; both need a proposed design before implementation, not a silent code change.
 2. **Sentry Alert Rule for Stripe payment failures** — code-side capture is done, the dashboard rule isn't created yet.
-3. **Cloudflare API token scope** — verify the CI secret is minimally scoped (dashboard check, see Pass 3).
-4. Formal load test against a preview URL with real authenticated traffic (chat, insights generation, PDF export) — the current baseline only hits the public `/api/health` endpoint.
-5. Broader zod adoption across the remaining ~28 authenticated-route call sites, incrementally.
-6. Re-run the D1 restore drill periodically (every 6 months, or after any wrangler major-version upgrade) — see `docs/dev/d1-backup-recovery-runbook.md`.
-7. Watch Turnstile's pass/fail rate after activation (2026-07-15) — confirm Managed mode isn't creating friction for legitimate parents/children before considering it "done" rather than just "live".
+3. Formal load test against a preview URL with real authenticated traffic (chat, insights generation, PDF export) — the current baseline only hits the public `/api/health` endpoint.
+4. Broader zod adoption across the remaining ~28 authenticated-route call sites, incrementally.
+5. Re-run the D1 restore drill periodically (every 6 months, or after any wrangler major-version upgrade) — see `docs/dev/d1-backup-recovery-runbook.md`.
+6. Watch Turnstile's pass/fail rate after activation (2026-07-15) — confirm Managed mode isn't creating friction for legitimate parents/children before considering it "done" rather than just "live".
+7. Delete the old over-scoped Cloudflare API tokens (`Edit Cloudflare Workers` ×2, `moneysteps-deploy`, `moneysteps build token`) once confidence in the new minimal one is fully established — not done immediately after rotation in case of an unexpected rollback need.
 8. This incident-response runbook itself hasn't been drilled (unlike the D1 one) — worth at least a tabletop walkthrough.
