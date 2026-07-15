@@ -146,7 +146,8 @@ import {
   handleGoogleCallback,
   handleSltExchange,
 } from './routes/auth.js';
-import { requireAuth, requireRole, requireFamilyMatch } from './lib/middleware.js';
+import { requireAuth, requireRole, requireFamilyMatch, requireCsrfHeader } from './lib/middleware.js';
+import { getAuthCookie } from './lib/cookies.js';
 import { requireAdmin, requireAdminBasicAuth } from './lib/adminAuth.js';
 import { checkTrialStatus, getTrialStatus } from './lib/trial.js';
 import { handleCreateCheckout, handleStripeWebhook, handleCancelPlan, handleShieldUpgradePrice } from './routes/stripe.js';
@@ -636,6 +637,10 @@ async function route(request: Request, env: Env, method: string, path: string): 
   const auth = await requireAuth(request, env);
   if (auth instanceof Response) return auth;
 
+  // ── CSRF check — only bites cookie-authenticated (web) mutating requests ──
+  const csrfCheck = requireCsrfHeader(request, getAuthCookie(request) !== null);
+  if (csrfCheck) return csrfCheck;
+
   // ── Authenticated — any role ──────────────────────────────────
   if (path === '/auth/demo/enter'  && method === 'POST') return withAuth(request, auth, env, handleDemoEnter);
   if (path === '/auth/demo/notify' && method === 'POST') return withAuth(request, auth, env, handleDemoNotify);
@@ -1071,9 +1076,14 @@ async function checkFamilyFromBody(
 
 function corsHeaders(): Record<string, string> {
   return {
-    'Access-Control-Allow-Origin':  'https://app.morechard.com',
-    'Access-Control-Allow-Methods': 'GET, POST, PATCH, DELETE, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    // Must stay an exact match — never a wildcard — now that credentialed
+    // (cookie-carrying) requests are allowed. Browsers reject wildcard +
+    // credentials combinations, but keep this explicit as a guard against
+    // a future accidental regression.
+    'Access-Control-Allow-Origin':      'https://app.morechard.com',
+    'Access-Control-Allow-Methods':     'GET, POST, PATCH, DELETE, OPTIONS',
+    'Access-Control-Allow-Headers':     'Content-Type, Authorization, X-Morechard-Client',
+    'Access-Control-Allow-Credentials': 'true',
   };
 }
 
