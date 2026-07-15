@@ -9,11 +9,13 @@
     "deploy:promote": "wrangler versions deploy --env production",
     "sync:playbook": "node scripts/sync-playbook.mjs",
     "sync:playbook:prod": "node scripts/sync-playbook.mjs --env production",
-    "test": "vitest"
+    "test": "vitest",
+    "load-test": "node scripts/load-test.mjs"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20240909.0",
     "@types/qrcode-svg": "^1.1.5",
+    "autocannon": "^8.0.0",
     "typescript": "^5.5.2",
     "vitest": "^4.1.5",
     "wrangler": "^4.79.0"

@@ -25,6 +25,7 @@ import { sha256, computeRecordHash, GENESIS_HASH } from '../lib/hash.js';
 import { recordPinFailure, clearPinLockout } from '../lib/pinLockout.js';
 import { z } from 'zod';
 import { parseValidatedBody } from '../lib/validate.js';
+import { verifyTurnstile } from '../lib/turnstile.js';
 
 const MAGIC_LINK_EXPIRY  = 15 * 60;         // 15 minutes
 const PARENT_JWT_EXPIRY  = 365 * 24 * 3600; // 1 year
@@ -156,16 +157,20 @@ export async function handleCreateFamily(request: Request, env: Env): Promise<Re
 
 // ----------------------------------------------------------------
 // POST /auth/register
+const registerSchema = z.object({
+  family_id:    z.string().min(1, 'family_id required'),
+  display_name: z.string().min(1, 'display_name required'),
+  email:        z.string().min(1, 'email required'),
+  password:     z.string().optional(),
+  locale:       z.string().optional(),
+});
+
 export async function handleRegister(request: Request, env: Env): Promise<Response> {
-  const body = await parseBody(request);
-  if (!body) return error('Invalid JSON body');
+  const parsed = await parseValidatedBody(request, registerSchema);
+  if (parsed instanceof Response) return parsed;
+  const { family_id, display_name, email, password, locale } = parsed;
 
-  const { family_id, display_name, email, password, locale } = body;
-  if (!family_id    || typeof family_id    !== 'string') return error('family_id required');
-  if (!display_name || typeof display_name !== 'string') return error('display_name required');
-  if (!email        || typeof email        !== 'string') return error('email required');
-
-  const normEmail = (email as string).toLowerCase().trim();
+  const normEmail = email.toLowerCase().trim();
   if (!isValidEmail(normEmail)) return error('Invalid email address');
 
   // Check family exists
@@ -185,7 +190,7 @@ export async function handleRegister(request: Request, env: Env): Promise<Respon
   if (existing) return error('Email already registered', 409);
 
   const userId       = nanoid();
-  const passwordHash = password ? await hashPassword(password as string) : null;
+  const passwordHash = password ? await hashPassword(password) : null;
   const userLocale   = (locale === 'pl' ? 'pl' : 'en');
 
   await env.DB.batch([
@@ -214,15 +219,21 @@ const LOGIN_LOCKOUT_SEC   = 900;   // 15-minute lockout after exceeding limit
 const MAGIC_LINK_MAX     = 3;
 const MAGIC_LINK_WINDOW  = 600;   // 10-minute rolling window
 
+const loginSchema = z.object({
+  email:           z.string().min(1, 'email required'),
+  password:        z.string().min(1, 'password required'),
+  turnstile_token: z.string().optional(),
+});
+
 export async function handleLogin(request: Request, env: Env): Promise<Response> {
-  const body = await parseBody(request);
-  if (!body) return error('Invalid JSON body');
+  const parsed = await parseValidatedBody(request, loginSchema);
+  if (parsed instanceof Response) return parsed;
+  const { email, password, turnstile_token } = parsed;
 
-  const { email, password } = body;
-  if (!email    || typeof email    !== 'string') return error('email required');
-  if (!password || typeof password !== 'string') return error('password required');
+  const turnstileCheck = await verifyTurnstile(request, env, turnstile_token);
+  if (turnstileCheck) return turnstileCheck;
 
-  const normEmail = (email as string).toLowerCase().trim();
+  const normEmail = email.toLowerCase().trim();
   const nowSec    = Math.floor(Date.now() / 1000);
 
   // Check rate limit before touching the users table
@@ -267,7 +278,7 @@ export async function handleLogin(request: Request, env: Env): Promise<Response>
     return error('Invalid credentials', 401);
   }
 
-  const valid = await verifyPassword(password as string, user.password_hash);
+  const valid = await verifyPassword(password, user.password_hash);
   if (!valid) {
     await recordFailedLogin(env, normEmail, nowSec, rl).catch(() => null);
     logger.warn('handleLogin', 'login failed — wrong password', {
@@ -312,13 +323,19 @@ async function recordFailedLogin(
 // Generates a single-use token and sends it via Resend.
 // Body: { email }
 // ----------------------------------------------------------------
-export async function handleMagicLinkRequest(request: Request, env: Env): Promise<Response> {
-  const body = await parseBody(request);
-  if (!body) return error('Invalid JSON body');
+const magicLinkRequestSchema = z.object({
+  email:           z.string().min(1, 'email required'),
+  turnstile_token: z.string().optional(),
+});
 
-  const { email } = body;
-  if (!email || typeof email !== 'string') return error('email required');
-  const normEmail = (email as string).toLowerCase().trim();
+export async function handleMagicLinkRequest(request: Request, env: Env): Promise<Response> {
+  const parsed = await parseValidatedBody(request, magicLinkRequestSchema);
+  if (parsed instanceof Response) return parsed;
+
+  const turnstileCheck = await verifyTurnstile(request, env, parsed.turnstile_token);
+  if (turnstileCheck) return turnstileCheck;
+
+  const normEmail = parsed.email.toLowerCase().trim();
 
   // Rate-limit by email — prevents inbox flooding on known addresses.
   // Always returns 200 so the rate limit doesn't reveal email registration status.

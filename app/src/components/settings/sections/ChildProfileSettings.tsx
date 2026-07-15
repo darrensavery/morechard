@@ -278,7 +278,7 @@ interface PaymentSettingsProps {
   setAcctNum:      (v: string) => void
   zelle:           string
   setZelle:        (v: string) => void
-  saveBankDetails: () => void
+  saveBankDetails: () => Promise<void>
   onBack:          () => void
 }
 
@@ -323,8 +323,8 @@ function PaymentSettingsView({
     }
   }
 
-  function saveBankAndMark() {
-    saveBankDetails()
+  async function saveBankAndMark() {
+    await saveBankDetails()
     setBankSaved(true)
     setTimeout(() => setBankSaved(false), 2000)
   }
@@ -448,22 +448,27 @@ export function ChildProfileSettings({
   const [nameError,    setNameError]    = useState<string | null>(null)
   const [showPinSheet, setShowPinSheet] = useState(false)
   const [showInviteSheet, setShowInviteSheet] = useState(false)
-  const [sortCode, setSortCode] = useState(
-    () => getDetails(familyId, child.id)?.sortCode ?? '',
-  )
-  const [acctNum, setAcctNum] = useState(
-    () => getDetails(familyId, child.id)?.accountNumber ?? '',
-  )
-  const [zelle, setZelle] = useState(
-    () => getDetails(familyId, child.id)?.zelleHandle ?? '',
-  )
+  const [sortCode, setSortCode] = useState('')
+  const [acctNum, setAcctNum] = useState('')
+  const [zelle, setZelle] = useState('')
 
-  function saveBankDetails() {
+  useEffect(() => {
+    let cancelled = false
+    getDetails(familyId, child.id).then(d => {
+      if (cancelled) return
+      setSortCode(d?.sortCode ?? '')
+      setAcctNum(d?.accountNumber ?? '')
+      setZelle(d?.zelleHandle ?? '')
+    })
+    return () => { cancelled = true }
+  }, [familyId, child.id])
+
+  async function saveBankDetails() {
     if (!sortCode && !acctNum && !zelle) {
-      clearDetails(familyId, child.id)
+      await clearDetails(familyId, child.id)
       return
     }
-    setDetails(familyId, child.id, {
+    await setDetails(familyId, child.id, {
       childId: child.id,
       sortCode: sortCode || undefined,
       accountNumber: acctNum || undefined,

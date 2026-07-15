@@ -19,6 +19,7 @@ import { getDeviceIdentity, setDeviceIdentity, toInitials, hashPin } from '@/lib
 import { isBiometricsAvailable, registerBiometrics }        from '@/lib/biometrics'
 import { analytics, track, applyInheritedChildConsent } from '@/lib/analytics'
 import { apiUrl }                       from '@/lib/api'
+import { TurnstileWidget }              from '@/components/ui/TurnstileWidget'
 import * as Sentry                      from '@sentry/react'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -66,6 +67,7 @@ export function JoinFamilyScreen() {
   const [password,    setPassword]    = useState('')
   const [detailError, setDetailError] = useState('')
   const [submitting,  setSubmitting]  = useState(false)
+  const [turnstileToken, setTurnstileToken] = useState<string | undefined>(undefined)
 
   // Redeemed identity (filled after successful /auth/invite/redeem)
   const [redeemedData, setRedeemedData] = useState<RedeemResponse | null>(null)
@@ -165,6 +167,7 @@ export function JoinFamilyScreen() {
         body['email']    = email.trim().toLowerCase()
         body['password'] = password
       }
+      if (turnstileToken) body['turnstile_token'] = turnstileToken
 
       const res = await fetch(apiUrl('/auth/invite/redeem'), {
         method:  'POST',
@@ -447,6 +450,8 @@ export function JoinFamilyScreen() {
               {detailError && (
                 <p className="text-[13px] font-semibold text-red-600 text-center">{detailError}</p>
               )}
+
+              <TurnstileWidget onVerify={setTurnstileToken} />
 
               <button
                 onClick={handleDetailSubmit}

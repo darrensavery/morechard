@@ -26,6 +26,9 @@ export interface Env {
   OPENAI_API_KEY:        string;
   BREVO_API_KEY:         string;
   ADMIN_SECRET:          string;
+  // Optional — Cloudflare Turnstile bot-challenge. Unset until a Turnstile
+  // site is created in the dashboard (see docs/security/audits/2026-07-15-production-security-audit.md).
+  TURNSTILE_SECRET_KEY?: string;
   // ── Autonomous Support Agent (Phase 0) ──────────────────────────────────
   ANTHROPIC_API_KEY: string;
   ZOHO_CLIENT_ID: string;

@@ -11,6 +11,7 @@ import { Env, InviteRole } from '../types.js';
 
 import { json, error, clientIp, parseBody } from '../lib/response.js';
 import { parseValidatedBody } from '../lib/validate.js';
+import { verifyTurnstile } from '../lib/turnstile.js';
 import { nanoid } from '../lib/nanoid.js';
 import { hashPassword } from '../lib/crypto.js';
 import { signJwt } from '../lib/jwt.js';
@@ -189,6 +190,9 @@ export async function handleRedeemInvite(request: Request, env: Env): Promise<Re
   if (parsed instanceof Response) return parsed;
   const body = parsed as Record<string, unknown>;
   const code = parsed.code.toUpperCase();
+
+  const turnstileCheck = await verifyTurnstile(request, env, body['turnstile_token'] as string | undefined);
+  if (turnstileCheck) return turnstileCheck;
 
   const now = Math.floor(Date.now() / 1000);
 

@@ -1,0 +1,59 @@
+name: D1 Off-Platform Backup Export
+
+# Cloudflare D1 Time Travel (see docs/dev/d1-backup-recovery-runbook.md)
+# covers point-in-time recovery, but only for data loss *within* an
+# existing database — it cannot recover a deleted D1 database resource.
+# This is the backstop for that scenario: a daily SQL dump of production,
+# stored in a separate R2 bucket, with a 30-day expiry lifecycle rule
+# already configured on the bucket (`morechard-db-backups`) so this
+# workflow doesn't need its own cleanup step.
+
+on:
+  schedule:
+    - cron: '0 4 * * *' # 04:00 UTC daily — low-traffic window
+  workflow_dispatch:
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install worker dependencies
+        working-directory: worker
+        run: npm ci
+
+      - name: Export production D1 to SQL
+        working-directory: worker
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          DATE=$(date -u +%Y-%m-%d)
+          echo "BACKUP_DATE=$DATE" >> "$GITHUB_ENV"
+          npx wrangler d1 export morechard --env production --remote \
+            --output="morechard-${DATE}.sql"
+
+      - name: Upload to R2 backup bucket
+        working-directory: worker
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          npx wrangler r2 object put "morechard-db-backups/morechard-${BACKUP_DATE}.sql" \
+            --file="morechard-${BACKUP_DATE}.sql" \
+            --remote
+
+      - name: Summary
+        run: |
+          {
+            echo "### D1 backup exported"
+            echo "- File: \`morechard-${BACKUP_DATE}.sql\`"
+            echo "- Bucket: \`morechard-db-backups\` (30-day auto-expiry lifecycle rule)"
+          } >> "$GITHUB_STEP_SUMMARY"

@@ -2,6 +2,7 @@ import { useSearchParams, useNavigate } from 'react-router-dom'
 import { useState } from 'react'
 import { requestMagicLink } from '../lib/api'
 import { FullLogo } from '@/components/ui/Logo'
+import { TurnstileWidget } from '@/components/ui/TurnstileWidget'
 
 export default function LoginScreen() {
   const [searchParams] = useSearchParams()
@@ -14,6 +15,7 @@ export default function LoginScreen() {
   const [sending,    setSending]    = useState(false)
   const [magicSent,  setMagicSent]  = useState(false)
   const [magicError, setMagicError] = useState('')
+  const [turnstileToken, setTurnstileToken] = useState<string | undefined>(undefined)
 
   const workerUrl = (import.meta.env.VITE_WORKER_URL as string | undefined) ?? 'https://api.morechard.com'
 
@@ -23,7 +25,7 @@ export default function LoginScreen() {
     setSending(true)
     setMagicError('')
     try {
-      await requestMagicLink(email.trim())
+      await requestMagicLink(email.trim(), turnstileToken)
       setMagicSent(true)
     } catch (err) {
       setMagicError(err instanceof Error ? err.message : 'Something went wrong')
@@ -132,6 +134,7 @@ export default function LoginScreen() {
                 {magicError && (
                   <p className="text-[12px] text-red-500 px-1">{magicError}</p>
                 )}
+                <TurnstileWidget onVerify={setTurnstileToken} />
                 <button
                   type="submit"
                   disabled={sending || !email.trim()}

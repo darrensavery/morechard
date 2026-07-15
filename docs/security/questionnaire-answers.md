@@ -13,10 +13,10 @@ Full supporting detail for anything below: [`audits/2026-07-15-production-securi
 Yes — Cloudflare terminates TLS for all traffic (Pages + Workers). *(Verified 2026-07-15)*
 
 **Do you encrypt data at rest?**
-Relies on Cloudflare D1's platform-level encryption at rest; no additional application-level column encryption on top of that today. Bank details entered for the Payment Bridge feature are currently stored in browser `localStorage` unencrypted — a known gap, tracked for an encrypted-vault replacement ("Spec B"). *(Verified 2026-07-15)*
+Relies on Cloudflare D1's platform-level encryption at rest for the main database; no additional application-level column encryption on top of that today. Bank details entered for the Payment Bridge feature use a dedicated client-side encrypted vault (AES-GCM, per-family non-extractable key, IndexedDB) — never transmitted to or stored on Morechard's servers, and encrypted at rest on-device. *(Verified 2026-07-15)*
 
 **Do you have a documented backup and disaster recovery process?**
-Yes — Cloudflare D1 Time Travel (continuous point-in-time recovery, automatic, no separate backup job needed) with a documented, drilled restore procedure: [`docs/dev/d1-backup-recovery-runbook.md`](../dev/d1-backup-recovery-runbook.md). RPO is near-zero (continuous bookmarks). RTO measured via a live restore-and-undo drill against the dev database: ~5 seconds for the restore operation itself; budget 10–15 minutes end-to-end for a human operator working through the full runbook during a real incident. One gap remains: Time Travel doesn't cover a *deleted* D1 database resource (only data loss within an existing one) — an off-platform export backstop for that scenario is identified but not yet built. *(Verified 2026-07-15, drilled same day)*
+Yes — Cloudflare D1 Time Travel (continuous point-in-time recovery, automatic, no separate backup job needed) with a documented, drilled restore procedure: [`docs/dev/d1-backup-recovery-runbook.md`](../dev/d1-backup-recovery-runbook.md). RPO is near-zero (continuous bookmarks). RTO measured via a live restore-and-undo drill against the dev database: ~5 seconds for the restore operation itself; budget 10–15 minutes end-to-end for a human operator working through the full runbook during a real incident. Time Travel doesn't cover a *deleted* D1 database resource, only data loss within an existing one — closed with a daily off-platform export to a separate R2 bucket (`morechard-db-backups`, 30-day retention, `.github/workflows/d1-backup-export.yml`). *(Verified 2026-07-15, drilled same day)*
 
 **Do you have MFA enabled on your infrastructure accounts?**
 Not yet — tracked as a blocking item in [`docs/governance/cyber-essentials-checklist.md`](../governance/cyber-essentials-checklist.md). This is an account-level action item, not something fixable in code. *(Verified 2026-07-15 — status: outstanding)*
@@ -31,7 +31,7 @@ Yes — OpenAI (`gpt-4o-mini`), disclosed in the Privacy Policy as an AI Mentor 
 Yes — parent login (10 attempts/10min, 15min lockout), child PIN and parent step-up PIN (escalating lockout, doubling 30s→24h cap on repeated lockouts), invite-code redemption (15 attempts/10min, 15min lockout), and AI chat (20 messages/hour per child). No blanket global API rate limiter — deliberately, to avoid throttling legitimate shared-IP family/school traffic. *(Verified 2026-07-15)*
 
 **Do you have a Web Application Firewall (WAF) or bot protection?**
-Not currently — no Cloudflare Access, Turnstile, or custom rate-limiting rules configured beyond the application-level throttling above. Open item. *(Verified 2026-07-15 — status: outstanding)*
+Cloudflare Turnstile integration exists end-to-end (server verification + client widget) on login, magic-link request, and invite redemption, but is currently inert — it soft-no-ops on both sides until a Turnstile site is created in the Cloudflare dashboard and its keys are configured. No Cloudflare Access or zone-level rate-limiting rules beyond the application-level throttling described above. *(Verified 2026-07-15 — status: plumbing done, activation pending)*
 
 **Are all API endpoints authenticated?**
 All state-mutating and data-bearing endpoints are authenticated (JWT bearer token or `X-Admin-Key` for internal admin routes). A small number of routes are intentionally public: webhook receivers (Stripe, Zoho Desk, Sentry — all signature-verified internally), invite-code peek (read-only existence check, rate-limited), and health-check endpoints. *(Verified 2026-07-15)*
@@ -50,3 +50,9 @@ Server-side `sessions` table keyed by JWT `jti`; individually revocable, revocab
 
 **Do you have a CI/CD pipeline with automated testing before production deploys?**
 Yes — every push/PR touching the worker runs `tsc --noEmit` + the full vitest suite (333 tests); both the preview and production-promotion jobs depend on that passing. Deploys use Cloudflare Worker Versions (blue/green) — a bad version can be rolled back by re-promoting the prior version ID, though this is currently a manual step, not scripted. *(Verified 2026-07-15)*
+
+**Do you have a documented incident response process?**
+Yes — [`docs/dev/infra-incident-response-runbook.md`](../dev/infra-incident-response-runbook.md) covers detection signals (what actually pages today vs. known gaps), triage steps, and response procedures by category (bad deploy, database issue, payment issue, platform outage). Written for a solo-operator setup — there's no on-call rotation. Not yet drilled end-to-end (unlike the D1 restore procedure, which was). *(Verified 2026-07-15)*
+
+**Have you load-tested or capacity-planned for growth?**
+Only a baseline exists — [`docs/dev/capacity-planning.md`](../dev/capacity-planning.md) documents known Cloudflare platform ceilings and the one code-level risk area identified (a cron-triggered sweep with no per-family batching), plus a basic load-test script (`worker/scripts/load-test.mjs`) against the public health-check endpoint only. No real production traffic data or authenticated-route load numbers exist yet — this is an honest gap, not a solved one. *(Verified 2026-07-15 — status: baseline only)*

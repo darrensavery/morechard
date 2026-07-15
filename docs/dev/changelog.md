@@ -40,6 +40,17 @@ Follow-up on the deferred items above, per user prioritisation:
 
 All changes verified: `tsc --noEmit` clean, `vitest run` 333/333 passing.
 
+### Fourth pass, same day — D1 export backstop, encrypted bank vault, Turnstile plumbing, infra runbook, capacity planning
+Picked up the remaining audit items (5 of the 6 not yet closed; WebAuthn/JWT redesign still deliberately deferred pending a design proposal):
+- **Off-platform D1 export backstop** — created `morechard-db-backups` R2 bucket (30-day expiry lifecycle rule applied via `wrangler r2 bucket lifecycle`), and `.github/workflows/d1-backup-export.yml` runs a daily production export into it. Closes the one real gap Time Travel doesn't cover: a *deleted* D1 database resource, not just data loss within an existing one.
+- **Bank-details encrypted vault (Spec B)** — `app/src/lib/localBankDetails.ts` rewritten from plaintext sessionStorage to an AES-GCM encrypted IndexedDB vault: non-extractable per-family key (structured-clone stored directly in IndexedDB, never exported as bytes), random IV per write, and a sessionStorage-marker comparison on read that reproduces the original "gone when the tab closes" property IndexedDB doesn't have natively. All three call sites (`PaymentBridgeSheet.tsx`, `HistoryTab.tsx`, `ChildProfileSettings.tsx`) converted to the new async API. Verified via 8 new unit tests (added `fake-indexeddb` for jsdom) plus a live check in an actual Chromium browser via Playwright confirming real IndexedDB/Web Crypto behavior, not just the test double.
+- **Turnstile bot-challenge plumbing** — `worker/src/lib/turnstile.ts` (server verification) and `app/src/components/ui/TurnstileWidget.tsx` (client widget), wired into login, magic-link request, and invite redemption. Deliberately soft-no-op on both sides until `TURNSTILE_SECRET_KEY`/`VITE_TURNSTILE_SITE_KEY` are set — a hard-enforced check with no real Turnstile site configured would have locked out every login in production instantly. **Needs a Cloudflare dashboard action to activate** (Turnstile → Add site).
+- **`docs/dev/infra-incident-response-runbook.md`** — detection signals inventory, triage steps, response by category (bad deploy, D1 issue, payment issue, platform outage). Explicit about being a solo-operator process (no on-call rotation).
+- **`docs/dev/capacity-planning.md`** + `worker/scripts/load-test.mjs` — honest that no real traffic data exists yet; documents known platform ceilings and flags the payday/market-rate cron sweep as the most likely first bottleneck (only unbounded-by-family-count loop with no batching). Baseline `autocannon` script refuses to target the production hostname directly.
+- Extended zod adoption (`worker/src/lib/validate.ts`, added Pass 3) to `auth.ts`'s remaining unauthenticated routes: register, login, magic-link request.
+
+All changes verified: `tsc --noEmit` clean in both workspaces, `vitest run` passing (333 worker / 101 app, including the 8 new vault tests), plus the live-browser vault check above.
+
 ## 2026-07-14
 
 ### Freshdesk → Zoho Desk support migration

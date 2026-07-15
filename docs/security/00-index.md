@@ -18,14 +18,16 @@ docs/security/
 
 | Date | Audit | Scope | Result |
 |------|-------|-------|--------|
-| 2026-07-15 | [Production security audit](audits/2026-07-15-production-security-audit.md) | 13-domain review ahead of a potential school endorsement (auth, database, app security, hosting, deployment, scaling, recovery, monitoring, secrets, supply chain, compliance) | 3 remediation passes same-day: ~15 gaps closed (headers, admin/governance auth, PIN lockout, invite rate limiting, PII truncation, payment alerting, D1 recovery + drilled, gitleaks + dependency-review CI, zod adoption started); WebAuthn/JWT redesign and a few org-level items (MFA, CF token scope) explicitly deferred — see doc |
+| 2026-07-15 | [Production security audit](audits/2026-07-15-production-security-audit.md) | 13-domain review ahead of a potential school endorsement (auth, database, app security, hosting, deployment, scaling, recovery, monitoring, secrets, supply chain, compliance) | 4 remediation passes same-day: ~20 gaps closed (headers, admin/governance auth, PIN lockout, invite rate limiting, PII truncation, payment alerting, D1 recovery + drilled, gitleaks + dependency-review CI, zod adoption, D1 off-platform export backstop, encrypted bank vault, Turnstile plumbing, infra incident runbook, capacity planning); WebAuthn/JWT redesign, Turnstile dashboard activation, and a few org-level items (MFA, CF token scope, Sentry alert rule) explicitly deferred/pending user action — see doc |
 
 ## Related documents (not moved here — cross-referenced)
 
 - [`docs/governance/cyber-essentials-checklist.md`](../governance/cyber-essentials-checklist.md) — NCSC/IASME Cyber Essentials readiness checklist. Org/account-level items (MFA, device inventory, legal entity details) that only Darren can action — not code-fixable, tracked separately from the technical audits in this folder.
 - [`docs/governance/lia/`](../governance/lia/) — Legitimate Interest Assessment (UK GDPR basis for the 7-year pseudonymised ledger retention).
 - [`docs/governance/privacy/`](../governance/privacy/) — privacy/data-protection source documents.
-- [`docs/dev/d1-backup-recovery-runbook.md`](../dev/d1-backup-recovery-runbook.md) — D1 Time Travel restore procedure, RPO/RTO. Written as a byproduct of the 2026-07-15 audit; lives in `docs/dev/` because it's an operational runbook, not an audit record — linked here for discoverability.
+- [`docs/dev/d1-backup-recovery-runbook.md`](../dev/d1-backup-recovery-runbook.md) — D1 Time Travel restore procedure, RPO/RTO (drilled). Written as a byproduct of the 2026-07-15 audit; lives in `docs/dev/` because it's an operational runbook, not an audit record — linked here for discoverability.
+- [`docs/dev/infra-incident-response-runbook.md`](../dev/infra-incident-response-runbook.md) — infra incident detection/triage/response (bad deploy, D1 issue, payment issue, platform outage). Same rationale as above for living in `docs/dev/`.
+- [`docs/dev/capacity-planning.md`](../dev/capacity-planning.md) — known platform ceilings, code-level scaling risks, baseline load-test script.
 
 ## When a new audit/questionnaire comes in
 

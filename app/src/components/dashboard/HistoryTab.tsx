@@ -10,7 +10,7 @@ import { useGatekeeper } from '../../hooks/useGatekeeper'
 import { useAndroidBack } from '../../hooks/useAndroidBack'
 import { useDragToClose } from '../../hooks/useDragToClose'
 import { PremiumShell, MentorAvatar, ProBadge, injectPremiumStyles } from '../ui/PremiumShell'
-import { getDetails } from '../../lib/localBankDetails'
+import { getDetails, type StoredBankDetails } from '../../lib/localBankDetails'
 import { useLocale, currencySymbol } from '../../lib/locale'
 import { ErrorBox } from '../ui/ErrorBox'
 
@@ -94,6 +94,13 @@ export function ActivityTab({ familyId, child, childCount, onCountChange, unpaid
   const [bonusError, setBonusError] = useState<string | null>(null)
   const [overdueCount, setOverdueCount] = useState(0)
   const [detailCompletion, setDetailCompletion] = useState<Completion | null>(null)
+  const [bankDetails, setBankDetails] = useState<StoredBankDetails | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    getDetails(familyId, child.id).then(d => { if (!cancelled) setBankDetails(d) })
+    return () => { cancelled = true }
+  }, [familyId, child.id])
 
   useAndroidBack(showApproveAllModal, () => setShowApproveAllModal(false))
   useAndroidBack(!!reviseId, () => { setReviseId(null); setReviseNote('') })
@@ -367,7 +374,6 @@ export function ActivityTab({ familyId, child, childCount, onCountChange, unpaid
 
       {/* ── Unpaid earnings summary ───────────────────────────────────────────── */}
       {unpaidRow && unpaidRow.unpaid_total > 0 && (() => {
-        const bankDetails = getDetails(familyId, child.id)
         const hasPaymentDetails =
           !!child.monzo_handle || !!child.revolut_handle ||
           !!child.paypal_handle || !!child.venmo_handle ||

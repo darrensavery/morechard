@@ -145,8 +145,8 @@ export async function login(email: string, password: string): Promise<LoginResul
   return request('/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) });
 }
 
-export async function requestMagicLink(email: string): Promise<{ sent: boolean }> {
-  return request('/auth/magic-link', { method: 'POST', body: JSON.stringify({ email }) });
+export async function requestMagicLink(email: string, turnstileToken?: string): Promise<{ sent: boolean }> {
+  return request('/auth/magic-link', { method: 'POST', body: JSON.stringify({ email, turnstile_token: turnstileToken }) });
 }
 
 export async function verifyMagicLink(token: string): Promise<LoginResult & { family_id: string; user_id: string; role: string }> {

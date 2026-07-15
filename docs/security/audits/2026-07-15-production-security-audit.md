@@ -61,7 +61,7 @@ Confirmed, not just claimed:
 | 8 | No Dependabot, no `npm audit`/SCA step anywhere in CI. | **Fixed (informational, non-blocking).** `.github/dependabot.yml` (weekly, all 4 workspaces + github-actions) and `.github/workflows/dependency-audit.yml`. Deliberately non-blocking: current audit shows 6 (worker) / 24 (app) known high/critical advisories, all in dev-only build tooling (wrangler, vite, miniflare, vitest/@vitest-ui, undici, ws) that never ships to the production bundle — making this blocking today would break every deploy before those are triaged. |
 | 9 | Children's `display_name` sent unredacted to OpenAI (`insights.ts`, `chat.ts`) — no anonymization step before third-party LLM calls. | **Fixed.** `getChildIntelligence()` (`worker/src/lib/intelligence.ts`) now truncates to the first name/nickname token before it enters any AI Mentor prompt — fixed once at the source, covering every `chat.ts` call site. Deliberately did *not* replace the name with a generic placeholder (would break the AI Mentor's personalized-coaching design); nickname-only policy already caps the real exposure vs. a genuine real-name leak. |
 | 10 | No dedicated alerting for failed Stripe payments — only generic Sentry exception capture. | **Fixed (partial — needs one dashboard step).** Stripe webhook now captures failure events (`payment_intent.payment_failed`, `charge.failed`, `invoice.payment_failed`, `checkout.session.expired`/`async_payment_failed`) to Sentry with a dedicated fingerprint (`stripe-payment-failure`). **Still needs a Sentry Alert Rule created in the dashboard** to actually notify anyone — same pattern as the existing Cron/Uptime monitors (dashboard config, not code). |
-| 11 | Bank details stored in plaintext browser `localStorage` (Payment Bridge V1). | **Deferred — already tracked.** Documented in `CLAUDE.md` as "Spec B" (encrypted vault), not yet built. Not addressed in either pass; pre-existing known gap, not newly discovered by this audit. |
+| 11 | Bank details stored in plaintext browser `localStorage`/sessionStorage (Payment Bridge V1). | **Fixed (Pass 4).** `app/src/lib/localBankDetails.ts` now an AES-GCM encrypted IndexedDB vault, non-extractable per-family key, verified encrypted at rest and session-scoped in both unit tests and a live browser check. |
 
 ### 🟡 Medium
 
@@ -70,11 +70,11 @@ Confirmed, not just claimed:
 | 12 | No global API rate limiting outside login/PIN/SLT/chat endpoints. | **Deliberately not fixed.** A naive per-IP limiter risks throttling legitimate shared-IP family/school traffic (NAT collision) — worse than the gap it closes. The actual cost-amplification risk (`/api/chat`) was already covered before this audit. |
 | 13 | Child PIN lockout was flat 30s after 5 fails on a 4-digit PIN (10,000 combinations) — grindable in under a day. | **Fixed.** Escalating lockout (30s → 60s → 120s → ... capped at 24h) via new shared `worker/src/lib/pinLockout.ts`, applied to both child login and parent step-up PIN. New `pin_lockout_tier` column (migration `0086_pin_lockout_tier.sql`). |
 | 14 | Invite-code redemption (`/auth/invite/peek`, `/auth/invite/redeem`) had no rate limiting on a 6-char (~30-bit) code with a 72h TTL. | **Fixed.** IP-based rate limiting (15 attempts/10min, 15min lockout), mirroring the existing `login_attempts`/`slt_attempts` pattern. Migration `0085_invite_redeem_attempts.sql`. |
-| 15 | No WAF/bot-protection layer (no Cloudflare Access, Turnstile, or rate-limiting rules found in config). | **Not addressed.** Flagged, no action taken this pass. |
+| 15 | No WAF/bot-protection layer (no Cloudflare Access, Turnstile, or rate-limiting rules found in config). | **Plumbing done (Pass 4), inert until configured.** Turnstile wired into login/magic-link/invite-redeem, soft no-op on both client and server until a Turnstile site is created in the dashboard — see Pass 4 remediation log and Open Items. |
 | 16 | Dead `Cookie: token=` auth fallback in `middleware.ts` — no route ever issued a `Set-Cookie` for it. | **Fixed.** Removed outright; Bearer-token-only now. |
-| 17 | No formal infra incident-response runbook (the support-agent runbook covers customer support, not infra incidents). | **Partially addressed** — the D1 backup/DR runbook covers the database-loss scenario specifically. A broader infra incident runbook (payment outage, cron silent failure escalation) is still open. |
-| 18 | No documented D1/Worker scaling ceilings or growth plan. | **Not addressed.** Flagged, no action taken this pass. |
-| 19 | No validation library (zod) — ad hoc `typeof x !== 'string'` checks per-route. | **Not addressed.** Works today; flagged as a nice-to-have, not urgent. |
+| 17 | No formal infra incident-response runbook (the support-agent runbook covers customer support, not infra incidents). | **Fixed (Pass 4).** `docs/dev/infra-incident-response-runbook.md` — detection signals, triage, response by category (bad deploy / D1 issue / payment issue / platform outage). Not yet drilled — see Open Items. |
+| 18 | No documented D1/Worker scaling ceilings or growth plan. | **Fixed (Pass 4).** `docs/dev/capacity-planning.md` — honest that no real traffic data exists, documents known platform ceilings and the code's one real unbounded-growth risk (payday/market-rate cron sweep). |
+| 19 | No validation library (zod) — ad hoc `typeof x !== 'string'` checks per-route. | Superseded by #28 below (fixed in Pass 3, extended in Pass 4). |
 | 20 | Rollback is manual (`wrangler versions deploy <id>@100`), not scripted. | **Not addressed.** |
 | 21 | Uproot's 7-year pseudonymised ledger retention isn't clearly disclosed in the privacy policy/deletion UI. | **Fixed (finding was partially stale).** The marketing privacy policy (Section 6) already disclosed this in full detail — that part of the original finding was wrong. The in-app Uproot confirmation modal, however, only said "anonymised but structurally preserved" with no timeframe — updated to state the 7-year window explicitly and link to the policy section. |
 | 22 | `display_name` isn't validated against real names — free-text, soft control only. | **Not addressed** — by design (`CLAUDE.md` §6, confirmed deliberate). |
@@ -86,7 +86,7 @@ Confirmed, not just claimed:
 | 23 | No full git-history secret scan (gitleaks/trufflehog) — current tree confirmed clean, history unverified. | **Fixed.** `.github/workflows/gitleaks.yml` — no local binary was available, so this runs as a CI check on push/PR/manual dispatch (full history via `fetch-depth: 0`) instead. |
 | 24 | Cloudflare API token scope unverified (should be Workers Scripts: Edit only). | **Still open — needs manual dashboard check.** Not verifiable from this environment (see Pass 3 in the remediation log). |
 | 25 | No SBOM/dependency-review CI step. | **Fixed.** `.github/workflows/dependency-review.yml` (`actions/dependency-review-action`, blocks PRs introducing high/critical-severity dependencies). |
-| 26 | No load testing / capacity planning doc. | Not addressed. |
+| 26 | No load testing / capacity planning doc. | **Fixed (Pass 4), baseline only.** `docs/dev/capacity-planning.md` + `worker/scripts/load-test.mjs`. Only tests the public `/api/health` endpoint — real authenticated-route numbers are still an open item. |
 | 27 | Caret-ranged dependency versions (standard practice, but no CI audit signal before this pass). | Superseded by the Dependabot/audit fix above. |
 | 28 | No validation library (zod) — ad hoc `typeof x !== 'string'` checks per-route. | **Partially fixed.** `worker/src/lib/validate.ts` added; applied to `/auth/invite/peek`, `/auth/invite/redeem`, `/auth/child/login`. Broader route-by-route adoption is intentionally incremental, not a single sweep. |
 
@@ -125,15 +125,26 @@ All Pass 3 code changes verified: `tsc --noEmit` clean, `vitest run` 333/333 pas
 
 ---
 
+**Pass 4 (same day — items 5 through 10 from the Pass 3 open-items list):**
+- **Off-platform D1 export backstop** — created `morechard-db-backups` R2 bucket with a 30-day expiry lifecycle rule already applied. `.github/workflows/d1-backup-export.yml` runs `wrangler d1 export` against production daily (04:00 UTC) and uploads to the bucket. This is the backstop Time Travel doesn't cover: a *deleted* D1 database resource, not just data loss within an existing one.
+- **Bank-details encrypted vault (Spec B)** — `app/src/lib/localBankDetails.ts` rewritten from plaintext sessionStorage to a per-family, non-extractable AES-GCM key stored in IndexedDB, encrypting entries at rest. Preserves the original "gone when the tab closes" property (which IndexedDB doesn't have by default) via a sessionStorage marker comparison on read — a stale marker means a new tab session, so the entry is wiped rather than decrypted. All three call sites (`PaymentBridgeSheet.tsx`, `HistoryTab.tsx`, `ChildProfileSettings.tsx`) converted to the new async signatures. Verified two ways: 8 new unit tests (round-trip, cross-family isolation, session-expiry, and a direct assertion that the raw IndexedDB record contains no plaintext PII), plus a live check in an actual Chromium browser via Playwright (not just jsdom) confirming the same behavior with real IndexedDB/Web Crypto.
+- **WAF/bot protection (Cloudflare Turnstile)** — full plumbing added (`worker/src/lib/turnstile.ts` server-side verification, `app/src/components/ui/TurnstileWidget.tsx` client widget), wired into the three most-exposed unauthenticated endpoints: login, magic-link request, and invite redemption. Deliberately a **soft no-op on both sides** until configured — the server skips verification entirely when `TURNSTILE_SECRET_KEY` isn't set, and the widget renders nothing when `VITE_TURNSTILE_SITE_KEY` isn't set. This was necessary: a hard-enforced check with no real Turnstile site configured would have locked out every login/registration in production immediately. **Needs user action to activate**: create a Turnstile site in the Cloudflare dashboard (Turnstile → Add site), then set `TURNSTILE_SECRET_KEY` (`wrangler secret put`, production env) and `VITE_TURNSTILE_SITE_KEY` (app build env).
+- **Formal infra incident-response runbook** (`docs/dev/infra-incident-response-runbook.md`) — detection signals inventory (what actually pages today vs. known gaps), triage steps, and response procedures by category (bad deploy, D1 issue, payment issue, Cloudflare outage), explicitly scoped as solo-operator (no on-call rotation exists).
+- **Broader zod adoption** — extended from the 3 routes done in Pass 3 to `auth.ts`'s remaining unauthenticated routes: `handleRegister`, `handleLogin`, `handleMagicLinkRequest`. Still incremental by design — the interior authenticated CRUD routes (chores/goals/completions/finance/settings/suggestions, ~28 more `parseBody` call sites) are lower marginal risk and left for future passes.
+- **Load testing / capacity planning** (`docs/dev/capacity-planning.md`) — honest that no real traffic data exists yet to size against. Documents known platform ceilings, flags the payday/market-rate cron sweep as the most likely first bottleneck (the only cron-triggered, unbounded-by-family-count loop with no batching), and ships a baseline `autocannon` script (`worker/scripts/load-test.mjs`, `npm run load-test`) that refuses to target the production hostname directly.
+
+All Pass 4 changes verified: `tsc --noEmit` clean and full test suite passing in both `worker/` (333 tests) and `app/` (101 tests, including 8 new vault tests) — plus the live browser check for the vault described above.
+
+---
+
 ## Open items for the next audit pass
 
 Roughly in priority order:
 1. **WebAuthn server-side verification** and **JWT storage model** (httpOnly cookie) — the two remaining architecture-level auth gaps. These are the highest-value items left; both need a proposed design before implementation, not a silent code change.
-2. **Sentry Alert Rule for Stripe payment failures** — code-side capture is done, the dashboard rule isn't created yet.
-3. **Cloudflare API token scope** — verify the CI secret is minimally scoped (dashboard check, see Pass 3 above).
-4. **Off-platform D1 export backstop** (`wrangler d1 export` to R2) — Time Travel doesn't cover a deleted D1 resource; needs a decision on frequency/retention/cost before building.
-5. Bank-details encrypted vault (Spec B, already tracked separately).
-6. WAF/bot protection (Cloudflare Turnstile or rate-limiting rules) if abuse patterns emerge.
-7. Formal infra incident-response runbook beyond the D1-specific one.
-8. Broader zod adoption across remaining routes, incrementally.
-9. Re-run the D1 restore drill periodically (every 6 months, or after any wrangler major-version upgrade) — see `docs/dev/d1-backup-recovery-runbook.md`.
+2. **Activate Turnstile** — create the Cloudflare dashboard site, set both keys (see Pass 4 above). Until then the plumbing is inert by design.
+3. **Sentry Alert Rule for Stripe payment failures** — code-side capture is done, the dashboard rule isn't created yet.
+4. **Cloudflare API token scope** — verify the CI secret is minimally scoped (dashboard check, see Pass 3).
+5. Formal load test against a preview URL with real authenticated traffic (chat, insights generation, PDF export) — the current baseline only hits the public `/api/health` endpoint.
+6. Broader zod adoption across the remaining ~28 authenticated-route call sites, incrementally.
+7. Re-run the D1 restore drill periodically (every 6 months, or after any wrangler major-version upgrade) — see `docs/dev/d1-backup-recovery-runbook.md`.
+8. This incident-response runbook itself hasn't been drilled (unlike the D1 one) — worth at least a tabletop walkthrough.

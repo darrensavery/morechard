@@ -79,9 +79,9 @@ export function PaymentBridgeSheet(props: Props) {
     bank:    true,
   };
 
-  function handleTileSelect(p: Provider) {
+  async function handleTileSelect(p: Provider) {
     if (p === 'bank') {
-      const saved = getDetails(familyId, child.id);
+      const saved = await getDetails(familyId, child.id);
       // UK has sort code + account number; US uses Zelle (email/phone).
       if (saved?.zelleHandle && !saved?.sortCode) {
         setView({
