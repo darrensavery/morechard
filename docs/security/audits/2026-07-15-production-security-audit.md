@@ -70,7 +70,7 @@ Confirmed, not just claimed:
 | 12 | No global API rate limiting outside login/PIN/SLT/chat endpoints. | **Deliberately not fixed.** A naive per-IP limiter risks throttling legitimate shared-IP family/school traffic (NAT collision) — worse than the gap it closes. The actual cost-amplification risk (`/api/chat`) was already covered before this audit. |
 | 13 | Child PIN lockout was flat 30s after 5 fails on a 4-digit PIN (10,000 combinations) — grindable in under a day. | **Fixed.** Escalating lockout (30s → 60s → 120s → ... capped at 24h) via new shared `worker/src/lib/pinLockout.ts`, applied to both child login and parent step-up PIN. New `pin_lockout_tier` column (migration `0086_pin_lockout_tier.sql`). |
 | 14 | Invite-code redemption (`/auth/invite/peek`, `/auth/invite/redeem`) had no rate limiting on a 6-char (~30-bit) code with a 72h TTL. | **Fixed.** IP-based rate limiting (15 attempts/10min, 15min lockout), mirroring the existing `login_attempts`/`slt_attempts` pattern. Migration `0085_invite_redeem_attempts.sql`. |
-| 15 | No WAF/bot-protection layer (no Cloudflare Access, Turnstile, or rate-limiting rules found in config). | **Plumbing done (Pass 4), inert until configured.** Turnstile wired into login/magic-link/invite-redeem, soft no-op on both client and server until a Turnstile site is created in the dashboard — see Pass 4 remediation log and Open Items. |
+| 15 | No WAF/bot-protection layer (no Cloudflare Access, Turnstile, or rate-limiting rules found in config). | **Fixed and activated 2026-07-15.** Turnstile wired into login/magic-link/invite-redeem; Cloudflare Turnstile site created (`app.morechard.com`, Managed mode), `TURNSTILE_SECRET_KEY` set on the production Worker and `VITE_TURNSTILE_SITE_KEY` added to `app/.env.production`. Live in production. |
 | 16 | Dead `Cookie: token=` auth fallback in `middleware.ts` — no route ever issued a `Set-Cookie` for it. | **Fixed.** Removed outright; Bearer-token-only now. |
 | 17 | No formal infra incident-response runbook (the support-agent runbook covers customer support, not infra incidents). | **Fixed (Pass 4).** `docs/dev/infra-incident-response-runbook.md` — detection signals, triage, response by category (bad deploy / D1 issue / payment issue / platform outage). Not yet drilled — see Open Items. |
 | 18 | No documented D1/Worker scaling ceilings or growth plan. | **Fixed (Pass 4).** `docs/dev/capacity-planning.md` — honest that no real traffic data exists, documents known platform ceilings and the code's one real unbounded-growth risk (payday/market-rate cron sweep). |
@@ -141,10 +141,10 @@ All Pass 4 changes verified: `tsc --noEmit` clean and full test suite passing in
 
 Roughly in priority order:
 1. **WebAuthn server-side verification** and **JWT storage model** (httpOnly cookie) — the two remaining architecture-level auth gaps. These are the highest-value items left; both need a proposed design before implementation, not a silent code change.
-2. **Activate Turnstile** — create the Cloudflare dashboard site, set both keys (see Pass 4 above). Until then the plumbing is inert by design.
-3. **Sentry Alert Rule for Stripe payment failures** — code-side capture is done, the dashboard rule isn't created yet.
-4. **Cloudflare API token scope** — verify the CI secret is minimally scoped (dashboard check, see Pass 3).
-5. Formal load test against a preview URL with real authenticated traffic (chat, insights generation, PDF export) — the current baseline only hits the public `/api/health` endpoint.
-6. Broader zod adoption across the remaining ~28 authenticated-route call sites, incrementally.
-7. Re-run the D1 restore drill periodically (every 6 months, or after any wrangler major-version upgrade) — see `docs/dev/d1-backup-recovery-runbook.md`.
+2. **Sentry Alert Rule for Stripe payment failures** — code-side capture is done, the dashboard rule isn't created yet.
+3. **Cloudflare API token scope** — verify the CI secret is minimally scoped (dashboard check, see Pass 3).
+4. Formal load test against a preview URL with real authenticated traffic (chat, insights generation, PDF export) — the current baseline only hits the public `/api/health` endpoint.
+5. Broader zod adoption across the remaining ~28 authenticated-route call sites, incrementally.
+6. Re-run the D1 restore drill periodically (every 6 months, or after any wrangler major-version upgrade) — see `docs/dev/d1-backup-recovery-runbook.md`.
+7. Watch Turnstile's pass/fail rate after activation (2026-07-15) — confirm Managed mode isn't creating friction for legitimate parents/children before considering it "done" rather than just "live".
 8. This incident-response runbook itself hasn't been drilled (unlike the D1 one) — worth at least a tabletop walkthrough.

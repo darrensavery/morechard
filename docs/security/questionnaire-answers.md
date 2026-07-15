@@ -31,7 +31,7 @@ Yes — OpenAI (`gpt-4o-mini`), disclosed in the Privacy Policy as an AI Mentor 
 Yes — parent login (10 attempts/10min, 15min lockout), child PIN and parent step-up PIN (escalating lockout, doubling 30s→24h cap on repeated lockouts), invite-code redemption (15 attempts/10min, 15min lockout), and AI chat (20 messages/hour per child). No blanket global API rate limiter — deliberately, to avoid throttling legitimate shared-IP family/school traffic. *(Verified 2026-07-15)*
 
 **Do you have a Web Application Firewall (WAF) or bot protection?**
-Cloudflare Turnstile integration exists end-to-end (server verification + client widget) on login, magic-link request, and invite redemption, but is currently inert — it soft-no-ops on both sides until a Turnstile site is created in the Cloudflare dashboard and its keys are configured. No Cloudflare Access or zone-level rate-limiting rules beyond the application-level throttling described above. *(Verified 2026-07-15 — status: plumbing done, activation pending)*
+Yes — Cloudflare Turnstile (Managed mode) is live on login, magic-link request, and invite redemption as of 2026-07-15. No Cloudflare Access or zone-level rate-limiting rules beyond that and the application-level throttling described above. *(Verified and activated 2026-07-15)*
 
 **Are all API endpoints authenticated?**
 All state-mutating and data-bearing endpoints are authenticated (JWT bearer token or `X-Admin-Key` for internal admin routes). A small number of routes are intentionally public: webhook receivers (Stripe, Zoho Desk, Sentry — all signature-verified internally), invite-code peek (read-only existence check, rate-limited), and health-check endpoints. *(Verified 2026-07-15)*

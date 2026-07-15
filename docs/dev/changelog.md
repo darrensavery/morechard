@@ -6,6 +6,9 @@ A running log of notable engineering work, grouped by day, for future reference.
 
 ## 2026-07-15
 
+### Turnstile activated
+Created the Cloudflare Turnstile site (`app.morechard.com`, Managed mode) and wired in both keys: `TURNSTILE_SECRET_KEY` set on the production Worker (`wrangler secret put`), `VITE_TURNSTILE_SITE_KEY` added to `app/.env.production` (public key, safe to commit — same pattern as the existing `VITE_POSTHOG_KEY`). The plumbing from the fourth security-audit pass earlier today is now live rather than a no-op — login, magic-link request, and invite redemption are all actually challenge-protected. Also documented the test-key pattern for local dev in `worker/.dev.vars.example`.
+
 ### Production security audit — school-endorsement readiness pass
 Ran a 13-domain production security audit (auth, database, app security, hosting, deployment, scaling, recovery, monitoring, secrets, supply chain, compliance) ahead of a potential school endorsement. Full findings and severity ranking captured in the conversation; "quick win" gaps closed in this pass:
 - **Security headers** — API worker now sets `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Strict-Transport-Security`, `Permissions-Policy`, and a `default-src 'none'` CSP on every JSON response (the admin HTML panel gets its own permissive CSP so it isn't broken by the blanket one). The app's `_headers` (previously cache-control only) now carries the full header set plus a CSP scoped to its actual third parties (Stripe pricing table, Sentry, PostHog reverse-proxy, dicebear avatars).

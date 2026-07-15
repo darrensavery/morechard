@@ -17,3 +17,7 @@ ZOHO_ORG_ID=xxxxxxxxx
 ZOHO_DEPARTMENT_ID=xxxxxxxxxxxxxxxxxx
 STRIPE_SUPPORT_AGENT_WEBHOOK_SECRET=whsec_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 SENTRY_WEBHOOK_SECRET=replace-with-32-plus-char-random-string
+# Optional — Cloudflare Turnstile. Omit to leave verification as a no-op locally.
+# For local testing, use Cloudflare's published always-pass test keys instead of
+# a real one: https://developers.cloudflare.com/turnstile/troubleshooting/testing/
+TURNSTILE_SECRET_KEY=1x0000000000000000000000000000000AA
