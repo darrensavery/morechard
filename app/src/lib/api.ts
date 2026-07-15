@@ -1,10 +1,19 @@
 /**
  * Morechard API client
  * All requests go through the Cloudflare Worker at /api or /auth.
- * JWT is stored in localStorage under 'mc_token'.
+ *
+ * Web: the JWT lives in an HttpOnly cookie the browser attaches automatically
+ * (see worker/src/lib/cookies.ts) — this client never reads or stores it.
+ * Native (Capacitor): no reliable cookie story in a cross-origin WebView, so
+ * the JWT is kept in Keychain/Keystore-backed secure storage and sent as a
+ * Bearer header.
  */
 
 import { Capacitor } from '@capacitor/core';
+import { SecureStoragePlugin } from 'capacitor-secure-storage-plugin';
+import { clearCachedAuthState } from './authState.js';
+
+const SECURE_STORAGE_KEY = 'mc_token';
 
 // On Cloudflare Pages, relative URLs work because Pages Functions proxy
 // /auth/* and /api/* to the Worker. Inside Capacitor (Android/iOS), the app
@@ -19,30 +28,42 @@ export function apiUrl(path: string): string {
   return `${BASE}${path}`;
 }
 
-/** Standard auth + content-type headers for callers that bypass request(). */
-export function authHeaders(contentType?: string): Record<string, string> {
-  const token = getToken();
+/** Native-only: reads the Bearer token from Keychain/Keystore. Resolves null on web
+ *  (the cookie is HttpOnly and invisible to JS by design) or on any storage error. */
+export async function getToken(): Promise<string | null> {
+  if (!Capacitor.isNativePlatform()) return null;
+  try {
+    const { value } = await SecureStoragePlugin.get({ key: SECURE_STORAGE_KEY });
+    return value ?? null;
+  } catch {
+    return null; // corrupted/inaccessible keychain — treat as logged out, never throw
+  }
+}
+
+/** Native-only: writes the Bearer token to Keychain/Keystore. No-op on web. */
+export async function setToken(token: string): Promise<void> {
+  if (!Capacitor.isNativePlatform()) return;
+  await SecureStoragePlugin.set({ key: SECURE_STORAGE_KEY, value: token });
+}
+
+/** Native-only: clears the Bearer token from Keychain/Keystore. No-op on web
+ *  (there the server-side clearAuthCookie() on /auth/logout is what matters). */
+export async function clearToken(): Promise<void> {
+  clearCachedAuthState();
+  if (!Capacitor.isNativePlatform()) return;
+  await SecureStoragePlugin.remove({ key: SECURE_STORAGE_KEY }).catch(() => null);
+}
+
+/** Standard auth + content-type headers for callers that bypass request() (native only —
+ *  used by the proof-upload/receipt-upload raw fetch() calls further down this file). */
+export async function authHeaders(contentType?: string): Promise<Record<string, string>> {
   const h: Record<string, string> = {};
   if (contentType) h['Content-Type'] = contentType;
-  if (token) h.Authorization = `Bearer ${token}`;
+  if (Capacitor.isNativePlatform()) {
+    const token = await getToken();
+    if (token) h.Authorization = `Bearer ${token}`;
+  }
   return h;
-}
-
-export function getToken(): string | null {
-  return localStorage.getItem('mc_token');
-}
-
-export function setToken(token: string): void {
-  localStorage.setItem('mc_token', token);
-}
-
-export function clearToken(): void {
-  localStorage.removeItem('mc_token');
-  // mc_family_id / mc_user_id / mc_role are no longer written to localStorage.
-  // Remove any legacy values that may have been persisted by an older client version.
-  localStorage.removeItem('mc_family_id');
-  localStorage.removeItem('mc_user_id');
-  localStorage.removeItem('mc_role');
 }
 
 export function getFamilyId(): string {
@@ -71,14 +92,31 @@ export function getRole(): 'parent' | 'child' | null {
 }
 
 async function request<T>(path: string, options: RequestInit = {}, _retries = 2, skip402 = false): Promise<T> {
-  const token = getToken();
+  const isNative = Capacitor.isNativePlatform();
+  const isWrite  = !['GET', 'HEAD', 'OPTIONS'].includes((options.method ?? 'GET').toUpperCase());
+
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
     ...(options.headers as Record<string, string> ?? {}),
   };
 
-  const res = await fetch(`${BASE}${path}`, { ...options, headers });
+  if (isNative) {
+    const token = await getToken();
+    if (token) headers.Authorization = `Bearer ${token}`;
+  } else if (isWrite) {
+    // CSRF defense — see worker/src/lib/middleware.ts requireCsrfHeader().
+    // Cross-site attacks can't set custom headers, so this alone blocks them.
+    headers['X-Morechard-Client'] = '1';
+  }
+
+  const res = await fetch(`${BASE}${path}`, {
+    ...options,
+    headers,
+    // Web only: makes the browser send/receive the HttpOnly mc_token cookie.
+    // Harmless to set on native too (native uses an absolute cross-origin URL
+    // and doesn't rely on cookies either way).
+    credentials: isNative ? 'omit' : 'include',
+  });
 
   // D1 transient reset — retry up to twice with a short delay
   if (res.status === 503 && _retries > 0) {
@@ -100,7 +138,7 @@ async function request<T>(path: string, options: RequestInit = {}, _retries = 2,
   // Clearing it would force the child through the full re-join flow (6-digit code),
   // which is wrong — only the token needs refreshing.
   if (res.status === 401 && !path.startsWith('/auth/')) {
-    localStorage.removeItem('mc_token');
+    await clearToken();
     window.location.href = '/';
     throw new Error((data as Record<string, unknown>).error as string ?? 'Session expired');
   }
@@ -159,7 +197,7 @@ export async function childLogin(family_id: string, child_id: string, pin: strin
 
 export async function logout(): Promise<void> {
   await request('/auth/logout', { method: 'POST' });
-  clearToken();
+  await clearToken();
 }
 
 export interface MeResult {
@@ -494,7 +532,8 @@ export async function postReviewFeedback(payload: {
 export async function uploadProof(completionId: string, file: Blob): Promise<{ proof_url: string }> {
   const res = await fetch(apiUrl(`/api/completions/${completionId}/proof`), {
     method: 'POST',
-    headers: authHeaders(file.type || 'application/octet-stream'),
+    headers: await authHeaders(file.type || 'application/octet-stream'),
+    credentials: Capacitor.isNativePlatform() ? 'omit' : 'include',
     body: file,
   });
   const data = await res.json() as { proof_url?: string; error?: string };
@@ -505,7 +544,8 @@ export async function uploadProof(completionId: string, file: Blob): Promise<{ p
 /** Fetch proof photo from the Worker and return a local blob URL for use in <img>. */
 export async function getProofUrl(completionId: string): Promise<{ url: string }> {
   const res = await fetch(apiUrl(`/api/completions/${completionId}/proof`), {
-    headers: authHeaders(),
+    headers: await authHeaders(),
+    credentials: Capacitor.isNativePlatform() ? 'omit' : 'include',
   });
   if (!res.ok) {
     const data = await res.json().catch(() => ({})) as { message?: string };
@@ -1257,7 +1297,8 @@ export async function createSharedExpense(body: {
 export async function uploadReceipt(expenseId: number, file: File): Promise<{ id: number; receipt_uploaded_at: number }> {
   const res = await fetch(apiUrl(`/api/shared-expenses/${expenseId}/receipt`), {
     method: 'POST',
-    headers: authHeaders(file.type || 'application/octet-stream'),
+    headers: await authHeaders(file.type || 'application/octet-stream'),
+    credentials: Capacitor.isNativePlatform() ? 'omit' : 'include',
     body: file,
   });
   const data = await res.json() as { id?: number; receipt_uploaded_at?: number; error?: string };
