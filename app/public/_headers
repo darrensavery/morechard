@@ -1,12 +1,30 @@
 # index.html — always revalidate so users pick up new deployments immediately
 /
   Cache-Control: no-cache, no-store, must-revalidate
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=()
+  Strict-Transport-Security: max-age=31536000; includeSubDomains
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://js.stripe.com; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: https://api.dicebear.com; connect-src 'self' https://api.morechard.com https://sap.morechard.com https://eu.posthog.com https://*.ingest.de.sentry.io https://*.ingest.sentry.io; frame-src https://js.stripe.com; object-src 'none'; base-uri 'self'; frame-ancestors 'none'
 
 /index.html
   Cache-Control: no-cache, no-store, must-revalidate
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=()
+  Strict-Transport-Security: max-age=31536000; includeSubDomains
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://js.stripe.com; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: https://api.dicebear.com; connect-src 'self' https://api.morechard.com https://sap.morechard.com https://eu.posthog.com https://*.ingest.de.sentry.io https://*.ingest.sentry.io; frame-src https://js.stripe.com; object-src 'none'; base-uri 'self'; frame-ancestors 'none'
 
 /404.html
   Cache-Control: no-cache, no-store, must-revalidate
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=()
+  Strict-Transport-Security: max-age=31536000; includeSubDomains
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://js.stripe.com; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: https://api.dicebear.com; connect-src 'self' https://api.morechard.com https://sap.morechard.com https://eu.posthog.com https://*.ingest.de.sentry.io https://*.ingest.sentry.io; frame-src https://js.stripe.com; object-src 'none'; base-uri 'self'; frame-ancestors 'none'
 
 # Hashed JS/CSS assets — safe to cache long-term (filename changes on each build)
 /assets/*

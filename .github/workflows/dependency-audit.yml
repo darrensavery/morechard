@@ -1,0 +1,38 @@
+name: Dependency Audit (informational)
+
+# Runs `npm audit` across every workspace and prints results to the job
+# summary. Intentionally non-blocking (`|| true`): the existing dependency
+# tree already carries known high/critical advisories in dev-only tooling
+# (wrangler/vite/miniflare/vitest) that would break every deploy if this
+# gated the pipeline. Flip to blocking once those are triaged.
+
+on:
+  pull_request:
+  schedule:
+    - cron: '0 6 * * 1' # Monday 06:00 UTC
+  workflow_dispatch:
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    strategy:
+      matrix:
+        workspace: ['.', 'worker', 'app', 'marketing']
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        working-directory: ${{ matrix.workspace }}
+        run: npm ci
+
+      - name: npm audit (high/critical)
+        working-directory: ${{ matrix.workspace }}
+        run: |
+          echo "### npm audit — ${{ matrix.workspace }}" >> "$GITHUB_STEP_SUMMARY"
+          npm audit --audit-level=high >> "$GITHUB_STEP_SUMMARY" 2>&1 || true

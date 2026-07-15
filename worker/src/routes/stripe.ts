@@ -26,6 +26,7 @@
  * and verifyWebhookSignature() — the license-grant logic below them is provider-neutral.
  */
 
+import * as Sentry from '@sentry/cloudflare';
 import { Env, PaymentType } from '../types.js';
 import { json, error } from '../lib/response.js';
 import { JwtPayload } from '../lib/jwt.js';
@@ -323,6 +324,31 @@ export async function handleStripeWebhook(
       // Return 200 so Stripe stops retrying — we log the error for diagnosis
       return json({ received: true, error: String(err) });
     }
+  }
+
+  const FAILURE_EVENT_TYPES = new Set([
+    'checkout.session.async_payment_failed',
+    'checkout.session.expired',
+    'payment_intent.payment_failed',
+    'charge.failed',
+    'invoice.payment_failed',
+  ]);
+
+  if (FAILURE_EVENT_TYPES.has(event.type)) {
+    const obj = event.data.object as unknown as Record<string, unknown>;
+    const lastError = obj['last_payment_error'] as Record<string, unknown> | undefined;
+    // Distinct fingerprint so this groups into its own Sentry issue — a
+    // dedicated alert rule can fire on this specific fingerprint rather than
+    // relying on generic exception-rate alerting to happen to cover it.
+    Sentry.captureMessage(`Stripe payment failure: ${event.type}`, {
+      level: 'error',
+      fingerprint: ['stripe-payment-failure', event.type],
+      extra: {
+        stripe_object_id: obj['id'],
+        family_id: obj['metadata'] && (obj['metadata'] as Record<string, string>)['family_id'],
+        failure_message: lastError?.['message'] ?? obj['failure_message'],
+      },
+    });
   }
 
   // Always 200 — Stripe retries on non-2xx

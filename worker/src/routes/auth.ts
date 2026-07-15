@@ -22,6 +22,7 @@ import { signJwt } from '../lib/jwt.js';
 import type { JwtPayload } from '../lib/jwt.js';
 import { nanoid } from '../lib/nanoid.js';
 import { sha256, computeRecordHash, GENESIS_HASH } from '../lib/hash.js';
+import { recordPinFailure, clearPinLockout } from '../lib/pinLockout.js';
 
 const MAGIC_LINK_EXPIRY  = 15 * 60;         // 15 minutes
 const PARENT_JWT_EXPIRY  = 365 * 24 * 3600; // 1 year
@@ -477,12 +478,12 @@ export async function handleChildLogin(request: Request, env: Env): Promise<Resp
   if (!pin       || typeof pin       !== 'string') return error('pin required');
 
   const user = await env.DB
-    .prepare(`SELECT u.id, u.pin_hash, u.pin_attempt_count, u.pin_locked_until
+    .prepare(`SELECT u.id, u.pin_hash, u.pin_attempt_count, u.pin_locked_until, u.pin_lockout_tier
               FROM users u
               JOIN family_roles fr ON fr.user_id = u.id
               WHERE u.id = ? AND fr.family_id = ? AND fr.role = 'child'`)
     .bind(child_id, family_id)
-    .first<{ id: string; pin_hash: string | null; pin_attempt_count: number; pin_locked_until: number | null }>();
+    .first<{ id: string; pin_hash: string | null; pin_attempt_count: number; pin_locked_until: number | null; pin_lockout_tier: number }>();
 
   if (!user || !user.pin_hash) return error('Invalid credentials', 401);
 
@@ -500,32 +501,15 @@ export async function handleChildLogin(request: Request, env: Env): Promise<Resp
   const valid = await verifyPassword(pin as string, user.pin_hash);
 
   if (!valid) {
-    const newCount = (user.pin_attempt_count ?? 0) + 1;
-    if (newCount >= 5) {
-      await env.DB
-        .prepare('UPDATE users SET pin_attempt_count = 0, pin_locked_until = ? WHERE id = ?')
-        .bind(now + 30, user.id)
-        .run();
-      logger.warn('handleChildLogin', 'child PIN failed — account locked', {
-        child_id, family_id, attempt: newCount,
-      });
-    } else {
-      await env.DB
-        .prepare('UPDATE users SET pin_attempt_count = ? WHERE id = ?')
-        .bind(newCount, user.id)
-        .run();
-      logger.warn('handleChildLogin', 'child PIN failed', {
-        child_id, family_id, attempt: newCount,
-      });
-    }
+    await recordPinFailure(env, user.id, user.pin_attempt_count ?? 0, user.pin_lockout_tier ?? 0, now, 5);
+    logger.warn('handleChildLogin', 'child PIN failed', {
+      child_id, family_id, attempt: (user.pin_attempt_count ?? 0) + 1,
+    });
     return error('Invalid credentials', 401);
   }
 
   // Correct — reset counters
-  await env.DB
-    .prepare('UPDATE users SET pin_attempt_count = 0, pin_locked_until = NULL WHERE id = ?')
-    .bind(user.id)
-    .run();
+  await clearPinLockout(env, user.id);
 
   // Fetch current app_view for this child
   const settingsRow = await env.DB
@@ -1171,9 +1155,9 @@ export async function handleVerifyPin(request: Request, env: Env): Promise<Respo
   const now = Math.floor(Date.now() / 1000);
 
   const user = await env.DB
-    .prepare('SELECT parent_pin_hash, pin_attempt_count, pin_locked_until FROM users WHERE id = ?')
+    .prepare('SELECT parent_pin_hash, pin_attempt_count, pin_locked_until, pin_lockout_tier FROM users WHERE id = ?')
     .bind(caller.sub)
-    .first<{ parent_pin_hash: string | null; pin_attempt_count: number; pin_locked_until: number | null }>();
+    .first<{ parent_pin_hash: string | null; pin_attempt_count: number; pin_locked_until: number | null; pin_lockout_tier: number }>();
 
   if (!user) return error('User not found', 404);
   if (!user.parent_pin_hash) return error('No PIN set', 400);
@@ -1187,27 +1171,12 @@ export async function handleVerifyPin(request: Request, env: Env): Promise<Respo
   const valid = await verifyPassword(pin as string, user.parent_pin_hash);
 
   if (!valid) {
-    const newCount = (user.pin_attempt_count ?? 0) + 1;
-    if (newCount >= 3) {
-      // Lock for 30 seconds, reset counter
-      await env.DB
-        .prepare('UPDATE users SET pin_attempt_count = 0, pin_locked_until = ? WHERE id = ?')
-        .bind(now + 30, caller.sub)
-        .run();
-    } else {
-      await env.DB
-        .prepare('UPDATE users SET pin_attempt_count = ? WHERE id = ?')
-        .bind(newCount, caller.sub)
-        .run();
-    }
+    await recordPinFailure(env, caller.sub, user.pin_attempt_count ?? 0, user.pin_lockout_tier ?? 0, now, 3);
     return error('Incorrect PIN', 401);
   }
 
   // Correct — reset counters
-  await env.DB
-    .prepare('UPDATE users SET pin_attempt_count = 0, pin_locked_until = NULL WHERE id = ?')
-    .bind(caller.sub)
-    .run();
+  await clearPinLockout(env, caller.sub);
 
   return json({ ok: true });
 }

@@ -147,6 +147,7 @@ import {
   handleSltExchange,
 } from './routes/auth.js';
 import { requireAuth, requireRole, requireFamilyMatch } from './lib/middleware.js';
+import { requireAdmin, requireAdminBasicAuth } from './lib/adminAuth.js';
 import { checkTrialStatus, getTrialStatus } from './lib/trial.js';
 import { handleCreateCheckout, handleStripeWebhook, handleCancelPlan, handleShieldUpgradePrice } from './routes/stripe.js';
 import {
@@ -278,6 +279,19 @@ export default Sentry.withSentry<Env, IncidentQueueMessage>(
 
       const headers = new Headers(response.headers);
       for (const [k, v] of Object.entries(corsHeaders())) headers.set(k, v);
+      // The admin HTML panel needs its own CSP (inline script, Google Fonts,
+      // same-origin fetch) — don't clobber it with the JSON-API default-src 'none'.
+      const isHtml = (headers.get('Content-Type') ?? '').includes('text/html');
+      for (const [k, v] of Object.entries(securityHeaders())) {
+        if (isHtml && k === 'Content-Security-Policy') continue;
+        headers.set(k, v);
+      }
+      if (isHtml && !headers.has('Content-Security-Policy')) {
+        headers.set(
+          'Content-Security-Policy',
+          "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'",
+        );
+      }
       return new Response(response.body, { status: response.status, headers });
     },
 
@@ -558,8 +572,14 @@ async function route(request: Request, env: Env, method: string, path: string): 
   // Stripe webhook — public but signature-verified internally (support-agent isolated endpoint)
   if (path === '/api/support-agent/stripe-webhook' && method === 'POST') return handleSupportAgentStripeWebhook(request, env);
 
-  // Admin — self-contained browser panel (login gated client-side by X-Admin-Key)
-  if (path === '/admin' && method === 'GET') return serveAdminUI();
+  // Admin — self-contained browser panel. Page load itself is gated by HTTP
+  // Basic Auth (browser-native prompt); the panel's own JS then uses
+  // X-Admin-Key for its data calls, which were already gated separately.
+  if (path === '/admin' && method === 'GET') {
+    const basicAuthCheck = requireAdminBasicAuth(request, env);
+    if (basicAuthCheck) return basicAuthCheck;
+    return serveAdminUI();
+  }
 
   // Admin — protected by X-Admin-Key header
   if (path === '/api/admin/promo-codes' && method === 'POST') return handleCreatePromoCode(request, env);
@@ -977,7 +997,11 @@ async function route(request: Request, env: Env, method: string, path: string): 
 
   // Governance — mutual consent handshake for verify_mode changes
   if (path === '/api/governance/request' && method === 'POST') return withAuth(request, auth, env, handleGovernanceRequest);
-  if (path === '/api/governance/expire'  && method === 'POST') return handleGovernanceExpire(request, env); // cron/admin, no auth needed
+  if (path === '/api/governance/expire'  && method === 'POST') {
+    const adminCheck = requireAdmin(request, env);
+    if (adminCheck) return adminCheck;
+    return handleGovernanceExpire(request, env);
+  }
   if (path === '/api/governance'         && method === 'GET')  return withAuth(request, auth, env, handleGovernanceGet);
 
   const govActionMatch = path.match(/^\/api\/governance\/(\d+)\/(confirm|reject)$/);
@@ -1050,5 +1074,20 @@ function corsHeaders(): Record<string, string> {
     'Access-Control-Allow-Origin':  'https://app.morechard.com',
     'Access-Control-Allow-Methods': 'GET, POST, PATCH, DELETE, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  };
+}
+
+// Baseline hardening headers for every API response. The API only ever
+// returns JSON (never renders untrusted HTML), so CSP here just needs to
+// forbid the response being treated as a document/frame — the app's own
+// _headers file carries the real content CSP.
+function securityHeaders(): Record<string, string> {
+  return {
+    'X-Content-Type-Options':   'nosniff',
+    'X-Frame-Options':          'DENY',
+    'Referrer-Policy':          'strict-origin-when-cross-origin',
+    'Content-Security-Policy':  "default-src 'none'; frame-ancestors 'none'",
+    'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
+    'Permissions-Policy':       'camera=(), microphone=(), geolocation=()',
   };
 }

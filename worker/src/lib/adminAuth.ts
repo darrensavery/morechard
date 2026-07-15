@@ -14,3 +14,36 @@ export function requireAdmin(request: Request, env: Env): Response | null {
   const b = new TextEncoder().encode(env.ADMIN_SECRET);
   return timingSafeEqual(a, b) ? null : error('Unauthorised', 401);
 }
+
+/**
+ * Gates the GET /admin page load itself (the panel's data calls are already
+ * gated by requireAdmin() via the X-Admin-Key header the panel's JS sends —
+ * but a plain browser navigation can't set that, so the HTML shell was
+ * previously reachable by anyone). Uses HTTP Basic Auth against the same
+ * ADMIN_SECRET so there's no second credential to manage; the browser's
+ * native prompt handles it, and the panel's own X-Admin-Key flow for data
+ * calls is unaffected.
+ */
+export function requireAdminBasicAuth(request: Request, env: Env): Response | null {
+  const unauthorized = () => new Response('Unauthorised', {
+    status: 401,
+    headers: { 'WWW-Authenticate': 'Basic realm="Morechard Admin"' },
+  });
+
+  if (!env.ADMIN_SECRET) return unauthorized();
+
+  const header = request.headers.get('Authorization');
+  if (!header?.startsWith('Basic ')) return unauthorized();
+
+  let password: string;
+  try {
+    const decoded = atob(header.slice(6));
+    password = decoded.slice(decoded.indexOf(':') + 1);
+  } catch {
+    return unauthorized();
+  }
+
+  const a = new TextEncoder().encode(password);
+  const b = new TextEncoder().encode(env.ADMIN_SECRET);
+  return timingSafeEqual(a, b) ? null : unauthorized();
+}

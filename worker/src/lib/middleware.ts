@@ -89,17 +89,12 @@ export function requireFamilyMatch(auth: JwtPayload, family_id: string): Respons
 // ----------------------------------------------------------------
 
 function extractToken(request: Request): string | null {
-  // 1. Authorization: Bearer <token>
+  // Authorization: Bearer <token> — the only supported scheme. A prior
+  // `Cookie: token=` fallback was removed: no route ever issues a
+  // Set-Cookie for it, so it was dead, unauthenticated attack surface.
   const authHeader = request.headers.get('Authorization');
   if (authHeader?.startsWith('Bearer ')) {
     return authHeader.slice(7).trim();
-  }
-
-  // 2. Cookie: token=<token>  (for browser PWA clients)
-  const cookie = request.headers.get('Cookie');
-  if (cookie) {
-    const match = cookie.match(/(?:^|;\s*)token=([^;]+)/);
-    if (match) return match[1];
   }
 
   return null;

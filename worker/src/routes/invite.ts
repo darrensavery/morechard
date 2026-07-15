@@ -18,6 +18,58 @@ const INVITE_TTL = 72 * 60 * 60; // 72 hours in seconds
 const CHILD_JWT_EXPIRY = 90 * 24 * 3600;  // 90 days — children have no re-auth mechanism
 const PARENT_JWT_EXPIRY = 365 * 24 * 3600;
 
+// Rate limiting for invite peek/redeem — codes are 6 chars (~30 bits) with a
+// 72h TTL, so an unthrottled caller could grind through the keyspace.
+const INVITE_RL_MAX_ATTEMPTS = 15;
+const INVITE_RL_WINDOW_SEC   = 600;  // 10-minute rolling window
+const INVITE_RL_LOCKOUT_SEC  = 900;  // 15-minute lockout after exceeding limit
+
+async function checkInviteRateLimit(env: Env, ip: string): Promise<Response | null> {
+  const nowSec = Math.floor(Date.now() / 1000);
+  const rl = await env.DB
+    .prepare('SELECT attempts, window_start, locked_until FROM invite_redeem_attempts WHERE ip = ?')
+    .bind(ip)
+    .first<{ attempts: number; window_start: number; locked_until: number }>()
+    .catch(() => null);
+
+  if (!rl) return null;
+  if (rl.locked_until > nowSec) return error('Too many attempts — please try again later.', 429);
+  if (nowSec - rl.window_start < INVITE_RL_WINDOW_SEC && rl.attempts >= INVITE_RL_MAX_ATTEMPTS) {
+    await env.DB
+      .prepare('UPDATE invite_redeem_attempts SET locked_until = ? WHERE ip = ?')
+      .bind(nowSec + INVITE_RL_LOCKOUT_SEC, ip)
+      .run()
+      .catch(() => null);
+    return error('Too many attempts — please try again later.', 429);
+  }
+  return null;
+}
+
+async function recordInviteAttempt(env: Env, ip: string): Promise<void> {
+  const nowSec = Math.floor(Date.now() / 1000);
+  const rl = await env.DB
+    .prepare('SELECT window_start FROM invite_redeem_attempts WHERE ip = ?')
+    .bind(ip)
+    .first<{ window_start: number }>()
+    .catch(() => null);
+
+  if (!rl || nowSec - rl.window_start >= INVITE_RL_WINDOW_SEC) {
+    await env.DB
+      .prepare(`INSERT INTO invite_redeem_attempts (ip, attempts, window_start, locked_until)
+                VALUES (?, 1, ?, 0)
+                ON CONFLICT(ip) DO UPDATE SET attempts = 1, window_start = excluded.window_start, locked_until = 0`)
+      .bind(ip, nowSec)
+      .run()
+      .catch(() => null);
+  } else {
+    await env.DB
+      .prepare('UPDATE invite_redeem_attempts SET attempts = attempts + 1 WHERE ip = ?')
+      .bind(ip)
+      .run()
+      .catch(() => null);
+  }
+}
+
 // ── Generates a cryptographically random 6-char uppercase code ──────────────
 function generateCode(): string {
   const chars   = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no ambiguous chars (0/O, 1/I)
@@ -86,6 +138,11 @@ export async function handleGenerateInvite(request: Request, env: Env): Promise<
 // Public route. Validates a code is active without redeeming it.
 // Returns { role } so the client can render the correct details form.
 export async function handlePeekInvite(request: Request, env: Env): Promise<Response> {
+  const ip = clientIp(request);
+  const rateLimited = await checkInviteRateLimit(env, ip);
+  if (rateLimited) return rateLimited;
+  await recordInviteAttempt(env, ip);
+
   const body = await parseBody(request);
   if (!body) return error('Invalid JSON body');
 
@@ -117,6 +174,11 @@ export async function handlePeekInvite(request: Request, env: Env): Promise<Resp
 //
 // Returns: JWT for the newly-joined user
 export async function handleRedeemInvite(request: Request, env: Env): Promise<Response> {
+  const ip = clientIp(request);
+  const rateLimited = await checkInviteRateLimit(env, ip);
+  if (rateLimited) return rateLimited;
+  await recordInviteAttempt(env, ip);
+
   const body = await parseBody(request);
   if (!body) return error('Invalid JSON body');
 
@@ -136,8 +198,6 @@ export async function handleRedeemInvite(request: Request, env: Env): Promise<Re
   if (!invite)              return error('Invalid invite code', 404);
   if (invite.redeemed_at)   return error('Invite code already used', 409);
   if (now > invite.expires_at) return error('Invite code has expired', 410);
-
-  const ip = clientIp(request);
 
   if (invite.role === 'child') {
     return redeemChildInvite(invite.code, invite.family_id, invite.child_id, body, now, ip, env);

@@ -100,7 +100,11 @@ export async function getChildIntelligence(
 
   return {
     child_id: childId,
-    display_name: identity.display_name,
+    // First token only — this flows straight into OpenAI prompts (chat.ts).
+    // display_name is a free-text field (nickname recommended, not enforced),
+    // so this stops a child-entered full name from leaking to the third-party
+    // LLM if they ever typed one.
+    display_name: (identity.display_name ?? '').split(' ')[0] || identity.display_name,
     locale: (identity.locale as Locale) ?? 'en',
     currency: (identity.currency as Currency) ?? 'GBP',
     app_view: (identity.app_view as 'ORCHARD' | 'CLEAN') ?? 'ORCHARD',
