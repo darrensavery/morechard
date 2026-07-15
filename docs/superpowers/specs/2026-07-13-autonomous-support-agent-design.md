@@ -117,6 +117,18 @@ to opening PRs against `docs/support/**`.
 
 ## 2. Authority model
 
+> **As-built note (Phase 1, shipped):** the "no human step" AUTO
+> description below is the *original* design. Partway through building
+> Phase 1, the zero-touch AUTO tier was deliberately rejected in favor of
+> **one-tap approve** — every AUTO tool execution still requires a human
+> to physically click (the emailed one-tap link, or the `/admin` → Agent
+> Review "Approve" button), just with a single tap instead of a full
+> review-and-approve flow. This makes the as-built AUTO tier behave much
+> closer to this spec's own GATED description than its AUTO one. Treat
+> `docs/dev/support-agent-runbook.md` as the source of truth for current
+> behavior; this section remains as the historical design rationale for
+> why tools are split into tiers at all.
+
 Every capability the agent can invoke is a **registered tool** with a
 hard-coded `tier`. The registry is **default-deny**: a tool with no explicit
 tier assignment cannot be invoked at all. Tiers are enforced in code inside
@@ -132,7 +144,7 @@ active sessions, Stripe read (charge/refund status), Freshdesk read
 write grant at the database layer — a defense-in-depth backstop below the
 application-layer tier check.
 
-### AUTO (executes + replies immediately, no human step)
+### AUTO (original design: executes + replies immediately, no human step — see as-built note above; shipped as one-tap approve instead)
 Restricted to actions that are **idempotent, zero marginal cost, and
 self-correcting** (worst case of a wrong call: the user just asks again or
 re-tries the same self-service flow a human would have pointed them to
