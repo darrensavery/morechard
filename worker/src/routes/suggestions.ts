@@ -9,9 +9,11 @@
 
 import { Env } from '../types.js';
 
-import { json, error, parseBody } from '../lib/response.js';
+import { json, error } from '../lib/response.js';
 import { nanoid } from '../lib/nanoid.js';
 import { JwtPayload } from '../lib/jwt.js';
+import { z } from 'zod';
+import { parseValidatedBody } from '../lib/validate.js';
 
 type AuthedRequest = Request & { auth: JwtPayload };
 
@@ -19,18 +21,25 @@ const VALID_FREQUENCY = new Set([
   'daily', 'weekly', 'bi_weekly', 'monthly', 'quarterly', 'as_needed', 'school_days',
 ]);
 
+const suggestionCreateSchema = z.object({
+  family_id:       z.any(),
+  title:           z.string().min(1, 'title required'),
+  frequency:       z.any().optional(),
+  proposed_amount: z.number().int('proposed_amount must be a positive integer').positive('proposed_amount must be a positive integer'),
+  reason:          z.any().optional(),
+  due_date:        z.any().optional(),
+});
+
 export async function handleSuggestionCreate(request: Request, env: Env): Promise<Response> {
   const auth = (request as AuthedRequest).auth;
   if (auth.role !== 'child') return error('Only children can suggest jobs', 403);
 
-  const body = await parseBody(request);
-  if (!body) return error('Invalid JSON');
+  const parsed = await parseValidatedBody(request, suggestionCreateSchema);
+  if (parsed instanceof Response) return parsed;
 
-  const { family_id, title, frequency, proposed_amount, reason, due_date } = body;
+  const { family_id, title, frequency, proposed_amount, reason, due_date } = parsed;
   if (!family_id || family_id !== auth.family_id) return error('Forbidden', 403);
-  if (!title || typeof title !== 'string' || !(title as string).trim()) return error('title required');
-  if (!Number.isInteger(proposed_amount) || (proposed_amount as number) <= 0)
-    return error('proposed_amount must be a positive integer');
+  if (!title.trim()) return error('title required');
 
   const id  = nanoid();
   const now = Math.floor(Date.now() / 1000);
@@ -41,7 +50,7 @@ export async function handleSuggestionCreate(request: Request, env: Env): Promis
     VALUES (?,?,?,?,?,?,?,?,?)
   `).bind(
     id, family_id as string, auth.sub,
-    (title as string).trim(),
+    title.trim(),
     frequency ?? null,
     proposed_amount,
     reason ? String(reason).trim() : null,
@@ -82,6 +91,17 @@ export async function handleSuggestionList(request: Request, env: Env): Promise<
   return json({ suggestions: results });
 }
 
+// Parent may override title, amount, frequency, due_date before approving — all
+// optional; an invalid override silently falls back to the suggestion's own
+// value rather than erroring, so the schema stays permissive (z.any()) and the
+// existing inline type/range checks keep doing the fallback gating.
+const suggestionApproveSchema = z.object({
+  title:           z.any().optional(),
+  proposed_amount: z.any().optional(),
+  frequency:       z.any().optional(),
+  due_date:        z.any().optional(),
+});
+
 export async function handleSuggestionApprove(
   request: Request, env: Env, id: string,
 ): Promise<Response> {
@@ -99,8 +119,9 @@ export async function handleSuggestionApprove(
   if (sug.family_id !== auth.family_id) return error('Forbidden', 403);
   if (sug.status !== 'pending') return error(`Suggestion is already ${sug.status}`);
 
-  // Parent may override title, amount, frequency, due_date before approving
-  const body = await parseBody(request);
+  const parsed = await parseValidatedBody(request, suggestionApproveSchema);
+  if (parsed instanceof Response) return parsed;
+  const body = parsed;
   const finalTitle     = (body?.title && typeof body.title === 'string' && (body.title as string).trim())
     ? (body.title as string).trim()
     : sug.title;
@@ -139,15 +160,19 @@ export async function handleSuggestionApprove(
   return json({ ok: true, chore_id: choreId });
 }
 
+const suggestionRejectSchema = z.object({
+  rejection_note: z.string().trim().min(1, 'rejection_note is required'),
+});
+
 export async function handleSuggestionReject(
   request: Request, env: Env, id: string,
 ): Promise<Response> {
   const auth = (request as AuthedRequest).auth;
   if (auth.role !== 'parent') return error('Only parents can reject suggestions', 403);
 
-  const body = await parseBody(request);
-  const rejection_note = body?.rejection_note ? String(body.rejection_note).trim() : null;
-  if (!rejection_note) return error('rejection_note is required', 400);
+  const parsed = await parseValidatedBody(request, suggestionRejectSchema);
+  if (parsed instanceof Response) return parsed;
+  const rejection_note = parsed.rejection_note;
 
   const sug = await env.DB
     .prepare('SELECT family_id, status FROM suggestions WHERE id = ?')

@@ -16,15 +16,71 @@
 
 import { Env } from '../types.js';
 
-import { json, error, clientIp, parseBody } from '../lib/response.js';
+import { json, error, clientIp } from '../lib/response.js';
 import { nanoid } from '../lib/nanoid.js';
 import { computeRecordHash, GENESIS_HASH } from '../lib/hash.js';
 import { JwtPayload } from '../lib/jwt.js';
 import { getStreakState, buildMissEvent, saveStreakEvent, hadScheduledChores, todayUTC, previousDay } from '../lib/streaks.js';
 import { getBadgeStats, badgesToAward, insertBadges } from '../lib/badges.js';
 import { getJarConfig, getJarBalances } from '../lib/jar-balance.js';
+import { z } from 'zod';
+import { parseValidatedBody } from '../lib/validate.js';
 
 type AuthedRequest = Request & { auth: JwtPayload };
+
+const spendingCreateSchema = z.object({
+  family_id: z.string().optional(),
+  title:     z.string().min(1, 'title required'),
+  amount:    z.number().refine(
+    (v) => Number.isInteger(v) && v > 0,
+    { message: 'amount must be a positive integer' },
+  ),
+  currency:  z.enum(['GBP', 'USD', 'PLN'], { message: 'Invalid currency' }),
+  note:      z.string().nullable().optional(),
+  goal_id:   z.string().nullable().optional(),
+  category:  z.string().nullable().optional(),
+});
+
+const payoutCreateSchema = z.object({
+  family_id: z.string().optional(),
+  child_id:  z.string().min(1, 'child_id required'),
+  amount:    z.number().refine(
+    (v) => Number.isInteger(v) && v > 0,
+    { message: 'amount must be a positive integer' },
+  ),
+  currency:  z.enum(['GBP', 'PLN'], { message: 'Invalid currency' }),
+  note:      z.string().nullable().optional(),
+});
+
+const bonusCreateSchema = z.object({
+  family_id: z.string().optional(),
+  child_id:  z.string().min(1, 'child_id required'),
+  reason:    z.string().min(1, 'reason required'),
+  amount:    z.number().refine(
+    (v) => Number.isInteger(v) && v > 0,
+    { message: 'amount must be a positive integer' },
+  ),
+  currency:  z.enum(['GBP', 'PLN'], { message: 'Invalid currency' }),
+});
+
+const subscriptionCreateSchema = z.object({
+  family_id:  z.string().optional(),
+  child_id:   z.string().min(1, 'child_id required'),
+  title:      z.string().min(1, 'title required'),
+  category:   z.string().nullable().optional(),
+  amount:     z.number().refine(
+    (v) => Number.isInteger(v) && v > 0,
+    { message: 'amount must be a positive integer' },
+  ),
+  currency:   z.enum(['GBP', 'PLN'], { message: 'Invalid currency' }),
+  frequency:  z.enum(['weekly', 'monthly', 'annual'], { message: 'frequency must be weekly, monthly, or annual' }),
+  start_date: z.string().min(1, 'start_date required'),
+});
+
+// No per-field validation existed on the original subscription-update handler
+// beyond "is this valid JSON" — mirrors that with a permissive record so the
+// dynamic allow-listed-field loop keeps working unchanged off `parsed`.
+const subscriptionUpdateSchema = z.record(z.string(), z.unknown());
 
 // ----------------------------------------------------------------
 // POST /api/spending
@@ -33,15 +89,11 @@ export async function handleSpendingCreate(request: Request, env: Env): Promise<
   const auth = (request as AuthedRequest).auth;
   if (auth.role !== 'child') return error('Only children can log spending', 403);
 
-  const body = await parseBody(request);
-  if (!body) return error('Invalid JSON');
+  const parsed = await parseValidatedBody(request, spendingCreateSchema);
+  if (parsed instanceof Response) return parsed;
 
-  const { family_id, title, amount, currency, note, goal_id, category } = body;
+  const { family_id, title, amount, currency, note, goal_id, category } = parsed;
   if (!family_id || family_id !== auth.family_id) return error('Forbidden', 403);
-  if (!title || typeof title !== 'string') return error('title required');
-  if (!Number.isInteger(amount) || (amount as number) <= 0)
-    return error('amount must be a positive integer');
-  if (!currency || !['GBP','USD','PLN'].includes(currency as string)) return error('Invalid currency');
 
   // Spend category — keep this whitelist in sync with the Spend Guide taxonomy.
   // Unknown / missing values normalise to 'other' so over-time analytics stay clean.
@@ -90,14 +142,10 @@ export async function handlePayoutCreate(request: Request, env: Env): Promise<Re
   const auth = (request as AuthedRequest).auth;
   if (auth.role !== 'parent') return error('Only parents can record payouts', 403);
 
-  const body = await parseBody(request);
-  if (!body) return error('Invalid JSON');
-  const { family_id, child_id, amount, currency, note } = body;
+  const parsed = await parseValidatedBody(request, payoutCreateSchema);
+  if (parsed instanceof Response) return parsed;
+  const { family_id, child_id, amount, currency, note } = parsed;
   if (!family_id || family_id !== auth.family_id) return error('Forbidden', 403);
-  if (!child_id  || typeof child_id !== 'string') return error('child_id required');
-  if (!Number.isInteger(amount) || (amount as number) <= 0)
-    return error('amount must be a positive integer');
-  if (!currency || !['GBP','PLN'].includes(currency as string)) return error('Invalid currency');
 
   const id  = nanoid();
   const now = Math.floor(Date.now() / 1000);
@@ -191,16 +239,11 @@ export async function handleBonusCreate(request: Request, env: Env): Promise<Res
   if (auth.role !== 'parent') return error('Only parents can award bonuses', 403);
 
   const ip = clientIp(request);
-  const body = await parseBody(request);
-  if (!body) return error('Invalid JSON');
+  const parsed = await parseValidatedBody(request, bonusCreateSchema);
+  if (parsed instanceof Response) return parsed;
 
-  const { family_id, child_id, amount, currency, reason } = body;
+  const { family_id, child_id, amount, currency, reason } = parsed;
   if (!family_id || family_id !== auth.family_id) return error('Forbidden', 403);
-  if (!child_id  || typeof child_id !== 'string') return error('child_id required');
-  if (!reason    || typeof reason   !== 'string') return error('reason required');
-  if (!Number.isInteger(amount) || (amount as number) <= 0)
-    return error('amount must be a positive integer');
-  if (!currency || !['GBP','PLN'].includes(currency as string)) return error('Invalid currency');
 
   const family = await env.DB
     .prepare('SELECT verify_mode FROM families WHERE id = ?')
@@ -299,19 +342,11 @@ export async function handleBonusList(request: Request, env: Env): Promise<Respo
 // ----------------------------------------------------------------
 export async function handleSubscriptionCreate(request: Request, env: Env): Promise<Response> {
   const auth = (request as AuthedRequest).auth;
-  const body = await parseBody(request);
-  if (!body) return error('Invalid JSON');
+  const parsed = await parseValidatedBody(request, subscriptionCreateSchema);
+  if (parsed instanceof Response) return parsed;
 
-  const { family_id, child_id, title, category, amount, currency, frequency, start_date } = body;
+  const { family_id, child_id, title, category, amount, currency, frequency, start_date } = parsed;
   if (!family_id || family_id !== auth.family_id) return error('Forbidden', 403);
-  if (!child_id  || typeof child_id !== 'string') return error('child_id required');
-  if (!title     || typeof title    !== 'string') return error('title required');
-  if (!Number.isInteger(amount) || (amount as number) <= 0)
-    return error('amount must be a positive integer');
-  if (!currency || !['GBP','PLN'].includes(currency as string)) return error('Invalid currency');
-  if (!frequency || !['weekly','monthly','annual'].includes(frequency as string))
-    return error('frequency must be weekly, monthly, or annual');
-  if (!start_date || typeof start_date !== 'string') return error('start_date required');
 
   const id  = nanoid();
   const now = Math.floor(Date.now() / 1000);
@@ -346,8 +381,9 @@ export async function handleSubscriptionUpdate(
   request: Request, env: Env, id: string,
 ): Promise<Response> {
   const auth = (request as AuthedRequest).auth;
-  const body = await parseBody(request);
-  if (!body) return error('Invalid JSON');
+  const parsed = await parseValidatedBody(request, subscriptionUpdateSchema);
+  if (parsed instanceof Response) return parsed;
+  const body = parsed;
 
   const sub = await env.DB
     .prepare('SELECT family_id FROM subscriptions WHERE id = ?')

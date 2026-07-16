@@ -9,11 +9,25 @@
 
 import { Env } from '../types.js';
 
-import { json, error, parseBody } from '../lib/response.js';
+import { json, error } from '../lib/response.js';
 import { JwtPayload } from '../lib/jwt.js';
 import { nanoid } from '../lib/nanoid.js';
+import { z } from 'zod';
+import { parseValidatedBody } from '../lib/validate.js';
 
 type AuthedRequest = Request & { auth: JwtPayload };
+
+// context is left loose (z.any()) — a non-string value is silently treated
+// as null by the handler below, not rejected (matches original behaviour).
+const marketRateSuggestSchema = z.object({
+  canonical_name: z.string().min(1, 'canonical_name required'),
+  median_amount: z.any().refine(
+    v => Number.isInteger(v) && v > 0,
+    'median_amount must be a positive integer',
+  ),
+  currency: z.enum(['GBP', 'PLN', 'USD'], { message: 'currency must be GBP, PLN, or USD' }),
+  context: z.any().optional(),
+});
 
 // ── Value tier thresholds (GBP pence equivalent) ────────────────────────────
 const TIER_SEEDS_MAX    = 149;  // £0 – £1.49
@@ -136,17 +150,11 @@ export async function handleMarketRateSuggest(request: Request, env: Env): Promi
   const auth = (request as AuthedRequest).auth;
   if (auth.role !== 'child') return error('Only children can suggest chores', 403);
 
-  const body = await parseBody(request);
-  if (!body) return error('Invalid JSON');
-
-  const { canonical_name, median_amount, currency, context } = body;
-
-  if (!canonical_name || typeof canonical_name !== 'string')
-    return error('canonical_name required');
-  if (!Number.isInteger(median_amount) || (median_amount as number) <= 0)
-    return error('median_amount must be a positive integer');
-  if (!currency || !['GBP', 'PLN', 'USD'].includes(currency as string))
-    return error('currency must be GBP, PLN, or USD');
+  const parsed = await parseValidatedBody(request, marketRateSuggestSchema);
+  if (parsed instanceof Response) return parsed;
+  // currency is validated by the schema above (GBP/PLN/USD) but not persisted —
+  // matches the original handler, which validated it without writing it to the row.
+  const { canonical_name, median_amount, context } = parsed;
 
   const id  = nanoid();
   const now = Math.floor(Date.now() / 1000);

@@ -8,11 +8,27 @@
 
 import { Env } from '../types.js';
 
-import { json, error, parseBody } from '../lib/response.js';
+import { json, error } from '../lib/response.js';
 import { nanoid } from '../lib/nanoid.js';
 import { JwtPayload } from '../lib/jwt.js';
+import { z } from 'zod';
+import { parseValidatedBody } from '../lib/validate.js';
 
 type AuthedRequest = Request & { auth: JwtPayload };
+
+// family_id is left loose (z.any()) — it's checked for equality against
+// auth.family_id below (a comparison, not a type/format check), exactly as
+// before; the original had no dedicated "family_id required" error message.
+const planCreateSchema = z.object({
+  family_id: z.any(),
+  chore_id: z.string().min(1, 'chore_id required'),
+  child_id: z.string().min(1, 'child_id required'),
+  day_of_week: z.any().refine(
+    v => Number.isInteger(v) && v >= 1 && v <= 7,
+    'day_of_week must be 1–7 (Mon=1, Sun=7)',
+  ),
+  week_start: z.any().optional(),
+});
 
 export async function handlePlanList(request: Request, env: Env): Promise<Response> {
   const auth = (request as AuthedRequest).auth;
@@ -49,15 +65,11 @@ export async function handlePlanList(request: Request, env: Env): Promise<Respon
 
 export async function handlePlanCreate(request: Request, env: Env): Promise<Response> {
   const auth = (request as AuthedRequest).auth;
-  const body = await parseBody(request);
-  if (!body) return error('Invalid JSON');
+  const parsed = await parseValidatedBody(request, planCreateSchema);
+  if (parsed instanceof Response) return parsed;
 
-  const { family_id, chore_id, child_id, day_of_week, week_start } = body;
+  const { family_id, chore_id, child_id, day_of_week, week_start } = parsed;
   if (!family_id || family_id !== auth.family_id) return error('Forbidden', 403);
-  if (!chore_id  || typeof chore_id !== 'string') return error('chore_id required');
-  if (!child_id  || typeof child_id !== 'string') return error('child_id required');
-  if (!Number.isInteger(day_of_week) || (day_of_week as number) < 1 || (day_of_week as number) > 7)
-    return error('day_of_week must be 1–7 (Mon=1, Sun=7)');
 
   // Child can only plan their own chores
   if (auth.role === 'child' && child_id !== auth.sub) return error('Forbidden', 403);

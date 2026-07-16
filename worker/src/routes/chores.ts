@@ -11,7 +11,9 @@
 
 import { Env } from '../types.js';
 
-import { json, error, clientIp, parseBody } from '../lib/response.js';
+import { z } from 'zod';
+import { json, error, clientIp } from '../lib/response.js';
+import { parseValidatedBody } from '../lib/validate.js';
 import { nanoid } from '../lib/nanoid.js';
 import { JwtPayload } from '../lib/jwt.js';
 import { computeRecordHash, GENESIS_HASH } from '../lib/hash.js';
@@ -32,23 +34,38 @@ const VALID_FREQUENCIES = ['daily','weekly','bi_weekly','monthly','quarterly','a
 //         frequency?, due_date?, description?, is_priority?, is_flash?,
 //         flash_deadline?, proof_required?, auto_approve? }
 // ----------------------------------------------------------------
+const choreCreateSchema = z.object({
+  family_id:      z.string().min(1, 'family_id required'),
+  assigned_to:    z.string().min(1, 'assigned_to required'),
+  title:          z.string().min(1, 'title required'),
+  reward_amount:  z.number().refine(
+    n => Number.isInteger(n) && n > 0,
+    'reward_amount must be a positive integer (pence/groszy)',
+  ),
+  currency:       z.enum(['GBP', 'PLN', 'USD'], { message: 'Invalid currency' }),
+  frequency:      z.string().refine(
+    f => VALID_FREQUENCIES.includes(f),
+    { message: `frequency must be one of: ${VALID_FREQUENCIES.join(', ')}` },
+  ).optional(),
+  due_date:       z.string().optional(),
+  description:    z.string().optional(),
+  is_priority:    z.unknown().optional(),
+  is_flash:       z.unknown().optional(),
+  flash_deadline: z.string().optional(),
+  proof_required: z.unknown().optional(),
+  auto_approve:   z.unknown().optional(),
+});
+
 export async function handleChoreCreate(request: Request, env: Env): Promise<Response> {
   const auth = (request as AuthedRequest).auth;
-  const body = await parseBody(request);
-  if (!body) return error('Invalid JSON');
+  const parsed = await parseValidatedBody(request, choreCreateSchema);
+  if (parsed instanceof Response) return parsed;
 
   const {
     family_id, assigned_to, title, reward_amount, currency,
     frequency, due_date, description, is_priority, is_flash, flash_deadline,
     proof_required, auto_approve,
-  } = body;
-
-  if (!family_id   || typeof family_id   !== 'string') return error('family_id required');
-  if (!assigned_to || typeof assigned_to !== 'string') return error('assigned_to required');
-  if (!title       || typeof title       !== 'string') return error('title required');
-  if (!currency    || !['GBP','PLN','USD'].includes(currency as string)) return error('Invalid currency');
-  if (!Number.isInteger(reward_amount) || (reward_amount as number) <= 0)
-    return error('reward_amount must be a positive integer (pence/groszy)');
+  } = parsed;
 
   if (family_id !== auth.family_id) return error('Forbidden', 403);
 
@@ -60,9 +77,6 @@ export async function handleChoreCreate(request: Request, env: Env): Promise<Res
     if ((row?.cnt ?? 0) >= 1) return error('Demo accounts are limited to one test chore', 403);
   }
 
-  if (frequency && !VALID_FREQUENCIES.includes(frequency as string))
-    return error(`frequency must be one of: ${VALID_FREQUENCIES.join(', ')}`);
-
   // proof_required and auto_approve are mutually exclusive:
   // auto_approve cannot bypass a photo-evidence requirement.
   const proofRequired = proof_required ? 1 : 0;
@@ -71,7 +85,7 @@ export async function handleChoreCreate(request: Request, env: Env): Promise<Res
 
   // 'anyone' and 'everyone' are sentinel values — skip child lookup.
   // Any other value must be a real child in this family.
-  const isSentinel = (assigned_to as string) === 'anyone' || (assigned_to as string) === 'everyone';
+  const isSentinel = assigned_to === 'anyone' || assigned_to === 'everyone';
   if (!isSentinel) {
     const child = await env.DB
       .prepare(`SELECT u.id FROM users u JOIN family_roles fr ON fr.user_id = u.id
@@ -91,8 +105,8 @@ export async function handleChoreCreate(request: Request, env: Env): Promise<Res
     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
   `).bind(
     id, family_id, assigned_to, auth.sub,
-    (title as string).trim(),
-    description ? (description as string).trim() : null,
+    title.trim(),
+    description ? description.trim() : null,
     reward_amount,
     currency,
     frequency ?? 'as_needed',
@@ -202,10 +216,31 @@ export async function handleChoreList(request: Request, env: Env): Promise<Respo
 // PATCH /api/chores/:id
 // Parent edits a job.
 // ----------------------------------------------------------------
+const choreUpdateSchema = z.object({
+  title:          z.string().optional(),
+  description:    z.string().nullable().optional(),
+  reward_amount:  z.number().refine(
+    n => Number.isInteger(n) && n > 0,
+    'reward_amount must be a positive integer',
+  ).optional(),
+  currency:       z.enum(['GBP', 'PLN', 'USD'], { message: 'Invalid currency' }).optional(),
+  frequency:      z.string().refine(
+    f => VALID_FREQUENCIES.includes(f),
+    { message: 'Invalid frequency' },
+  ).optional(),
+  due_date:       z.string().nullable().optional(),
+  is_priority:    z.unknown().optional(),
+  is_flash:       z.unknown().optional(),
+  flash_deadline: z.string().nullable().optional(),
+  proof_required: z.unknown().optional(),
+  auto_approve:   z.unknown().optional(),
+});
+
 export async function handleChoreUpdate(request: Request, env: Env, id: string): Promise<Response> {
   const auth = (request as AuthedRequest).auth;
-  const body = await parseBody(request);
-  if (!body) return error('Invalid JSON');
+  const parsed = await parseValidatedBody(request, choreUpdateSchema);
+  if (parsed instanceof Response) return parsed;
+  const body = parsed as Record<string, unknown>;
 
   const chore = await env.DB
     .prepare('SELECT * FROM chores WHERE id = ?')
@@ -226,15 +261,9 @@ export async function handleChoreUpdate(request: Request, env: Env, id: string):
   const values: unknown[] = [];
 
   for (const key of allowed) {
-    if (key in body) {
-      if (key === 'reward_amount') {
-        if (!Number.isInteger(body[key]) || (body[key] as number) <= 0)
-          return error('reward_amount must be a positive integer');
-      }
-      if (key === 'currency' && !['GBP','PLN','USD'].includes(body[key] as string))
-        return error('Invalid currency');
-      if (key === 'frequency' && !VALID_FREQUENCIES.includes(body[key] as string))
-        return error('Invalid frequency');
+    // Field-level validation (type/range) was already enforced by choreUpdateSchema
+    // above — this loop only needs to detect presence and build the dynamic SET clause.
+    if (body[key] !== undefined) {
       updates.push(`${key} = ?`);
       values.push(body[key] ?? null);
     }
@@ -244,8 +273,8 @@ export async function handleChoreUpdate(request: Request, env: Env, id: string):
 
   // Enforce mutual exclusion — resolve against the current DB values if only
   // one flag is being changed in this update.
-  const updatingProof   = 'proof_required' in body;
-  const updatingApprove = 'auto_approve' in body;
+  const updatingProof   = body.proof_required !== undefined;
+  const updatingApprove = body.auto_approve !== undefined;
   if (updatingProof || updatingApprove) {
     const current = await env.DB
       .prepare('SELECT proof_required, auto_approve FROM chores WHERE id = ?')
@@ -379,12 +408,17 @@ export async function handleChoreClaim(request: Request, env: Env, id: string): 
 // Double-dip guard: explicit status check before any write.
 // Body: { note? }
 // ----------------------------------------------------------------
+const choreSubmitSchema = z.object({
+  note: z.string().optional(),
+});
+
 export async function handleChoreSubmit(request: Request, env: Env, id: string): Promise<Response> {
   const auth = (request as AuthedRequest).auth;
   if (auth.role !== 'child') return error('Only children can submit chores', 403);
 
-  const body = await parseBody(request);
-  const note = (body?.note && typeof body.note === 'string') ? body.note.trim() : null;
+  const parsed = await parseValidatedBody(request, choreSubmitSchema);
+  if (parsed instanceof Response) return parsed;
+  const note = parsed.note ? parsed.note.trim() : null;
 
   const chore = await env.DB
     .prepare('SELECT * FROM chores WHERE id = ?')

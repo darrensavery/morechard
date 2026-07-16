@@ -41,14 +41,28 @@ expensive per-invocation runs inline, synchronously, with no batching:
 
 ## Load testing — what exists now
 
-A baseline script (`worker/scripts/load-test.mjs`, `npm run load-test -- <preview-url>`) using `autocannon` against the unauthenticated `/api/health` endpoint. This is deliberately minimal:
+A baseline script (`worker/scripts/load-test.mjs`, `npm run load-test -- <preview-url>`) using `autocannon` against the unauthenticated `/api/health` endpoint. Deliberately minimal — never targets `api.morechard.com` directly (refuses to run against the production hostname; point it at a Worker Versions preview URL instead, which runs against the real production D1 without touching live traffic).
 
-- **Never targets `api.morechard.com` directly** — the script refuses to run against the production hostname; point it at a Worker Versions preview URL instead (`deploy:preview` uploads one against the real production D1 without touching live traffic).
-- **Only tests one public, cheap endpoint.** Realistic capacity numbers need authenticated load against the actual expensive paths above (chat, insights generation, PDF export) — this needs a seeded test family + valid JWT to drive, which this baseline script does not yet do.
+A second script, `worker/scripts/load-test-authenticated.mjs` (`npm run load-test:auth -- <preview-url>`), covers real authenticated traffic. It authenticates via `POST /auth/demo/register` (the shared Thomson demo family — no seeded test family needed) and load-tests:
+- `GET /api/insights` (after a single priming request so the measured run hits the D1-cached weekly briefing, not OpenAI)
+- `GET /api/export/pdf?tier=basic` (the Puppeteer-based report generator)
+
+**Deliberately excludes `/api/chat`** — the demo family only has 2 children, and chat is rate-limited to 20 messages/hour *per child* (`chat_rate_limits`). Real load-testing it would either 429 almost immediately (not a real capacity signal) or lock the shared demo account's chat out for genuine visitors for up to an hour afterward. See `docs/security/audits/2026-07-15-production-security-audit.md`, Open item #10, for why chat wasn't exercised here — a separate content-safety question surfaced during this pass that's independent of load/capacity.
+
+### Results — 2026-07-16, preview URL, 10 connections × 30s each
+
+| Endpoint | Requests | Avg latency | p50 | p90 | p99 | Errors/non-2xx |
+|---|---|---|---|---|---|---|
+| `GET /api/insights` (D1-cached) | 198 | 1516ms | 1485ms | 1671ms | 2021ms | 0 |
+| `GET /api/export/pdf?tier=basic` | 1116 | 268ms | 245ms | 332ms | 670ms | 0 |
+
+Zero errors, timeouts, or non-2xx responses across ~1,300 combined requests on both paths — no capacity red flags at this load level. One thing worth a closer look later: `/api/insights` averaging ~1.5s even on the documented "cached" path is notably slower than PDF export's Puppeteer-driven render at ~268ms — suggests the *briefing text* is cached but other per-request work in that handler (KPI/velocity recalculation?) may not be. Not investigated further in this pass since nothing failed or timed out; flagged here as a possible future optimization target, not a capacity risk.
 
 ## Next steps (not done in this pass)
 
-1. Extend `load-test.mjs` to mint a test JWT against a seeded test family (mirroring the pattern in `worker/src/routes/*.test.ts` if one exists) and hit 2-3 of the expensive authenticated routes above.
-2. Run a real load test against a preview URL and record actual numbers here — this doc currently has zero measured throughput data.
-3. Add explicit batching/queueing to the payday/market-rate cron sweep if a real drill shows it's the bottleneck — don't build this speculatively without a number showing it's needed.
-4. Once PostHog is live (Phase 8 roadmap item), use real usage data instead of synthetic load as the primary capacity signal.
+1. ~~Extend `load-test.mjs` to mint a test JWT and hit 2-3 expensive authenticated routes.~~ **Done 2026-07-16** — see `load-test-authenticated.mjs` and results above.
+2. ~~Run a real load test against a preview URL and record actual numbers here.~~ **Done 2026-07-16** — see table above.
+3. Load-test `/api/chat` separately and carefully — needs its own seeded test family (not the shared demo account) so a real burst doesn't lock out genuine demo visitors, and ideally resolved alongside the content-safety gap in Open item #10 rather than before it.
+4. Investigate why `/api/insights` averages ~1.5s on the "cached" path — profile `insights.ts` to confirm what's actually cached vs. recomputed per request.
+5. Add explicit batching/queueing to the payday/market-rate cron sweep if a real drill shows it's the bottleneck — don't build this speculatively without a number showing it's needed.
+6. Once PostHog is live (Phase 8 roadmap item), use real usage data instead of synthetic load as the primary capacity signal.

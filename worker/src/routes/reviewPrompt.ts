@@ -8,9 +8,11 @@
 
 import { Env, ReviewPromptState } from '../types.js'
 
-import { json, error, parseBody } from '../lib/response.js'
+import { json, error } from '../lib/response.js'
 import { JwtPayload } from '../lib/jwt.js'
 import { COOLDOWN_DAYS, MAYBE_LATER_DAYS, MAX_PROMPTS } from '../lib/reviewPrompt.js'
+import { z } from 'zod'
+import { parseValidatedBody } from '../lib/validate.js'
 
 type AuthedRequest = Request & { auth: JwtPayload }
 
@@ -21,14 +23,17 @@ const DAY_MS = 86_400_000
 // Records what happened after the prompt was shown.
 // Body: { outcome: 'prompted' | 'dismissed' | 'maybe_later' }
 // ----------------------------------------------------------------
+const reviewOutcomeSchema = z.object({
+  outcome: z.enum(['prompted', 'dismissed', 'maybe_later'], { message: 'Invalid outcome' }),
+});
+
 export async function handleReviewOutcome(request: Request, env: Env): Promise<Response> {
   const auth = (request as AuthedRequest).auth
   if (auth.role !== 'parent') return error('Parents only', 403)
 
-  const body    = await parseBody(request)
-  const outcome = (body as Record<string, unknown>)?.outcome as string | undefined
-  if (!['prompted', 'dismissed', 'maybe_later'].includes(outcome ?? ''))
-    return error('Invalid outcome', 400)
+  const parsed = await parseValidatedBody(request, reviewOutcomeSchema)
+  if (parsed instanceof Response) return parsed
+  const outcome = parsed.outcome
 
   const now = Date.now()
 
@@ -72,20 +77,24 @@ export async function handleReviewOutcome(request: Request, env: Env): Promise<R
 // Saves private feedback from an unhappy parent.
 // Body: { message?, platform, app_version }
 // ----------------------------------------------------------------
+const reviewFeedbackSchema = z.object({
+  platform:    z.enum(['android', 'ios', 'web'], { message: 'Invalid platform' }),
+  app_version: z.any().optional(),
+  message:     z.any().optional(),
+});
+
 export async function handleReviewFeedback(request: Request, env: Env): Promise<Response> {
   const auth = (request as AuthedRequest).auth
   if (auth.role !== 'parent') return error('Parents only', 403)
 
-  const body     = await parseBody(request)
-  const platform = (body as Record<string, unknown>)?.platform as string | undefined
-  const version  = String((body as Record<string, unknown>)?.app_version ?? 'unknown').slice(0, 32)
-  const rawMsg   = (body as Record<string, unknown>)?.message
-    ? String((body as Record<string, unknown>).message).trim()
+  const parsed   = await parseValidatedBody(request, reviewFeedbackSchema)
+  if (parsed instanceof Response) return parsed
+  const platform = parsed.platform
+  const version  = String(parsed.app_version ?? 'unknown').slice(0, 32)
+  const rawMsg   = parsed.message
+    ? String(parsed.message).trim()
     : null
   const message  = rawMsg ? rawMsg.slice(0, 500).replace(/<[^>]*>/g, '') : null
-
-  if (!['android', 'ios', 'web'].includes(platform ?? ''))
-    return error('Invalid platform', 400)
 
   const id  = crypto.randomUUID()
   const now = Date.now()

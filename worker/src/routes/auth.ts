@@ -15,7 +15,7 @@ import { Env } from '../types.js'
 import { EmailService, buildVerifyEmailHtml, buildVerifyEmailText } from '../lib/email.js';
 import { resolveReturnOrigin } from '../lib/appUrl.js';
 
-import { json, error, clientIp, parseBody } from '../lib/response.js';
+import { json, error, clientIp } from '../lib/response.js';
 import { logger } from '../lib/logger.js';
 import { hashPassword, verifyPassword, timingSafeEqual } from '../lib/crypto.js';
 import { signJwt } from '../lib/jwt.js';
@@ -45,15 +45,23 @@ const CHILD_JWT_EXPIRY   = 90 * 24 * 3600;  // 90 days
 // Body: { display_name, email, password?, locale? }
 // Returns: { family_id, user_id, email }
 // ----------------------------------------------------------------
+const createFamilySchema = z.object({
+  display_name:     z.string().min(1, 'display_name required'),
+  email:             z.string().min(1, 'email required'),
+  password:          z.string().optional(),
+  locale:            z.string().optional(),
+  governance_mode:   z.string().optional(),
+  base_currency:     z.string().optional(),
+  parenting_mode:    z.string().optional(),
+  referred_by_code:  z.string().optional(),
+});
+
 export async function handleCreateFamily(request: Request, env: Env): Promise<Response> {
-  const body = await parseBody(request);
-  if (!body) return error('Invalid JSON body');
+  const parsed = await parseValidatedBody(request, createFamilySchema);
+  if (parsed instanceof Response) return parsed;
+  const { display_name, email, password, locale } = parsed;
 
-  const { display_name, email, password, locale } = body;
-  if (!display_name || typeof display_name !== 'string') return error('display_name required');
-  if (!email        || typeof email        !== 'string') return error('email required');
-
-  const normEmail = (email as string).toLowerCase().trim();
+  const normEmail = email.toLowerCase().trim();
   if (!isValidEmail(normEmail)) return error('Invalid email address');
 
   const existing = await env.DB
@@ -99,7 +107,7 @@ export async function handleCreateFamily(request: Request, env: Env): Promise<Re
         .bind(tokenHash, existing.id, now + MAGIC_LINK_EXPIRY, clientIp(request))
         .run();
       const link = `${appUrl}/auth/verify?token=${rawToken}`;
-      await sendMagicLinkEmail(normEmail, display_name as string, link, env).catch(() => null);
+      await sendMagicLinkEmail(normEmail, display_name, link, env).catch(() => null);
     }
     // Generic response — does not confirm or deny whether this email is registered
     return json({ sent: true }, 200);
@@ -123,16 +131,16 @@ export async function handleCreateFamily(request: Request, env: Env): Promise<Re
 
   const familyId     = nanoid();
   const userId       = nanoid();
-  const passwordHash = password ? await hashPassword(password as string) : null;
+  const passwordHash = password ? await hashPassword(password) : null;
   const userLocale   = (locale === 'pl' ? 'pl' : 'en');
 
   // Accept new Stage-1/2 registration fields (default to safe values if absent)
-  const governance_mode  = (body['governance_mode']  === 'standard') ? 'standard'      : 'amicable';
-  const base_currency    = (body['base_currency']    === 'PLN')      ? 'PLN'           : 'GBP';
-  const parenting_mode   = (body['parenting_mode']   === 'co-parenting') ? 'co-parenting' : 'single';
+  const governance_mode  = (parsed.governance_mode  === 'standard') ? 'standard'      : 'amicable';
+  const base_currency    = (parsed.base_currency    === 'PLN')      ? 'PLN'           : 'GBP';
+  const parenting_mode   = (parsed.parenting_mode   === 'co-parenting') ? 'co-parenting' : 'single';
 
   // Referral attribution — silently ignore unknown codes
-  let referred_by_code: string | null = (body['referred_by_code'] as string | undefined)?.trim().toUpperCase() ?? null;
+  let referred_by_code: string | null = parsed.referred_by_code?.trim().toUpperCase() ?? null;
   if (referred_by_code) {
     const referrer = await env.DB
       .prepare('SELECT id FROM families WHERE referral_code = ?')
@@ -450,14 +458,15 @@ export async function handleMagicLinkVerify(request: Request, env: Env): Promise
 // Parent sets or resets a child's PIN. Requires parent JWT.
 // Body: { child_id, pin }  — pin must be exactly 4 digits
 // ----------------------------------------------------------------
-export async function handleSetChildPin(request: Request, env: Env): Promise<Response> {
-  const body = await parseBody(request);
-  if (!body) return error('Invalid JSON body');
+const setChildPinSchema = z.object({
+  child_id: z.string().min(1, 'child_id required'),
+  pin:      z.string().regex(/^\d{4}$/, 'PIN must be exactly 4 digits'),
+});
 
-  const { child_id, pin } = body;
-  if (!child_id || typeof child_id !== 'string') return error('child_id required');
-  if (!pin      || typeof pin      !== 'string') return error('pin required');
-  if (!/^\d{4}$/.test(pin as string))            return error('PIN must be exactly 4 digits');
+export async function handleSetChildPin(request: Request, env: Env): Promise<Response> {
+  const parsed = await parseValidatedBody(request, setChildPinSchema);
+  if (parsed instanceof Response) return parsed;
+  const { child_id, pin } = parsed;
 
   // Caller identity comes from the JWT (injected by middleware)
   const caller = (request as AuthedRequest).auth;
@@ -474,7 +483,7 @@ export async function handleSetChildPin(request: Request, env: Env): Promise<Res
 
   if (!child) return error('Child not found in your family', 404);
 
-  const pinHash = await hashPassword(pin as string);
+  const pinHash = await hashPassword(pin);
   await env.DB
     .prepare('UPDATE users SET pin_hash = ? WHERE id = ?')
     .bind(pinHash, child_id)
@@ -1166,17 +1175,19 @@ export async function handleDeleteFamily(request: Request & { auth?: JwtPayload 
 // Always requires email password as the master key.
 // Body: { password: string, new_pin: string }
 // ----------------------------------------------------------------
+const pinSetSchema = z.object({
+  password: z.string().optional(),
+  new_pin:  z.string().regex(/^\d{4}$/, 'PIN must be exactly 4 digits'),
+});
+
 export async function handlePinSet(request: Request, env: Env): Promise<Response> {
   const caller = (request as AuthedRequest).auth;
   if (!caller) return error('Unauthorised', 401);
   if (caller.role !== 'parent') return error('Parents only', 403);
 
-  const body = await parseBody(request);
-  if (!body) return error('Invalid JSON body');
-
-  const { password, new_pin } = body;
-  if (!new_pin  || typeof new_pin  !== 'string') return error('new_pin required');
-  if (!/^\d{4}$/.test(new_pin as string)) return error('PIN must be exactly 4 digits');
+  const parsed = await parseValidatedBody(request, pinSetSchema);
+  if (parsed instanceof Response) return parsed;
+  const { password, new_pin } = parsed;
 
   const user = await env.DB
     .prepare('SELECT password_hash FROM users WHERE id = ?')
@@ -1187,12 +1198,12 @@ export async function handlePinSet(request: Request, env: Env): Promise<Response
 
   // Google-only users have no password — JWT is sufficient proof of identity
   if (user.password_hash) {
-    if (!password || typeof password !== 'string') return error('password required');
-    const valid = await verifyPassword(password as string, user.password_hash);
+    if (!password) return error('password required');
+    const valid = await verifyPassword(password, user.password_hash);
     if (!valid) return error('Incorrect password', 401);
   }
 
-  const pinHash = await hashPassword(new_pin as string);
+  const pinHash = await hashPassword(new_pin);
   await env.DB
     .prepare('UPDATE users SET parent_pin_hash = ?, pin_attempt_count = 0, pin_locked_until = NULL WHERE id = ?')
     .bind(pinHash, caller.sub)
@@ -1206,16 +1217,18 @@ export async function handlePinSet(request: Request, env: Env): Promise<Response
 // Verifies the parent's 4-digit PIN. Server-side lockout after 3 failures.
 // Body: { pin: string }
 // ----------------------------------------------------------------
+const verifyPinSchema = z.object({
+  pin: z.string().min(1, 'pin required'),
+});
+
 export async function handleVerifyPin(request: Request, env: Env): Promise<Response> {
   const caller = (request as AuthedRequest).auth;
   if (!caller) return error('Unauthorised', 401);
   if (caller.role !== 'parent') return error('Parents only', 403);
 
-  const body = await parseBody(request);
-  if (!body) return error('Invalid JSON body');
-
-  const { pin } = body;
-  if (!pin || typeof pin !== 'string') return error('pin required');
+  const parsed = await parseValidatedBody(request, verifyPinSchema);
+  if (parsed instanceof Response) return parsed;
+  const { pin } = parsed;
 
   const now = Math.floor(Date.now() / 1000);
 
@@ -1233,7 +1246,7 @@ export async function handleVerifyPin(request: Request, env: Env): Promise<Respo
     return error(`Too many attempts. Try again in ${seconds} seconds.`, 429);
   }
 
-  const valid = await verifyPassword(pin as string, user.parent_pin_hash);
+  const valid = await verifyPassword(pin, user.parent_pin_hash);
 
   if (!valid) {
     await recordPinFailure(env, caller.sub, user.pin_attempt_count ?? 0, user.pin_lockout_tier ?? 0, now, 3);
@@ -1467,12 +1480,14 @@ async function _handleGoogleCallback(request: Request, env: Env, appUrl: string)
 // Consumes a Short-Lived Token, returns a long-lived JWT.
 // Body: { slt: string }
 // ----------------------------------------------------------------
-export async function handleSltExchange(request: Request, env: Env): Promise<Response> {
-  const body = await parseBody(request);
-  if (!body) return error('Invalid JSON body');
+const sltExchangeSchema = z.object({
+  slt: z.string().min(1, 'slt required'),
+});
 
-  const { slt } = body;
-  if (!slt || typeof slt !== 'string') return error('slt required');
+export async function handleSltExchange(request: Request, env: Env): Promise<Response> {
+  const parsed = await parseValidatedBody(request, sltExchangeSchema);
+  if (parsed instanceof Response) return parsed;
+  const { slt } = parsed;
 
   const ip  = clientIp(request);
   const now = Math.floor(Date.now() / 1000);

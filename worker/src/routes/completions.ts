@@ -19,7 +19,9 @@
 import { Env } from '../types.js';
 import type { ReviewPromptState } from '../types.js';
 
-import { json, error, clientIp, parseBody } from '../lib/response.js';
+import { z } from 'zod';
+import { json, error, clientIp } from '../lib/response.js';
+import { parseValidatedBody } from '../lib/validate.js';
 import { evaluateEligibility } from '../lib/reviewPrompt.js';
 import { writeLedgerEntry } from '../lib/hash.js';
 import { JwtPayload } from '../lib/jwt.js';
@@ -401,6 +403,10 @@ export async function handleCompletionApprove(
 // Child sees the orange badge + parent_notes in their task list.
 // Body: { parent_notes? }
 // ----------------------------------------------------------------
+const completionReviseSchema = z.object({
+  parent_notes: z.string().optional(),
+});
+
 export async function handleCompletionRevise(
   request: Request,
   env: Env,
@@ -409,8 +415,9 @@ export async function handleCompletionRevise(
   const auth = (request as AuthedRequest).auth;
   if (auth.role !== 'parent') return error('Only parents can request revision', 403);
 
-  const body = await parseBody(request);
-  const parent_notes = body?.parent_notes ? String(body.parent_notes).trim() : null;
+  const parsed = await parseValidatedBody(request, completionReviseSchema);
+  if (parsed instanceof Response) return parsed;
+  const parent_notes = parsed.parent_notes ? parsed.parent_notes.trim() : null;
 
   const comp = await env.DB
     .prepare('SELECT id, family_id, status FROM completions WHERE id = ?')
@@ -438,6 +445,10 @@ export async function handleCompletionRevise(
 // Parent permanently rejects a submission — no payment, no resubmission.
 // Body: { parent_notes? }
 // ----------------------------------------------------------------
+const completionRejectSchema = z.object({
+  parent_notes: z.string().optional(),
+});
+
 export async function handleCompletionReject(
   request: Request,
   env: Env,
@@ -446,8 +457,9 @@ export async function handleCompletionReject(
   const auth = (request as AuthedRequest).auth;
   if (auth.role !== 'parent') return error('Only parents can reject completions', 403);
 
-  const body = await parseBody(request);
-  const parent_notes = body?.parent_notes ? String(body.parent_notes).trim() : null;
+  const parsed = await parseValidatedBody(request, completionRejectSchema);
+  if (parsed instanceof Response) return parsed;
+  const parent_notes = parsed.parent_notes ? parsed.parent_notes.trim() : null;
 
   const comp = await env.DB
     .prepare('SELECT id, family_id, child_id, status FROM completions WHERE id = ?')
@@ -477,6 +489,13 @@ export async function handleCompletionReject(
 // POST /api/completions/:id/rate
 // Child rates a completed completion. Body: { rating: 1 | -1 }
 // ----------------------------------------------------------------
+const completionRateSchema = z.object({
+  rating: z.number().refine(
+    r => r === 1 || r === -1,
+    'rating must be 1 (thumbs up) or -1 (thumbs down)',
+  ),
+});
+
 export async function handleCompletionRate(
   request: Request,
   env: Env,
@@ -485,9 +504,9 @@ export async function handleCompletionRate(
   const auth = (request as AuthedRequest).auth;
   if (auth.role !== 'child') return error('Only children can rate completions', 403);
 
-  const body = await parseBody(request);
-  const rating = body?.rating;
-  if (rating !== 1 && rating !== -1) return error('rating must be 1 (thumbs up) or -1 (thumbs down)');
+  const parsed = await parseValidatedBody(request, completionRateSchema);
+  if (parsed instanceof Response) return parsed;
+  const rating = parsed.rating;
 
   const comp = await env.DB
     .prepare('SELECT family_id, child_id, status FROM completions WHERE id = ?')
@@ -512,12 +531,18 @@ export async function handleCompletionRate(
 // Approve all awaiting_review completions for a child in one action.
 // Body: { family_id, child_id }
 // ----------------------------------------------------------------
+const approveAllSchema = z.object({
+  family_id: z.string().optional(),
+  child_id:  z.string().optional(),
+});
+
 export async function handleApproveAll(request: Request, env: Env): Promise<Response> {
   const auth = (request as AuthedRequest).auth;
   if (auth.role !== 'parent') return error('Only parents can approve completions', 403);
 
-  const body = await parseBody(request);
-  const { family_id, child_id } = (body as { family_id?: string; child_id?: string } | null) ?? {};
+  const parsed = await parseValidatedBody(request, approveAllSchema);
+  if (parsed instanceof Response) return parsed;
+  const { family_id, child_id } = parsed;
   if (!family_id || family_id !== auth.family_id) return error('Forbidden', 403);
   if (!child_id) return error('child_id required');
 

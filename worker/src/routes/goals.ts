@@ -12,7 +12,7 @@
 
 import { Env } from '../types.js';
 
-import { json, error, parseBody } from '../lib/response.js';
+import { json, error } from '../lib/response.js';
 import { nanoid } from '../lib/nanoid.js';
 import { JwtPayload } from '../lib/jwt.js';
 import {
@@ -22,10 +22,47 @@ import {
 } from '../lib/labTriggers.js';
 import { getJarConfig, getJarBalances } from '../lib/jar-balance.js';
 import { generateChildNudge, generateOnceChildNudge } from './child-nudges.js';
+import { z } from 'zod';
+import { parseValidatedBody } from '../lib/validate.js';
 
 type AuthedRequest = Request & { auth: JwtPayload };
 
 const MAX_GOALS = 5;
+
+const goalCreateSchema = z.object({
+  family_id: z.string().optional(),
+  child_id:  z.string().min(1, 'child_id required'),
+  title:     z.string().min(1, 'title required'),
+  target_amount: z.number().refine(
+    (v) => Number.isInteger(v) && v > 0,
+    { message: 'target_amount must be a positive integer' },
+  ),
+  currency:  z.enum(['GBP', 'PLN'], { message: 'Invalid currency' }),
+  category:  z.string().nullable().optional(),
+  deadline:  z.string().nullable().optional(),
+  alloc_pct: z.number().nullable().optional(),
+  match_rate: z.number().nullable().optional(),
+  product_url: z.string().nullable().optional(),
+  parent_match_pct: z.number().nullable().optional(),
+  parent_fixed_contribution: z.number().nullable().optional(),
+});
+
+// No per-field validation existed on the original update/reorder/contribute
+// handlers beyond "is this valid JSON" — goalUpdateSchema mirrors that with
+// a permissive record so the dynamic allow-listed-field loop keeps working
+// unchanged off the now-typed `parsed` object.
+const goalUpdateSchema = z.record(z.string(), z.unknown());
+
+const goalReorderSchema = z.object({
+  dir: z.enum(['up', 'down'], { message: 'dir must be "up" or "down"' }),
+});
+
+const goalContributeSchema = z.object({
+  amount_pence: z.number().refine(
+    (v) => Number.isInteger(v) && v > 0,
+    { message: 'amount_pence must be a positive integer' },
+  ),
+});
 
 export async function handleGoalList(request: Request, env: Env): Promise<Response> {
   const auth = (request as AuthedRequest).auth;
@@ -47,20 +84,15 @@ export async function handleGoalList(request: Request, env: Env): Promise<Respon
 
 export async function handleGoalCreate(request: Request, env: Env): Promise<Response> {
   const auth = (request as AuthedRequest).auth;
-  const body = await parseBody(request);
-  if (!body) return error('Invalid JSON');
+  const parsed = await parseValidatedBody(request, goalCreateSchema);
+  if (parsed instanceof Response) return parsed;
 
   const {
     family_id, child_id, title, target_amount, currency, category, deadline,
     alloc_pct, match_rate, product_url, parent_match_pct, parent_fixed_contribution,
-  } = body;
+  } = parsed;
   if (!family_id || family_id !== auth.family_id) return error('Forbidden', 403);
-  if (!child_id  || typeof child_id !== 'string') return error('child_id required');
   if (auth.role === 'child' && child_id !== auth.sub) return error('Forbidden', 403);
-  if (!title     || typeof title    !== 'string') return error('title required');
-  if (!Number.isInteger(target_amount) || (target_amount as number) <= 0)
-    return error('target_amount must be a positive integer');
-  if (!currency || !['GBP','PLN'].includes(currency as string)) return error('Invalid currency');
 
   // Enforce 5-goal limit
   const count = await env.DB
@@ -123,8 +155,9 @@ export async function handleGoalCreate(request: Request, env: Env): Promise<Resp
 
 export async function handleGoalUpdate(request: Request, env: Env, id: string): Promise<Response> {
   const auth = (request as AuthedRequest).auth;
-  const body = await parseBody(request);
-  if (!body) return error('Invalid JSON');
+  const parsed = await parseValidatedBody(request, goalUpdateSchema);
+  if (parsed instanceof Response) return parsed;
+  const body = parsed;
 
   const goal = await env.DB
     .prepare('SELECT family_id, child_id FROM goals WHERE id = ?')
@@ -190,9 +223,9 @@ export async function handleGoalDelete(request: Request, env: Env, id: string): 
 
 export async function handleGoalReorder(request: Request, env: Env, id: string): Promise<Response> {
   const auth = (request as AuthedRequest).auth;
-  const body = await parseBody(request);
-  const dir  = body?.dir;
-  if (dir !== 'up' && dir !== 'down') return error('dir must be "up" or "down"');
+  const parsed = await parseValidatedBody(request, goalReorderSchema);
+  if (parsed instanceof Response) return parsed;
+  const dir = parsed.dir;
 
   const goal = await env.DB
     .prepare('SELECT family_id, child_id, sort_order FROM goals WHERE id = ? AND archived = 0')
@@ -282,12 +315,9 @@ export async function handleGoalContribute(request: Request, env: Env, id: strin
   const auth = (request as AuthedRequest).auth;
   if (auth.role !== 'parent') return error('Only parents can contribute to goals', 403);
 
-  const body = await parseBody(request);
-  if (!body) return error('Invalid JSON');
-
-  const { amount_pence } = body;
-  if (!Number.isInteger(amount_pence) || (amount_pence as number) <= 0)
-    return error('amount_pence must be a positive integer');
+  const parsed = await parseValidatedBody(request, goalContributeSchema);
+  if (parsed instanceof Response) return parsed;
+  const { amount_pence } = parsed;
 
   const goal = await env.DB
     .prepare('SELECT * FROM goals WHERE id = ? AND archived = 0')

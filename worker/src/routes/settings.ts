@@ -14,10 +14,40 @@
 
 import { Env } from '../types.js';
 
-import { json, error, parseBody } from '../lib/response.js';
+import { json, error } from '../lib/response.js';
 import { JwtPayload } from '../lib/jwt.js';
+import { z } from 'zod';
+import { parseValidatedBody } from '../lib/validate.js';
 
 type AuthedRequest = Request & { auth: JwtPayload };
+
+const VALID_THEMES  = ['light', 'dark', 'system'] as const;
+const VALID_LOCALES = ['en', 'en-GB', 'en-US', 'pl'] as const;
+const VALID_AVATARS = [
+  'adventurer:felix', 'adventurer:luna', 'adventurer:jasper', 'adventurer:nova', 'adventurer:orion', 'adventurer:sage',
+  'bottts:spark', 'bottts:volt', 'bottts:byte', 'bottts:nano', 'bottts:pixel', 'bottts:core',
+  'croodles:wisp', 'croodles:fern', 'croodles:mossy', 'croodles:dune', 'croodles:ember', 'croodles:cove',
+  'fun-emoji:bliss', 'fun-emoji:zest', 'fun-emoji:glee', 'fun-emoji:whim', 'fun-emoji:fizz', 'fun-emoji:hype',
+  'shapes:prism', 'shapes:arc', 'shapes:delta', 'shapes:grid', 'shapes:wave', 'shapes:facet',
+  'thumbs:scout', 'thumbs:ivy', 'thumbs:echo', 'thumbs:vale', 'thumbs:rook', 'thumbs:flint',
+  'lorelei-neutral:mara', 'lorelei-neutral:reed', 'lorelei-neutral:quinn', 'lorelei-neutral:sable', 'lorelei-neutral:lark', 'lorelei-neutral:wren',
+  'personas:juno', 'personas:atlas', 'personas:sol', 'personas:cleo', 'personas:rex', 'personas:vera',
+  'pixel-art-neutral:ash', 'pixel-art-neutral:birch', 'pixel-art-neutral:cedar', 'pixel-art-neutral:elm', 'pixel-art-neutral:hazel', 'pixel-art-neutral:oak',
+  'icons:bolt', 'icons:gem', 'icons:star', 'icons:leaf', 'icons:drop', 'icons:moon',
+  'big-ears-neutral:beau', 'big-ears-neutral:cade', 'big-ears-neutral:drew', 'big-ears-neutral:finn', 'big-ears-neutral:gray', 'big-ears-neutral:hope',
+] as const;
+
+// ----------------------------------------------------------------
+// PATCH /api/settings body schema
+// app_view is intentionally left loose (z.any()) — invalid values are
+// silently coerced to 'ORCHARD' by the handler, not rejected.
+// ----------------------------------------------------------------
+const settingsUpdateSchema = z.object({
+  avatar_id: z.enum(VALID_AVATARS, { message: 'Invalid avatar_id' }).optional(),
+  theme:     z.enum(VALID_THEMES,  { message: 'Invalid theme' }).optional(),
+  locale:    z.enum(VALID_LOCALES, { message: 'Invalid locale' }).optional(),
+  app_view:  z.any().optional(),
+});
 
 // ----------------------------------------------------------------
 // GET /api/settings[?user_id=<child_id>]
@@ -75,52 +105,33 @@ export async function handleSettingsGet(request: Request, env: Env): Promise<Res
 export async function handleSettingsUpdate(request: Request, env: Env): Promise<Response> {
   const auth = (request as AuthedRequest).auth;
   const url  = new URL(request.url);
-  const body = await parseBody(request);
-  if (!body) return error('Invalid JSON');
+  const parsed = await parseValidatedBody(request, settingsUpdateSchema);
+  if (parsed instanceof Response) return parsed;
 
   const targetId = await resolveTargetUserId(url, auth, env.DB);
   if (!targetId) return error('user_id required or must be a parent', 403);
 
   // app_view can only be changed by a parent
-  if ('app_view' in body && auth.role !== 'parent') {
+  if ('app_view' in parsed && auth.role !== 'parent') {
     return error('Only parents can change the view mode', 403);
   }
-
-  const VALID_THEMES  = ['light','dark','system'];
-  const VALID_LOCALES = ['en', 'en-GB', 'en-US', 'pl'];
-  const VALID_AVATARS = [
-    'adventurer:felix','adventurer:luna','adventurer:jasper','adventurer:nova','adventurer:orion','adventurer:sage',
-    'bottts:spark','bottts:volt','bottts:byte','bottts:nano','bottts:pixel','bottts:core',
-    'croodles:wisp','croodles:fern','croodles:mossy','croodles:dune','croodles:ember','croodles:cove',
-    'fun-emoji:bliss','fun-emoji:zest','fun-emoji:glee','fun-emoji:whim','fun-emoji:fizz','fun-emoji:hype',
-    'shapes:prism','shapes:arc','shapes:delta','shapes:grid','shapes:wave','shapes:facet',
-    'thumbs:scout','thumbs:ivy','thumbs:echo','thumbs:vale','thumbs:rook','thumbs:flint',
-    'lorelei-neutral:mara','lorelei-neutral:reed','lorelei-neutral:quinn','lorelei-neutral:sable','lorelei-neutral:lark','lorelei-neutral:wren',
-    'personas:juno','personas:atlas','personas:sol','personas:cleo','personas:rex','personas:vera',
-    'pixel-art-neutral:ash','pixel-art-neutral:birch','pixel-art-neutral:cedar','pixel-art-neutral:elm','pixel-art-neutral:hazel','pixel-art-neutral:oak',
-    'icons:bolt','icons:gem','icons:star','icons:leaf','icons:drop','icons:moon',
-    'big-ears-neutral:beau','big-ears-neutral:cade','big-ears-neutral:drew','big-ears-neutral:finn','big-ears-neutral:gray','big-ears-neutral:hope',
-  ];
 
   const updates: string[] = [];
   const values: unknown[] = [];
 
-  if ('avatar_id' in body) {
-    if (!VALID_AVATARS.includes(body.avatar_id as string)) return error('Invalid avatar_id');
-    updates.push('avatar_id = ?'); values.push(body.avatar_id);
+  if ('avatar_id' in parsed) {
+    updates.push('avatar_id = ?'); values.push(parsed.avatar_id);
   }
-  if ('theme' in body) {
-    if (!VALID_THEMES.includes(body.theme as string)) return error('Invalid theme');
-    updates.push('theme = ?'); values.push(body.theme);
+  if ('theme' in parsed) {
+    updates.push('theme = ?'); values.push(parsed.theme);
   }
-  if ('locale' in body) {
-    if (!VALID_LOCALES.includes(body.locale as string)) return error('Invalid locale');
-    updates.push('locale = ?'); values.push(body.locale);
+  if ('locale' in parsed) {
+    updates.push('locale = ?'); values.push(parsed.locale);
     await env.DB.prepare('UPDATE users SET locale = ? WHERE id = ?')
-      .bind(body.locale, targetId).run();
+      .bind(parsed.locale, targetId).run();
   }
-  if ('app_view' in body) {
-    const val = (body.app_view as string) === 'CLEAN' ? 'CLEAN' : 'ORCHARD';
+  if ('app_view' in parsed) {
+    const val = (parsed.app_view as string) === 'CLEAN' ? 'CLEAN' : 'ORCHARD';
     updates.push('app_view = ?'); values.push(val);
   }
 
@@ -175,26 +186,49 @@ export async function handleFamilyGet(request: Request, env: Env): Promise<Respo
 // ----------------------------------------------------------------
 // PATCH /api/family
 // Body: { name?, base_currency?, parenting_mode?, verify_mode? }
+// verify_mode is intentionally left loose (z.any()) — its enum check is
+// performed inline below, after a DB read that must run first (mutual
+// consent gating for co-parenting families).
 // ----------------------------------------------------------------
+const familyUpdateSchema = z.object({
+  base_currency:  z.enum(['GBP', 'PLN', 'USD'], { message: 'Invalid base_currency' }).optional(),
+  parenting_mode: z.enum(['single', 'co-parenting'], { message: 'Invalid parenting_mode' }).optional(),
+  verify_mode:    z.any().optional(),
+  fast_track_enabled: z.any().optional().refine(
+    v => v === undefined || v === 0 || v === 1 || v === true || v === false,
+    'fast_track_enabled must be a boolean',
+  ),
+  pocket_money_day: z.any().optional().refine(
+    v => v === undefined || (Number.isInteger(v) && v >= 0 && v <= 6),
+    'pocket_money_day must be an integer 0–6',
+  ),
+  overdraft_enabled: z.any().optional().refine(
+    v => v === undefined || v === 0 || v === 1 || v === true || v === false,
+    'overdraft_enabled must be a boolean',
+  ),
+  overdraft_limit_pence: z.any().optional().refine(
+    v => v === undefined || (Number.isInteger(v) && v >= 0),
+    'overdraft_limit_pence must be a non-negative integer',
+  ),
+});
+
 export async function handleFamilyUpdate(request: Request, env: Env): Promise<Response> {
   const auth = (request as AuthedRequest).auth;
   if (auth.role !== 'parent') return error('Only parents can update family settings', 403);
 
-  const body = await parseBody(request);
-  if (!body) return error('Invalid JSON');
+  const parsed = await parseValidatedBody(request, familyUpdateSchema);
+  if (parsed instanceof Response) return parsed;
 
   const updates: string[] = [];
   const values: unknown[] = [];
 
-  if ('base_currency' in body) {
-    if (!['GBP','PLN','USD'].includes(body.base_currency as string)) return error('Invalid base_currency');
-    updates.push('base_currency = ?'); values.push(body.base_currency);
+  if ('base_currency' in parsed) {
+    updates.push('base_currency = ?'); values.push(parsed.base_currency);
   }
-  if ('parenting_mode' in body) {
-    if (!['single','co-parenting'].includes(body.parenting_mode as string)) return error('Invalid parenting_mode');
-    updates.push('parenting_mode = ?'); values.push(body.parenting_mode);
+  if ('parenting_mode' in parsed) {
+    updates.push('parenting_mode = ?'); values.push(parsed.parenting_mode);
   }
-  if ('verify_mode' in body) {
+  if ('verify_mode' in parsed) {
     // BUG-019 fix: verify_mode changes in co-parenting mode require mutual consent
     // via POST /api/governance/request — direct update is blocked to prevent one
     // parent unilaterally changing the approval model without the other's consent.
@@ -208,36 +242,26 @@ export async function handleFamilyUpdate(request: Request, env: Env): Promise<Re
         403,
       );
     }
-    if (!['amicable','standard'].includes(body.verify_mode as string)) return error('Invalid verify_mode');
-    updates.push('verify_mode = ?'); values.push(body.verify_mode);
+    if (!['amicable','standard'].includes(parsed.verify_mode as string)) return error('Invalid verify_mode');
+    updates.push('verify_mode = ?'); values.push(parsed.verify_mode);
   }
-  if ('fast_track_enabled' in body) {
-    const val = body.fast_track_enabled;
-    if (val !== 0 && val !== 1 && val !== true && val !== false)
-      return error('fast_track_enabled must be a boolean');
+  if ('fast_track_enabled' in parsed) {
+    const val = parsed.fast_track_enabled;
     updates.push('fast_track_enabled = ?');
     values.push(val ? 1 : 0);
   }
-  if ('pocket_money_day' in body) {
-    const v = body.pocket_money_day;
-    if (!Number.isInteger(v) || (v as number) < 0 || (v as number) > 6)
-      return error('pocket_money_day must be an integer 0–6');
+  if ('pocket_money_day' in parsed) {
     updates.push('pocket_money_day = ?');
-    values.push(v as number);
+    values.push(parsed.pocket_money_day as number);
   }
-  if ('overdraft_enabled' in body) {
-    const v = body.overdraft_enabled;
-    if (v !== 0 && v !== 1 && v !== true && v !== false)
-      return error('overdraft_enabled must be a boolean');
+  if ('overdraft_enabled' in parsed) {
+    const val = parsed.overdraft_enabled;
     updates.push('overdraft_enabled = ?');
-    values.push(v ? 1 : 0);
+    values.push(val ? 1 : 0);
   }
-  if ('overdraft_limit_pence' in body) {
-    const v = body.overdraft_limit_pence;
-    if (!Number.isInteger(v) || (v as number) < 0)
-      return error('overdraft_limit_pence must be a non-negative integer');
+  if ('overdraft_limit_pence' in parsed) {
     updates.push('overdraft_limit_pence = ?');
-    values.push(v as number);
+    values.push(parsed.overdraft_limit_pence as number);
   }
 
   if (updates.length === 0) return error('No valid fields to update');
@@ -283,17 +307,21 @@ export async function handleChildrenList(request: Request, env: Env): Promise<Re
 // POST /api/account-lock
 // Body: { child_id, duration_seconds }
 // ----------------------------------------------------------------
+const accountLockSchema = z.object({
+  child_id: z.string().min(1, 'child_id required'),
+  duration_seconds: z.any().refine(
+    v => Number.isInteger(v) && v > 0,
+    'duration_seconds must be a positive integer',
+  ),
+});
+
 export async function handleAccountLock(request: Request, env: Env): Promise<Response> {
   const auth = (request as AuthedRequest).auth;
   if (auth.role !== 'parent') return error('Only parents can lock accounts', 403);
 
-  const body = await parseBody(request);
-  if (!body) return error('Invalid JSON');
-
-  const { child_id, duration_seconds } = body;
-  if (!child_id || typeof child_id !== 'string') return error('child_id required');
-  if (!Number.isInteger(duration_seconds) || (duration_seconds as number) <= 0)
-    return error('duration_seconds must be a positive integer');
+  const parsed = await parseValidatedBody(request, accountLockSchema);
+  if (parsed instanceof Response) return parsed;
+  const { child_id, duration_seconds } = parsed;
 
   // Verify child belongs to this family
   const childCheck = await env.DB
@@ -344,17 +372,19 @@ export async function handleAccountUnlock(
 // POST /api/parent-message
 // Body: { child_id, message }
 // ----------------------------------------------------------------
+const parentMessageSchema = z.object({
+  child_id: z.string().min(1, 'child_id required'),
+  message: z.string().min(1, 'message required')
+    .refine(m => m.trim().length <= 280, 'Message too long (max 280 chars)'),
+});
+
 export async function handleParentMessageSet(request: Request, env: Env): Promise<Response> {
   const auth = (request as AuthedRequest).auth;
   if (auth.role !== 'parent') return error('Only parents can send messages', 403);
 
-  const body = await parseBody(request);
-  if (!body) return error('Invalid JSON');
-
-  const { child_id, message } = body;
-  if (!child_id || typeof child_id !== 'string') return error('child_id required');
-  if (!message  || typeof message  !== 'string') return error('message required');
-  if ((message as string).trim().length > 280) return error('Message too long (max 280 chars)');
+  const parsed = await parseValidatedBody(request, parentMessageSchema);
+  if (parsed instanceof Response) return parsed;
+  const { child_id, message } = parsed;
 
   // Verify child belongs to this family
   const childCheck = await env.DB
@@ -373,8 +403,8 @@ export async function handleParentMessageSet(request: Request, env: Env): Promis
     SET message = ?, expires_at = ?, created_at = ?
   `).bind(
     auth.family_id, auth.sub, child_id,
-    (message as string).trim(), expiresAt, now,
-    (message as string).trim(), expiresAt, now,
+    message.trim(), expiresAt, now,
+    message.trim(), expiresAt, now,
   ).run();
 
   return json({ ok: true, expires_at: expiresAt });
@@ -421,14 +451,23 @@ export async function handleChildGrowthGet(
   return json(child);
 }
 
+const childGrowthUpdateSchema = z.object({
+  earnings_mode: z.enum(['ALLOWANCE', 'CHORES', 'HYBRID'], { message: 'Invalid earnings_mode' }).optional(),
+  allowance_amount: z.any().optional().refine(
+    v => v === undefined || (Number.isInteger(v) && v >= 0),
+    'allowance_amount must be a non-negative integer',
+  ),
+  allowance_frequency: z.enum(['WEEKLY', 'BI_WEEKLY', 'MONTHLY'], { message: 'Invalid allowance_frequency' }).optional(),
+});
+
 export async function handleChildGrowthUpdate(
   request: Request, env: Env, childId: string,
 ): Promise<Response> {
   const auth = (request as AuthedRequest).auth;
   if (auth.role !== 'parent') return error('Only parents can update child growth settings', 403);
 
-  const body = await parseBody(request);
-  if (!body) return error('Invalid JSON');
+  const parsed = await parseValidatedBody(request, childGrowthUpdateSchema);
+  if (parsed instanceof Response) return parsed;
 
   // Verify child belongs to this family
   const child = await env.DB.prepare(`
@@ -437,24 +476,17 @@ export async function handleChildGrowthUpdate(
   `).bind(childId, auth.family_id).first();
   if (!child) return error('Child not found', 404);
 
-  const VALID_MODES  = ['ALLOWANCE', 'CHORES', 'HYBRID'];
-  const VALID_FREQS  = ['WEEKLY', 'BI_WEEKLY', 'MONTHLY'];
-
   const updates: string[] = [];
   const values: unknown[] = [];
 
-  if ('earnings_mode' in body) {
-    if (!VALID_MODES.includes(body.earnings_mode as string)) return error('Invalid earnings_mode');
-    updates.push('earnings_mode = ?'); values.push(body.earnings_mode);
+  if ('earnings_mode' in parsed) {
+    updates.push('earnings_mode = ?'); values.push(parsed.earnings_mode);
   }
-  if ('allowance_amount' in body) {
-    if (!Number.isInteger(body.allowance_amount) || (body.allowance_amount as number) < 0)
-      return error('allowance_amount must be a non-negative integer');
-    updates.push('allowance_amount = ?'); values.push(body.allowance_amount);
+  if ('allowance_amount' in parsed) {
+    updates.push('allowance_amount = ?'); values.push(parsed.allowance_amount);
   }
-  if ('allowance_frequency' in body) {
-    if (!VALID_FREQS.includes(body.allowance_frequency as string)) return error('Invalid allowance_frequency');
-    updates.push('allowance_frequency = ?'); values.push(body.allowance_frequency);
+  if ('allowance_frequency' in parsed) {
+    updates.push('allowance_frequency = ?'); values.push(parsed.allowance_frequency);
   }
 
   if (updates.length === 0) return error('No valid fields to update');

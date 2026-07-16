@@ -9,7 +9,7 @@
 import { z } from 'zod';
 import { Env, InviteRole } from '../types.js';
 
-import { json, error, clientIp, parseBody } from '../lib/response.js';
+import { json, error, clientIp } from '../lib/response.js';
 import { parseValidatedBody } from '../lib/validate.js';
 import { verifyTurnstile } from '../lib/turnstile.js';
 import { nanoid } from '../lib/nanoid.js';
@@ -99,15 +99,17 @@ function generateCode(): string {
 // ── POST /auth/invite/generate ───────────────────────────────────────────────
 // Requires parent JWT. Creates a typed, single-use code valid for 72h.
 // Body: { role: 'child' | 'co-parent' }
+const generateInviteSchema = z.object({
+  role: z.enum(['child', 'co-parent'], { message: 'role must be "child" or "co-parent"' }),
+});
+
 export async function handleGenerateInvite(request: Request, env: Env): Promise<Response> {
   const caller = (request as AuthedRequest).auth;
   if (!caller || caller.role !== 'parent') return error('Unauthorised', 401);
 
-  const body = await parseBody(request);
-  if (!body) return error('Invalid JSON body');
-
-  const role = body['role'] as InviteRole | undefined;
-  if (role !== 'child' && role !== 'co-parent') return error('role must be "child" or "co-parent"');
+  const parsed = await parseValidatedBody(request, generateInviteSchema);
+  if (parsed instanceof Response) return parsed;
+  const role: InviteRole = parsed.role;
 
   // Only the lead parent may invite a co-parent
   if (role === 'co-parent') {
@@ -359,22 +361,24 @@ async function redeemCoParentInvite(
 // Parent creates a child record + generates a child invite code in one step.
 // Body: { display_name, age?, opening_balance_pence? }
 // Returns: { child_id, invite_code, expires_at }
+const addChildSchema = z.object({
+  display_name:           z.string().trim().min(1, 'display_name required'),
+  earnings_mode:           z.enum(['ALLOWANCE', 'CHORES', 'HYBRID'], { message: 'Invalid earnings_mode' }).optional(),
+  opening_balance_pence:   z.number().optional(),
+});
+
 export async function handleAddChild(request: Request, env: Env): Promise<Response> {
   const caller = (request as AuthedRequest).auth;
   if (!caller || caller.role !== 'parent') return error('Unauthorised', 401);
 
-  const body = await parseBody(request);
-  if (!body) return error('Invalid JSON body');
+  const parsed = await parseValidatedBody(request, addChildSchema);
+  if (parsed instanceof Response) return parsed;
 
-  const display_name = (body['display_name'] as string | undefined)?.trim();
-  if (!display_name) return error('display_name required');
+  const display_name  = parsed.display_name;
+  const earnings_mode = parsed.earnings_mode ?? 'HYBRID';
 
-  const VALID_MODES = ['ALLOWANCE', 'CHORES', 'HYBRID'];
-  const earnings_mode = (body['earnings_mode'] as string | undefined) ?? 'HYBRID';
-  if (!VALID_MODES.includes(earnings_mode)) return error('Invalid earnings_mode');
-
-  const opening_balance_pence = typeof body['opening_balance_pence'] === 'number'
-    ? Math.max(0, Math.floor(body['opening_balance_pence'] as number))
+  const opening_balance_pence = typeof parsed.opening_balance_pence === 'number'
+    ? Math.max(0, Math.floor(parsed.opening_balance_pence))
     : 0;
 
   const childId   = nanoid();
@@ -472,18 +476,23 @@ export async function handleRegenerateChildInvite(request: Request, env: Env, ch
 // ── POST /auth/registration/save-step ───────────────────────────────────────
 // Upserts the in-progress registration state. Called after each stage.
 // Body: { step: 1–4, data: { ... } }
+const saveRegistrationStepSchema = z.object({
+  step:      z.number().min(1, 'step must be 1–4').max(4, 'step must be 1–4'),
+  step_data: z.record(z.string(), z.unknown()).optional(),
+  data:      z.record(z.string(), z.unknown()).optional(),
+});
+
 export async function handleSaveRegistrationStep(request: Request, env: Env): Promise<Response> {
   const caller = (request as AuthedRequest).auth;
   if (!caller || caller.role !== 'parent') return error('Unauthorised', 401);
 
-  const body = await parseBody(request);
-  if (!body) return error('Invalid JSON body');
+  const parsed = await parseValidatedBody(request, saveRegistrationStepSchema);
+  if (parsed instanceof Response) return parsed;
 
-  const step = body['step'] as number | undefined;
-  const data = (body['step_data'] ?? body['data']) as Record<string, unknown> | undefined;
+  const step = parsed.step;
+  const data = parsed.step_data ?? parsed.data;
 
-  if (!step || step < 1 || step > 4) return error('step must be 1–4');
-  if (!data || typeof data !== 'object') return error('data must be an object');
+  if (!data) return error('data must be an object');
 
   const now = Math.floor(Date.now() / 1000);
 

@@ -10,7 +10,8 @@
     "sync:playbook": "node scripts/sync-playbook.mjs",
     "sync:playbook:prod": "node scripts/sync-playbook.mjs --env production",
     "test": "vitest",
-    "load-test": "node scripts/load-test.mjs"
+    "load-test": "node scripts/load-test.mjs",
+    "load-test:auth": "node scripts/load-test-authenticated.mjs"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20240909.0",
