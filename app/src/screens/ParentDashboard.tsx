@@ -252,7 +252,7 @@ export function ParentDashboard() {
                 return (
                   <button
                     onClick={() => setShowSettings(true)}
-                    className="shrink-0 rounded-full cursor-pointer focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)]"
+                    className="shrink-0 w-9 h-9 rounded-full cursor-pointer focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)]"
                     title="Settings"
                     aria-label="Open settings"
                   >
