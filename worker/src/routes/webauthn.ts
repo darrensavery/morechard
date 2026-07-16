@@ -11,13 +11,11 @@
 
 import {
   generateRegistrationOptions, verifyRegistrationResponse,
-  generateAuthenticationOptions, verifyAuthenticationResponse,
 } from '@simplewebauthn/server';
 import type {
-  RegistrationResponseJSON, AuthenticationResponseJSON,
-  VerifiedRegistrationResponse, VerifiedAuthenticationResponse,
+  RegistrationResponseJSON,
+  VerifiedRegistrationResponse,
 } from '@simplewebauthn/server';
-import * as Sentry from '@sentry/cloudflare';
 import { z } from 'zod';
 import { Env } from '../types.js';
 import { json, error } from '../lib/response.js';
@@ -26,15 +24,13 @@ import { resolveReturnOrigin } from '../lib/appUrl.js';
 import { nanoid } from '../lib/nanoid.js';
 import type { JwtPayload } from '../lib/jwt.js';
 import {
-  toBase64Url, fromBase64Url, deriveNativeCredentialId, verifyNativeSignature,
+  toBase64Url, deriveNativeCredentialId,
   storeChallenge, consumeChallenge,
 } from '../lib/webauthn.js';
-import { issueParentJwt, issueChildJwt } from './auth.js';
 
 type AuthedRequest = Request & { auth: JwtPayload };
 
 const platformSchema = z.enum(['web', 'native']);
-const roleSchema = z.enum(['parent', 'child']);
 
 const registerOptionsSchema = z.object({ platform: platformSchema, displayName: z.string().optional() });
 
@@ -47,22 +43,17 @@ const registerVerifySchema = z.discriminatedUnion('platform', [
   z.object({ platform: z.literal('native'), publicKey: z.string().min(1) }),
 ]);
 
-const loginOptionsSchema = z.object({
-  user_id: z.string().min(1),
-  role: roleSchema,
-  platform: platformSchema,
-});
-
-const loginVerifySchema = z.discriminatedUnion('platform', [
-  z.object({
-    platform: z.literal('web'), user_id: z.string().min(1), role: roleSchema,
-    response: z.record(z.string(), z.unknown()),
-  }),
-  z.object({
-    platform: z.literal('native'), user_id: z.string().min(1), role: roleSchema,
-    public_key: z.string().min(1), signature: z.string().min(1),
-  }),
-]);
+// NOTE for Task 5: this file's login/options + login/verify handlers are
+// appended in Task 5, which also needs to add back (not re-derive): the
+// `generateAuthenticationOptions`/`verifyAuthenticationResponse` imports +
+// `AuthenticationResponseJSON`/`VerifiedAuthenticationResponse` types from
+// '@simplewebauthn/server', `import * as Sentry from '@sentry/cloudflare'`,
+// `fromBase64Url`/`verifyNativeSignature` from '../lib/webauthn.js',
+// `issueParentJwt`/`issueChildJwt` from './auth.js', and the `roleSchema`/
+// `loginOptionsSchema`/`loginVerifySchema` zod schemas — all of these were
+// trimmed from this task's commit because they were unused until Task 5's
+// handlers exist (tsc's `noUnusedLocals` fails a commit that declares them
+// too early).
 
 function rpFrom(request: Request, env: Env): { origin: string; rpID: string } {
   const origin = resolveReturnOrigin(request, env);
