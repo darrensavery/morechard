@@ -132,7 +132,7 @@ async function readStore(familyId: string): Promise<Store> {
 
     try {
       const key = await getOrCreateKey(db, familyId);
-      const plainBuf = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: record.iv }, key, record.ciphertext);
+      const plainBuf = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: record.iv as BufferSource }, key, record.ciphertext);
       return JSON.parse(new TextDecoder().decode(plainBuf)) as Store;
     } catch {
       return {};
