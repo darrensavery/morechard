@@ -195,6 +195,48 @@ export async function childLogin(family_id: string, child_id: string, pin: strin
   return request('/auth/child/login', { method: 'POST', body: JSON.stringify({ family_id, child_id, pin }) });
 }
 
+export type WebauthnRegisterOptionsResult =
+  | { platform: 'native'; challenge: string }
+  | { platform: 'web'; options: Record<string, unknown> };
+
+export async function webauthnRegisterOptions(
+  platform: 'web' | 'native',
+  displayName?: string,
+): Promise<WebauthnRegisterOptionsResult> {
+  return request('/auth/webauthn/register/options', { method: 'POST', body: JSON.stringify({ platform, displayName }) });
+}
+
+export type WebauthnRegisterVerifyBody =
+  | { platform: 'web'; response: Record<string, unknown> }
+  | { platform: 'native'; publicKey: string };
+
+export async function webauthnRegisterVerify(body: WebauthnRegisterVerifyBody): Promise<{ ok: true }> {
+  return request('/auth/webauthn/register/verify', { method: 'POST', body: JSON.stringify(body) });
+}
+
+export type WebauthnLoginOptionsResult =
+  | { platform: 'native'; challenge: string }
+  | { platform: 'web'; options: Record<string, unknown> };
+
+export async function webauthnLoginOptions(
+  userId: string,
+  role: 'parent' | 'child',
+  platform: 'web' | 'native',
+): Promise<WebauthnLoginOptionsResult> {
+  return request('/auth/webauthn/login/options', {
+    method: 'POST',
+    body: JSON.stringify({ user_id: userId, role, platform }),
+  });
+}
+
+export type WebauthnLoginVerifyBody =
+  | { platform: 'web'; user_id: string; role: 'parent' | 'child'; response: Record<string, unknown> }
+  | { platform: 'native'; user_id: string; role: 'parent' | 'child'; public_key: string; signature: string };
+
+export async function webauthnLoginVerify(body: WebauthnLoginVerifyBody): Promise<{ token: string; expires_in: number }> {
+  return request('/auth/webauthn/login/verify', { method: 'POST', body: JSON.stringify(body) });
+}
+
 export async function logout(): Promise<void> {
   await request('/auth/logout', { method: 'POST' });
   await clearToken();
