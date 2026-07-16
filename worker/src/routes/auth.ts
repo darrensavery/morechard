@@ -548,28 +548,65 @@ export async function handleChildLogin(request: Request, env: Env): Promise<Resp
   const prevAppView = prevLogin?.app_view ?? 'ORCHARD'
   const graduationPending = prevAppView === 'ORCHARD' && appView === 'CLEAN'
 
+  const { token, jti, ip, userAgent } = await createChildSession(user.id, family_id, request, env);
+
+  await env.DB
+    .prepare(`INSERT INTO child_logins (child_id, logged_at, ip_address, user_agent, session_jti, app_view)
+              VALUES (?,?,?,?,?,?)`)
+    .bind(user.id, now, ip, userAgent, jti, appView)
+    .run();
+
+  const response = json({ token, expires_in: CHILD_JWT_EXPIRY, graduation_pending: graduationPending });
+  setAuthCookie(response.headers, token, CHILD_JWT_EXPIRY);
+  setSessionMarkerCookie(response.headers, 'child', CHILD_JWT_EXPIRY);
+  return response;
+}
+
+/**
+ * Inserts the `sessions` row and signs the JWT for a child login — shared
+ * by `handleChildLogin` (PIN) and the WebAuthn login/verify handler
+ * (Task 5). Does NOT touch `child_logins`/graduation detection — that
+ * bookkeeping is specific to the PIN login-history feature, not part of
+ * session issuance itself.
+ */
+async function createChildSession(
+  childId: string,
+  familyId: string,
+  request: Request,
+  env: Env,
+): Promise<{ token: string; jti: string; ip: string; userAgent: string | null }> {
   const ip  = clientIp(request);
+  const now = Math.floor(Date.now() / 1000);
   const jti = nanoid();
+  const userAgent = request.headers.get('User-Agent') ?? null;
 
-  const ua = request.headers.get('User-Agent') ?? null;
-
-  await env.DB.batch([
-    env.DB
-      .prepare(`INSERT INTO sessions (jti, user_id, family_id, role, issued_at, expires_at, ip_address, user_agent)
-                VALUES (?,?,?,'child',?,?,?,?)`)
-      .bind(jti, user.id, family_id, now, now + CHILD_JWT_EXPIRY, ip, ua),
-    env.DB
-      .prepare(`INSERT INTO child_logins (child_id, logged_at, ip_address, user_agent, session_jti, app_view)
-                VALUES (?,?,?,?,?,?)`)
-      .bind(user.id, now, ip, ua, jti, appView),
-  ]);
+  await env.DB
+    .prepare(`INSERT INTO sessions (jti, user_id, family_id, role, issued_at, expires_at, ip_address, user_agent)
+              VALUES (?,?,?,'child',?,?,?,?)`)
+    .bind(jti, childId, familyId, now, now + CHILD_JWT_EXPIRY, ip, userAgent)
+    .run();
 
   const token = await signJwt(
-    { sub: user.id, jti, family_id, role: 'child', iat: now, exp: now + CHILD_JWT_EXPIRY },
+    { sub: childId, jti, family_id: familyId, role: 'child', iat: now, exp: now + CHILD_JWT_EXPIRY },
     env.JWT_SECRET,
   );
 
-  const response = json({ token, expires_in: CHILD_JWT_EXPIRY, graduation_pending: graduationPending });
+  return { token, jti, ip, userAgent };
+}
+
+/**
+ * Issues a full child session (cookie + marker cookie) for a non-PIN login
+ * path (currently: WebAuthn). Mirrors `issueParentJwt`'s shape exactly —
+ * no `child_logins`/graduation bookkeeping, that's PIN-specific.
+ */
+export async function issueChildJwt(
+  childId: string,
+  familyId: string,
+  request: Request,
+  env: Env,
+): Promise<Response> {
+  const { token } = await createChildSession(childId, familyId, request, env);
+  const response = json({ token, expires_in: CHILD_JWT_EXPIRY });
   setAuthCookie(response.headers, token, CHILD_JWT_EXPIRY);
   setSessionMarkerCookie(response.headers, 'child', CHILD_JWT_EXPIRY);
   return response;
@@ -1613,7 +1650,7 @@ async function verifyGoogleIdToken(
   return payload;
 }
 
-async function issueParentJwt(userId: string, familyId: string, request: Request, env: Env): Promise<Response> {
+export async function issueParentJwt(userId: string, familyId: string, request: Request, env: Env): Promise<Response> {
   const ip  = clientIp(request);
   const now = Math.floor(Date.now() / 1000);
   const jti = nanoid();
