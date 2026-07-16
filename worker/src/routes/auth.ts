@@ -22,6 +22,7 @@ import { signJwt } from '../lib/jwt.js';
 import type { JwtPayload } from '../lib/jwt.js';
 import { nanoid } from '../lib/nanoid.js';
 import { sha256, computeRecordHash, GENESIS_HASH } from '../lib/hash.js';
+import { setAuthCookie, clearAuthCookie, setSessionMarkerCookie, clearSessionMarkerCookie } from '../lib/cookies.js';
 import { recordPinFailure, clearPinLockout } from '../lib/pinLockout.js';
 import { z } from 'zod';
 import { parseValidatedBody } from '../lib/validate.js';
@@ -568,7 +569,10 @@ export async function handleChildLogin(request: Request, env: Env): Promise<Resp
     env.JWT_SECRET,
   );
 
-  return json({ token, expires_in: CHILD_JWT_EXPIRY, graduation_pending: graduationPending });
+  const response = json({ token, expires_in: CHILD_JWT_EXPIRY, graduation_pending: graduationPending });
+  setAuthCookie(response.headers, token, CHILD_JWT_EXPIRY);
+  setSessionMarkerCookie(response.headers, 'child', CHILD_JWT_EXPIRY);
+  return response;
 }
 
 // ----------------------------------------------------------------
@@ -585,7 +589,10 @@ export async function handleLogout(request: Request, env: Env): Promise<Response
     .bind(now, caller.jti)
     .run();
 
-  return json({ ok: true });
+  const response = json({ ok: true });
+  clearAuthCookie(response.headers);
+  clearSessionMarkerCookie(response.headers);
+  return response;
 }
 
 // ----------------------------------------------------------------
@@ -1507,7 +1514,7 @@ export async function handleSltExchange(request: Request, env: Env): Promise<Res
     .run();
 
   // ── Step 7: Respond ───────────────────────────────────────────
-  return json({
+  const response = json({
     token: jwtData.token,
     user: {
       id:             user.id,
@@ -1520,6 +1527,12 @@ export async function handleSltExchange(request: Request, env: Env): Promise<Res
       google_picture: user.google_picture  ?? null,
     },
   });
+  // issueParentJwt already set the auth + session-marker cookies on
+  // jwtResponse — carry them over since we build a new response body here.
+  for (const cookie of jwtResponse.headers.getAll('Set-Cookie')) {
+    response.headers.append('Set-Cookie', cookie);
+  }
+  return response;
 }
 
 // ----------------------------------------------------------------
@@ -1617,7 +1630,10 @@ async function issueParentJwt(userId: string, familyId: string, request: Request
     env.JWT_SECRET,
   );
 
-  return json({ token, expires_in: PARENT_JWT_EXPIRY });
+  const response = json({ token, expires_in: PARENT_JWT_EXPIRY });
+  setAuthCookie(response.headers, token, PARENT_JWT_EXPIRY);
+  setSessionMarkerCookie(response.headers, 'parent', PARENT_JWT_EXPIRY);
+  return response;
 }
 
 async function sendMagicLinkEmail(

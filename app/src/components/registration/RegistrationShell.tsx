@@ -17,7 +17,7 @@ import { Stage2FamilyConstitution } from './Stage2FamilyConstitution'
 import { Stage3SecureApp }          from './Stage3SecureApp'
 import { Stage4CoParentBridge }     from './Stage4CoParentBridge'
 import { WelcomeNudge }             from './WelcomeNudge'
-import { createFamily, requestMagicLink, saveRegistrationStep } from '@/lib/api'
+import { createFamily, requestMagicLink, saveRegistrationStep, getToken } from '@/lib/api'
 import { detectLocale, type AppLocale } from '@/lib/locale'
 import { grantAnalyticsConsent, setAnalyticsConsent } from '@/lib/analytics'
 
@@ -71,7 +71,7 @@ const STEP_LABELS: Record<number, string> = {
 // ── Shell ─────────────────────────────────────────────────────────────────────
 
 interface Props {
-  onComplete: (familyId: string, token: string, displayName: string, userId: string, authMethod: 'biometrics' | 'pin' | null, pin: string | null) => void
+  onComplete: (familyId: string, token: string | null, displayName: string, userId: string, authMethod: 'biometrics' | 'pin' | null, pin: string | null) => void
 }
 
 export function RegistrationShell({ onComplete }: Props) {
@@ -187,10 +187,10 @@ export function RegistrationShell({ onComplete }: Props) {
     setError('')
   }
 
-  function handleNudgeDismiss() {
+  async function handleNudgeDismiss() {
     onComplete(
       state.family_id!,
-      localStorage.getItem('mc_token')!,
+      await getToken(),
       state.display_name!,
       state.user_id!,
       authMethod,

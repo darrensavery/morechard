@@ -13,6 +13,7 @@
 import { Env } from '../types.js';
 import { verifyJwt, JwtPayload } from './jwt.js';
 import { error } from './response.js';
+import { getAuthCookie } from './cookies.js';
 
 export async function requireAuth(request: Request, env: Env): Promise<JwtPayload | Response> {
   const token = extractToken(request);
@@ -88,10 +89,23 @@ export function requireFamilyMatch(auth: JwtPayload, family_id: string): Respons
 // Helpers
 // ----------------------------------------------------------------
 
+export function requireCsrfHeader(request: Request, viaCookie: boolean): Response | null {
+  if (!viaCookie) return null; // Bearer/native — no browser auto-attach, no CSRF exposure
+  const isWrite = !['GET', 'HEAD', 'OPTIONS'].includes(request.method);
+  if (!isWrite) return null;
+  if (request.headers.get('X-Morechard-Client') !== '1') {
+    return error('Missing client header', 403);
+  }
+  return null;
+}
+
 function extractToken(request: Request): string | null {
-  // Authorization: Bearer <token> — the only supported scheme. A prior
-  // `Cookie: token=` fallback was removed: no route ever issues a
-  // Set-Cookie for it, so it was dead, unauthenticated attack surface.
+  // Cookie takes precedence — this is the web path (HttpOnly mc_token cookie).
+  const cookieToken = getAuthCookie(request);
+  if (cookieToken) return cookieToken;
+
+  // Authorization: Bearer <token> — the native app's path (Capacitor WebView
+  // can't reliably use cookies; see the JWT cookie migration design doc).
   const authHeader = request.headers.get('Authorization');
   if (authHeader?.startsWith('Bearer ')) {
     return authHeader.slice(7).trim();

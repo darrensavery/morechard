@@ -18,7 +18,7 @@ import { cn }                           from '@/lib/utils'
 import { getDeviceIdentity, setDeviceIdentity, toInitials, hashPin } from '@/lib/deviceIdentity'
 import { isBiometricsAvailable, registerBiometrics }        from '@/lib/biometrics'
 import { analytics, track, applyInheritedChildConsent } from '@/lib/analytics'
-import { apiUrl }                       from '@/lib/api'
+import { apiUrl, setToken }             from '@/lib/api'
 import { TurnstileWidget }              from '@/components/ui/TurnstileWidget'
 import * as Sentry                      from '@sentry/react'
 
@@ -186,7 +186,7 @@ export function JoinFamilyScreen() {
       }
 
       const data = await res.json() as RedeemResponse
-      localStorage.setItem('mc_token', data.token)
+      await setToken(data.token)
       setRedeemedData({ ...data, display_name: name })
       setStep('securing')
       // Biometric check kicks off via useEffect watching step === 'securing'

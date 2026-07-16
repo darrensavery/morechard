@@ -11,6 +11,7 @@ import { Env } from '../types.js';
 import { json, error } from '../lib/response.js';
 import { signJwt } from '../lib/jwt.js';
 import type { JwtPayload } from '../lib/jwt.js';
+import { setAuthCookie, setSessionMarkerCookie } from '../lib/cookies.js';
 
 const DEMO_FAMILY_ID   = 'demo-family-thomson';
 const DEMO_LEAD_ID     = 'demo-user-sarah';
@@ -47,7 +48,10 @@ export async function handleDemoRegister(request: Request, env: Env): Promise<Re
     .run();
 
   const token = await issueDemoToken(env, DEMO_LEAD_ID, 'professional', now);
-  return json({ token, expires_in: DEMO_SESSION_TTL });
+  const response = json({ token, expires_in: DEMO_SESSION_TTL });
+  setAuthCookie(response.headers, token, DEMO_SESSION_TTL);
+  setSessionMarkerCookie(response.headers, 'parent', DEMO_SESSION_TTL);
+  return response;
 }
 
 // ----------------------------------------------------------------
@@ -82,7 +86,10 @@ export async function handleDemoEnter(request: Request, env: Env): Promise<Respo
     .run();
 
   const token = await issueDemoToken(env, DEMO_LEAD_ID, 'demo_parent', now);
-  return json({ token, expires_in: DEMO_SESSION_TTL });
+  const response = json({ token, expires_in: DEMO_SESSION_TTL });
+  setAuthCookie(response.headers, token, DEMO_SESSION_TTL);
+  setSessionMarkerCookie(response.headers, 'parent', DEMO_SESSION_TTL);
+  return response;
 }
 
 // ----------------------------------------------------------------

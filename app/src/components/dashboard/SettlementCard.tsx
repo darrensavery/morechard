@@ -45,7 +45,7 @@ export function SettlementCard({ period, onClose, onReconciled }: Props) {
     try {
       const res = await fetch(apiUrl('/api/shared-expenses/reconcile'), {
         method: 'POST',
-        headers: authHeaders('application/json'),
+        headers: await authHeaders('application/json'),
         body: JSON.stringify({ period }),
       });
       if (!res.ok) {

@@ -116,3 +116,43 @@ describe('lockMinutesRemaining', () => {
     expect(lockMinutesRemaining(NOW + 1, NOW)).toBe(1);
   });
 });
+
+// ── CSRF header guard logic ──────────────────────────────────────────────────
+
+import { requireCsrfHeader } from './middleware.js';
+
+describe('requireCsrfHeader', () => {
+  it('rejects a cookie-authenticated mutating request with no client header', () => {
+    const request = new Request('https://api.morechard.com/api/goals', {
+      method: 'POST',
+      headers: { Cookie: 'mc_token=abc' },
+    });
+    const result = requireCsrfHeader(request, true);
+    expect(result).not.toBeNull();
+    expect(result?.status).toBe(403);
+  });
+
+  it('accepts a cookie-authenticated mutating request WITH the client header', () => {
+    const request = new Request('https://api.morechard.com/api/goals', {
+      method: 'POST',
+      headers: { Cookie: 'mc_token=abc', 'X-Morechard-Client': '1' },
+    });
+    expect(requireCsrfHeader(request, true)).toBeNull();
+  });
+
+  it('never blocks a Bearer-authenticated (native) request, regardless of header', () => {
+    const request = new Request('https://api.morechard.com/api/goals', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer abc' },
+    });
+    expect(requireCsrfHeader(request, false)).toBeNull();
+  });
+
+  it('never blocks GET requests even when cookie-authenticated', () => {
+    const request = new Request('https://api.morechard.com/api/goals', {
+      method: 'GET',
+      headers: { Cookie: 'mc_token=abc' },
+    });
+    expect(requireCsrfHeader(request, true)).toBeNull();
+  });
+});

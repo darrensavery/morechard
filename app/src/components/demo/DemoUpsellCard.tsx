@@ -33,13 +33,13 @@ export function DemoUpsellCard({ trialStatus }: Props) {
     try {
       const res = await fetch(apiUrl('/auth/demo/enter'), {
         method: 'POST',
-        headers: authHeaders('application/json'),
+        headers: await authHeaders('application/json'),
         body: JSON.stringify({}),
       })
       const data = await res.json() as { token?: string; error?: string }
       if (!res.ok) throw new Error(data.error ?? 'Could not enter demo')
 
-      setToken(data.token!)
+      await setToken(data.token!)
       const existing = getDeviceIdentity()
       setDeviceIdentity({
         user_id:        'demo-user-sarah',

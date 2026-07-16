@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import { FullLogo } from '../components/ui/Logo'
+import { isAuthenticated } from '../lib/authState'
 
 type Tile = {
   role: 'dad' | 'mum' | 'child'
@@ -76,9 +77,7 @@ export function LandingScreen() {
   const navigate = useNavigate()
 
   function handleTileClick(tile: Tile) {
-    const token = localStorage.getItem('mc_token')
-
-    if (!token) {
+    if (!isAuthenticated()) {
       navigate('/signup')
       return
     }

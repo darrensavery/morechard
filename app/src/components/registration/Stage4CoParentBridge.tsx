@@ -77,7 +77,7 @@ export function Stage4CoParentBridge({ data, onNext, onBack }: Props) {
     try {
       await fetch(apiUrl('/auth/invite/send-email'), {
         method: 'POST',
-        headers: authHeaders('application/json'),
+        headers: await authHeaders('application/json'),
         body: JSON.stringify({ email, code: c, role: 'co-parent' }),
       })
       setEmailSent(true)

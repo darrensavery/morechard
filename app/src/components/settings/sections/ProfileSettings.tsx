@@ -10,7 +10,7 @@ import { useState } from 'react'
 import { User, Shield, AlertTriangle, X, LogOut } from 'lucide-react'
 import { AvatarSVG, DefaultAvatar, AVATAR_CATEGORIES, avatarsForCategory, type AvatarCategory } from '../../../lib/avatars'
 import type { MeResult } from '../../../lib/api'
-import { leaveFamily, deleteFamily, clearToken } from '../../../lib/api'
+import { leaveFamily, deleteFamily, logout } from '../../../lib/api'
 import { clearDeviceIdentity, getDeviceIdentity, verifyPinHash } from '../../../lib/deviceIdentity'
 import { cn } from '../../../lib/utils'
 import { Toast, SettingsRow, SectionCard, SectionHeader } from '../shared'
@@ -130,11 +130,11 @@ export function ProfileSettings({
     }
   }
 
-  function wipeLsAndRedirect() {
+  async function wipeLsAndRedirect() {
     clearDeviceIdentity()
     localStorage.removeItem('mc_parent_tab')
     localStorage.removeItem('mc_parent_avatar')
-    clearToken()
+    await logout().catch(() => undefined)
     window.location.replace('/')
   }
 
@@ -147,7 +147,7 @@ export function ProfileSettings({
     setDangerError(null)
     try {
       await leaveFamily()
-      wipeLsAndRedirect()
+      await wipeLsAndRedirect()
     } catch (err: unknown) {
       setDangerError((err as Error).message)
       setDangerBusy(false)
@@ -164,7 +164,7 @@ export function ProfileSettings({
     setDangerError(null)
     try {
       await deleteFamily()
-      wipeLsAndRedirect()
+      await wipeLsAndRedirect()
     } catch (err: unknown) {
       setDangerError((err as Error).message)
       setDangerBusy(false)

@@ -15,6 +15,7 @@ import { verifyTurnstile } from '../lib/turnstile.js';
 import { nanoid } from '../lib/nanoid.js';
 import { hashPassword } from '../lib/crypto.js';
 import { signJwt } from '../lib/jwt.js';
+import { setAuthCookie, setSessionMarkerCookie } from '../lib/cookies.js';
 import { AuthedRequest } from './auth.js';
 
 const INVITE_TTL = 72 * 60 * 60; // 72 hours in seconds
@@ -288,7 +289,10 @@ async function redeemChildInvite(
     .bind(familyId)
     .first<{ child_analytics_consent: number }>();
 
-  return json({ token, expires_in: CHILD_JWT_EXPIRY, role: 'child', user_id: userId, family_id: familyId, child_analytics: fam?.child_analytics_consent === 1 }, 201);
+  const response = json({ token, expires_in: CHILD_JWT_EXPIRY, role: 'child', user_id: userId, family_id: familyId, child_analytics: fam?.child_analytics_consent === 1 }, 201);
+  setAuthCookie(response.headers, token, CHILD_JWT_EXPIRY);
+  setSessionMarkerCookie(response.headers, 'child', CHILD_JWT_EXPIRY);
+  return response;
 }
 
 async function redeemCoParentInvite(
@@ -345,7 +349,10 @@ async function redeemCoParentInvite(
     env.JWT_SECRET,
   );
 
-  return json({ token, expires_in: PARENT_JWT_EXPIRY, role: 'co-parent', user_id: userId, family_id: familyId }, 201);
+  const response = json({ token, expires_in: PARENT_JWT_EXPIRY, role: 'co-parent', user_id: userId, family_id: familyId }, 201);
+  setAuthCookie(response.headers, token, PARENT_JWT_EXPIRY);
+  setSessionMarkerCookie(response.headers, 'parent', PARENT_JWT_EXPIRY);
+  return response;
 }
 
 // ── POST /auth/child/add ─────────────────────────────────────────────────────

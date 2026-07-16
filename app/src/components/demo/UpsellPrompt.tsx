@@ -36,7 +36,7 @@ export function UpsellPrompt({ feature, title, description, children }: Props) {
     try {
       await fetch(apiUrl('/auth/demo/notify'), {
         method: 'POST',
-        headers: authHeaders('application/json'),
+        headers: await authHeaders('application/json'),
         body: JSON.stringify({ feature }),
       })
       setNotified(true)

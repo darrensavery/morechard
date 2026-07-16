@@ -5,7 +5,7 @@
 import { useState, useEffect } from 'react'
 import { Monitor, Smartphone, Tablet, AlertCircle, Loader2 } from 'lucide-react'
 import type { SessionRow } from '../../../lib/api'
-import { getSessions, revokeSession, revokeOtherSessions } from '../../../lib/api'
+import { getSessions, revokeSession, revokeOtherSessions, getToken } from '../../../lib/api'
 import { SectionHeader } from '../shared'
 
 // ── UA parsing ────────────────────────────────────────────────────────────────
@@ -56,9 +56,9 @@ function DeviceIcon({ label }: { label: string }) {
 
 // ── JWT jti extraction ────────────────────────────────────────────────────────
 
-function getCurrentJti(): string | null {
+async function getCurrentJti(): Promise<string | null> {
   try {
-    const token = localStorage.getItem('mc_token')
+    const token = await getToken() // null on web — HttpOnly cookie, not decodable client-side
     if (!token) return null
     const payload = JSON.parse(atob(token.split('.')[1]))
     return payload.jti ?? null
@@ -82,8 +82,7 @@ export function ActiveSessionsSettings({ onBack }: Props) {
   const [revoking,    setRevoking]    = useState<string | null>(null)
   const [revokeAll,   setRevokeAll]   = useState(false)
   const [revokeError, setRevokeError] = useState<string | null>(null)
-
-  const currentJti = getCurrentJti()
+  const [currentJti,  setCurrentJti]  = useState<string | null>(null)
 
   async function load() {
     setLoading(true)
@@ -98,7 +97,10 @@ export function ActiveSessionsSettings({ onBack }: Props) {
     }
   }
 
-  useEffect(() => { load() }, [])
+  useEffect(() => {
+    load()
+    getCurrentJti().then(setCurrentJti)
+  }, [])
 
   async function handleRevoke(jti: string) {
     setRevoking(jti)

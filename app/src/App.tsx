@@ -5,10 +5,37 @@ import { getDeviceIdentity, setDeviceIdentity, toInitials, hashPin } from './lib
 import { LocaleProvider } from './lib/locale'
 import { analytics, track, applyInheritedChildConsent } from './lib/analytics'
 import { apiUrl } from './lib/api'
+import { primeAuthState, isAuthenticated } from './lib/authState'
+import { Capacitor } from '@capacitor/core'
+import { SecureStoragePlugin } from 'capacitor-secure-storage-plugin'
 import { AppUrlListener } from './components/AppUrlListener'
 import { AndroidBackController } from './components/AndroidBackController'
 import { AppAutoLock } from './components/AppAutoLock'
 import { hasSeenOnboarding }  from './lib/onboarding'
+
+/**
+ * One-time native migration: an existing install may still have the JWT in
+ * localStorage from before this change. Write it into secure storage FIRST,
+ * verify the write succeeded, and only THEN delete the localStorage copy —
+ * if the secure-storage write fails, leaving localStorage intact gives the
+ * app another chance to migrate on the next boot instead of hard-logging
+ * the user out.
+ */
+async function migrateNativeTokenIfNeeded(): Promise<void> {
+  if (!Capacitor.isNativePlatform()) return
+  const legacy = localStorage.getItem('mc_token')
+  if (!legacy) return
+  try {
+    await SecureStoragePlugin.set({ key: 'mc_token', value: legacy })
+    const { value } = await SecureStoragePlugin.get({ key: 'mc_token' })
+    if (value === legacy) {
+      localStorage.removeItem('mc_token')
+    }
+    // else: write didn't verify — leave localStorage alone, retry next boot
+  } catch {
+    // secure storage unavailable this boot — leave localStorage alone, retry next boot
+  }
+}
 // Sentry is deferred via requestIdleCallback in main.tsx — import lazily here too
 // so vendor-sentry stays out of the initial module graph
 async function getSentry() { return import('@sentry/react') }
@@ -125,8 +152,7 @@ function RootGate() {
 function RequireSession({ children }: { children: React.ReactNode }) {
   const identity = getDeviceIdentity()
   if (!identity) return <Navigate to="/" replace />
-  const token = localStorage.getItem('mc_token')
-  if (!token) return <Navigate to="/lock" replace />
+  if (!isAuthenticated()) return <Navigate to="/lock" replace />
   return <>{children}</>
 }
 
@@ -141,7 +167,7 @@ function SuspenseFallback() {
 export default function App() {
   async function handleRegistrationComplete(
     familyId: string,
-    _token: string,
+    _token: string | null,
     displayName: string,
     userId: string,
     authMethod: 'biometrics' | 'pin' | null,
@@ -186,13 +212,29 @@ export default function App() {
   // parent's later opt-in or veto propagates (events only — replay stays off).
   useEffect(() => {
     const id = getDeviceIdentity()
-    if (id?.role !== 'child' || !localStorage.getItem('mc_token')) return
+    if (id?.role !== 'child' || !isAuthenticated()) return
     import('./lib/api').then(({ getAnalyticsEffective }) =>
       getAnalyticsEffective()
         .then(({ child_analytics }) => applyInheritedChildConsent(child_analytics))
         .catch(() => null)
     )
   }, [])
+
+  // Boot gate: prime in-memory auth state (and migrate any legacy native
+  // localStorage token) before the router can render a guarded route —
+  // RequireSession/isAuthenticated() would otherwise see a false "logged out"
+  // on native during the async priming window.
+  const [checkingAuth, setCheckingAuth] = useState(true)
+
+  useEffect(() => {
+    migrateNativeTokenIfNeeded()
+      .then(() => primeAuthState())
+      .finally(() => setCheckingAuth(false))
+  }, [])
+
+  if (checkingAuth) {
+    return <SuspenseFallback />
+  }
 
   return (
     <LocaleProvider>

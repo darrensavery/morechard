@@ -198,7 +198,7 @@ export function SupportSettings({ toast, onBack }: Props) {
     try {
       const res = await fetch(apiUrl('/api/support-agent/request'), {
         method: 'POST',
-        headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+        headers: { ...(await authHeaders()), 'Content-Type': 'application/json' },
         body: JSON.stringify({ description, screen: 'SupportSettings' }),
       })
       if (!res.ok) throw new Error('Request failed')
