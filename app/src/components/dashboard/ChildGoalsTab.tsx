@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { tick } from '../../lib/haptics'
 import type { BalanceSummary, Goal, Chore, ChildNudge } from '../../lib/api'
-import { getBalance, getGoals, getChores, purchaseGoal, formatCurrency, effectiveTarget } from '../../lib/api'
+import { getBalance, getGoals, getChores, purchaseGoal, deleteGoal, formatCurrency, effectiveTarget } from '../../lib/api'
 import { ChildNudgeBanner } from '../child/ChildNudgeBanner'
 import { GrowingTree } from '../ui/GrowingTree'
 import { SavingsGrove } from './SavingsGrove'
@@ -23,6 +23,7 @@ export function ChildGoalsTab({ familyId, childId, currency, appView, nudge, onN
   const [loading,  setLoading]  = useState(true)
   const [showGrove, setShowGrove] = useState(false)
   const [purchasing, setPurchasing] = useState<string | null>(null)
+  const [deleting, setDeleting] = useState<string | null>(null)
   const [goalBarPct, setGoalBarPct] = useState(0)
   const barTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -102,6 +103,18 @@ export function ChildGoalsTab({ familyId, childId, currency, appView, nudge, onN
       await load()
     } finally {
       setPurchasing(null)
+    }
+  }
+
+  async function handleDelete(goalId: string, goalTitle: string) {
+    if (!confirm(`Stop saving for "${goalTitle}"? Any money you've saved goes back to your balance.`)) return
+    void tick()
+    setDeleting(goalId)
+    try {
+      await deleteGoal(goalId)
+      await load()
+    } finally {
+      setDeleting(null)
     }
   }
 
@@ -208,6 +221,14 @@ export function ChildGoalsTab({ familyId, childId, currency, appView, nudge, onN
                         : (appView === 'CLEAN' ? 'Mark as Purchased!' : '🎉 Mark as Purchased!')}
                     </button>
                   )}
+
+                  <button
+                    onClick={() => handleDelete(activeTopGoal.id, activeTopGoal.title)}
+                    disabled={deleting === activeTopGoal.id}
+                    className="w-full text-center text-[11px] font-semibold text-[var(--color-text-muted)] hover:text-red-500 disabled:opacity-60 transition-colors cursor-pointer py-1"
+                  >
+                    {deleting === activeTopGoal.id ? 'Removing…' : 'Stop saving for this'}
+                  </button>
                 </div>
               )
             })()}
@@ -221,6 +242,14 @@ export function ChildGoalsTab({ familyId, childId, currency, appView, nudge, onN
                       <span className="text-base">{i === 0 ? '🎯' : '⭕'}</span>
                       <span className="flex-1 text-[12px] font-semibold text-[var(--color-text)] truncate">{g.title}</span>
                       <span className="text-[11px] text-[var(--color-text-muted)] shrink-0">{effortLabel(g.target_amount)}</span>
+                      <button
+                        onClick={() => handleDelete(g.id, g.title)}
+                        disabled={deleting === g.id}
+                        aria-label={`Stop saving for ${g.title}`}
+                        className="shrink-0 text-[var(--color-text-muted)] hover:text-red-500 disabled:opacity-60 transition-colors cursor-pointer px-1"
+                      >
+                        ✕
+                      </button>
                     </div>
                   ))}
                 </div>
