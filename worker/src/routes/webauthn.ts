@@ -11,11 +11,15 @@
 
 import {
   generateRegistrationOptions, verifyRegistrationResponse,
+  generateAuthenticationOptions, verifyAuthenticationResponse,
 } from '@simplewebauthn/server';
 import type {
   RegistrationResponseJSON,
   VerifiedRegistrationResponse,
+  AuthenticationResponseJSON,
+  VerifiedAuthenticationResponse,
 } from '@simplewebauthn/server';
+import * as Sentry from '@sentry/cloudflare';
 import { z } from 'zod';
 import { Env } from '../types.js';
 import { json, error } from '../lib/response.js';
@@ -24,9 +28,10 @@ import { resolveReturnOrigin } from '../lib/appUrl.js';
 import { nanoid } from '../lib/nanoid.js';
 import type { JwtPayload } from '../lib/jwt.js';
 import {
-  toBase64Url, deriveNativeCredentialId,
-  storeChallenge, consumeChallenge,
+  toBase64Url, fromBase64Url, deriveNativeCredentialId,
+  storeChallenge, consumeChallenge, verifyNativeSignature,
 } from '../lib/webauthn.js';
+import { issueParentJwt, issueChildJwt } from './auth.js';
 
 type AuthedRequest = Request & { auth: JwtPayload };
 
@@ -43,17 +48,32 @@ const registerVerifySchema = z.discriminatedUnion('platform', [
   z.object({ platform: z.literal('native'), publicKey: z.string().min(1) }),
 ]);
 
-// NOTE for Task 5: this file's login/options + login/verify handlers are
-// appended in Task 5, which also needs to add back (not re-derive): the
-// `generateAuthenticationOptions`/`verifyAuthenticationResponse` imports +
-// `AuthenticationResponseJSON`/`VerifiedAuthenticationResponse` types from
-// '@simplewebauthn/server', `import * as Sentry from '@sentry/cloudflare'`,
-// `fromBase64Url`/`verifyNativeSignature` from '../lib/webauthn.js',
-// `issueParentJwt`/`issueChildJwt` from './auth.js', and the `roleSchema`/
-// `loginOptionsSchema`/`loginVerifySchema` zod schemas — all of these were
-// trimmed from this task's commit because they were unused until Task 5's
-// handlers exist (tsc's `noUnusedLocals` fails a commit that declares them
-// too early).
+const roleSchema = z.enum(['parent', 'child']);
+
+const loginOptionsSchema = z.object({
+  user_id: z.string().min(1),
+  role: roleSchema,
+  platform: platformSchema,
+});
+
+// `response`'s exact shape is a deeply-nested WebAuthn structure; zod here
+// only confirms we received a JSON object at all — @simplewebauthn/server's
+// own verify call is the real validator for its contents.
+const loginVerifySchema = z.discriminatedUnion('platform', [
+  z.object({
+    platform: z.literal('web'),
+    user_id: z.string().min(1),
+    role: roleSchema,
+    response: z.record(z.string(), z.unknown()),
+  }),
+  z.object({
+    platform: z.literal('native'),
+    user_id: z.string().min(1),
+    role: roleSchema,
+    public_key: z.string().min(1),
+    signature: z.string().min(1),
+  }),
+]);
 
 function rpFrom(request: Request, env: Env): { origin: string; rpID: string } {
   const origin = resolveReturnOrigin(request, env);
@@ -144,4 +164,119 @@ export async function handleWebauthnRegisterVerify(request: Request, env: Env): 
     .run();
 
   return json({ ok: true });
+}
+
+// ── Login ─────────────────────────────────────────────────────────────────
+
+export async function handleWebauthnLoginOptions(request: Request, env: Env): Promise<Response> {
+  const parsed = await parseValidatedBody(request, loginOptionsSchema);
+  if (parsed instanceof Response) return parsed;
+  const { user_id, role, platform } = parsed;
+
+  const type = platform === 'web' ? 'webauthn' : 'native-ecdsa';
+  const rows = await env.DB
+    .prepare('SELECT credential_id FROM webauthn_credentials WHERE user_id = ? AND role = ? AND type = ?')
+    .bind(user_id, role, type)
+    .all<{ credential_id: string }>();
+
+  if (rows.results.length === 0) return error('No credential registered', 404);
+
+  if (platform === 'native') {
+    const challenge = toBase64Url(crypto.getRandomValues(new Uint8Array(32)));
+    await storeChallenge(env, user_id, challenge);
+    return json({ platform: 'native', challenge });
+  }
+
+  const { rpID } = rpFrom(request, env);
+  const options = await generateAuthenticationOptions({
+    rpID,
+    allowCredentials: rows.results.map(r => ({ id: r.credential_id })),
+    userVerification: 'required',
+  });
+
+  await storeChallenge(env, user_id, options.challenge);
+  return json({ platform: 'web', options });
+}
+
+export async function handleWebauthnLoginVerify(request: Request, env: Env): Promise<Response> {
+  const parsed = await parseValidatedBody(request, loginVerifySchema);
+  if (parsed instanceof Response) return parsed;
+  const { user_id, role } = parsed;
+
+  const challenge = await consumeChallenge(env, user_id);
+  if (!challenge) return error('Challenge expired or not found', 400);
+
+  const userRow = await env.DB
+    .prepare('SELECT family_id FROM users WHERE id = ?')
+    .bind(user_id)
+    .first<{ family_id: string }>();
+  if (!userRow) return error('Invalid credentials', 401);
+
+  if (parsed.platform === 'native') {
+    const credentialId = await deriveNativeCredentialId(parsed.public_key);
+    const credRow = await env.DB
+      .prepare('SELECT public_key FROM webauthn_credentials WHERE user_id = ? AND role = ? AND type = ? AND credential_id = ?')
+      .bind(user_id, role, 'native-ecdsa', credentialId)
+      .first<{ public_key: string }>();
+    if (!credRow || credRow.public_key !== parsed.public_key) return error('Invalid credentials', 401);
+
+    const valid = await verifyNativeSignature(parsed.public_key, parsed.signature, challenge);
+    if (!valid) return error('Invalid credentials', 401);
+
+    await env.DB
+      .prepare('UPDATE webauthn_credentials SET last_used_at = ? WHERE credential_id = ?')
+      .bind(Math.floor(Date.now() / 1000), credentialId)
+      .run();
+
+    return role === 'parent'
+      ? issueParentJwt(user_id, userRow.family_id, request, env)
+      : issueChildJwt(user_id, userRow.family_id, request, env);
+  }
+
+  const response = parsed.response as unknown as AuthenticationResponseJSON;
+  const credRow = await env.DB
+    .prepare('SELECT credential_id, public_key, counter FROM webauthn_credentials WHERE user_id = ? AND role = ? AND type = ? AND credential_id = ?')
+    .bind(user_id, role, 'webauthn', response.id)
+    .first<{ credential_id: string; public_key: string; counter: number }>();
+  if (!credRow) return error('Invalid credentials', 401);
+
+  const { origin, rpID } = rpFrom(request, env);
+  let verification: VerifiedAuthenticationResponse;
+  try {
+    verification = await verifyAuthenticationResponse({
+      response,
+      expectedChallenge: challenge,
+      expectedOrigin: origin,
+      expectedRPID: rpID,
+      credential: {
+        id: credRow.credential_id,
+        publicKey: fromBase64Url(credRow.public_key) as Uint8Array<ArrayBuffer>,
+        counter: credRow.counter,
+      },
+    });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (msg.includes('counter value') && msg.includes('was lower than expected')) {
+      // A stored counter that didn't increase is the textbook signal of a
+      // cloned hardware authenticator — log distinctly so a dedicated
+      // Sentry alert rule can watch this fingerprint, same pattern as
+      // 'stripe-payment-failure' in routes/stripe.ts.
+      Sentry.captureMessage('WebAuthn credential counter regression: possible clone', {
+        level: 'error',
+        fingerprint: ['webauthn-clone-detected', credRow.credential_id],
+        extra: { user_id, role, credential_id: credRow.credential_id },
+      });
+    }
+    return error('Invalid credentials', 401);
+  }
+  if (!verification.verified) return error('Invalid credentials', 401);
+
+  await env.DB
+    .prepare('UPDATE webauthn_credentials SET counter = ?, last_used_at = ? WHERE credential_id = ?')
+    .bind(verification.authenticationInfo.newCounter, Math.floor(Date.now() / 1000), credRow.credential_id)
+    .run();
+
+  return role === 'parent'
+    ? issueParentJwt(user_id, userRow.family_id, request, env)
+    : issueChildJwt(user_id, userRow.family_id, request, env);
 }
