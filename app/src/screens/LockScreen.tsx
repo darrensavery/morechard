@@ -17,7 +17,7 @@ import { AvatarSVG } from '@/lib/avatars'
 import { challengeBiometrics, hasBiometricCredential, clearBiometricCredential } from '@/lib/biometrics'
 import { analytics, track } from '@/lib/analytics'
 import { FullLogo } from '@/components/ui/Logo'
-import { childLogin, setToken, clearToken } from '@/lib/api'
+import { childLogin, setToken, logout } from '@/lib/api'
 import { isAuthenticated } from '@/lib/authState'
 import * as Sentry from '@sentry/react'
 
@@ -237,7 +237,7 @@ export function LockScreen() {
       `Log out of ${identity.display_name}'s account?\n\nYour family's data stays safe — you'll need to log back in to use Morechard on this phone.`
     )) return
     clearDeviceIdentity()
-    await clearToken()
+    await logout().catch(() => undefined)
     navigate('/', { replace: true })
   }
 

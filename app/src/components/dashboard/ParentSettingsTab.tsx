@@ -78,7 +78,7 @@ import {
   getChildGrowth, updateChildGrowth,
   getMe, updateProfile, getLeadCount, getTrialStatus,
   getShieldUpgradePrice,
-  apiUrl, authHeaders, clearToken,
+  apiUrl, authHeaders, logout,
   type MeResult, type TrialStatus, type ShieldUpgradePrice,
 } from '../../lib/api'
 import { track } from '../../lib/analytics'
@@ -578,7 +578,7 @@ onCoParentRemoved={handleCoParentRemoved} /></ProfileSection>
                 clearDeviceIdentity()
                 localStorage.removeItem('mc_parent_tab')
                 localStorage.removeItem('mc_parent_avatar')
-                await clearToken()
+                await logout().catch(() => undefined)
                 window.location.replace('/')
               }}
               className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-red-50 active:bg-red-50 cursor-pointer transition-colors text-left"

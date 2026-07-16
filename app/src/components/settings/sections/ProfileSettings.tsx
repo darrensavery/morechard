@@ -10,7 +10,7 @@ import { useState } from 'react'
 import { User, Shield, AlertTriangle, X, LogOut } from 'lucide-react'
 import { AvatarSVG, DefaultAvatar, AVATAR_CATEGORIES, avatarsForCategory, type AvatarCategory } from '../../../lib/avatars'
 import type { MeResult } from '../../../lib/api'
-import { leaveFamily, deleteFamily, clearToken } from '../../../lib/api'
+import { leaveFamily, deleteFamily, logout } from '../../../lib/api'
 import { clearDeviceIdentity, getDeviceIdentity, verifyPinHash } from '../../../lib/deviceIdentity'
 import { cn } from '../../../lib/utils'
 import { Toast, SettingsRow, SectionCard, SectionHeader } from '../shared'
@@ -134,7 +134,7 @@ export function ProfileSettings({
     clearDeviceIdentity()
     localStorage.removeItem('mc_parent_tab')
     localStorage.removeItem('mc_parent_avatar')
-    await clearToken()
+    await logout().catch(() => undefined)
     window.location.replace('/')
   }
 

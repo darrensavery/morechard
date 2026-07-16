@@ -1514,7 +1514,7 @@ export async function handleSltExchange(request: Request, env: Env): Promise<Res
     .run();
 
   // ── Step 7: Respond ───────────────────────────────────────────
-  return json({
+  const response = json({
     token: jwtData.token,
     user: {
       id:             user.id,
@@ -1527,6 +1527,12 @@ export async function handleSltExchange(request: Request, env: Env): Promise<Res
       google_picture: user.google_picture  ?? null,
     },
   });
+  // issueParentJwt already set the auth + session-marker cookies on
+  // jwtResponse — carry them over since we build a new response body here.
+  for (const cookie of jwtResponse.headers.getAll('Set-Cookie')) {
+    response.headers.append('Set-Cookie', cookie);
+  }
+  return response;
 }
 
 // ----------------------------------------------------------------
