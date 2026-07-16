@@ -42,8 +42,8 @@ describe('deriveNativeCredentialId', () => {
 
 describe('verifyNativeSignature — real ECDSA round trip', () => {
   it('accepts a genuine signature over the challenge', async () => {
-    const keyPair = await crypto.subtle.generateKey({ name: 'ECDSA', namedCurve: 'P-256' }, true, ['sign', 'verify']);
-    const spki = await crypto.subtle.exportKey('spki', keyPair.publicKey);
+    const keyPair = await crypto.subtle.generateKey({ name: 'ECDSA', namedCurve: 'P-256' }, true, ['sign', 'verify']) as CryptoKeyPair;
+    const spki = await crypto.subtle.exportKey('spki', keyPair.publicKey) as ArrayBuffer;
     const publicKeyB64Url = toBase64Url(spki);
 
     const challenge = crypto.getRandomValues(new Uint8Array(32));
@@ -57,8 +57,8 @@ describe('verifyNativeSignature — real ECDSA round trip', () => {
   });
 
   it('rejects a signature over a different challenge (catches client/server format mismatch too)', async () => {
-    const keyPair = await crypto.subtle.generateKey({ name: 'ECDSA', namedCurve: 'P-256' }, true, ['sign', 'verify']);
-    const spki = await crypto.subtle.exportKey('spki', keyPair.publicKey);
+    const keyPair = await crypto.subtle.generateKey({ name: 'ECDSA', namedCurve: 'P-256' }, true, ['sign', 'verify']) as CryptoKeyPair;
+    const spki = await crypto.subtle.exportKey('spki', keyPair.publicKey) as ArrayBuffer;
     const publicKeyB64Url = toBase64Url(spki);
 
     const realChallenge = toBase64Url(crypto.getRandomValues(new Uint8Array(32)));
