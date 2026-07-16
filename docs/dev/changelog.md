@@ -4,6 +4,29 @@ A running log of notable engineering work, grouped by day, for future reference.
 
 ---
 
+## 2026-07-16
+
+### JWT storage model migrated off `localStorage` — httpOnly cookies (web), Keychain/Keystore (native)
+Closed the two remaining "explicitly deferred" items from the 2026-07-15 audit's first pass: the JWT lived in client `localStorage` (1yr parent / 90-day child expiry — any XSS was a long-lived full account takeover) and the client-side biometric check was never verified server-side. Brainstormed and spec'd both as separate projects (`docs/superpowers/specs/2026-07-15-jwt-cookie-migration-design.md`, `docs/dev/handoff-2026-07-15-webauthn-jwt-redesign.md`), building the bigger-risk JWT migration first.
+- **Web** now uses an `HttpOnly; Secure; SameSite=Lax` auth cookie (`mc_token`) plus a non-`HttpOnly` `mc_session` marker cookie the client JS can read for session state without touching the actual token, and a custom-header CSRF check (`X-Morechard-Client`) enforced on every cookie-authenticated route (`84cb183`, `e93d3bb`, `035d25c`, `d8d21a6`).
+- **Native (Capacitor)** moved off `localStorage` to `capacitor-secure-storage-plugin` (Keychain/Keystore), staying on a Bearer-token model since cross-origin cookies in a mobile WebView are unreliable — includes a one-time migration for existing installs and a new `authState.ts` module priming cookie-based web session state at boot (`fa97163`, `e8f5633`, `ba9c8b9`).
+- Final whole-branch review caught two real bugs before merge: magic-link/Google OAuth web login silently dropped the `Set-Cookie` headers (a fresh JSON response replaced the one carrying them, so those login paths never actually authenticated), and all three "Log out" UI paths only cleared local state without revoking the server-side session, leaving a valid cookie usable for up to 365 days after "logging out" (`a0d6ff7`).
+- Playwright coverage for the cookie-login + CSRF-403 flow written and statically cross-checked against the route code, but never run live — `wrangler dev --remote` returns a Cloudflare 503 on every route in this environment, reproducing identically on unmodified `main` (pre-existing tooling limitation, not a regression) (`31e4418`, `1446d61`).
+
+Verified: `worker/` `tsc --noEmit` clean, 343/343 tests. `app/` `tsc -b --noEmit` clean except the pre-existing, out-of-scope `localBankDetails.ts:135` error, 103/103 tests.
+
+### WebAuthn server-side verification — real biometric login, both web and native
+The other half of the same handoff: `app/src/lib/biometrics.ts` performed a genuine `navigator.credentials.create()`/`.get()` ceremony but never sent the public key anywhere or verified any signature — trivially bypassable while presented as a real security control. Brainstormed and spec'd (`docs/superpowers/specs/2026-07-16-webauthn-verification-design.md`), covering both parent and child accounts, unifying the old separate "unlock" (local re-auth) and "login" (session issuance) concepts: every successful verification now both proves presence and (re)issues a real session, reusing the exact `issueParentJwt`/`issueChildJwt` cookie-issuing code from the JWT migration above.
+- **Web**: real WebAuthn via `@simplewebauthn/server`/`browser` — genuine COSE public keys, real attestation/assertion verification, and signature-counter clone-detection that rejects the login (401) and alerts Sentry with a dedicated `webauthn-clone-detected` fingerprint on a regression (the textbook signal of a cloned hardware authenticator), same alerting pattern as `stripe-payment-failure` (`582614d`, `4a63129`, `ef31cea`, `05cf769`, `7754f40`).
+- **Native (Capacitor)**: a non-extractable ECDSA P-256 key pair generated with Web Crypto and persisted in IndexedDB — the exact same technique already shipped for the encrypted bank vault — gated behind a native biometric prompt (`@aparajita/capacitor-biometric-auth`) before every use. Deliberately not true Secure-Enclave/Android-Keystore-backed signing, which would need custom Swift/Kotlin untestable on real hardware in this environment; documented as a lower security bar consistent with this app's existing risk acceptance elsewhere (`e3a9d83`).
+- `app/src/lib/biometrics.ts`'s 5 exported function signatures kept byte-for-byte unchanged so its 5 existing call sites (`Stage3SecureApp`, `JoinFamilyScreen`, `PinManagementSettings`, `useGatekeeper`, `LockScreen`) needed zero changes (`b9f0c9c`).
+- New `webauthn_credentials` D1 table, migration `0087`, applied to both `morechard-dev` and production `morechard` (`582614d`).
+- Task-level review of the login endpoint flagged zero test coverage on the counter-regression/Sentry alerting path — the single most security-critical behavior in the whole feature — fixed immediately with an isolated test file rather than deferred (`f98d974`).
+- No migration UX needed — pre-launch, no live users; any pre-existing `mc_biometric_id`-only client state is silently treated as "never registered."
+- No live device/browser verification was possible in this environment (no iOS/Android device or emulator, `wrangler dev --remote` doesn't run here) — ships verified by unit tests + code review only; needs real end-to-end verification on actual hardware, tracked alongside the still-outstanding Android App Links item.
+
+Verified: `worker/` `tsc --noEmit` clean, 364/364 tests. `app/` `tsc -b --noEmit` clean except the pre-existing, out-of-scope `localBankDetails.ts:135` error, 125/125 tests.
+
 ## 2026-07-15
 
 ### Cloudflare API token rotated to least privilege
