@@ -54,7 +54,7 @@ Confirmed, not just claimed:
 
 | # | Finding | Status |
 |---|---|---|
-| 4 | JWT held in client `localStorage`, no httpOnly-cookie model. 1yr (parent) / 90-day (child) token life means any XSS = long-lived full account takeover. | **Deferred.** Architecture-level — touches every login flow, web + any wrapped app. User declined this scope for now. |
+| 4 | JWT held in client `localStorage`, no httpOnly-cookie model. 1yr (parent) / 90-day (child) token life means any XSS = long-lived full account takeover. | **Fixed (Pass 6).** Web now uses an `HttpOnly; Secure; SameSite=Lax` cookie (`mc_token`) plus a non-`HttpOnly` `mc_session` marker cookie, with a custom-header (`X-Morechard-Client`) CSRF check enforced on every cookie-authenticated route. Native (Capacitor) moved off `localStorage` to Keychain/Keystore-backed secure storage (`capacitor-secure-storage-plugin`) rather than cookies, since cross-origin cookies in a mobile WebView are unreliable. See `docs/superpowers/specs/2026-07-15-jwt-cookie-migration-design.md` and `docs/superpowers/plans/2026-07-15-jwt-cookie-migration.md`. |
 | 5 | No CSP/HSTS/X-Frame-Options/Referrer-Policy on the app or worker API responses — only the marketing site had headers. | **Fixed.** Full header set added to both the worker (`worker/src/index.ts` — `securityHeaders()`) and the app (`app/public/_headers`), with a CSP scoped to actual third parties (Stripe pricing table, Sentry, PostHog reverse-proxy, dicebear avatars). The admin HTML panel gets its own permissive CSP so the blanket JSON-API CSP doesn't break it. |
 | 6 | `GET /admin` served the full admin panel UI with zero auth. | **Fixed.** HTTP Basic Auth added in front of the page load, reusing the existing `ADMIN_SECRET` (no new credential). Couldn't reuse the `X-Admin-Key` header check the data endpoints use — a plain browser navigation can't set custom headers, which would have broken the login form's own ability to load. |
 | 7 | `POST /api/governance/expire` was reachable with zero auth — a state-mutating endpoint. | **Fixed.** Gated behind the existing `X-Admin-Key` check (`requireAdmin`). Confirmed nothing internal depended on the unauthenticated route — the cron job runs the underlying SQL directly, never calls this HTTP route. |
@@ -137,14 +137,40 @@ All Pass 4 changes verified: `tsc --noEmit` clean and full test suite passing in
 
 ---
 
+**Pass 5 (same day — Turnstile activation + CI token rotation, item 24 from Pass 3):**
+- **Turnstile activated** — created the real Turnstile site in the Cloudflare dashboard and set both `TURNSTILE_SECRET_KEY` (worker secret) and `VITE_TURNSTILE_SITE_KEY` (app build env), turning the soft no-op plumbing from Pass 4 into a live, enforced check on login/magic-link/invite-redeem.
+- **CI Cloudflare API token rotated** — see finding #24 above for the full before/after scope and verification.
+
+Verified via a real `wrangler d1 export` + R2 upload + Worker deploy against production with the new token.
+
+---
+
+**Pass 6 (2026-07-16 — JWT storage model, finding #4):**
+- Brainstormed, designed, and implemented per `docs/superpowers/specs/2026-07-15-jwt-cookie-migration-design.md` and `docs/superpowers/plans/2026-07-15-jwt-cookie-migration.md`.
+- `worker/src/lib/cookies.ts` — new `setAuthCookie`/`setSessionMarkerCookie`/`getAuthCookie` helpers (`mc_token` HttpOnly + `mc_session` non-HttpOnly marker).
+- `worker/src/lib/middleware.ts` — `extractToken()` reads the cookie first (falls back to `Authorization: Bearer` for native), new `requireCsrfHeader()`.
+- `worker/src/index.ts` — CSRF check enforced ahead of every cookie-authenticated route, `Access-Control-Allow-Credentials` added to `corsHeaders()`.
+- All 6 login/registration routes (parent register/login/magic-link-verify, child login, invite redeem, demo register) now issue both cookies.
+- `app/src/lib/api.ts` — token storage rewritten to be async and platform-aware: web relies on the cookie (no client-side token storage at all), native uses `capacitor-secure-storage-plugin` (Keychain/Keystore) instead of `localStorage`.
+- `app/src/lib/authState.ts` — new module priming cookie-based web session state.
+- `App.tsx` — async boot gate + one-time native migration off the old `localStorage` token.
+- ~22 files updated to the new async auth abstraction (`LandingScreen`, `LockScreen`, `JoinFamilyScreen`, `AuthCallbackScreen`, `ParentDashboard`, `ActiveSessionsSettings`, `ProfileSettings`, `RegistrationShell`, `DemoRegisterScreen`, `DemoUpsellCard`, `deviceIdentity.ts`, and others surfaced by the `await authHeaders(...)` typecheck).
+- `app/e2e/auth-cookie.spec.ts` + `app/playwright.config.ts` — new Playwright coverage for the cookie-login + CSRF-403 flow. Written and statically cross-checked against the route code (see Open Items #8) but not run live — `wrangler dev --remote` 503s on every route in this sandbox, reproducing identically on unmodified `main`.
+- `app/vitest.config.ts` — added `e2e/**` to the vitest exclude list (the new Playwright spec was otherwise being collected by vitest too, since its default excludes don't cover a custom `e2e/` directory).
+
+All Pass 6 changes verified: `worker/` — `tsc --noEmit` clean, 343/343 tests passing. `app/` — `tsc -b --noEmit` clean except the pre-existing, out-of-scope `localBankDetails.ts:135` error (confirmed present on baseline before this pass), 103/103 vitest tests passing. WebAuthn server-side verification (finding #1) remains open — separate follow-up project per the original handoff.
+
+---
+
 ## Open items for the next audit pass
 
 Roughly in priority order:
-1. **WebAuthn server-side verification** and **JWT storage model** (httpOnly cookie) — the two remaining architecture-level auth gaps. These are the highest-value items left; both need a proposed design before implementation, not a silent code change.
+1. **WebAuthn server-side verification** — the one remaining architecture-level auth gap (JWT storage model is now closed, Pass 6). Needs a proposed design before implementation, not a silent code change — see the `docs/dev/handoff-2026-07-15-webauthn-jwt-redesign.md` handoff for prior research (mature-library recommendation: `@simplewebauthn/server`/`@simplewebauthn/browser`, plus the fact that every existing user's stored "credential ID" is worthless and needs re-registration once this ships).
 2. **Sentry Alert Rule for Stripe payment failures** — code-side capture is done, the dashboard rule isn't created yet.
 3. Formal load test against a preview URL with real authenticated traffic (chat, insights generation, PDF export) — the current baseline only hits the public `/api/health` endpoint.
 4. Broader zod adoption across the remaining ~28 authenticated-route call sites, incrementally.
 5. Re-run the D1 restore drill periodically (every 6 months, or after any wrangler major-version upgrade) — see `docs/dev/d1-backup-recovery-runbook.md`.
 6. Watch Turnstile's pass/fail rate after activation (2026-07-15) — confirm Managed mode isn't creating friction for legitimate parents/children before considering it "done" rather than just "live".
 7. Delete the old over-scoped Cloudflare API tokens (`Edit Cloudflare Workers` ×2, `moneysteps-deploy`, `moneysteps build token`) once confidence in the new minimal one is fully established — not done immediately after rotation in case of an unexpected rollback need.
+8. Live Playwright verification of the new cookie/CSRF flow (`app/e2e/auth-cookie.spec.ts`) — written and statically cross-checked against the route code, but never actually run: `wrangler dev --remote` returns a Cloudflare 503 on every route in the sandboxed dev environment used for Pass 6 (reproduces identically on unmodified `main`, so it's a pre-existing tooling limitation, not a regression). Run it for real the next time a normal local dev setup is available.
 8. This incident-response runbook itself hasn't been drilled (unlike the D1 one) — worth at least a tabletop walkthrough.
