@@ -146,6 +146,10 @@ import {
   handleGoogleCallback,
   handleSltExchange,
 } from './routes/auth.js';
+import {
+  handleWebauthnRegisterOptions, handleWebauthnRegisterVerify,
+  handleWebauthnLoginOptions, handleWebauthnLoginVerify,
+} from './routes/webauthn.js';
 import { requireAuth, requireRole, requireFamilyMatch, requireCsrfHeader } from './lib/middleware.js';
 import { getAuthCookie } from './lib/cookies.js';
 import { requireAdmin, requireAdminBasicAuth } from './lib/adminAuth.js';
@@ -563,6 +567,8 @@ async function route(request: Request, env: Env, method: string, path: string): 
   if (path === '/auth/google'          && method === 'GET')  return handleGoogleAuth(request, env);
   if (path === '/auth/google/callback' && method === 'GET')  return handleGoogleCallback(request, env);
   if (path === '/auth/slt/exchange'    && method === 'POST') return handleSltExchange(request, env);
+  if (path === '/auth/webauthn/login/options' && method === 'POST') return handleWebauthnLoginOptions(request, env);
+  if (path === '/auth/webauthn/login/verify' && method === 'POST') return handleWebauthnLoginVerify(request, env);
 
   // Stripe webhook — public but signature-verified internally
   if (path === '/api/stripe/webhook' && method === 'POST') return handleStripeWebhook(request, env);
@@ -648,6 +654,8 @@ async function route(request: Request, env: Env, method: string, path: string): 
 
   if (path === '/auth/me'           && method === 'GET')  return withAuth(request, auth, env, handleMe);
   if (path === '/auth/me'           && method === 'PATCH') return withAuth(request, auth, env, handleMePatch);
+  if (path === '/auth/webauthn/register/options' && method === 'POST') return withAuth(request, auth, env, handleWebauthnRegisterOptions);
+  if (path === '/auth/webauthn/register/verify' && method === 'POST') return withAuth(request, auth, env, handleWebauthnRegisterVerify);
   if (path === '/auth/verify-email' && method === 'GET')  return handleVerifyEmail(request, env);
   if (path === '/auth/logout'       && method === 'POST') return withAuth(request, auth, env, handleLogout);
 
