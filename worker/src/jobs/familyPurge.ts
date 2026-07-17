@@ -222,8 +222,6 @@ export async function runChildDsarPurge(env: Env, nowEpoch: number): Promise<voi
       'lesson_completions',
       'module_act_progress',
       'chat_rate_limits',
-      'user_settings',
-      'account_locks',
       'child_badges',
       'child_streaks',
       'child_nudges',
@@ -231,6 +229,9 @@ export async function runChildDsarPurge(env: Env, nowEpoch: number): Promise<voi
     const batch: D1PreparedStatement[] = childKeyedTables.map(table =>
       env.DB.prepare(`DELETE FROM ${table} WHERE child_id = ?`).bind(childId),
     );
+    // user_settings and account_locks are keyed on user_id, not child_id.
+    batch.push(env.DB.prepare(`DELETE FROM user_settings WHERE user_id = ?`).bind(childId));
+    batch.push(env.DB.prepare(`DELETE FROM account_locks WHERE user_id = ?`).bind(childId));
     batch.push(env.DB.prepare(`DELETE FROM sessions WHERE user_id = ?`).bind(childId));
     batch.push(env.DB.prepare(`DELETE FROM family_roles WHERE user_id = ?`).bind(childId));
     batch.push(env.DB.prepare(`DELETE FROM users WHERE id = ?`).bind(childId));

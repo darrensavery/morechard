@@ -46,4 +46,16 @@ describe('runChildDsarPurge', () => {
     expect(calls.some(s => s.includes('DELETE FROM users WHERE id'))).toBe(true);
     expect(calls.some(s => s.toLowerCase().includes('ledger'))).toBe(false);
   });
+
+  it('deletes user_settings and account_locks via WHERE user_id = ?, not child_id', async () => {
+    const db = makeMockDb([{ id: 'child-1' }]);
+    const env = { DB: db } as unknown as Env;
+    await runChildDsarPurge(env, 1_800_000_000);
+    const calls = (db as unknown as { __batchCalls: string[] }).__batchCalls;
+
+    expect(calls.some(s => s === 'DELETE FROM user_settings WHERE user_id = ?')).toBe(true);
+    expect(calls.some(s => s === 'DELETE FROM account_locks WHERE user_id = ?')).toBe(true);
+    expect(calls.some(s => s.includes('user_settings') && s.includes('child_id'))).toBe(false);
+    expect(calls.some(s => s.includes('account_locks') && s.includes('child_id'))).toBe(false);
+  });
 });
