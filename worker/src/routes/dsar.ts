@@ -134,6 +134,10 @@ export async function handleDsarVerify(request: Request, env: Env): Promise<Resp
     }
   } catch (err) {
     console.error('[dsar] execution failed', err);
+    await env.DB
+      .prepare(`UPDATE dsar_requests SET status = 'needs_clarification' WHERE id = ?`)
+      .bind(dsarRequest.id)
+      .run();
     return htmlResult('Something went wrong processing your request. Please contact support@morechard.com.', false);
   }
 
@@ -155,7 +159,12 @@ async function executeErasure(env: Env, req: DsarRequestRow): Promise<void> {
     if ((otherParents?.cnt ?? 0) === 0) {
       await executeFamilyErasureSoleParent(env, req.target_family_id);
     } else if (roleRow?.parent_role === 'lead') {
-      await executeFamilyErasureLeadWithCoparent(env, req.target_family_id, req.matched_user_id);
+      const result = await executeFamilyErasureLeadWithCoparent(env, req.target_family_id, req.matched_user_id);
+      if ('error' in result) {
+        await env.DB.prepare(`UPDATE dsar_requests SET status = 'needs_clarification' WHERE id = ?`).bind(req.id).run();
+        await sendDsarClarificationEmail(req.requester_email, env);
+        return;
+      }
     } else {
       await executeFamilyErasureNonLeadCoparent(env, req.target_family_id, req.matched_user_id);
     }
