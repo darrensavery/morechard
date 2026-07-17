@@ -1,59 +1,43 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Capacitor } from '@capacitor/core';
-import { App, type AppState } from '@capacitor/app';
+import { getDeviceIdentity } from '../lib/deviceIdentity';
 
-const BACKGROUND_KEY = 'mc_backgrounded_at';
-const LOCK_AFTER_MS = 5 * 60 * 1000;
+// Module-scoped, not component state — persists for the lifetime of this JS
+// execution context. Backgrounding and resuming the app (task-switch, tab
+// hidden, phone screen off) never re-evaluates this module, so the flag
+// stays consumed and no re-lock happens. A genuine cold start — the process
+// actually killed and restarted, or the page actually reloaded — re-runs
+// this module from scratch, so the flag starts fresh again.
+let hasCheckedThisProcess = false;
 
 /**
- * Native auto-lock: if the app has been backgrounded for 5+ minutes, redirect
- * to /lock on resume. Web build is a no-op — browser PWAs already require
- * re-auth on cold load via the LockScreen gate.
+ * Gates re-auth to real cold starts only — deliberately not a timer.
  *
- * The token stays in localStorage so PIN/biometric unlock on LockScreen
- * navigates straight back to the dashboard without a fresh magic link.
+ * This is a chore-tracker app, not a bank: the long-lived session
+ * (365-day parent / 90-day child) should never force a re-login just from
+ * switching apps or leaving a tab backgrounded, matching how Amazon/Tesco/
+ * eBay-style apps behave. A quick biometric/PIN tap only makes sense once
+ * per genuine process restart — e.g. the OS reclaimed the app's memory, or
+ * the device rebooted — since that's the point a different person could
+ * plausibly now be holding the device. Previously this fired on a 5-minute
+ * background timer and was Capacitor-only; both removed 2026-07-17.
  */
 export function AppAutoLock() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!Capacitor.isNativePlatform()) return;
+    if (hasCheckedThisProcess) return;
+    hasCheckedThisProcess = true;
 
-    let handle: { remove: () => Promise<void> } | undefined;
-    let cancelled = false;
+    const identity = getDeviceIdentity();
+    if (!identity) return; // nothing to gate — RootGate handles the no-identity path
 
-    App.addListener('appStateChange', ({ isActive }: AppState) => {
-      if (!isActive) {
-        localStorage.setItem(BACKGROUND_KEY, String(Date.now()));
-        return;
-      }
+    const onLockRoute = window.location.pathname.startsWith('/lock') ||
+      window.location.pathname === '/' ||
+      window.location.pathname.startsWith('/auth');
+    if (onLockRoute) return;
 
-      const raw = localStorage.getItem(BACKGROUND_KEY);
-      localStorage.removeItem(BACKGROUND_KEY);
-      if (!raw) return;
-
-      const backgroundedAt = Number(raw);
-      if (!Number.isFinite(backgroundedAt)) return;
-
-      const awayMs = Date.now() - backgroundedAt;
-      if (awayMs < LOCK_AFTER_MS) return;
-
-      const onLockRoute = window.location.pathname.startsWith('/lock') ||
-        window.location.pathname === '/' ||
-        window.location.pathname.startsWith('/auth');
-      if (onLockRoute) return;
-
-      navigate('/lock', { replace: true });
-    }).then(h => {
-      if (cancelled) { h.remove().catch(() => {}); return; }
-      handle = h;
-    });
-
-    return () => {
-      cancelled = true;
-      handle?.remove().catch(() => {});
-    };
+    navigate('/lock', { replace: true });
   }, [navigate]);
 
   return null;

@@ -11,6 +11,7 @@ import { useState, useCallback } from 'react'
 import type { MeResult } from '../../../lib/api'
 import { setParentPin, resetPinWithPassword } from '../../../lib/api'
 import { isBiometricsAvailable, hasBiometricCredential, registerBiometrics } from '../../../lib/biometrics'
+import { updateDeviceIdentity } from '../../../lib/deviceIdentity'
 import { SectionHeader } from '../shared'
 
 const PIN_LENGTH = 4
@@ -201,10 +202,14 @@ export function PinManagementSettings({ profile, hasPassword, onBack }: Props) {
   // ── Biometric nudge ────────────────────────────────────────────────────────
 
   async function handleEnableBiometrics() {
-    await registerBiometrics(
+    const result = await registerBiometrics(
       profile?.id ?? '',
       profile?.display_name ?? 'Parent',
-    ).catch(() => {})
+    ).catch(() => ({ ok: false as const, reason: 'error' as const }))
+    // Registration only stores the credential — without this, LockScreen has
+    // no way to know biometrics are available (its auto-trigger and button
+    // both gate on identity.auth_method === 'biometrics').
+    if (result.ok) updateDeviceIdentity({ auth_method: 'biometrics' })
     onBack()
   }
 
