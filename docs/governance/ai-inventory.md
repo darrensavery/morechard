@@ -3,7 +3,7 @@
 
 **Document type:** Internal accountability record. Not published to the public site.  
 **Controller:** Darren Savery, trading as Morechard (sole trader)  
-**Status:** Verified against codebase 2026-06-29. Sections marked [OWNER TO COMPLETE] require human judgment.  
+**Status:** Verified against codebase 2026-06-29; updated 2026-07-16 to record decommissioning of AI System 2 (Child Mentor Chat). Sections marked [OWNER TO COMPLETE] require human judgment.  
 **Next review:** [OWNER TO COMPLETE — suggest quarterly; 2026-09-29]
 
 ---
@@ -60,64 +60,31 @@
 
 ---
 
-## AI System 2: Child Mentor Chat
+## AI System 2: Child Mentor Chat — DECOMMISSIONED 2026-07-16
 
-**Source file:** `worker/src/routes/chat.ts`, route `POST /api/chat`
+**Status:** Removed from the codebase. `worker/src/routes/chat.ts`, `chat-history.ts`, and `chat-modules.ts` (routes `POST /api/chat`, `GET /api/chat/history`, `GET /api/chat/modules`) were deleted and unregistered from `worker/src/index.ts`. The corresponding client functions (`postChat`, `getChatHistory`, `getChatModules`) were removed from `app/src/lib/api.ts`.
 
-- **Provider:** OpenAI
-- **Model:** `gpt-4o-mini`
-- **API endpoint:** `https://api.openai.com/v1/chat/completions`
-- **Auth:** `env.OPENAI_API_KEY` (Cloudflare Worker secret)
-- **Timeout:** 10 seconds per call
-- **Cache:** None — each message generates a fresh response.
+**Why removed:** This endpoint let a child send unmoderated free-text to an LLM. It was discovered live in production without having gone through a deliberate ship decision — no moderation layer, no crisis-detection/escalation path, no confirmed COPPA/GDPR-K consent basis for collecting free-text from a minor, and no frontend ever consumed it (dead surface area from day one — grep confirms zero UI callers). Given Morechard's separated/co-parenting positioning and its hash-chained, court-submissible ledger (Shield AI export tier), an unmoderated child chat log sitting in the same trust boundary was assessed as an active liability rather than a feature to harden: a flagged disclosure with no defined escalation path, or a chat transcript surfaced in a custody dispute, were both live risks with no mitigation in place. Full analysis: internal council review, 2026-07-16.
 
-**Purpose:** Real-time conversational coaching for the child. The child sends a message; the AI responds in-character as a persona (Collaborative Coach / Performance Coach / Master Mentor depending on locale) grounded in the child's real financial data and behavioural signals.
+**What replaces it:** AI System 1 (Parent Weekly Briefing) remains the sole conversational/generative AI surface. Child-facing coaching stays in the existing templated Seedling/Professional nudge system (structured, non-generative, pre-written per trigger), which was already carrying the substantive educational content the chat endpoint would have duplicated.
 
-**Inputs passed to the model (from `chat.ts` system prompt construction):**
-| Field | Source |
-|---|---|
-| Child's message | User input (max 500 chars) |
-| `balance` | D1 ledger — current balance |
-| `goals` | D1 — active goals and progress |
-| `velocity` | Derived — recent earning rate |
-| `reliability_rating` | Derived — task completion rate |
-| `consecutive_low_confidence` | D1 — count of low-confidence photo submissions (integrity signal) |
-| `batching_detected` | EXIF metadata analysis — chores completed in rapid succession |
-| `is_burner` | Derived — balance hit zero within 24h of receipt |
-| `is_stagnant` | Derived — 14+ days no chore activity after high activity |
-| `inflation_nudge` | Derived — chore reward recently increased |
-| `is_hoarder` | Derived — balance > £100, no spending in 60+ days |
-| `overdue_chore_count` | D1 — number of assigned chores past due |
-| ~~`distinct_ips_7d`~~ | Removed 2026-06-29 — IP/location-adjacent signal eliminated from AI inputs to avoid Annex III high-risk classification. |
-| `locale` | Family setting — 'en', 'en-US', or 'pl' |
+**Data retained:** The `chat_history`, `chat_rate_limits`, and `unlocked_modules` D1 tables are not dropped — any rows already written while the endpoint was live remain subject to the standard account-deletion purge (`worker/src/jobs/familyPurge.ts`). No new rows can be written; the write paths no longer exist. `unlocked_modules` continues to be written by the unrelated, non-AI Learning Lab unlock rules (`worker/src/lib/labTriggers.ts` — deterministic thresholds on ledger/goal data, not a generative or profiling system).
 
-**Outputs:** `{ reply, pillar, data_points, app_view, locale, unlock_slug }` — the AI reply text plus metadata. The `unlock_slug` triggers curriculum module unlock if the conversation matches a module topic.
-
-**Decision-making:** Informational only. The AI reply is coaching text directed at the child. No automated decisions with binding effect.
-
-**Disclosure in place:**
-- **Frontend UI not yet built.** The chat API endpoint exists in the worker but there is no corresponding frontend component in the app as of 2026-06-29. When the frontend is built, an "AI-generated" disclosure label must be added inline with the chat reply, per the same pattern as AI System 1.
-- Privacy policy: Section 9 of privacy policy v1.4 covers AI coaching broadly.
-
-**Children's data involved:** Yes. The child is the direct user of this feature. Multiple behavioural signals derived from the child's activity are injected into the system prompt.
-
-**Human oversight mechanism:** Parent is not present in the chat session. The AI acts directly with the child. The parent retains overall account control and can review child activity history. [OWNER TO COMPLETE: consider whether additional oversight is needed given the child is the direct recipient with no parent in the loop.]
-
-**PostHog event capture:** `$ai_generation` event fired per chat message (`worker/src/lib/posthog.ts`).
-
-**Known limitations:** [OWNER TO COMPLETE]
+**If free-text child chat is reconsidered in future:** it should be scoped and funded as its own feature, gated on (1) legal sign-off on COPPA/GDPR-K consent for minor free-text collection, (2) a co-parenting-specific escalation design that never feeds chat content into the court-submissible ledger/Shield AI export without separate explicit consent, (3) a real human escalation path (not just a moderation API call) for self-harm/abuse-adjacent content, and (4) an audit of any legacy logged data before reactivation.
 
 ---
 
-## Annex III Risk Assessment — resolved 2026-06-29
+## Annex III Risk Assessment — resolved 2026-06-29, superseded 2026-07-16
 
-**Item:** Module unlock matrix in `worker/src/routes/chat.ts`, function `detectUnlockSlug()`.
+**Item:** Module unlock matrix, originally `detectUnlockSlug()` in `worker/src/routes/chat.ts` (now deleted — see AI System 2, decommissioned 2026-07-16).
 
 **Previous concern:** The `distinct_ips_7d` trigger used IP/location-adjacent data to characterise a child's behaviour and influence which curriculum modules they could access — a combination that risked Annex III item 3(a) classification (educational access systems for children).
 
-**Resolution:** `distinct_ips_7d` has been removed from the AI input pipeline entirely (2026-06-29). The field is no longer fetched, passed to the AI, or used in pillar selection or prompt construction. The module unlock mechanism now operates solely on in-app behavioural signals (task completion, spending patterns, goal progress) with no location-adjacent data.
+**2026-06-29 resolution:** `distinct_ips_7d` was removed from the AI input pipeline entirely. The field was no longer fetched, passed to the AI, or used in pillar selection or prompt construction.
 
-**Residual question:** [OWNER TO COMPLETE] The module unlock mechanic still determines which educational content a child accesses based on behavioural profiling (without location data). Seek specialist legal advice on whether this residual pattern reaches Annex III item 3(a). The removal of IP signals significantly reduces the risk profile; the remaining signals are all derived from explicit app interactions rather than passive location inference.
+**2026-07-16 update:** The entire chat-based unlock path (`detectUnlockSlug()`, keyword matching against a child's free-text messages) no longer exists — it was deleted along with the Child Mentor Chat endpoint. The only remaining Learning Lab unlock mechanism is `worker/src/lib/labTriggers.ts`, which is deterministic, rules-based, and non-AI: fixed thresholds against ledger/goal/streak data (e.g. cumulative earnings ≥ £X, active goal count, reliability %). It performs no free-text analysis, no behavioural profiling beyond simple threshold checks, and no AI model call.
+
+**Residual question:** [OWNER TO COMPLETE] Seek specialist legal advice on whether deterministic threshold-based content gating (no AI inference, no free-text input) still reaches Annex III item 3(a) as an "educational access system." The removal of both the IP signal and the AI-driven keyword-matching path substantially narrows the risk profile from the original assessment.
 
 ---
 

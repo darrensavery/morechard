@@ -189,9 +189,6 @@ import { runSuggestionPromotion } from './jobs/suggestionPromotion.js';
 import { runSoftDeletePurge, runLedgerPurge } from './jobs/familyPurge.js';
 import { runDemoReset } from './cron/demo-reset.js';
 import { runPassiveUnlockSweep } from './cron/passive-unlocks.js';
-import { handleChildChat } from './routes/chat.js';
-import { handleChatHistory } from './routes/chat-history.js';
-import { handleChatModules } from './routes/chat-modules.js';
 import { handleLabModules, handleLabActComplete } from './routes/lab.js';
 import {
   handleReferralMe,
@@ -783,11 +780,6 @@ async function route(request: Request, env: Env, method: string, path: string): 
   // Streaks — child or parent (child restricted to own data, enforced in handler)
   const streaksMatch = path.match(/^\/api\/streaks\/([^/]+)$/)
   if (streaksMatch && method === 'GET') return withAuth(request, auth, env, (req, e) => handleGetStreaks(req, e, streaksMatch[1]));
-
-  // Chat — child mentor (role check enforced in handler)
-  if (path === '/api/chat' && method === 'POST') return withAuth(request, auth, env, (req, e) => handleChildChat(req, e));
-  if (path === '/api/chat/history' && method === 'GET') return withAuth(request, auth, env, handleChatHistory);
-  if (path === '/api/chat/modules' && method === 'GET') return withAuth(request, auth, env, handleChatModules);
 
   // Learning Lab
   if (path === '/api/lab/modules' && method === 'GET') return withAuth(request, auth, env, handleLabModules);

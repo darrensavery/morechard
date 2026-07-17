@@ -1,5 +1,31 @@
 import { describe, it, expect } from 'vitest';
-import { computePollWindow } from './zohoPoll.js';
+import { computePollWindow, isVendorArtifactTicket } from './zohoPoll.js';
+
+describe('isVendorArtifactTicket', () => {
+  it('flags tickets from the Zoho Desk vendor onboarding sender', () => {
+    expect(isVendorArtifactTicket({
+      id: '1', subject: 'Welcome to Zoho Desk', description: '', contactEmail: 'support@zohosupport.com',
+    })).toBe(true);
+  });
+
+  it('is case-insensitive on the domain', () => {
+    expect(isVendorArtifactTicket({
+      id: '1', subject: 'Welcome', description: '', contactEmail: 'support@ZohoSupport.com',
+    })).toBe(true);
+  });
+
+  it('does not flag real customer tickets', () => {
+    expect(isVendorArtifactTicket({
+      id: '2', subject: "Can't mark chore done", description: '', contactEmail: 'parent@example.com',
+    })).toBe(false);
+  });
+
+  it('does not flag tickets with no contact email', () => {
+    expect(isVendorArtifactTicket({
+      id: '3', subject: 'No email', description: '', contactEmail: null,
+    })).toBe(false);
+  });
+});
 
 describe('computePollWindow', () => {
   it('starts the window 10 minutes before now when there is no prior cursor', () => {

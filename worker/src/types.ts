@@ -295,15 +295,6 @@ export interface ChildIntelligence {
   parent_message: string | null;
 }
 
-/** Structured response returned by the chat endpoint. */
-export interface MentorResponse {
-  reply: string;
-  pillar: FinancialPillar;
-  data_points: Record<string, string | number | boolean>;
-  app_view: 'ORCHARD' | 'CLEAN';
-  locale: Locale;
-  unlock_slug?: string; // present only when this response triggered a module unlock
-}
 
 export interface ReferralStats {
   clicks:          number;

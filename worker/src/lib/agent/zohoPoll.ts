@@ -6,11 +6,22 @@
  */
 import { Env, IncidentQueueMessage } from '../../types.js';
 import { nanoid } from '../nanoid.js';
-import { searchZohoTicketsModifiedBetween } from './zoho.js';
+import { searchZohoTicketsModifiedBetween, ZohoTicketSummary } from './zoho.js';
 
 const POLL_CURSOR_KV_KEY = 'agent:zoho:last_poll_at';
 const OVERLAP_MINUTES = 2;
 const FIRST_POLL_LOOKBACK_MINUTES = 10;
+
+// Vendor/platform-generated tickets that are never real customer requests —
+// e.g. Zoho Desk seeds a "Welcome to Zoho Desk" sample ticket from this
+// domain the moment a new portal is created. Filtered out before they ever
+// reach agent_incidents so the agent isn't spent diagnosing non-incidents.
+const VENDOR_ARTIFACT_EMAIL_DOMAINS = ['zohosupport.com'];
+
+export function isVendorArtifactTicket(ticket: ZohoTicketSummary): boolean {
+  const domain = ticket.contactEmail?.split('@')[1]?.toLowerCase();
+  return domain != null && VENDOR_ARTIFACT_EMAIL_DOMAINS.includes(domain);
+}
 
 export function computePollWindow(
   lastCursorIso: string | null,
@@ -32,7 +43,7 @@ function stripHtml(html: string): string {
 
 export async function pollZohoDeskTickets(
   env: Env,
-): Promise<{ polled: number; created: number; deduplicated: number }> {
+): Promise<{ polled: number; created: number; deduplicated: number; skipped: number }> {
   const nowIso = new Date().toISOString();
   const lastCursor = await env.CACHE.get(POLL_CURSOR_KV_KEY);
   const { sinceIso, toIso } = computePollWindow(lastCursor, nowIso);
@@ -41,8 +52,14 @@ export async function pollZohoDeskTickets(
 
   let created = 0;
   let deduplicated = 0;
+  let skipped = 0;
 
   for (const ticket of tickets) {
+    if (isVendorArtifactTicket(ticket)) {
+      skipped++;
+      continue;
+    }
+
     const existing = await env.DB
       .prepare(`
         SELECT id FROM agent_incidents
@@ -99,5 +116,5 @@ export async function pollZohoDeskTickets(
 
   await env.CACHE.put(POLL_CURSOR_KV_KEY, nowIso);
 
-  return { polled: tickets.length, created, deduplicated };
+  return { polled: tickets.length, created, deduplicated, skipped };
 }
