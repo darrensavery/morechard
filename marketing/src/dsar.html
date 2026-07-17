@@ -1,0 +1,109 @@
+<!--
+  TITLE: Request Your Data – Morechard
+  DESCRIPTION: Request a copy of your Morechard data or ask us to delete it.
+  CANONICAL: https://morechard.com/dsar
+  PAGE_CSS: page.css
+-->
+
+<!-- BODY_START -->
+<main class="prose-page container">
+  <h1>Request Your Data</h1>
+  <p class="prose-meta">Export a copy of your family's data, or ask us to delete it.</p>
+
+  <div class="prose-tldr">
+    <ul>
+      <li>Enter the email address on your Morechard parent account — we'll send a confirmation link to verify it's really you.</li>
+      <li>You can request your whole family's data, or just one child's.</li>
+      <li>Erasure requests are processed automatically once you confirm — there's no waiting on us.</li>
+      <li>Read more about how erasure works with our tamper-evident ledger in our <a href="/privacy-policy#cookies">Privacy Policy</a>, Section 8.</li>
+    </ul>
+  </div>
+
+  <form id="dsar-form" style="max-width:480px;">
+    <label for="dsar-email">Email address on your Morechard account</label><br>
+    <input type="email" id="dsar-email" name="email" required style="width:100%;padding:10px;margin:8px 0 16px;">
+
+    <fieldset style="margin-bottom:16px;">
+      <legend>What would you like to do?</legend>
+      <label><input type="radio" name="request_type" value="access" checked> Get a copy of my data</label><br>
+      <label><input type="radio" name="request_type" value="erasure"> Delete my data</label>
+    </fieldset>
+
+    <fieldset style="margin-bottom:16px;">
+      <legend>Scope</legend>
+      <label><input type="radio" name="scope" value="family" checked> My whole family</label><br>
+      <label><input type="radio" name="scope" value="child"> Just one child</label>
+    </fieldset>
+
+    <div id="dsar-child-name-wrap" style="display:none;margin-bottom:16px;">
+      <label for="dsar-child-name">Child's exact in-app display name</label><br>
+      <input type="text" id="dsar-child-name" name="child_name" style="width:100%;padding:10px;margin:8px 0;">
+    </div>
+
+    <button type="submit" id="dsar-submit">Submit request</button>
+    <p id="dsar-error" style="color:#c0392b;display:none;"></p>
+  </form>
+
+  <div id="dsar-success" style="display:none;">
+    <h2>Check your email</h2>
+    <p>If that email is on an account, you'll receive a verification link shortly. Click it to confirm your request — nothing happens until you do.</p>
+  </div>
+</main>
+<!-- BODY_END -->
+
+<!-- SCRIPTS_START -->
+<script>
+(function() {
+  const form       = document.getElementById('dsar-form');
+  const errorEl    = document.getElementById('dsar-error');
+  const successEl  = document.getElementById('dsar-success');
+  const submitBtn  = document.getElementById('dsar-submit');
+  const scopeRadios = form.querySelectorAll('input[name="scope"]');
+  const childWrap  = document.getElementById('dsar-child-name-wrap');
+  const childInput = document.getElementById('dsar-child-name');
+
+  scopeRadios.forEach(r => r.addEventListener('change', () => {
+    const isChild = form.querySelector('input[name="scope"]:checked').value === 'child';
+    childWrap.style.display = isChild ? 'block' : 'none';
+    childInput.required = isChild;
+  }));
+
+  function showError(msg) { errorEl.textContent = msg; errorEl.style.display = 'block'; }
+  function clearError() { errorEl.style.display = 'none'; }
+
+  form.addEventListener('submit', async e => {
+    e.preventDefault();
+    clearError();
+    const email = document.getElementById('dsar-email').value.trim();
+    const requestType = form.querySelector('input[name="request_type"]:checked').value;
+    const scope = form.querySelector('input[name="scope"]:checked').value;
+    const childName = childInput.value.trim();
+
+    submitBtn.disabled = true;
+    try {
+      const res = await fetch('https://morechard-api.darren-savery.workers.dev/api/dsar/request', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email,
+          request_type: requestType,
+          scope,
+          child_name: scope === 'child' ? childName : undefined,
+        }),
+      });
+      if (res.ok) {
+        form.style.display = 'none';
+        successEl.style.display = 'block';
+      } else {
+        const data = await res.json().catch(() => ({}));
+        showError(data.error || 'Something went wrong — please try again.');
+        submitBtn.disabled = false;
+      }
+    } catch {
+      showError('Something went wrong — please check your connection and try again.');
+      submitBtn.disabled = false;
+    }
+  });
+})();
+</script>
+<!-- SCRIPTS_END -->
