@@ -184,6 +184,7 @@ import {
   handleMarketRateSuggest,
   handleMarketRateCron,
 } from './routes/market-rates.js';
+import { handleDsarRequest, handleDsarVerify } from './routes/dsar.js';
 import { runMarketRateAggregation } from './jobs/marketRateAggregation.js';
 import { runSuggestionPromotion } from './jobs/suggestionPromotion.js';
 import { runSoftDeletePurge, runLedgerPurge } from './jobs/familyPurge.js';
@@ -566,6 +567,11 @@ async function route(request: Request, env: Env, method: string, path: string): 
   if (path === '/auth/slt/exchange'    && method === 'POST') return handleSltExchange(request, env);
   if (path === '/auth/webauthn/login/options' && method === 'POST') return handleWebauthnLoginOptions(request, env);
   if (path === '/auth/webauthn/login/verify' && method === 'POST') return handleWebauthnLoginVerify(request, env);
+
+  // DSAR portal — public, no auth. Identity is verified via the emailed
+  // token, not a session. See docs/superpowers/specs/2026-07-17-dsar-portal-design.md
+  if (path === '/api/dsar/request' && method === 'POST') return handleDsarRequest(request, env);
+  if (path === '/api/dsar/verify'  && method === 'GET')  return handleDsarVerify(request, env);
 
   // Stripe webhook — public but signature-verified internally
   if (path === '/api/stripe/webhook' && method === 'POST') return handleStripeWebhook(request, env);
