@@ -3,6 +3,7 @@ export interface Env {
   CACHE: KVNamespace;
   EVIDENCE: R2Bucket;
   RECEIPTS: R2Bucket;
+  DSAR_EXPORTS: R2Bucket;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   AI: any; // Cloudflare Workers AI binding (@cloudflare/workers-types Ai)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

@@ -41,6 +41,10 @@ bucket_name = "morechard-evidence"
 binding = "RECEIPTS"
 bucket_name = "morechard-receipts"
 
+[[r2_buckets]]
+binding = "DSAR_EXPORTS"
+bucket_name = "morechard-dsar-exports-dev"
+
 [vars]
 ENVIRONMENT = "development"
 APP_URL = "https://app.morechard.com"
@@ -145,6 +149,10 @@ bucket_name = "morechard-evidence"
 [[env.production.r2_buckets]]
 binding = "RECEIPTS"
 bucket_name = "morechard-receipts"
+
+[[env.production.r2_buckets]]
+binding = "DSAR_EXPORTS"
+bucket_name = "morechard-dsar-exports"
 
 [[env.production.queues.producers]]
 binding = "INCIDENT_QUEUE"
