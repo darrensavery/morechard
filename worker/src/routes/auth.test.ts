@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { handleChildLogin } from './auth.js';
+import { handleChildLogin, handleDeleteFamily } from './auth.js';
 import { hashPassword } from '../lib/crypto.js';
 import type { Env } from '../types.js';
+import type { JwtPayload } from '../lib/jwt.js';
 
 // ── Minimal in-memory D1 stand-in ────────────────────────────────────────────
 // This codebase has no shared D1 test-fixture/pool-workers harness (checked
@@ -57,5 +58,70 @@ describe('handleChildLogin cookie issuance', () => {
     const setCookies = (res.headers as Headers & { getSetCookie(): string[] }).getSetCookie();
     expect(setCookies.some(c => c.startsWith('mc_token=') && c.includes('HttpOnly'))).toBe(true);
     expect(setCookies.some(c => c.startsWith('mc_session=child') && !c.includes('HttpOnly'))).toBe(true);
+  });
+});
+
+function makeMockDeleteFamilyDb(opts: {
+  callerRole: { parent_role: string | null } | null;
+  otherParentsCount: number;
+  coparentUserId?: string;
+}) {
+  const batchCalls: string[] = [];
+  return {
+    prepare(sql: string) {
+      return {
+        bind(..._args: unknown[]) {
+          return {
+            async first<T>() {
+              if (sql.includes('SELECT parent_role FROM family_roles')) return opts.callerRole as T;
+              if (sql.includes('COUNT(*) AS cnt')) return { cnt: opts.otherParentsCount } as T;
+              if (sql.includes("parent_role = 'co_parent'")) return (opts.coparentUserId ? { user_id: opts.coparentUserId } : null) as T;
+              return null as T;
+            },
+            toString() {
+              return sql;
+            },
+          };
+        },
+      };
+    },
+    async batch(statements: Array<{ toString(): string }>) {
+      for (const s of statements) batchCalls.push(String(s));
+      return statements.map(() => ({ success: true, meta: {} }));
+    },
+    __batchCalls: batchCalls,
+  } as unknown as D1Database & { __batchCalls: string[] };
+}
+
+function makeDeleteFamilyRequest(auth: JwtPayload): Request & { auth: JwtPayload } {
+  const req = new Request('https://internal/auth/family', { method: 'DELETE' }) as Request & { auth: JwtPayload };
+  req.auth = auth;
+  return req;
+}
+
+describe('handleDeleteFamily', () => {
+  it('rejects non-lead callers', async () => {
+    const db = makeMockDeleteFamilyDb({ callerRole: { parent_role: 'co_parent' }, otherParentsCount: 1 });
+    const env = { DB: db } as unknown as Env;
+    const res = await handleDeleteFamily(makeDeleteFamilyRequest({ sub: 'u1', family_id: 'f1' } as JwtPayload), env);
+    expect(res.status).toBe(403);
+  });
+
+  it('sole parent: soft-deletes the whole family', async () => {
+    const db = makeMockDeleteFamilyDb({ callerRole: { parent_role: 'lead' }, otherParentsCount: 0 });
+    const env = { DB: db } as unknown as Env;
+    const res = await handleDeleteFamily(makeDeleteFamilyRequest({ sub: 'u1', family_id: 'f1' } as JwtPayload), env);
+    expect(res.status).toBe(200);
+    expect(db.__batchCalls.some(s => s.includes('UPDATE families SET deleted_at'))).toBe(true);
+  });
+
+  it('lead with a co-parent remaining: promotes co-parent, does not block', async () => {
+    const db = makeMockDeleteFamilyDb({ callerRole: { parent_role: 'lead' }, otherParentsCount: 1, coparentUserId: 'coparent-1' });
+    const env = { DB: db } as unknown as Env;
+    const res = await handleDeleteFamily(makeDeleteFamilyRequest({ sub: 'lead-1', family_id: 'f1' } as JwtPayload), env);
+    expect(res.status).toBe(200);
+    const body = await res.json() as { action: string; promoted_user_id?: string };
+    expect(body.action).toBe('lead_transferred');
+    expect(body.promoted_user_id).toBe('coparent-1');
   });
 });

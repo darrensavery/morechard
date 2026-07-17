@@ -27,6 +27,7 @@ import { recordPinFailure, clearPinLockout } from '../lib/pinLockout.js';
 import { z } from 'zod';
 import { parseValidatedBody } from '../lib/validate.js';
 import { verifyTurnstile } from '../lib/turnstile.js';
+import { executeFamilyErasureSoleParent, executeFamilyErasureLeadWithCoparent } from '../lib/dsarExecution.js';
 
 const MAGIC_LINK_EXPIRY  = 15 * 60;         // 15 minutes
 const PARENT_JWT_EXPIRY  = 365 * 24 * 3600; // 1 year
@@ -1114,12 +1115,11 @@ export async function handleRemoveCoParent(request: Request & { auth?: JwtPayloa
 
 // ----------------------------------------------------------------
 // DELETE /auth/family
-// Soft-deletes the entire family. Lead-only. Only callable when
-// the caller is the last lead.
-//
-// Safety gates:
-//   1. Lead-only — rejects if caller's parent_role != 'lead'.
-//   2. Last Lead Guard — rejects if other leads exist in the family.
+// Soft-deletes the family (sole-parent case) or, if a co-parent remains,
+// promotes them to lead and anonymises only the departing lead's row.
+// Lead-only. Shares execution logic with the public DSAR portal
+// (worker/src/lib/dsarExecution.ts) so behavior never drifts between the
+// authenticated and unauthenticated entry points.
 // ----------------------------------------------------------------
 export async function handleDeleteFamily(request: Request & { auth?: JwtPayload }, env: Env): Promise<Response> {
   const auth = (request as Request & { auth?: JwtPayload }).auth;
@@ -1128,7 +1128,6 @@ export async function handleDeleteFamily(request: Request & { auth?: JwtPayload 
   const userId   = auth.sub;
   const familyId = auth.family_id;
 
-  // Lead-only check
   const callerRole = await env.DB
     .prepare(`SELECT parent_role FROM family_roles WHERE user_id = ? AND family_id = ? AND role = 'parent'`)
     .bind(userId, familyId)
@@ -1138,35 +1137,19 @@ export async function handleDeleteFamily(request: Request & { auth?: JwtPayload 
     return error('Only a Lead parent can delete the family.', 403);
   }
 
-  // Block deletion while any other parent (lead or co-parent) is still in the family
   const otherParents = await env.DB
     .prepare(`SELECT COUNT(*) AS cnt FROM family_roles WHERE family_id = ? AND role = 'parent' AND user_id != ?`)
     .bind(familyId, userId)
     .first<{ cnt: number }>();
 
-  if ((otherParents?.cnt ?? 0) > 0) {
-    return error('All co-parents must leave before the orchard can be uprooted.', 403);
+  if ((otherParents?.cnt ?? 0) === 0) {
+    await executeFamilyErasureSoleParent(env, familyId);
+    return json({ ok: true, action: 'uprooted' });
   }
 
-  await env.DB.batch([
-    // Soft-delete the family
-    env.DB.prepare(`UPDATE families SET deleted_at = unixepoch() WHERE id = ?`)
-      .bind(familyId),
-    // Anonymise all users in the family
-    env.DB.prepare(`UPDATE users SET display_name = 'Deleted User', email = NULL, email_pending = NULL, password_hash = NULL, pin_hash = NULL WHERE family_id = ?`)
-      .bind(familyId),
-    // Revoke all sessions for all family users
-    env.DB.prepare(`UPDATE sessions SET revoked_at = unixepoch() WHERE user_id IN (SELECT id FROM users WHERE family_id = ?) AND revoked_at IS NULL`)
-      .bind(familyId),
-    // Delete invite codes
-    env.DB.prepare(`DELETE FROM invite_codes WHERE family_id = ?`)
-      .bind(familyId),
-    // Delete registration progress
-    env.DB.prepare(`DELETE FROM registration_progress WHERE family_id = ?`)
-      .bind(familyId),
-  ]);
-
-  return json({ ok: true, action: 'uprooted' });
+  const result = await executeFamilyErasureLeadWithCoparent(env, familyId, userId);
+  if ('error' in result) return error(result.error, 409);
+  return json({ ok: true, action: 'lead_transferred', promoted_user_id: result.promotedUserId });
 }
 
 // ----------------------------------------------------------------
