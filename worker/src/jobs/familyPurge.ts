@@ -40,7 +40,11 @@ export async function runSoftDeletePurge(env: Env, nowEpoch: number): Promise<vo
   if (!rows.results.length) return;
 
   for (const { id: familyId } of rows.results) {
-    // Collect child user IDs for this family (needed for child-keyed tables).
+    // Collect ALL user IDs for this family — parents AND children (the
+    // `childIds` name is legacy; the query has never filtered by role).
+    // This matters: userKeyedTables below relies on this set covering
+    // parent rows too (e.g. analytics_consents belongs to any user, not
+    // just children).
     const childRows = await env.DB
       .prepare(`SELECT id FROM users WHERE family_id = ?`)
       .bind(familyId)
@@ -49,17 +53,16 @@ export async function runSoftDeletePurge(env: Env, nowEpoch: number): Promise<vo
 
     const batch: D1PreparedStatement[] = [];
 
-    // ── Family-keyed tables ─────────────────────────────────────────
+    // ── Family-keyed tables (real `family_id` column, verified against the
+    // latest CREATE TABLE for each in worker/migrations/*.sql) ────────────
     const familyTables = [
       'chores',
       'goals',
       'completions',
       'bonus_payments',
       'insight_snapshots',
-      'child_badges',
       'child_logins',
       'child_nudges',
-      'child_streaks',
       'family_roles',
       'push_subscriptions',
       'parent_messages',
@@ -67,15 +70,12 @@ export async function runSoftDeletePurge(env: Env, nowEpoch: number): Promise<vo
       'jar_config',
       'jar_movements',
       'give_requests',
-      'analytics_consents',
       'plans',
       'shared_expenses',
       'spending',
       'payday_log',
       'review_feedback',
       'review_prompt_state',
-      'referral_clicks',
-      'referral_conversions',
       'family_governance_log',
     ];
     for (const table of familyTables) {
@@ -84,16 +84,42 @@ export async function runSoftDeletePurge(env: Env, nowEpoch: number): Promise<vo
       );
     }
 
+    // referral_conversions has no `family_id` column — the purchasing
+    // family is stored as `referred_family` (0042_referral_system.sql).
+    batch.push(
+      env.DB
+        .prepare(`DELETE FROM referral_conversions WHERE referred_family = ?`)
+        .bind(familyId),
+    );
+
+    // referral_clicks has neither `family_id` nor `user_id` — click events
+    // are anonymous, pre-signup traffic keyed only by the referral_code
+    // being clicked. Derive via this family's own outbound code. Must run
+    // before the tombstone UPDATE below nulls `families.referral_code` —
+    // it does, since D1 batch statements execute in the order pushed and
+    // this is pushed well before the tombstone update.
+    batch.push(
+      env.DB
+        .prepare(
+          `DELETE FROM referral_clicks WHERE referral_code = (SELECT referral_code FROM families WHERE id = ?)`,
+        )
+        .bind(familyId),
+    );
+
     // ── Child-keyed tables ──────────────────────────────────────────
     // Only if there are child rows to avoid a no-op IN () which SQLite rejects.
     if (childIds.length > 0) {
       const placeholders = childIds.map(() => '?').join(',');
+      // child_badges and child_streaks (0058_gamification.sql) have no
+      // family_id column at all — they're keyed by child_id only.
       const childKeyedTables = [
         'chat_history',
         'unlocked_modules',
         'lesson_completions',
         'module_act_progress',
         'chat_rate_limits',
+        'child_badges',
+        'child_streaks',
       ];
       for (const table of childKeyedTables) {
         batch.push(
@@ -102,17 +128,32 @@ export async function runSoftDeletePurge(env: Env, nowEpoch: number): Promise<vo
             .bind(...childIds),
         );
       }
-      // user_settings, account_locks, sessions, and auth tables key on user_id rather than child_id
+      // user_settings, account_locks, sessions, and most auth tables key on
+      // user_id rather than child_id. analytics_consents is also user_id-keyed
+      // (0062_analytics_consent.sql has no family_id column) and belongs here
+      // because `childIds` covers every family member, not just children.
+      //
+      // magic_link_attempts (keyed by `email`, 0060_magic_link_attempts.sql)
+      // and slt_attempts (keyed by `ip`, 0022_google_oauth.sql) are
+      // deliberately NOT purged here: neither table has a user_id column,
+      // and by this point in the family-deletion lifecycle `users.email` has
+      // already been anonymised to NULL (see the users DELETE below's
+      // comment), so email can't be derived either. slt_attempts already has
+      // its own generic TTL sweep (see `DELETE FROM slt_attempts WHERE
+      // blocked_until < ?` in worker/src/index.ts) that reaps it independent
+      // of family identity. magic_link_attempts has no equivalent sweep —
+      // rows for a purged family's former email address are NOT covered by
+      // this 30-day purge and persist until the rate-limit window naturally
+      // ages out via normal read/reset logic in routes/auth.ts.
       const userKeyedTables = [
         'user_settings',
         'account_locks',
         'sessions',
         'magic_link_tokens',
-        'magic_link_attempts',
         'email_verify_tokens',
         'upgrade_interest',
         'slt_tokens',
-        'slt_attempts',
+        'analytics_consents',
       ];
       for (const table of userKeyedTables) {
         batch.push(
