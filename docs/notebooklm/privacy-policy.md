@@ -1,5 +1,5 @@
 # Morechard: Privacy Policy
-**Transparent Data Management — Version 1.2 (UK, US, PL)**
+**Transparent Data Management — Version 1.4 (UK, US, PL)**
 
 ## The "Too Long; Didn't Read" Summary
 * **Children:** Nicknames only. We don't want or store real names of minors.
@@ -33,12 +33,23 @@ We use a carefully selected "team" of service providers to keep Morechard fast a
 ### Communication & Payments
 * **Google:** Used for secure "one-tap" authentication.
 * **Resend:** The service that sends your transactional emails (trial reminders, password alerts).
-* **Stripe / Paddle:** They handle the money. We never store your full credit card details on our own servers.
+* **Brevo:** Manages our opt-in marketing email list. Only used if you've explicitly agreed to receive marketing communications from us.
+* **Stripe:** Handles your payment. We never store your full credit card details on our own servers.
+* **Paddle:** Not currently in use. Reserved for a future US market launch, where Paddle's Merchant-of-Record model handles US sales-tax compliance that Stripe alone does not. This notice will be updated before Paddle processes any customer's data.
+
+### Customer Support & AI-Assisted Diagnostics
+* **Zoho Desk:** Our support-ticketing platform (EU-hosted). If you contact support, your message and email address are stored here so we can respond.
+* **Anthropic (Claude):** An AI model that helps our support team triage and draft replies to support tickets faster. A human always reviews and approves any reply before it's sent to you — the AI drafts, a person decides.
+
+### The AI Mentor
+* **OpenAI:** Powers the AI Mentor's weekly parent briefing. We send your child's behavioural scores (consistency, responsibility, planning) and their nickname — never a full legal name, since we don't collect one — to generate a personalised coaching note for you, the parent.
 
 > **[Legal Note: Listing "Sub-processors" is a mandatory requirement under GDPR (UK/EU) transparency rules.]**
 
 ## 4. Children’s Privacy (COPPA & GDPR-K)
-Morechard is designed for parents to use with their children. We do not knowingly collect personal data from anyone under 13 (US) or 16 (UK/PL). The parent acts as the primary user and provides consent by creating child profiles using nicknames.
+Morechard is designed for parents to use with their children. We do not knowingly collect personal data from anyone under 13 (US, UK) or 16 (PL) without parental consent. The parent acts as the primary user and provides consent by creating child profiles using nicknames.
+
+> **[Legal Note: Poland's Art. 8 GDPR digital-consent age has not been independently confirmed against current Polish implementing legislation — verify before relying on "16 (PL)" here.]**
 
 ## 5. Data Retention & The "Soft-Delete"
 When you delete your account, we trigger a 30-day "Soft-Delete" window. Your data is hidden immediately but stored for 30 days to prevent accidental loss or to allow co-parents to intervene if a deletion was unauthorized. After 30 days, personal identifiers are permanently purged from our active systems.
@@ -50,4 +61,6 @@ You have the right to access your data, correct it, or move it (via our CSV Expo
 We use cryptographic hashing to ensure the integrity of your family ledger. This technical "seal" ensures your records cannot be tampered with. We treat your family data with the same respect and security we apply to our own.
 
 ---
-© 2026 Morechard. Privacy Policy v1.2. Contact: support@morechard.com
+© 2026 Morechard. Privacy Policy v1.4. Contact: support@morechard.com
+
+**Version history:** v1.4 (2026-07-17) — added Anthropic, Zoho Desk, Brevo, and OpenAI as named sub-processors (all were already live in the product but missing from this notice); clarified Paddle is not currently in use, reserved for a possible future US launch; corrected UK digital-consent age from 16 to 13. v1.2 and earlier — see version control history for this file.

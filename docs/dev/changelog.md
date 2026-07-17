@@ -6,6 +6,9 @@ A running log of notable engineering work, grouped by day, for future reference.
 
 ## 2026-07-17
 
+### Privacy policy updated to v1.4 — disclosed Anthropic, Zoho Desk, Brevo; clarified Paddle; fixed UK consent age
+Following the sub-processor register audit (below), `docs/notebooklm/privacy-policy.md` was missing three live sub-processors and had a stale/incorrect Paddle reference and a wrong UK children's-data age threshold. Fixed all four in one pass, confirmed with Darren that Paddle is intentionally dormant (reserved for a possible future US launch, not in use today): added Anthropic (Claude, support-agent triage/drafting), Zoho Desk (support ticketing, EU-hosted), Brevo (marketing email list), and OpenAI (AI Mentor weekly briefing, previously undisclosed entirely) as named sub-processors; reworded the Paddle line to say it's reserved for a future US launch rather than implying it's live; corrected the UK digital-consent age from 16 to 13 (the DPIA had flagged this as wrong back in June but the notice was never actually brought into line). `docs/governance/privacy/sub-processors.md` and `docs/governance/privacy/ropa.md` updated to mark these findings resolved — Sentry's EU/US residency mismatch (LIA-2 vs. the actual `.de` DSN) remains open, not addressed by this pass.
+
 ### Security audit follow-up — closed stale findings, re-checked blocked open items, drilled the incident-response runbook
 Working through the 2026-07-15 audit's remaining open items:
 - **Sentry Alert Rule for Stripe payment failures created** (open item #1) — Issues alert on "a new issue is created" + "a resolved issue becomes unresolved" triggers, production-scoped, email notification. The code-side capture (`stripe-payment-failure` fingerprint) had been live since Pass 2; this was the missing dashboard half. Audit doc, this changelog, and `docs/dev/infra-incident-response-runbook.md`'s detection table all updated to reflect it's live, not just captured.

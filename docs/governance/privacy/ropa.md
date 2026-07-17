@@ -64,7 +64,7 @@ Each row is one processing activity, in the Art. 30(1) format: purpose, categori
 | **Purpose** | Handle parent-submitted support requests; triage and draft (human-approved) responses using an AI support agent. |
 | **Data subjects** | Parents (ticket submitters) |
 | **Personal data categories** | Ticket subject, free-text description, requester email, requester last name, linked `family_id`. |
-| **Recipients** | Zoho Desk (ticketing platform, EU-hosted), Anthropic (Claude — triage/diagnosis/reply drafting). **Both are currently undisclosed sub-processors — see the open finding in `docs/governance/privacy/sub-processors.md`.** |
+| **Recipients** | Zoho Desk (ticketing platform, EU-hosted), Anthropic (Claude — triage/diagnosis/reply drafting). Both disclosed in the privacy policy (v1.4, 2026-07-17) — see `docs/governance/privacy/sub-processors.md`. |
 | **Retention** | Governed by Zoho's own retention policy; local `agent_incidents`/`agent_action_log`/`agent_review_items` tables subject to the standard family-purge schedule when linked to a family that deletes its account. |
 | **Lawful basis** | Art. 6(1)(f), legitimate interests — providing customer support is a reasonable, expected part of the service relationship. |
 | **Safeguard** | A human always reviews and approves before any AI-drafted reply reaches a customer — the AI drafts, a person sends. |
@@ -77,7 +77,7 @@ Each row is one processing activity, in the Art. 30(1) format: purpose, categori
 | **Purpose** | Send marketing emails to parents who have opted in; manage the pre-launch "register your interest" list. |
 | **Data subjects** | Parents (and prospective parents who registered interest before signing up) |
 | **Personal data categories** | Email address, marketing-list membership, consent record (`marketing_consents` table: consented flag, consent version, IP address, timestamp). |
-| **Recipients** | Brevo (Sendinblue) — **currently an undisclosed sub-processor, see `docs/governance/privacy/sub-processors.md`.** Resend for transactional (non-marketing) email is a separate processing activity, covered under §1/§2 as service-necessary communication, not marketing. |
+| **Recipients** | Brevo (Sendinblue) — disclosed in the privacy policy (v1.4, 2026-07-17). Resend for transactional (non-marketing) email is a separate processing activity, covered under §1/§2 as service-necessary communication, not marketing. |
 | **Retention** | Consent record retained per standard purge; Brevo integration is best-effort (a Brevo failure never blocks the underlying request) and its own retention isn't independently confirmed. |
 | **Lawful basis** | Art. 6(1)(a), consent — explicit opt-in required, tracked with a versioned consent record. |
 | **Cross-reference** | `worker/migrations/0047_marketing_consent.sql`, `docs/governance/privacy/sub-processors.md` |
@@ -136,6 +136,6 @@ Each row is one processing activity, in the Art. 30(1) format: purpose, categori
 ## Open items
 
 1. Finalise the `[JUDGMENT]` lawful-basis calls above (§1 core service, §3 AI Mentor) in the DPIA — the ROPA is citing the DPIA's own open items rather than resolving them independently, which is correct practice but means these rows aren't yet "done."
-2. Resolve the sub-processor disclosure gaps in `docs/governance/privacy/sub-processors.md` (Anthropic, Zoho Desk, Brevo) — several ROPA rows above (§4, §5) reference processors not yet named in the public privacy policy.
+2. ~~Resolve the sub-processor disclosure gaps (Anthropic, Zoho Desk, Brevo).~~ **Done 2026-07-17** — privacy policy v1.4.
 3. No DPO is currently appointed — acceptable at current scale per the DPIA's documented rationale, but worth revisiting if a school partnership meaningfully increases the number of children's records processed.
 4. This is a first draft, not yet reviewed by a data-protection specialist — flag this status explicitly if shown to a school before that review happens.
