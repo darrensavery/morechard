@@ -94,9 +94,6 @@ export async function runSoftDeletePurge(env: Env, nowEpoch: number): Promise<vo
         'lesson_completions',
         'module_act_progress',
         'chat_rate_limits',
-        'user_settings',
-        'account_locks',
-        'sessions',
       ];
       for (const table of childKeyedTables) {
         batch.push(
@@ -105,8 +102,10 @@ export async function runSoftDeletePurge(env: Env, nowEpoch: number): Promise<vo
             .bind(...childIds),
         );
       }
-      // sessions and auth tables key on user_id rather than child_id
+      // user_settings, account_locks, sessions, and auth tables key on user_id rather than child_id
       const userKeyedTables = [
+        'user_settings',
+        'account_locks',
         'sessions',
         'magic_link_tokens',
         'magic_link_attempts',
