@@ -19,7 +19,7 @@ an actual incident, not to describe a team process that doesn't exist yet.
 | Worker `scheduled()` cron silently failing | Sentry Cron Monitor (`worker-scheduled-heartbeat`) | First missed check-in |
 | API/D1 down | Sentry Uptime Monitor on `/api/health` | First failed check (5-min interval) |
 | Unhandled exceptions | Sentry error capture (`Sentry.captureException` in `index.ts`'s top-level catch) | Every occurrence, rate-limited by Sentry's own noise controls |
-| Stripe payment failures | Sentry, fingerprint `stripe-payment-failure` (`stripe.ts`) | Every `payment_intent.payment_failed`/`charge.failed`/etc. — **alert rule not yet created in the Sentry dashboard, so this currently logs but doesn't notify** (tracked in `docs/security/audits/2026-07-15-production-security-audit.md`) |
+| Stripe payment failures | Sentry, fingerprint `stripe-payment-failure` (`stripe.ts`) | Every `payment_intent.payment_failed`/`charge.failed`/etc. — Alert Rule created 2026-07-17 (new issue + resolved-becomes-unresolved, production-scoped, email) |
 | GitHub Actions deploy failure | GitHub's own notification (email/GitHub app) | Any `test`/`deploy` job failure in `worker-deploy.yml` |
 
 **Known gap:** nothing pages on elevated error *rate* specifically (vs. a
@@ -74,4 +74,16 @@ Nothing to do on the app side — confirm at https://www.cloudflarestatus.com/, 
 
 - No alerting on Stripe webhook delivery failures at the Stripe-account level (would need a Stripe-side webhook-monitoring integration, not currently wired to anything).
 - No paging for elevated error *rate* specifically, only per-exception capture — Sentry supports rate-based alert rules but none are configured beyond the Cron/Uptime monitors.
-- This runbook itself hasn't been drilled (unlike the D1 restore procedure, which was) — the D1 drill on 2026-07-15 found the original recovery runbook had a real factual error before anyone hit it during a live incident. The same risk applies here until this is exercised at least once, even as a tabletop walkthrough.
+
+## Tabletop walkthrough log
+
+**2026-07-17 — first drill, no live incident, all steps verified against the real environment:**
+- **Detection table** — no changes needed; Stripe alert row already updated for the new Alert Rule (see above).
+- **Triage step 1** (`curl https://api.morechard.com/api/health`) — ran for real: `200`, D1 reachable, Worker up.
+- **Triage step 3** (`gh run list --workflow=worker-deploy.yml --branch main --limit 5`) — ran for real, returned the 5 most recent deploys with correct status/timestamps. Confirmed this is how a bad-deploy suspicion would actually get checked.
+- **Bad-deploy response** (`npx wrangler versions list --env production`) — ran for real (read-only, did not execute the `versions deploy` rollback itself, since there's no actual incident to roll back). Command syntax and output format match what the runbook describes; the prior-version-id-lookup step works as written.
+- **D1 issue response** — confirmed `docs/dev/d1-backup-recovery-runbook.md` exists and its decision tree (in-place Time Travel restore vs. R2 export recovery) matches what this runbook summarizes.
+- **Bad-deploy rollback doc reference** — confirmed `docs/dev/blue-green-deploys.md` exists and matches the command shown here.
+- **Payment-issue response** — Stripe dashboard step (Developers → Webhooks → delivery attempts) not exercised live (no incident to check), but the Sentry fingerprint (`stripe-payment-failure`) and its new Alert Rule were confirmed live in the prior pass.
+- **Cloudflare outage response** — nothing to verify; correctly has no automatable fallback per this stack's design.
+- **Result:** no factual errors found in this runbook (unlike the D1 runbook's Pass 3 drill, which did catch one). Every command referenced actually runs as written in this environment. Re-drill on the same cadence as the D1 restore drill (every 6 months, or after any material change to the deploy/detection tooling) rather than treating this as done permanently.
