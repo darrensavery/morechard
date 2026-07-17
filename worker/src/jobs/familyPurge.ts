@@ -193,3 +193,48 @@ export async function runLedgerPurge(env: Env, nowEpoch: number): Promise<void> 
     ]);
   }
 }
+
+/**
+ * Stage 1b — T+30 days, single-child DSAR erasures.
+ *
+ * A child-scope DSAR request anonymises the child's users row immediately
+ * (worker/src/lib/dsarExecution.ts::executeChildErasure) and sets
+ * purge_pending_at. This sweep hard-deletes the bulk child-keyed tables and
+ * the users row itself 30 days later — mirroring the family-scope pattern
+ * in runSoftDeletePurge, but scoped to one child instead of a whole family.
+ * Ledger rows are NEVER touched: `ledger.child_id` keeps pointing at the
+ * same (now-deleted) id, exactly as it already does for family-scope purges.
+ */
+export async function runChildDsarPurge(env: Env, nowEpoch: number): Promise<void> {
+  const cutoff30 = nowEpoch - THIRTY_DAYS_S;
+
+  const rows = await env.DB
+    .prepare(`SELECT id FROM users WHERE purge_pending_at IS NOT NULL AND purge_pending_at < ?`)
+    .bind(cutoff30)
+    .all<{ id: string }>();
+
+  if (!rows.results.length) return;
+
+  for (const { id: childId } of rows.results) {
+    const childKeyedTables = [
+      'chat_history',
+      'unlocked_modules',
+      'lesson_completions',
+      'module_act_progress',
+      'chat_rate_limits',
+      'user_settings',
+      'account_locks',
+      'child_badges',
+      'child_streaks',
+      'child_nudges',
+    ];
+    const batch: D1PreparedStatement[] = childKeyedTables.map(table =>
+      env.DB.prepare(`DELETE FROM ${table} WHERE child_id = ?`).bind(childId),
+    );
+    batch.push(env.DB.prepare(`DELETE FROM sessions WHERE user_id = ?`).bind(childId));
+    batch.push(env.DB.prepare(`DELETE FROM family_roles WHERE user_id = ?`).bind(childId));
+    batch.push(env.DB.prepare(`DELETE FROM users WHERE id = ?`).bind(childId));
+
+    await env.DB.batch(batch);
+  }
+}

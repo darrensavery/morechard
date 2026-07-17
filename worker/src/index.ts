@@ -187,7 +187,7 @@ import {
 import { handleDsarRequest, handleDsarVerify } from './routes/dsar.js';
 import { runMarketRateAggregation } from './jobs/marketRateAggregation.js';
 import { runSuggestionPromotion } from './jobs/suggestionPromotion.js';
-import { runSoftDeletePurge, runLedgerPurge } from './jobs/familyPurge.js';
+import { runSoftDeletePurge, runLedgerPurge, runChildDsarPurge } from './jobs/familyPurge.js';
 import { runDemoReset } from './cron/demo-reset.js';
 import { runPassiveUnlockSweep } from './cron/passive-unlocks.js';
 import { handleLabModules, handleLabActComplete } from './routes/lab.js';
@@ -371,6 +371,11 @@ export default Sentry.withSentry<Env, IncidentQueueMessage>(
         // civil-claims window — see docs/governance/lia/lia.md LIA-3).
         await runSoftDeletePurge(env, now);
         await runLedgerPurge(env, now);
+
+        // ── 10b. Single-child DSAR erasures — deferred bulk purge ────────
+        // Companion to Stage 1 above: hard-deletes bulk child-keyed data for
+        // children anonymised via a child-scope DSAR request 30+ days ago.
+        await runChildDsarPurge(env, now);
 
         // ── 11. Zoho Desk ticket poll (support agent ingestion) ────
         // Runs every 5-minute tick only — the other cron entries fire on
