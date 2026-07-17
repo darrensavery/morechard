@@ -71,7 +71,11 @@ export async function handleDsarRequest(request: Request, env: Env): Promise<Res
     .bind(id, requestType, scope, parent.family_id, scope === 'child' ? childName : null, email, parent.user_id, tokenHash, now)
     .run();
 
-  const link = `${env.APP_URL}/api/dsar/verify?token=${rawToken}`;
+  // Must be the worker's own origin, not APP_URL (the Pages SPA) — this is a
+  // worker route (GET /api/dsar/verify), and the SPA has no /api/* proxy to
+  // the worker. Same fallback pattern as the Google OAuth redirect URI in
+  // auth.ts, since WORKER_URL isn't set in the dev [vars] block.
+  const link = `${env.WORKER_URL ?? 'https://api.morechard.com'}/api/dsar/verify?token=${rawToken}`;
   await sendDsarVerificationEmail(email, link, requestType, env);
 
   return json(GENERIC_RESPONSE);

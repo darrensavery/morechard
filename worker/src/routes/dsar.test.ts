@@ -57,6 +57,34 @@ describe('handleDsarRequest', () => {
     expect(fetch).toHaveBeenCalledTimes(1);
   });
 
+  it('builds the emailed verification link from WORKER_URL, not APP_URL — GET /api/dsar/verify is a worker route, and the SPA on APP_URL has no /api/* proxy to it', async () => {
+    const db = makeMockDb({ user_id: 'parent-1', family_id: 'fam-1' });
+    // Deliberately distinct, distinguishable origins so an assertion against
+    // the wrong one fails loudly rather than passing by coincidence.
+    const env = {
+      DB: db,
+      RESEND_API_KEY: 'k',
+      APP_URL: 'https://app.morechard.com',
+      WORKER_URL: 'https://api.morechard.com',
+    } as unknown as Env;
+    const req = new Request('https://internal/api/dsar/request', {
+      method: 'POST',
+      body: JSON.stringify({ email: 'parent@example.com', request_type: 'erasure', scope: 'family' }),
+    });
+    const res = await handleDsarRequest(req, env);
+    expect(res.status).toBe(200);
+    expect(fetch).toHaveBeenCalledTimes(1);
+
+    const [, init] = (fetch as unknown as ReturnType<typeof vi.fn>).mock.calls[0];
+    const sentBody = JSON.parse((init as RequestInit).body as string);
+    const linkMatch = /href="([^"]+)"/.exec(sentBody.html as string);
+    expect(linkMatch).toBeTruthy();
+    const link = linkMatch![1];
+
+    expect(link.startsWith('https://api.morechard.com/api/dsar/verify?token=')).toBe(true);
+    expect(link.startsWith('https://app.morechard.com')).toBe(false);
+  });
+
   it('rejects a child-scope request with no child_name', async () => {
     const db = makeMockDb({ user_id: 'parent-1', family_id: 'fam-1' });
     const env = { DB: db, RESEND_API_KEY: 'k', APP_URL: 'https://app.morechard.com' } as unknown as Env;
