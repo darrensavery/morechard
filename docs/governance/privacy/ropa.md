@@ -89,7 +89,7 @@ Each row is one processing activity, in the Art. 30(1) format: purpose, categori
 | **Purpose** | Understand feature usage and diagnose issues to improve the product. |
 | **Data subjects** | Parents (consented adult devices only) |
 | **Personal data categories** | Product-analytics events, session replay (adult devices, error-triggered, fully masked), error/exception reports (PII-scrubbed via a deny-list filter). |
-| **Recipients** | PostHog (EU-hosted), Sentry (EU-hosted, `ingest.de.sentry.io` — pending confirmation, see `docs/governance/privacy/sub-processors.md` finding #5). |
+| **Recipients** | PostHog (EU-hosted), Sentry (confirmed EU — Sentry dashboard's Data Storage Region setting, 2026-07-17). |
 | **Retention** | Governed by each vendor's own retention policy; not independently overridden by Morechard. |
 | **Lawful basis** | Art. 6(1)(a), consent, for analytics (client + server-side consent gating, family-wide veto rule). Art. 6(1)(f), legitimate interests, for crash/error reporting (Sentry) — see LIA-2. |
 | **Children's-data safeguard** | Session replay and analytics tracking are **force-disabled on any device identified as a child's device, regardless of consent state** — a hard technical control, not a policy promise. |

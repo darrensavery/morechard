@@ -37,8 +37,8 @@ This DPIA was [started before processing began / started as remediation for an e
 | Chore / reward / goal records, ledger entries | Child + household | In-app activity | Core processing; financial-behaviour data |
 | AI coaching interactions | Child / parent | 25-module curriculum feature | **Profiling? Automated decisions? — clarify in 2.4** |
 | Analytics events | Parent (app, post-login) | PostHog | Session replay; **off on child profiles** |
-| Crash diagnostics | All | Sentry | |
-| Payment data | Parent | Paddle (Merchant of Record) | Full card details not stored by Morechard |
+| Crash diagnostics | All | Sentry | Confirmed EU-hosted (2026-07-17) — no US transfer for this processor. |
+| Payment data | Parent | Stripe | Full card details not stored by Morechard. Paddle is **not** currently integrated — reserved for a possible future US market launch only; do not treat as a live processor until it actually is one. |
 | Transactional email | Parent | Resend | |
 | Cryptographic hashes / ledger seal | Household | App | "Sovereign Ledger"; immutability. Post-deletion: direct identifiers removed, hash chain + amounts + timestamps + chore labels retained. **Assessed as pseudonymous personal data, not anonymous** — see Step 5a. |
 | Court-export / CSV output | Household | App | Evidential claim — see Step 5 |
@@ -50,7 +50,7 @@ This DPIA was [started before processing began / started as remediation for an e
 - Retention: 30-day soft-delete on account deletion; **[STATE active-data + ledger + backup + court-export retention — gap in current notice]**
 
 ### 2.3 Context — processors & data flows
-Controllers/processors and flows: Google (auth) → Cloudflare (host + D1/R2 database) → PostHog (analytics) / Sentry (crash) → Paddle (payments) → Resend (email); GitHub (source/deploy). International transfers: several processors process data in the **US** — **[STATE transfer mechanism per processor: UK IDTA / EU SCCs + UK addendum / adequacy]**. Confirm each processor's DPA is in place (you accept these; you don't draft them).
+Controllers/processors and flows: Google (auth) → Cloudflare (host + D1/R2 database) → PostHog (analytics, EU-hosted) / Sentry (crash, confirmed EU-hosted 2026-07-17) → Stripe (payments) → Resend (email) → Zoho Desk (support tickets, EU-hosted) → Anthropic (Claude — support-agent triage/drafting) → Brevo (marketing email); GitHub (source/deploy). See `docs/governance/privacy/sub-processors.md` for the full, current register — this list had drifted (Paddle listed but never actually integrated; Anthropic/Zoho/Brevo missing) and the sub-processor register is now the more current source. International transfers: OpenAI and Anthropic process data in the **US** with no region pinning confirmed in Morechard's config — **[STATE transfer mechanism: UK IDTA / EU SCCs + UK addendum / adequacy]** remains open for these two specifically. Confirm each processor's DPA is in place (you accept these; you don't draft them).
 
 > **Correction carried from privacy-notice review:** UK age of consent for ISS is **13**, not 16. The live notice (v1.3) still says "under 16 (UK)". This DPIA assumes the correct position; the notice must be brought into line.
 

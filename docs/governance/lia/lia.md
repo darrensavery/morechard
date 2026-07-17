@@ -187,7 +187,7 @@ Yes. Real-time crash reporting is the standard and most effective means of ident
 |---|---|
 | No crash reporting | Errors undetected; service quality and security degraded — does not meet the purpose |
 | User-submitted bug reports only | Highly incomplete; many errors not reported by users; no stack traces |
-| Self-hosted error logging (no third-party processor) | Would eliminate the international transfer to Sentry (US); operationally feasible for a solo developer though significantly more burdensome. Not required given no personal data is transmitted — but worth noting as an option if Sentry's scope ever expands to include personal data |
+| Self-hosted error logging (no third-party processor) | Not needed to avoid an international transfer — confirmed 2026-07-17 that the Sentry organization's Data Storage Region is EU, so there is no transfer to the US to eliminate. Operationally, self-hosting would still be significantly more burdensome for a solo developer with no corresponding privacy benefit given the EU-resident, no-personal-data configuration already in place |
 | Sentry with personal data scrubbing | This is the current approach — Sentry is configured to receive no personal data. This is already the least-intrusive version of third-party crash reporting |
 
 **Conclusion — Part B:** Processing is necessary. The configuration (no personal data transmitted) is already the minimum required. ✓
@@ -219,7 +219,7 @@ Yes, decisively:
 **Safeguards in place:**
 
 - Sentry configured to transmit no personal data (no user IDs, emails, session tokens, or user-generated content).
-- Transfer to Sentry (US) protected by EU SCCs with UK Addendum — documented in the privacy notice (Section 4).
+- **No international transfer occurs.** Confirmed 2026-07-17 via the Sentry dashboard (Organization Settings → Data Storage Region): the organization's data is stored in the **European Union**, not the US. This corrects an earlier draft of this LIA, which had assumed a US-hosted Sentry account and cited "EU SCCs with UK Addendum" as the transfer safeguard — no such transfer exists, so no safeguard is needed for this processor. (UK→EU data flow is in any case covered by the UK's adequacy regulations for the EU/EEA, which don't require SCCs.) The Worker's Sentry DSN (`ingest.de.sentry.io`, Frankfurt) is consistent with this.
 - Sentry's own DPA is in place (accepted as processor).
 - **[CONFIRM: verify Sentry configuration regularly to ensure no personal data scope creep — e.g. that error messages do not inadvertently capture user input. Add to periodic review checklist.]**
 
