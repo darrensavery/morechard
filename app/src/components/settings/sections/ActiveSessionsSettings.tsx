@@ -228,7 +228,7 @@ export function ActiveSessionsSettings({ onBack }: Props) {
           )}
 
           {revokeError && (
-            <p className="text-center text-[0.75rem] text-red-500">{revokeError}</p>
+            <p className="text-center text-[0.75rem] text-[var(--color-danger)]">{revokeError}</p>
           )}
         </>
       )}

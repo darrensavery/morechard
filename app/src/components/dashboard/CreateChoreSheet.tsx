@@ -437,7 +437,7 @@ export function CreateChoreSheet({
             {ratesLoading ? (
               <div className="py-3 text-center text-xs text-[var(--color-text-muted)]">Loading…</div>
             ) : ratesError ? (
-              <div className="py-2 text-center text-[0.6875rem] text-red-500">{ratesError}</div>
+              <div className="py-2 text-center text-[0.6875rem] text-[var(--color-danger)]">{ratesError}</div>
             ) : (
               <div className="grid grid-cols-4 gap-2">
                 {rates
@@ -469,8 +469,8 @@ export function CreateChoreSheet({
 
           {/* ── Search / title input + dropdown ─────────────────── */}
           <div className="relative">
-            <label className="text-[0.625rem] font-bold text-[var(--color-text-muted)] uppercase tracking-widest block mb-1.5">
-              Chore name <span className="text-red-500">*</span>
+            <label htmlFor="chore-title" className="text-[0.625rem] font-bold text-[var(--color-text-muted)] uppercase tracking-widest block mb-1.5">
+              Chore name <span className="text-[var(--color-danger)]">*</span>
             </label>
             <div className="flex gap-2">
               {/* Icon swatch — shows the chosen/guessed category icon; tap to override */}
@@ -488,6 +488,7 @@ export function CreateChoreSheet({
                 {renderCategoryIcon(form.icon_key ?? guessChoreCategory(form.title), 20)}
               </button>
               <input
+                id="chore-title"
                 ref={titleRef}
                 type="text"
                 value={form.title}
@@ -593,7 +594,7 @@ export function CreateChoreSheet({
             {/* Reward */}
             <div className={form.frequency === 'weekly' ? 'w-full' : 'flex-1'}>
               <label className="text-[0.625rem] font-bold text-[var(--color-text-muted)] uppercase tracking-widest block mb-1.5">
-                Reward <span className="text-red-500">*</span>
+                Reward <span className="text-[var(--color-danger)]">*</span>
               </label>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[0.9375rem] font-bold text-[var(--color-text-muted)]">
@@ -790,7 +791,7 @@ export function CreateChoreSheet({
             missing instead of leaving the user to guess why it won't go. */}
         <div className="shrink-0 px-4 py-3 bg-[var(--color-surface)] border-t border-[var(--color-border)]">
           {blockedReason && (
-            <p className="mb-2 text-[0.75rem] font-semibold text-center text-red-500" role="status">
+            <p className="mb-2 text-[0.75rem] font-semibold text-center text-[var(--color-danger)]" role="status">
               {blockedReason}
             </p>
           )}

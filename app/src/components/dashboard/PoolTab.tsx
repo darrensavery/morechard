@@ -209,7 +209,7 @@ export function PoolTab({ familyId, currentUserId, parentingMode, refreshKey, on
           <div className="flex-1 text-center">
             <p className="text-xs text-[var(--color-text-muted)] uppercase tracking-wide">This month</p>
             {isCoParenting ? (
-              <p className={`text-2xl font-bold tabular-nums ${netPence < 0 ? 'text-green-600' : netPence > 0 ? 'text-red-500' : 'text-[var(--color-text)]'}`}>
+              <p className={`text-2xl font-bold tabular-nums ${netPence < 0 ? 'text-green-600' : netPence > 0 ? 'text-[var(--color-danger)]' : 'text-[var(--color-text)]'}`}>
                 {netPence === 0 ? 'You are square' : netPence < 0
                   ? `You are owed ${formatAmount(Math.abs(netPence), currency)}`
                   : `You owe ${formatAmount(netPence, currency)}`}
@@ -261,7 +261,7 @@ export function PoolTab({ familyId, currentUserId, parentingMode, refreshKey, on
       {/* Flagged (rejected) expenses */}
       {flaggedExpenses.length > 0 && (
         <section>
-          <h3 className="text-xs font-semibold text-red-500 uppercase tracking-wide mb-2">Flagged</h3>
+          <h3 className="text-xs font-semibold text-[var(--color-danger)] uppercase tracking-wide mb-2">Flagged</h3>
           <div className="flex flex-col gap-2">
             {flaggedExpenses.map(e => (
               <div key={e.id} className="rounded-xl border border-red-200 bg-red-50 dark:bg-red-950/20 card-depth p-4 opacity-80">
@@ -269,7 +269,7 @@ export function PoolTab({ familyId, currentUserId, parentingMode, refreshKey, on
                   <span className="mt-0.5 shrink-0"><CategoryIcon category={e.category} /></span>
                   <div className="min-w-0">
                     <p className="font-semibold text-sm line-through text-[var(--color-text-muted)]">{e.description}</p>
-                    <p className="text-xs text-red-500 mt-0.5">Rejected — please discuss and re-submit if agreed</p>
+                    <p className="text-xs text-[var(--color-danger)] mt-0.5">Rejected — please discuss and re-submit if agreed</p>
                     <p className="text-sm font-bold tabular-nums mt-1 text-[var(--color-text-muted)]">
                       {formatAmount(e.total_amount, e.currency)}
                     </p>

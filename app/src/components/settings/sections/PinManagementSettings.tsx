@@ -288,7 +288,7 @@ export function PinManagementSettings({ profile, hasPassword, onBack }: Props) {
                 {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
             </div>
-            {pwError && <p id="pin-mgmt-password-error" role="alert" className="text-[0.75rem] text-red-500">{pwError}</p>}
+            {pwError && <p id="pin-mgmt-password-error" role="alert" className="text-[0.75rem] text-[var(--color-danger)]">{pwError}</p>}
             <button
               type="submit"
               disabled={!password.trim()}
@@ -336,7 +336,7 @@ export function PinManagementSettings({ profile, hasPassword, onBack }: Props) {
         </div>
 
         <div className="h-4 flex items-center justify-center">
-          {pinError && <p className="text-[0.75rem] font-semibold text-red-500">{pinError}</p>}
+          {pinError && <p className="text-[0.75rem] font-semibold text-[var(--color-danger)]">{pinError}</p>}
           {pinBusy  && <p className="text-[0.75rem] text-[var(--color-text-muted)]">Saving…</p>}
         </div>
 

@@ -67,7 +67,7 @@ export function VoidExpenseSheet({ expenseId, description, onClose, onVoided }: 
             aria-describedby={[reasonError && 'void-expense-field-error', error && 'void-expense-error'].filter(Boolean).join(' ') || undefined}
             className={`mt-1 w-full border rounded-xl px-4 py-3 text-sm bg-[var(--color-surface-raised)] resize-none ${reasonError ? 'border-red-400' : 'border-[var(--color-border)]'}`}
           />
-          {reasonError && <p id="void-expense-field-error" className="mt-1 text-xs text-red-500">{reasonError}</p>}
+          {reasonError && <p id="void-expense-field-error" className="mt-1 text-xs text-[var(--color-danger)]">{reasonError}</p>}
         </div>
 
         <ErrorBox id="void-expense-error" message={error} />

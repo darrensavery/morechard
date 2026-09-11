@@ -321,7 +321,7 @@ export function ProfileSettings({
               placeholder="Your name"
               className="w-full px-3 py-2 text-[0.875rem] rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-alt)] text-[var(--color-text)] placeholder-[var(--color-text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]"
             />
-            {nameError && <p id="profile-name-error" role="alert" className="text-[0.75rem] text-red-500">{nameError}</p>}
+            {nameError && <p id="profile-name-error" role="alert" className="text-[0.75rem] text-[var(--color-danger)]">{nameError}</p>}
             <div className="flex gap-2">
               <button
                 type="submit"
@@ -385,8 +385,8 @@ export function ProfileSettings({
               placeholder="your@email.com"
               className="w-full px-3 py-2 text-[0.875rem] rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-alt)] text-[var(--color-text)] placeholder-[var(--color-text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]"
             />
-            {emailError && <p id="profile-email-error" role="alert" className="text-[0.75rem] text-red-500">{emailError}</p>}
-            {!emailError && emailFormatError && <p id="profile-email-format-error" role="alert" className="text-[0.75rem] text-red-500">{emailFormatError}</p>}
+            {emailError && <p id="profile-email-error" role="alert" className="text-[0.75rem] text-[var(--color-danger)]">{emailError}</p>}
+            {!emailError && emailFormatError && <p id="profile-email-format-error" role="alert" className="text-[0.75rem] text-[var(--color-danger)]">{emailFormatError}</p>}
             <div className="flex gap-2">
               <button
                 type="submit"
@@ -456,7 +456,7 @@ export function ProfileSettings({
                 A co-parent will be promoted to Lead to ensure the family can still be managed.
               </p>
             )}
-            {dangerError && <p role="alert" className="text-[0.75rem] text-red-500">{dangerError}</p>}
+            {dangerError && <p role="alert" className="text-[0.75rem] text-[var(--color-danger)]">{dangerError}</p>}
             <button
               onClick={handleLeave}
               disabled={dangerBusy}
@@ -501,7 +501,7 @@ export function ProfileSettings({
               placeholder="Type UPROOT to confirm"
               className="w-full px-3 py-2 text-[0.875rem] rounded-xl border border-red-300 bg-red-50 text-red-800 placeholder-red-300 focus:outline-none focus:ring-2 focus:ring-red-500"
             />
-            {dangerError && <p id="uproot-error" role="alert" className="text-[0.75rem] text-red-500">{dangerError}</p>}
+            {dangerError && <p id="uproot-error" role="alert" className="text-[0.75rem] text-[var(--color-danger)]">{dangerError}</p>}
             <button
               onClick={handleUproot}
               disabled={dangerBusy || uprootInput !== 'UPROOT'}

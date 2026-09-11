@@ -103,7 +103,7 @@ export function VerifyLedgerHashScreen() {
                 spellCheck={false}
               />
               {input.trim().length > 0 && !isValidHash(input) && (
-                <p className="text-xs text-red-500">Hash must be exactly 64 lowercase hexadecimal characters.</p>
+                <p className="text-xs text-[var(--color-danger)]">Hash must be exactly 64 lowercase hexadecimal characters.</p>
               )}
               <button
                 type="submit"

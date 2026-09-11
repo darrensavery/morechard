@@ -21,7 +21,7 @@ export function ChoreIcon({
 }) {
   const category = iconKey || guessChoreCategory(title)
   if (appView === 'ORCHARD') {
-    return <span style={{ fontSize: size, lineHeight: 1 }}>{categoryEmoji(category)}</span>
+    return <span aria-hidden="true" style={{ fontSize: size, lineHeight: 1 }}>{categoryEmoji(category)}</span>
   }
   return renderCategoryIcon(category, size)
 }

@@ -206,7 +206,7 @@ export function LogSpendSheet({ familyId, childId, currency, onClose, onSaved }:
             {/* What did you buy */}
             <div>
               <label className="text-[0.625rem] font-bold text-[var(--color-text-muted)] uppercase tracking-widest">
-                What did you buy? <span className="text-red-500">*</span>
+                What did you buy? <span className="text-[var(--color-danger)]">*</span>
               </label>
               <Input
                 type="text"
@@ -217,13 +217,13 @@ export function LogSpendSheet({ familyId, childId, currency, onClose, onSaved }:
                 error={!!titleError}
                 className="mt-1.5 h-auto py-3 text-15"
               />
-              {titleError && <p className="mt-1 text-[0.75rem] text-red-500">{titleError}</p>}
+              {titleError && <p className="mt-1 text-[0.75rem] text-[var(--color-danger)]">{titleError}</p>}
             </div>
 
             {/* Amount */}
             <div>
               <label className="text-[0.625rem] font-bold text-[var(--color-text-muted)] uppercase tracking-widest">
-                How much? ({symbol}) <span className="text-red-500">*</span>
+                How much? ({symbol}) <span className="text-[var(--color-danger)]">*</span>
               </label>
               <div className="mt-1.5 relative">
                 <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[1.125rem] font-bold text-[var(--color-text-muted)]">
@@ -244,7 +244,7 @@ export function LogSpendSheet({ familyId, childId, currency, onClose, onSaved }:
                   className="h-auto pl-8 pr-3 py-3 text-[1.375rem] font-bold tabular-nums"
                 />
               </div>
-              {amountError && <p className="mt-1 text-[0.75rem] text-red-500">{amountError}</p>}
+              {amountError && <p className="mt-1 text-[0.75rem] text-[var(--color-danger)]">{amountError}</p>}
             </div>
 
             {/* Optional: link to goal */}

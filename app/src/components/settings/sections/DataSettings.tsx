@@ -248,7 +248,7 @@ export function DataSettings({
               <p className="text-[0.75rem] font-semibold text-amber-700 leading-snug">
                 {shieldLabelText}
               </p>
-              <p className="text-[0.6875rem] text-amber-500 leading-snug">
+              <p className="text-[0.6875rem] text-[var(--color-warning)] leading-snug">
                 Tap to unlock — court-ready tamper-evident exports
               </p>
             </div>
@@ -346,6 +346,6 @@ function Spinner({ 'aria-hidden': ariaHidden }: { 'aria-hidden'?: boolean | 'tru
 function ErrorNote({ message }: { message: string | null }) {
   if (!message) return null
   return (
-    <p className="px-4 pb-2 text-[0.6875rem] text-red-500 leading-snug">{message}</p>
+    <p className="px-4 pb-2 text-[0.6875rem] text-[var(--color-danger)] leading-snug">{message}</p>
   )
 }

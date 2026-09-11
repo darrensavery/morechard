@@ -114,7 +114,7 @@ export default function DemoRegisterScreen() {
               )}
             />
             {submitted && !nameOk && (
-              <p className="text-xs text-red-500 font-medium pl-1">Full name required</p>
+              <p className="text-xs text-[var(--color-danger)] font-medium pl-1">Full name required</p>
             )}
           </div>
 
@@ -138,7 +138,7 @@ export default function DemoRegisterScreen() {
               )}
             />
             {submitted && !emailOk && (
-              <p className="text-xs text-red-500 font-medium pl-1">Valid email required</p>
+              <p className="text-xs text-[var(--color-danger)] font-medium pl-1">Valid email required</p>
             )}
           </div>
 
@@ -146,7 +146,7 @@ export default function DemoRegisterScreen() {
           <fieldset>
             <legend className={cn(
               'text-sm font-semibold mb-3',
-              submitted && !consentOk ? 'text-red-500' : 'text-gray-700',
+              submitted && !consentOk ? 'text-[var(--color-danger)]' : 'text-gray-700',
             )}>
               Morechard may contact me with product updates and feedback questions. Unsubscribe any time.
             </legend>
@@ -182,12 +182,12 @@ export default function DemoRegisterScreen() {
               ))}
             </div>
             {submitted && !consentOk && (
-              <p className="text-xs text-red-500 font-medium pl-1 mt-1.5">Please select an option</p>
+              <p className="text-xs text-[var(--color-danger)] font-medium pl-1 mt-1.5">Please select an option</p>
             )}
           </fieldset>
 
           {error && (
-            <p className="text-sm text-red-500 font-medium text-center">{error}</p>
+            <p className="text-sm text-[var(--color-danger)] font-medium text-center">{error}</p>
           )}
 
           <button

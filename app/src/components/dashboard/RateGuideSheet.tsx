@@ -216,7 +216,7 @@ export function RateGuideSheet({ open, onClose, currency = 'GBP', onUse }: Props
             <p className="py-10 text-center text-[0.875rem] text-[var(--color-text-muted)]">Loading…</p>
           )}
           {error && (
-            <p className="py-10 text-center text-[0.8125rem] text-red-500">{error}</p>
+            <p className="py-10 text-center text-[0.8125rem] text-[var(--color-danger)]">{error}</p>
           )}
 
           {/* No results state */}

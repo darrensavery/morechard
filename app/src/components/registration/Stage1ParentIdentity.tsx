@@ -238,7 +238,7 @@ export function Stage1ParentIdentity({ data, onNext }: Props) {
               {strength.label && (
                 <p className={cn(
                   'text-xs font-medium',
-                  strength.score === 1 && 'text-red-500',
+                  strength.score === 1 && 'text-[var(--color-danger)]',
                   strength.score === 2 && 'text-amber-600',
                   strength.score === 3 && 'text-teal-600',
                 )}>
@@ -258,7 +258,7 @@ export function Stage1ParentIdentity({ data, onNext }: Props) {
       >
         <legend className={cn(
           'text-sm font-semibold mb-3',
-          (submitted && errors.marketingConsent) ? 'text-red-500' : 'text-gray-700',
+          (submitted && errors.marketingConsent) ? 'text-[var(--color-danger)]' : 'text-gray-700',
         )}>
           {CONSENT_VERSIONS[CURRENT_CONSENT_VERSION]}
         </legend>
@@ -295,7 +295,7 @@ export function Stage1ParentIdentity({ data, onNext }: Props) {
           ))}
         </div>
         {submitted && errors.marketingConsent && (
-          <p id="marketing-consent-error" role="alert" className="text-xs text-red-500 font-medium pl-1 mt-1.5">
+          <p id="marketing-consent-error" role="alert" className="text-xs text-[var(--color-danger)] font-medium pl-1 mt-1.5">
             {errors.marketingConsent}
           </p>
         )}
@@ -308,7 +308,7 @@ export function Stage1ParentIdentity({ data, onNext }: Props) {
       >
         <legend className={cn(
           'text-sm font-semibold mb-1.5',
-          (submitted && errors.analyticsConsent) ? 'text-red-500' : 'text-gray-700',
+          (submitted && errors.analyticsConsent) ? 'text-[var(--color-danger)]' : 'text-gray-700',
         )}>
           Help improve Morechard with usage analytics?
         </legend>
@@ -349,7 +349,7 @@ export function Stage1ParentIdentity({ data, onNext }: Props) {
           ))}
         </div>
         {submitted && errors.analyticsConsent && (
-          <p id="analytics-consent-error" role="alert" className="text-xs text-red-500 font-medium pl-1 mt-1.5">
+          <p id="analytics-consent-error" role="alert" className="text-xs text-[var(--color-danger)] font-medium pl-1 mt-1.5">
             {errors.analyticsConsent}
           </p>
         )}
@@ -447,7 +447,7 @@ function FloatingField({
             focused
               ? 'text-teal-600'
               : error
-              ? 'text-red-500'
+              ? 'text-[var(--color-danger)]'
               : floated
               ? 'text-gray-500'
               : 'text-gray-400',
@@ -490,7 +490,7 @@ function FloatingField({
 
       {/* Error or hint */}
       {error
-        ? <p id={errorId} role="alert" className="text-xs text-red-500 font-medium pl-1">{error}</p>
+        ? <p id={errorId} role="alert" className="text-xs text-[var(--color-danger)] font-medium pl-1">{error}</p>
         : hint
         ? <p className="text-xs text-gray-400 pl-1">{hint}</p>
         : null

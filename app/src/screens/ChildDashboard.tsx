@@ -1211,7 +1211,7 @@ function OrchardView({
           </span>
           {(balance?.pending ?? 0) > 0 && (
             <span className="text-[0.8125rem] text-[var(--color-text-muted)]">
-              Pending: <strong className="text-amber-500 tabular-nums">
+              Pending: <strong className="text-[var(--color-warning)] tabular-nums">
                 {formatCurrency(balance!.pending, currency)}
               </strong>
             </span>

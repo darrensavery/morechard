@@ -132,7 +132,7 @@ export function SettlementCard({ period, onClose, onReconciled }: Props) {
                       : 'You owe'}
                 </span>
                 {result.net_pence !== 0 && (
-                  <span className={result.net_pence < 0 ? 'text-green-600' : 'text-red-500'}>
+                  <span className={result.net_pence < 0 ? 'text-green-600' : 'text-[var(--color-danger)]'}>
                     {formatAmount(Math.abs(result.net_pence), result.currency)}
                   </span>
                 )}

@@ -142,7 +142,7 @@ export default function LoginScreen() {
                   "
                 />
                 {magicError && (
-                  <p id="magic-link-error" role="alert" className="text-[0.75rem] text-red-500 px-1">{magicError}</p>
+                  <p id="magic-link-error" role="alert" className="text-[0.75rem] text-[var(--color-danger)] px-1">{magicError}</p>
                 )}
                 <TurnstileWidget onVerify={setTurnstileToken} />
                 <button

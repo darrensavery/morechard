@@ -110,7 +110,7 @@ export function ChildLoginHistory({ childId, childName, onBack }: Props) {
       )}
 
       {!loading && error && (
-        <p className="text-center text-[0.875rem] text-red-500 px-4 py-6">{error}</p>
+        <p className="text-center text-[0.875rem] text-[var(--color-danger)] px-4 py-6">{error}</p>
       )}
 
       {!loading && !error && logins.length === 0 && (

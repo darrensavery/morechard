@@ -90,7 +90,7 @@ function GatekeeperModalUI({
               Locked for {lockSeconds}s…
             </p>
           ) : errorMsg ? (
-            <p className="text-[0.75rem] font-semibold text-red-500">{errorMsg}</p>
+            <p className="text-[0.75rem] font-semibold text-[var(--color-danger)]">{errorMsg}</p>
           ) : null}
         </div>
 

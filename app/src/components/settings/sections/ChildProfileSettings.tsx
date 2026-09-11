@@ -108,7 +108,7 @@ function InviteCodeSheet({
         )}
 
         {error && (
-          <p className="text-center text-[0.8125rem] text-red-500">{error}</p>
+          <p className="text-center text-[0.8125rem] text-[var(--color-danger)]">{error}</p>
         )}
 
         {code && !loading && (
@@ -216,7 +216,7 @@ function ResetPinSheet({
           ))}
         </div>
 
-        {errMsg && <p className="text-[0.8125rem] text-red-500 text-center">{errMsg}</p>}
+        {errMsg && <p className="text-[0.8125rem] text-[var(--color-danger)] text-center">{errMsg}</p>}
 
         {/* Keypad */}
         <div className="grid grid-cols-3 gap-2">
@@ -354,7 +354,7 @@ function PaymentSettingsView({
                 />
               </label>
             ))}
-            {handleErr && <p className="text-[0.75rem] text-red-500 mt-2">{handleErr}</p>}
+            {handleErr && <p className="text-[0.75rem] text-[var(--color-danger)] mt-2">{handleErr}</p>}
             <button
               type="button"
               onClick={saveHandles}
@@ -571,7 +571,7 @@ export function ChildProfileSettings({
                   placeholder="Child's name"
                   className="w-full px-3 py-2 text-[0.875rem] rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-alt)] text-[var(--color-text)] placeholder-[var(--color-text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]"
                 />
-                {nameError && <p id="child-profile-name-error" role="alert" className="text-[0.75rem] text-red-500">{nameError}</p>}
+                {nameError && <p id="child-profile-name-error" role="alert" className="text-[0.75rem] text-[var(--color-danger)]">{nameError}</p>}
                 <div className="flex gap-2">
                   <button
                     type="submit"

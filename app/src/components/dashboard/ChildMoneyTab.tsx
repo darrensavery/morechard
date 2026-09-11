@@ -142,7 +142,7 @@ export function ChildMoneyTab({ familyId, childId, currency, appView, nudge, onN
           {(balance?.pending ?? 0) > 0 && (
             <p className="text-[0.8125rem] text-[var(--color-text-muted)] mt-2">
               Pending approval:{' '}
-              <strong className="text-amber-500 tabular-nums">
+              <strong className="text-[var(--color-warning)] tabular-nums">
                 {formatCurrency(balance!.pending, currency)}
               </strong>
             </p>

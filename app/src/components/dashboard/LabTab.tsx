@@ -56,7 +56,7 @@ export function LabTab({ appView }: LabTabProps) {
   )
 
   if (error || !labData) return (
-    <p className="text-[0.8125rem] text-red-500 pt-2">{error ?? 'No data'}</p>
+    <p className="text-[0.8125rem] text-[var(--color-danger)] pt-2">{error ?? 'No data'}</p>
   )
 
   const totalUnlocked = Object.keys(labData.modules).length

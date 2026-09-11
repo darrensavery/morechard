@@ -263,7 +263,7 @@ export function AddExpenseSheet({ defaultSplitBp, currency, parentingMode, regio
             {/* Description */}
             <div>
               <label className="text-[0.625rem] font-bold text-[var(--color-text-muted)] uppercase tracking-widest">
-                Description <span className="text-red-500">*</span>
+                Description <span className="text-[var(--color-danger)]">*</span>
               </label>
               <Input
                 type="text"
@@ -274,7 +274,7 @@ export function AddExpenseSheet({ defaultSplitBp, currency, parentingMode, regio
                 error={!!descriptionError}
                 className="mt-1.5 h-auto py-2.5 text-sm"
               />
-              {descriptionError && <p className="mt-1 text-xs text-red-500">{descriptionError}</p>}
+              {descriptionError && <p className="mt-1 text-xs text-[var(--color-danger)]">{descriptionError}</p>}
             </div>
 
             {/* Filed under chip */}
@@ -315,7 +315,7 @@ export function AddExpenseSheet({ defaultSplitBp, currency, parentingMode, regio
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="text-[0.625rem] font-bold text-[var(--color-text-muted)] uppercase tracking-widest">
-                  Date <span className="text-red-500">*</span>
+                  Date <span className="text-[var(--color-danger)]">*</span>
                 </label>
                 <input
                   type="date"
@@ -326,7 +326,7 @@ export function AddExpenseSheet({ defaultSplitBp, currency, parentingMode, regio
               </div>
               <div>
                 <label className="text-[0.625rem] font-bold text-[var(--color-text-muted)] uppercase tracking-widest">
-                  Amount ({symbol}) <span className="text-red-500">*</span>
+                  Amount ({symbol}) <span className="text-[var(--color-danger)]">*</span>
                 </label>
                 <Input
                   type="number"
@@ -342,7 +342,7 @@ export function AddExpenseSheet({ defaultSplitBp, currency, parentingMode, regio
                   error={!!amountError}
                   className="mt-1.5 h-auto py-2.5 text-sm tabular-nums"
                 />
-                {amountError && <p className="mt-1 text-xs text-red-500">{amountError}</p>}
+                {amountError && <p className="mt-1 text-xs text-[var(--color-danger)]">{amountError}</p>}
               </div>
             </div>
 
@@ -409,7 +409,7 @@ export function AddExpenseSheet({ defaultSplitBp, currency, parentingMode, regio
                     onError={msg => setReceiptError(msg)}
                   />
                   {receiptError && (
-                    <p className="text-xs text-red-500 mt-1">{receiptError}</p>
+                    <p className="text-xs text-[var(--color-danger)] mt-1">{receiptError}</p>
                   )}
                 </div>
               )}

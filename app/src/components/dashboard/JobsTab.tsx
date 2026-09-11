@@ -714,7 +714,7 @@ function ChoreCard({ chore, plans, expanded, onToggle, onArchive, onEdit, onTogg
                 </span>
               )}
               {dueDateObj && (
-                <span className={`text-[0.625rem] font-semibold ${isOverdue ? 'text-red-500' : 'text-[var(--color-text-muted)]'}`}>
+                <span className={`text-[0.625rem] font-semibold ${isOverdue ? 'text-[var(--color-danger)]' : 'text-[var(--color-text-muted)]'}`}>
                   Due {dueDateObj.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
                 </span>
               )}
