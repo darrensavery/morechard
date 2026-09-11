@@ -1,6 +1,7 @@
 // app/src/lib/labCatalogue.ts
-// Static catalogue for all 17 Learning Lab modules.
-// Content sourced from /docs/notebooklm/09-module-*.md spec files.
+// Static catalogue for all 25 Learning Lab modules.
+// Content sourced from /docs/notebooklm/09-module-*.md spec files and
+// docs/learning-lab-curriculum-mapping.md (M1/M4/M7/M22 = the Sprout tier).
 
 import React from 'react'
 import type { ReactNode } from 'react'
@@ -10,16 +11,17 @@ import {
   Smartphone, Briefcase, Scale, Megaphone, GitFork, Star, CreditCard,
   Heart, Users, BarChart2, PieChart,
   Umbrella, Hourglass, Dices, ScrollText,
+  Hammer, SplitSquareHorizontal, Sprout, HeartHandshake,
 } from 'lucide-react'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 export type ModuleSlug =
-  | 'M2' | 'M3' | 'M3b' | 'M5' | 'M6' | 'M8' | 'M9' | 'M9b'
+  | 'M1' | 'M2' | 'M3' | 'M3b' | 'M4' | 'M5' | 'M6' | 'M7' | 'M8' | 'M9' | 'M9b'
   | 'M10' | 'M11' | 'M12' | 'M13' | 'M14' | 'M15' | 'M16' | 'M17' | 'M18' | 'M18b'
-  | 'M19' | 'M20' | 'M21'
+  | 'M19' | 'M20' | 'M21' | 'M22'
 
-export type AgeLevel = 1 | 2 | 3 | 4   // 1=Sprout(Phase2), 2=Sapling, 3=Oak, 4=Canopy
+export type AgeLevel = 1 | 2 | 3 | 4   // 1=Sprout, 2=Sapling, 3=Oak, 4=Canopy
 export type AppView  = 'ORCHARD' | 'CLEAN'
 
 /** Real child data passed to every act render function. */
@@ -1551,6 +1553,415 @@ export const MODULES: ModuleDef[] = [
         ],
         correct: 'B',
         explanation: 'For online purchases you typically get 14 days to change your mind and return for a refund. In a physical shop, returns for a change of mind are goodwill, not a legal right.',
+      },
+    ],
+  },
+
+  // ── M1: Effort vs Reward ──────────────────────────────────────────────────
+  {
+    slug:        'M1',
+    title:       'Effort vs Reward',
+    pillar:      1,
+    level:       1,
+    icon:        Hammer,
+    triggerHint: 'Complete your first chore to unlock',
+    description: 'Why some jobs pay more than others — starting with the one you just finished.',
+    actMinutes:  { hook: 1, lesson: 3, lab: 3, quiz: 2 },  // 9 min total
+    illustration: (locked) => React.createElement('svg', { width: '100%', height: 64, viewBox: '0 0 160 64', fill: 'none' },
+      // Small job — short bar, small coin
+      React.createElement('rect', { x: 28, y: 40, width: 26, height: 18, rx: 3, fill: c(locked, 0.25) }),
+      React.createElement('circle', { cx: 41, cy: 26, r: 7, fill: cGold(locked, 0.55) }),
+      // Big job — tall bar, big coin
+      React.createElement('rect', { x: 100, y: 20, width: 32, height: 38, rx: 3, fill: c(locked, 0.4) }),
+      React.createElement('circle', { cx: 116, cy: 12, r: 10, fill: cGold(locked, 0.85) }),
+      // Connecting dashed arrow
+      React.createElement('path', { d: 'M60 46 L94 34', stroke: c(locked, 0.3), strokeWidth: 1.5, strokeDasharray: '3 3' }),
+    ),
+    hook: (d) => React.createElement('div', { className: 'flex flex-col gap-3' },
+      React.createElement('p', { className: 'text-[0.9375rem] font-bold leading-snug' },
+        d.appView === 'ORCHARD'
+          ? `You did it — your first chore is done, and you've already earned ${fmtPence(d.choreRateMedianPence, d.currency)}! Every job you take on grows your harvest a little more.`
+          : `Nice work — you completed your first chore and earned ${fmtPence(d.choreRateMedianPence, d.currency)}. Let's look at why some jobs pay more than others.`
+      ),
+      React.createElement('p', { className: 'text-[0.875rem] leading-relaxed' },
+        d.appView === 'ORCHARD'
+          ? 'Some jobs are quick and easy. Some take longer, or need more care. The bigger the job, the bigger the reward — that\'s not an accident, it\'s fair.'
+          : 'Some jobs take a few minutes. Others take much longer or need more care. Bigger, harder jobs earn more money — that\'s being paid fairly for effort.'
+      )
+    ),
+    lesson: (d) => React.createElement('div', { className: 'flex flex-col gap-4' },
+      React.createElement('p', { className: 'text-[0.875rem] leading-relaxed' },
+        d.appView === 'ORCHARD'
+          ? 'Think about picking one apple compared to picking a whole basket. Picking one apple takes a few seconds. Filling a whole basket takes much longer and more energy — that\'s why a full basket is worth more than a single apple.'
+          : 'Compare a 2-minute job to a 20-minute job. The short job takes less time and effort. The long job takes more time, more energy, or more care. That difference is why they don\'t pay the same.'
+      ),
+      React.createElement('p', { className: 'text-[0.875rem] leading-relaxed' },
+        React.createElement('strong', null, d.appView === 'ORCHARD' ? 'Bigger effort, bigger harvest: ' : 'Bigger effort, bigger reward: '),
+        d.appView === 'ORCHARD'
+          ? 'When a job needs more time, more care, or more strength, it should earn more seeds. That\'s true for chores at home, and it stays true for grown-up jobs too.'
+          : 'When a job needs more time, more skill, or more care, it earns more money. This is true for chores now, and it stays true for jobs as an adult.'
+      ),
+      React.createElement('p', { className: 'text-[0.875rem] leading-relaxed' },
+        d.appView === 'ORCHARD'
+          ? 'That\'s also why not every job pays the same amount — and why choosing a harder job on purpose is one way to grow your harvest faster.'
+          : 'That\'s also why chores don\'t all pay the same, and why choosing a harder chore on purpose is one way to earn more.'
+      )
+    ),
+    lab: (d) => {
+      const small = d.choreRateMedianPence
+      const big   = small * 3
+      const count = Math.ceil(big / small)
+      return React.createElement('div', { className: 'flex flex-col gap-4' },
+        React.createElement('p', { className: 'text-[0.8125rem] text-[var(--color-text-muted)]' },
+          d.appView === 'ORCHARD'
+            ? `Your usual job earns ${fmtPence(small, d.currency)}. Imagine a bigger job that pays 3 times as much:`
+            : `Your median chore pays ${fmtPence(small, d.currency)}. A harder chore pays 3 times as much:`
+        ),
+        React.createElement('div', { className: 'rounded-xl bg-[var(--color-surface-alt)] p-3 text-[0.8125rem] font-mono flex flex-col gap-1' },
+          React.createElement('p', null, `Usual job:   ${fmtPence(small, d.currency)}`),
+          React.createElement('p', null, `Bigger job:  ${fmtPence(big, d.currency)}`),
+          React.createElement('p', { className: 'font-bold border-t border-[var(--color-border)] pt-1' },
+            `${count} usual jobs = 1 bigger job`
+          )
+        ),
+        React.createElement('p', { className: 'text-[0.8125rem] leading-relaxed' },
+          d.appView === 'ORCHARD'
+            ? `You'd need to do your usual job ${count} times to earn the same as just one bigger job. Taking on a bigger challenge can grow your harvest faster.`
+            : `You'd need to do your usual chore ${count} times to earn the same as one bigger chore. A harder task can be a faster way to earn.`
+        )
+      )
+    },
+    quiz: [
+      {
+        question: 'Why does a bigger, harder job usually earn more than a quick, easy one?',
+        options: [
+          { label: 'A', text: 'Because it takes more time, effort, or care' },
+          { label: 'B', text: 'Because bigger jobs are always more fun' },
+        ],
+        correct: 'A',
+        explanation: 'Reward is linked to effort — more time, care, or skill needed usually means a bigger reward.',
+      },
+      {
+        question: 'You can do 3 quick chores, or 1 big chore that pays the same as all 3 together. Which saves you more time?',
+        options: [
+          { label: 'A', text: 'The 3 quick chores' },
+          { label: 'B', text: 'The 1 big chore' },
+        ],
+        correct: 'B',
+        explanation: 'If they pay the same, doing one bigger job instead of three small ones can save you time overall.',
+      },
+      {
+        question: 'Is it fair for a longer, harder chore to pay more than a 2-minute one?',
+        options: [
+          { label: 'A', text: 'Yes — more effort deserves more reward' },
+          { label: 'B', text: 'No — every chore should pay exactly the same' },
+        ],
+        correct: 'A',
+        explanation: 'Paying more for more effort is the basic idea behind fair pay, at home and in real jobs.',
+      },
+    ],
+  },
+
+  // ── M4: Needs vs Wants ────────────────────────────────────────────────────
+  {
+    slug:        'M4',
+    title:       'Needs vs Wants',
+    pillar:      2,
+    level:       1,
+    icon:        SplitSquareHorizontal,
+    triggerHint: 'Make your first purchase to unlock',
+    description: 'Telling the difference between things you need and things you just want.',
+    actMinutes:  { hook: 1, lesson: 3, lab: 3, quiz: 2 },  // 9 min total
+    illustration: (locked) => React.createElement('svg', { width: '100%', height: 64, viewBox: '0 0 160 64', fill: 'none' },
+      // Left basket — Need (solid, filled)
+      React.createElement('path', { d: 'M22 28 L58 28 L54 54 L26 54 Z', fill: c(locked, 0.2), stroke: c(locked, 0.4), strokeWidth: 1.5 }),
+      React.createElement('rect', { x: 30, y: 34, width: 20, height: 5, rx: 2, fill: c(locked, 0.55) }),
+      React.createElement('rect', { x: 32, y: 42, width: 16, height: 5, rx: 2, fill: c(locked, 0.4) }),
+      // Right basket — Want (outline only, lighter)
+      React.createElement('path', { d: 'M102 28 L138 28 L134 54 L106 54 Z', fill: cGold(locked, 0.08), stroke: cGold(locked, 0.5), strokeWidth: 1.5, strokeDasharray: '3 2' }),
+      React.createElement('circle', { cx: 120, cy: 40, r: 6, fill: cGold(locked, 0.5) }),
+      // Divider
+      React.createElement('line', { x1: 80, y1: 14, x2: 80, y2: 58, stroke: c(locked, 0.15), strokeWidth: 1, strokeDasharray: '2 3' }),
+    ),
+    hook: (d) => React.createElement('div', { className: 'flex flex-col gap-3' },
+      React.createElement('p', { className: 'text-[0.9375rem] font-bold leading-snug' },
+        d.appView === 'ORCHARD'
+          ? 'You just spent some of your harvest! Before your next purchase, let\'s sort things into two baskets: Needs and Wants.'
+          : 'You made your first purchase. Before your next one, let\'s sort things into two groups: Needs and Wants.'
+      ),
+      React.createElement('p', { className: 'text-[0.875rem] leading-relaxed' },
+        'A ', React.createElement('strong', null, 'need'), ' is something you can\'t really do without — like food, clothes, or a place to live. A ',
+        React.createElement('strong', null, 'want'), ' is something nice to have, but you could live without it — like a new game or extra sweets.'
+      )
+    ),
+    lesson: (d) => React.createElement('div', { className: 'flex flex-col gap-4' },
+      React.createElement('p', { className: 'text-[0.875rem] leading-relaxed' },
+        d.appView === 'ORCHARD'
+          ? 'Imagine your harvest basket only has room for so much. Needs go in first — they keep you fed, warm, and safe. Whatever room is left over is for Wants.'
+          : 'Imagine you only have a little money to spend. Needs should be covered first — they keep you fed, warm, and safe. Whatever is left over can go toward Wants.'
+      ),
+      React.createElement('p', { className: 'text-[0.875rem] font-semibold' }, 'Some examples:'),
+      React.createElement('div', { className: 'rounded-xl bg-[var(--color-surface-alt)] p-3 text-[0.8125rem] flex flex-col gap-2' },
+        React.createElement('p', null, React.createElement('strong', null, 'Needs: '), 'school shoes, dinner, a warm coat'),
+        React.createElement('p', null, React.createElement('strong', null, 'Wants: '), 'a new game, extra sweets, a fancy toy')
+      ),
+      React.createElement('p', { className: 'text-[0.875rem] leading-relaxed' },
+        d.appView === 'ORCHARD'
+          ? 'Wants aren\'t bad! Enjoying a treat from your own harvest is great — as long as your Needs are looked after first.'
+          : 'Wants aren\'t bad — enjoying something fun with your own money is great, as long as your Needs are covered first.'
+      )
+    ),
+    lab: (_d) => React.createElement('div', { className: 'flex flex-col gap-4' },
+      React.createElement('p', { className: 'text-[0.875rem] font-semibold' }, 'Sort each item: Need or Want?'),
+      ...[
+        { item: 'New school shoes because yours have holes in them', answer: 'NEED' },
+        { item: 'The newest version of a game you already own', answer: 'WANT' },
+        { item: 'Dinner tonight', answer: 'NEED' },
+        { item: 'A toy you saw an advert for', answer: 'WANT' },
+      ].map((row, i) => React.createElement('div', { key: i, className: 'rounded-xl border border-[var(--color-border)] p-3 flex items-center justify-between gap-2' },
+        React.createElement('p', { className: 'text-[0.8125rem] flex-1' }, row.item),
+        React.createElement('p', { className: 'text-[0.75rem] font-bold text-[var(--brand-primary)]' }, row.answer)
+      ))
+    ),
+    quiz: [
+      {
+        question: 'Which of these is a Need, not a Want?',
+        options: [
+          { label: 'A', text: 'A new toy' },
+          { label: 'B', text: 'A warm coat in winter' },
+        ],
+        correct: 'B',
+        explanation: 'A warm coat keeps you safe and healthy — that makes it a Need. A toy is nice to have, but you could live without it.',
+      },
+      {
+        question: 'You have a little money left after covering your Needs. What can you do with it?',
+        options: [
+          { label: 'A', text: 'Spend it on a Want, like a treat or a toy' },
+          { label: 'B', text: 'You must always save every penny' },
+        ],
+        correct: 'A',
+        explanation: 'Once your Needs are covered, spending leftover money on something you Want is a perfectly good choice.',
+      },
+      {
+        question: 'Why do Needs come before Wants?',
+        options: [
+          { label: 'A', text: 'Needs keep you fed, warm, and safe — Wants are extra' },
+          { label: 'B', text: 'Wants are more expensive so they should wait' },
+        ],
+        correct: 'A',
+        explanation: 'Needs cover the essentials that keep you healthy and safe. Wants are enjoyable, but not essential.',
+      },
+    ],
+  },
+
+  // ── M7: Patience ──────────────────────────────────────────────────────────
+  {
+    slug:        'M7',
+    title:       'Patience',
+    pillar:      3,
+    level:       1,
+    icon:        Sprout,
+    triggerHint: 'Create your first savings goal to unlock',
+    description: 'Why waiting for something can make it feel even better when it finally arrives.',
+    actMinutes:  { hook: 1, lesson: 3, lab: 3, quiz: 2 },  // 9 min total
+    illustration: (locked) => React.createElement('svg', { width: '100%', height: 64, viewBox: '0 0 160 64', fill: 'none' },
+      // Small sprout — stage 1
+      React.createElement('line', { x1: 32, y1: 58, x2: 32, y2: 48, stroke: c(locked, 0.5), strokeWidth: 2 }),
+      React.createElement('circle', { cx: 32, cy: 44, r: 5, fill: c(locked, 0.3) }),
+      // Medium plant — stage 2
+      React.createElement('line', { x1: 80, y1: 58, x2: 80, y2: 38, stroke: c(locked, 0.55), strokeWidth: 2.5 }),
+      React.createElement('circle', { cx: 80, cy: 32, r: 8, fill: c(locked, 0.45) }),
+      // Tall plant with fruit — stage 3
+      React.createElement('line', { x1: 128, y1: 58, x2: 128, y2: 24, stroke: c(locked, 0.6), strokeWidth: 3 }),
+      React.createElement('circle', { cx: 128, cy: 16, r: 12, fill: c(locked, 0.5) }),
+      React.createElement('circle', { cx: 122, cy: 14, r: 3, fill: cGold(locked, 0.8) }),
+      React.createElement('circle', { cx: 134, cy: 18, r: 3, fill: cGold(locked, 0.8) }),
+      // Dashed arrows showing time passing
+      React.createElement('path', { d: 'M42 54 L70 44 M96 40 L114 28', stroke: c(locked, 0.2), strokeWidth: 1, strokeDasharray: '2 3' }),
+    ),
+    hook: (d) => React.createElement('div', { className: 'flex flex-col gap-3' },
+      React.createElement('p', { className: 'text-[0.9375rem] font-bold leading-snug' },
+        d.appView === 'ORCHARD'
+          ? 'You planted a goal! No fruit grows overnight — but if you wait and keep tending it, it grows into something real.'
+          : 'You created your first savings goal. Nothing you save for arrives instantly — but waiting and saving steadily gets you there.'
+      ),
+      React.createElement('p', { className: 'text-[0.875rem] leading-relaxed' },
+        d.appView === 'ORCHARD'
+          ? 'It\'s tempting to spend everything the moment you earn it. But if you wait a little and let your harvest build up, you can get something bigger and better.'
+          : 'It\'s tempting to spend money the moment you get it. But if you wait and let your savings build up, you can afford something bigger and better.'
+      )
+    ),
+    lesson: (d) => React.createElement('div', { className: 'flex flex-col gap-4' },
+      React.createElement('p', { className: 'text-[0.875rem] leading-relaxed' },
+        React.createElement('strong', null, d.appView === 'ORCHARD' ? 'Instant vs. planned: ' : 'Impulse vs. planned: '),
+        d.appView === 'ORCHARD'
+          ? 'Grabbing the first shiny apple you see is instant. Waiting for the whole tree to ripen takes patience — but the harvest is much bigger.'
+          : 'Buying something the moment you want it is an impulse purchase. Waiting and saving up for it on purpose is a planned purchase.'
+      ),
+      React.createElement('p', { className: 'text-[0.875rem] leading-relaxed' },
+        d.appView === 'ORCHARD'
+          ? 'A little sapling doesn\'t become a full tree overnight — it grows a bit every day. Your savings work the same way: a little bit, added regularly, becomes something big.'
+          : 'Savings grow the same way a plant grows — a little bit added regularly becomes something big over time.'
+      ),
+      React.createElement('p', { className: 'text-[0.875rem] leading-relaxed' },
+        d.appView === 'ORCHARD'
+          ? 'Waiting for a goal you really want often feels even better than buying something on the spot — because you know you worked for it.'
+          : 'Waiting for something you saved up for often feels more satisfying than buying it on impulse — because you know you earned it.'
+      )
+    ),
+    lab: (d) => {
+      const weeks  = 4
+      const weekly = d.choreRateMedianPence
+      const total  = weekly * weeks
+      return React.createElement('div', { className: 'flex flex-col gap-4' },
+        React.createElement('p', { className: 'text-[0.8125rem] text-[var(--color-text-muted)]' },
+          d.appView === 'ORCHARD'
+            ? `If you saved one chore's harvest (${fmtPence(weekly, d.currency)}) every week for ${weeks} weeks:`
+            : `If you saved one chore's pay (${fmtPence(weekly, d.currency)}) every week for ${weeks} weeks:`
+        ),
+        React.createElement('div', { className: 'rounded-xl bg-[var(--color-surface-alt)] p-3 text-[0.8125rem] font-mono flex flex-col gap-1' },
+          React.createElement('p', null, `Week 1: ${fmtPence(weekly, d.currency)}`),
+          React.createElement('p', null, `Week 2: ${fmtPence(weekly * 2, d.currency)}`),
+          React.createElement('p', null, `Week 3: ${fmtPence(weekly * 3, d.currency)}`),
+          React.createElement('p', { className: 'font-bold border-t border-[var(--color-border)] pt-1' }, `Week 4: ${fmtPence(total, d.currency)}`)
+        ),
+        React.createElement('p', { className: 'text-[0.8125rem] leading-relaxed' },
+          d.appView === 'ORCHARD'
+            ? `Wait four weeks instead of spending straight away, and your harvest grows to ${fmtPence(total, d.currency)} — enough for something much bigger.`
+            : `Wait four weeks instead of spending straight away, and you'll have ${fmtPence(total, d.currency)} — enough for something much bigger.`
+        )
+      )
+    },
+    quiz: [
+      {
+        question: 'What is an "impulse purchase"?',
+        options: [
+          { label: 'A', text: 'Buying something the moment you want it, without waiting' },
+          { label: 'B', text: 'Saving up for something over several weeks' },
+        ],
+        correct: 'A',
+        explanation: 'An impulse purchase happens right away, with no waiting or planning — the opposite of saving up for a goal.',
+      },
+      {
+        question: 'You want a toy that costs more than you have right now. What can waiting and saving do?',
+        options: [
+          { label: 'A', text: 'Let you build up enough money to afford it' },
+          { label: 'B', text: 'Nothing — the price will always be too high' },
+        ],
+        correct: 'A',
+        explanation: 'Saving a little at a time, over weeks, adds up until you can afford something bigger.',
+      },
+      {
+        question: 'Why might saving up for something feel better than buying it right away?',
+        options: [
+          { label: 'A', text: 'Because you worked for it and waited, which makes it feel earned' },
+          { label: 'B', text: 'It never feels better — buying instantly is always best' },
+        ],
+        correct: 'A',
+        explanation: 'Things we save and wait for often feel more rewarding because of the effort and patience behind them.',
+      },
+    ],
+  },
+
+  // ── M22: Giving & Charity ─────────────────────────────────────────────────
+  {
+    slug:        'M22',
+    title:       'Giving & Charity',
+    pillar:      6,
+    level:       1,
+    icon:        HeartHandshake,
+    triggerHint: 'Give for the first time to unlock',
+    description: 'How sharing a little of what you earn can help someone else.',
+    actMinutes:  { hook: 1, lesson: 3, lab: 3, quiz: 2 },  // 9 min total
+    illustration: (locked) => React.createElement('svg', { width: '100%', height: 64, viewBox: '0 0 160 64', fill: 'none' },
+      // Left hand — giving (holding a coin up)
+      React.createElement('path', { d: 'M30 50 C30 40 46 40 46 50 L46 54 C46 58 30 58 30 54 Z', fill: c(locked, 0.2), stroke: c(locked, 0.4), strokeWidth: 1.5 }),
+      React.createElement('circle', { cx: 38, cy: 30, r: 8, fill: cGold(locked, 0.7) }),
+      React.createElement('path', { d: 'M38 38 L38 44', stroke: cGold(locked, 0.5), strokeWidth: 1.5, strokeDasharray: '2 2' }),
+      // Right — a heart receiving
+      React.createElement('path', {
+        d: 'M120 26 C116 20 106 22 106 30 C106 38 120 46 120 46 C120 46 134 38 134 30 C134 22 124 20 120 26 Z',
+        fill: cRed(locked, 0.15), stroke: cRed(locked, 0.55), strokeWidth: 1.5,
+      }),
+      // Connecting dashed line
+      React.createElement('path', { d: 'M50 44 L104 34', stroke: c(locked, 0.25), strokeWidth: 1, strokeDasharray: '3 3' }),
+    ),
+    hook: (d) => React.createElement('div', { className: 'flex flex-col gap-3' },
+      React.createElement('p', { className: 'text-[0.9375rem] font-bold leading-snug' },
+        d.appView === 'ORCHARD'
+          ? 'You shared some of your harvest with someone else — that\'s called giving, and it\'s one of the best things you can do with money.'
+          : 'You gave some of your money to someone else. That\'s called giving, and it\'s one of the most powerful things you can do with money.'
+      ),
+      React.createElement('p', { className: 'text-[0.875rem] leading-relaxed' },
+        d.appView === 'ORCHARD'
+          ? 'Not every apple you grow has to be for you. Giving some away means someone who needs it more can enjoy it too.'
+          : 'You don\'t have to keep everything you earn. Giving some away means someone who needs it more can benefit from it.'
+      )
+    ),
+    lesson: (d) => React.createElement('div', { className: 'flex flex-col gap-4' },
+      React.createElement('p', { className: 'text-[0.875rem] leading-relaxed' },
+        React.createElement('strong', null, 'What giving means: '),
+        'When you give money or time to help someone else — a person, a group, or a charity — it\'s called giving, or charity. It doesn\'t have to be a lot to make a difference.'
+      ),
+      React.createElement('p', { className: 'text-[0.875rem] leading-relaxed' },
+        d.appView === 'ORCHARD'
+          ? 'Even a small basket of apples matters to someone who has none. A tiny bit of your harvest, given regularly, adds up to real help over time.'
+          : 'Even a small amount matters to someone who has less. A little given regularly adds up to real help over time.'
+      ),
+      React.createElement('p', { className: 'text-[0.875rem] leading-relaxed' },
+        d.appView === 'ORCHARD'
+          ? 'Some people share with family, some with friends, some with charities that help people they\'ll never meet. All of it counts as giving.'
+          : 'People give in different ways — to family, friends, or charities that help people they\'ll never meet. All of it counts.'
+      )
+    ),
+    lab: (d) => {
+      const earn = d.choreRateMedianPence
+      const give = Math.max(Math.round(earn / 10), 1)
+      return React.createElement('div', { className: 'flex flex-col gap-4' },
+        React.createElement('p', { className: 'text-[0.8125rem] text-[var(--color-text-muted)]' },
+          d.appView === 'ORCHARD'
+            ? `Say you earn ${fmtPence(earn, d.currency)} from a chore, and decide to share a little of your harvest:`
+            : `Say you earn ${fmtPence(earn, d.currency)} from a chore, and decide to give a little away:`
+        ),
+        React.createElement('div', { className: 'rounded-xl bg-[var(--color-surface-alt)] p-3 text-[0.8125rem] font-mono flex flex-col gap-1' },
+          React.createElement('p', null, `You earn:  ${fmtPence(earn, d.currency)}`),
+          React.createElement('p', null, `You give:  ${fmtPence(give, d.currency)}`),
+          React.createElement('p', { className: 'font-bold border-t border-[var(--color-border)] pt-1' }, `You keep: ${fmtPence(earn - give, d.currency)}`)
+        ),
+        React.createElement('p', { className: 'text-[0.8125rem] leading-relaxed' },
+          d.appView === 'ORCHARD'
+            ? `Giving away ${fmtPence(give, d.currency)} barely changes what's left for you — but for someone else, it could matter a lot.`
+            : `Giving away ${fmtPence(give, d.currency)} barely changes what you keep — but for someone else, it could matter a lot.`
+        )
+      )
+    },
+    quiz: [
+      {
+        question: 'What is "giving" or "charity"?',
+        options: [
+          { label: 'A', text: 'Sharing money, time, or things to help someone else' },
+          { label: 'B', text: 'Keeping all your money safely for yourself' },
+        ],
+        correct: 'A',
+        explanation: 'Giving means sharing what you have — money, time, or belongings — to help someone else.',
+      },
+      {
+        question: 'Does giving have to be a large amount to make a difference?',
+        options: [
+          { label: 'A', text: 'No — even a small amount, given regularly, can really help' },
+          { label: 'B', text: 'Yes — only large amounts of money count as real giving' },
+        ],
+        correct: 'A',
+        explanation: 'Small, regular giving adds up over time and can make a genuine difference to someone else.',
+      },
+      {
+        question: 'Who can you give to?',
+        options: [
+          { label: 'A', text: 'Only registered charities' },
+          { label: 'B', text: 'Family, friends, or charities — all of it counts as giving' },
+        ],
+        correct: 'B',
+        explanation: 'Giving isn\'t limited to charities — helping family or friends with money or time counts too.',
       },
     ],
   },

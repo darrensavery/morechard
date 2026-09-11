@@ -1,7 +1,7 @@
 # Morechard Learning Lab — Curriculum Mapping Matrix
 ### Cross-framework alignment evidence for the Financial Education Quality Mark and UK-wide school adoption
 
-*Draft v0.4 — prepared by [Your name], [date]. This document maps the 21 Learning Lab modules to UK financial-education and related frameworks. All four frameworks verified against primary sources (see §8): England Citizenship (KS3/4), England Mathematics, Scotland CfE Money outcomes, Wales Maths & Numeracy anchors, and the **PSHE Association 2026 edition (KS1–5)** — KS3–4/KS5 Economic Wellbeing LOs and statutory Section 1 financial-harms content. No residual framework-confirmation items remain; the open items in §7 are advisory cross-checks and the educationalist sign-off.*
+*Draft v0.5 — prepared by [Your name], [date]. This document maps the 25 Learning Lab modules to UK financial-education and related frameworks. All four frameworks verified against primary sources (see §8): England Citizenship (KS3/4), England Mathematics, Scotland CfE Money outcomes, Wales Maths & Numeracy anchors, and the **PSHE Association 2026 edition (KS1–5)** — KS3–4/KS5 Economic Wellbeing LOs and statutory Section 1 financial-harms content. No residual framework-confirmation items remain; the open items in §7 are advisory cross-checks and the educationalist sign-off.*
 
 > **Companion documents:** [Theory of Change & Evaluation Plan](young-money-theory-of-change-and-evaluation-plan.md) · [Quality Mark One-Pager](young-money-quality-mark-onepager.md) · syllabus source of truth: `app/src/lib/curriculum.ts`
 
@@ -9,7 +9,7 @@
 
 ## 1. Scope and honest framing
 
-This matrix covers the **launch scope** of the Learning Lab: 21 modules across 6 pillars, tiers Sapling (10–12), Oak (13–15) and Canopy (16+). The Sprout tier (6–9) is reserved for Phase 2 and is mapped here only at framework level, not module level.
+This matrix covers the full built scope of the Learning Lab: 25 modules across 6 pillars and all four tiers — Sprout (6–9), Sapling (10–12), Oak (13–15) and Canopy (16+). The Sprout tier shipped as module-level content (not just framework-level mapping) in *Effort vs Reward* (M1), *Needs vs Wants* (M4), *Patience* (M7) and *Giving & Charity* (M22) — see §6 for the closure note.
 
 **A note on framework fit, stated plainly:**
 
@@ -36,14 +36,14 @@ This matrix covers the **launch scope** of the Learning Lab: 21 modules across 6
 
 | # | Module | Pillar · Level | ENG-C | ENG-M | PSHE | WALES | CfE | GATSBY |
 |---|--------|----------------|:---:|:---:|:---:|:---:|:---:|:---:|
-| 1 | Effort vs Reward | 1 · L1 | ● | ◐ | ● | ● | ● | ◐ B4 |
+| 1 | Effort vs Reward *(Sprout — M1)* | 1 · L1 | ● | ◐ | ● | ● | ● | ◐ B4 |
 | 2 | Taxes & Net Pay | 1 · L2 | ● | ● | ● | ● | ● | ◐ B2 |
 | 3 | Entrepreneurship | 1 · L3 | ◐ | — | ● | ● | ● | ◐ B2/B4 |
 | 4 | Gig vs Salary | 1 · L3 | ◐ | — | ● | ◐ | ● | ● B2 |
-| 5 | Needs vs Wants | 2 · L1 | ● | ◐ | ● | ● | ● | — |
+| 5 | Needs vs Wants *(Sprout — M4)* | 2 · L1 | ● | ◐ | ● | ● | ● | — |
 | 6 | Scams & Digital Safety | 2 · L2 | ● | — | ● | ● | ● | — |
 | 7 | Advertising & Influence | 2 · L3 | ◐ | — | ● | ● | ◐ | — |
-| 8 | Patience | 3 · L1 | ◐ | — | ● | ● | ● | — |
+| 8 | Patience *(Sprout — M7)* | 3 · L1 | ◐ | — | ● | ● | ● | — |
 | 9 | Banking 101 | 3 · L2 | ● | ◐ | ● | ● | ● | — |
 | 10 | Opportunity Cost | 3 · L3 | ◐ | ◐ | ● | ● | ● | — |
 | 11 | The Snowball (compound interest) | 3 · L2 | ● | ● | ● | ● | ● | — |
@@ -53,7 +53,7 @@ This matrix covers the **launch scope** of the Learning Lab: 21 modules across 6
 | 15 | Compound Growth | 5 · L4 | ● | ● | ◐ | ● | ● | — |
 | 16 | Inflation | 5 · L2 | ◐ | ● | ◐ | ● | ● | — |
 | 17 | Risk & Diversification | 5 · L4 | ● | ◐ | ● | ◐ | ● | — |
-| 18 | Giving & Charity | 6 · L1 | ● | — | ● | ● | ● | — |
+| 18 | Giving & Charity *(Sprout — M22)* | 6 · L1 | ● | — | ● | ● | ● | — |
 | 19 | Digital vs Physical Currency | 6 · L2 | ◐ | — | ● | ● | ● | — |
 | 20 | Money & Mental Health | 6 · L3 | ◐ | — | ● | ● | ● | — |
 | 21 | Social Comparison | 6 · L3 | — | — | ● | ● | ◐ | — |
@@ -174,7 +174,7 @@ The Lab's botanical tiers map across the four nations' progression structures as
 
 | Lab tier | Age | England | Wales (PS) | Scotland (CfE) | Status |
 |---|---|---|---|---|---|
-| Sprout | 6–9 | KS1 / lower KS2 | PS1–PS2 | Early / First | Phase 2 (reserved) |
+| Sprout | 6–9 | KS1 / lower KS2 | PS1–PS2 | Early / First | ✅ Live — M1, M4, M7, M22 built |
 | Sapling | 10–12 | upper KS2 / KS3 | PS2–PS3 | Second / Third | Launch entry |
 | Oak | 13–15 | KS3 / KS4 | PS3–PS4 | Third / Fourth | Launch middle |
 | Canopy | 16+ | KS4 / post-16 | PS4–PS5 | Fourth / Senior Phase | Launch top |
@@ -193,6 +193,8 @@ The Lab's botanical tiers map across the four nations' progression structures as
 | G6 | No module on **evaluating sources of financial advice** (media literacy of finance) | PSHE KS4 EW LO8 | Low–Medium | Open — fold into Scams or Advertising module as an extension |
 
 **G1–G4 are now built** (`app/src/lib/labCatalogue.ts` modules M16/M19/M20/M21, with matching syllabus entries in `app/src/lib/curriculum.ts` and unlock triggers in `worker/src/lib/labTriggers.ts`). Each has an orchard-metaphor and a clean/professional hook, a plain-English lesson, a real-data Lab, and a 3-question quiz. England-Citizenship and PSHE Economic-Wellbeing direct coverage is now near-complete; the previously highest-priority statutory gap (G3 gambling/loot-box) is closed. Remaining: G5 (NI scope decision) and G6 (low-priority fold-in).
+
+**The Sprout tier (6–9) is now built**, closing the module-level gap this document previously reserved for Phase 2: *Effort vs Reward* (M1, Pillar 1), *Needs vs Wants* (M4, Pillar 2), *Patience* (M7, Pillar 3) and *Giving & Charity* (M22, Pillar 6) — `app/src/lib/labCatalogue.ts`, with real unlock triggers in `worker/src/lib/labTriggers.ts` (first approved chore, first logged spend, first savings goal, first fulfilled Give-jar request respectively). Each has fully separate orchard-metaphor and clean/literal copy across all four acts (hook, lesson, lab, quiz), simplified to 2-option quiz questions for early readers. This brings the Lab to all four tiers and the full 25-module curriculum described in §1.
 
 ---
 

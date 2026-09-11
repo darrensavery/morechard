@@ -23,6 +23,7 @@ import { JwtPayload } from '../lib/jwt.js';
 import { getStreakState, buildMissEvent, saveStreakEvent, hadScheduledChores, todayUTC, previousDay } from '../lib/streaks.js';
 import { getBadgeStats, badgesToAward, insertBadges } from '../lib/badges.js';
 import { getJarConfig, getJarBalances } from '../lib/jar-balance.js';
+import { evaluateOnSpend } from '../lib/labTriggers.js';
 import { z } from 'zod';
 import { parseValidatedBody } from '../lib/validate.js';
 
@@ -115,6 +116,8 @@ export async function handleSpendingCreate(request: Request, env: Env): Promise<
     note ? String(note).trim() : null,
     goal_id ?? null, cat, now,
   ).run();
+
+  evaluateOnSpend(env.DB, auth.sub).catch(() => {});
 
   return json({ id, spent_at: now }, 201);
 }

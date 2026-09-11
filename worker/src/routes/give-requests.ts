@@ -3,6 +3,7 @@ import { json, error } from '../lib/response.js';
 import { JwtPayload } from '../lib/jwt.js';
 import { getJarBalances } from '../lib/jar-balance.js';
 import { notifyParents } from '../lib/push/notify.js';
+import { evaluateOnGiveFulfilled } from '../lib/labTriggers.js';
 
 type AuthedRequest = Request & { auth: JwtPayload };
 
@@ -162,6 +163,10 @@ export async function handlePatchGiveRequest(
         .bind(req.family_id, req.child_id, id, now),
     ]),
   ]);
+
+  if (body.action === 'fulfil') {
+    evaluateOnGiveFulfilled(env.DB, req.child_id).catch(() => {});
+  }
 
   return json({ ok: true, status: newStatus });
 }

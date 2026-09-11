@@ -27,7 +27,7 @@ async function isUnlocked(db: D1Database, childId: string, slug: string): Promis
 // Call after every chore approval (ledger credit write).
 
 export async function evaluateOnChoreApproval(db: D1Database, childId: string): Promise<void> {
-  const [earningsRow, avgRow, distinctRow] = await Promise.all([
+  const [earningsRow, avgRow, distinctRow, approvalCountRow] = await Promise.all([
     db.prepare(
       `SELECT COALESCE(SUM(amount), 0) AS total FROM ledger
        WHERE child_id = ? AND entry_type = 'credit' AND verification_status != 'reversed'`
@@ -43,11 +43,18 @@ export async function evaluateOnChoreApproval(db: D1Database, childId: string): 
       `SELECT COUNT(DISTINCT chore_id) AS cnt FROM ledger
        WHERE child_id = ? AND entry_type = 'credit'`
     ).bind(childId).first<{ cnt: number }>(),
+    db.prepare(
+      `SELECT COUNT(*) AS cnt FROM ledger
+       WHERE child_id = ? AND entry_type = 'credit'`
+    ).bind(childId).first<{ cnt: number }>(),
   ])
 
   const lifetimeEarnings = earningsRow?.total ?? 0
   const avgChoreValue    = avgRow?.avg ?? 0
   const distinctChores   = distinctRow?.cnt ?? 0
+
+  // M1 — Effort vs Reward: the very first approved chore, ever
+  if ((approvalCountRow?.cnt ?? 0) >= 1) await unlock(db, childId, 'M1')
 
   // M2 — Taxes & Net Pay: cumulative >= £20 (2000 pence)
   if (lifetimeEarnings >= 2000) await unlock(db, childId, 'M2')
@@ -129,6 +136,17 @@ export async function evaluatePassive(db: D1Database, childId: string): Promise<
   }
 }
 
+// ── evaluateOnSpend ────────────────────────────────────────────────────────────
+// Call after every logged spend (POST /api/spending).
+
+export async function evaluateOnSpend(db: D1Database, childId: string): Promise<void> {
+  // M4 — Needs vs Wants: the very first logged spend, ever
+  const spendCountRow = await db.prepare(
+    `SELECT COUNT(*) AS cnt FROM spending WHERE child_id = ?`
+  ).bind(childId).first<{ cnt: number }>()
+  if ((spendCountRow?.cnt ?? 0) >= 1) await unlock(db, childId, 'M4')
+}
+
 // ── evaluateOnGoalCreate ───────────────────────────────────────────────────────
 // Call after a goal is created.
 
@@ -138,6 +156,12 @@ export async function evaluateOnGoalCreate(
   category: string,
   targetDate: string | null,
 ): Promise<void> {
+  // M7 — Patience: the very first savings goal created, of any category
+  const totalGoalsRow = await db.prepare(
+    `SELECT COUNT(*) AS cnt FROM goals WHERE child_id = ?`
+  ).bind(childId).first<{ cnt: number }>()
+  if ((totalGoalsRow?.cnt ?? 0) <= 1) await unlock(db, childId, 'M7')
+
   // M17 — Digital Currency: first goal in gaming category
   if (category === 'gaming') {
     const countRow = await db.prepare(
@@ -216,4 +240,12 @@ export async function evaluateOnGoalPurchase(db: D1Database, childId: string): P
 
 export async function evaluateOnLoanRequest(db: D1Database, childId: string): Promise<void> {
   await unlock(db, childId, 'M10')
+}
+
+// ── evaluateOnGiveFulfilled ────────────────────────────────────────────────────
+// Call when a parent fulfils a child's give request.
+
+export async function evaluateOnGiveFulfilled(db: D1Database, childId: string): Promise<void> {
+  // M22 — Giving & Charity: the first fulfilled Give-jar request, ever
+  await unlock(db, childId, 'M22')
 }

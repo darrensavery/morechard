@@ -25,11 +25,19 @@ describe('FamilyAuditCard', () => {
     expect(screen.getByText('AI-generated')).toBeTruthy()
   })
 
-  it('renders nothing when the family has no data yet this month', async () => {
+  it('shows a proper empty state instead of rendering nothing when there is no data yet this month', async () => {
     vi.spyOn(api, 'getFamilyAudit').mockResolvedValue({ month: '2026-07', is_empty: true })
 
-    const { container } = render(<FamilyAuditCard familyId="fam1" />)
+    render(<FamilyAuditCard familyId="fam1" />)
 
-    await waitFor(() => expect(container.firstChild).toBeNull())
+    await waitFor(() => expect(screen.getByText('Not enough activity yet')).toBeTruthy())
+  })
+
+  it('shows the same empty state when the request fails', async () => {
+    vi.spyOn(api, 'getFamilyAudit').mockRejectedValue(new Error('network error'))
+
+    render(<FamilyAuditCard familyId="fam1" />)
+
+    await waitFor(() => expect(screen.getByText('Not enough activity yet')).toBeTruthy())
   })
 })

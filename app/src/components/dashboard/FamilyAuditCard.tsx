@@ -40,7 +40,48 @@ export function FamilyAuditCard({ familyId }: Props) {
     return () => { cancelled = true }
   }, [familyId])
 
-  if (loading || !data || data.is_empty || !data.totals) return null
+  if (loading) {
+    return (
+      <PremiumShell>
+        <div className="px-4 pt-4 pb-3.5 relative z-10 animate-pulse">
+          <div className="flex items-center gap-3 mb-3">
+            <MentorAvatar />
+            <div className="flex-1">
+              <div className="h-2 w-24 rounded-full mb-2" style={{ background: 'rgba(226,245,238,0.12)' }} />
+              <div className="h-3 w-40 rounded-full" style={{ background: 'rgba(226,245,238,0.12)' }} />
+            </div>
+          </div>
+          <div className="h-16 rounded-xl" style={{ background: 'rgba(226,245,238,0.06)' }} />
+        </div>
+      </PremiumShell>
+    )
+  }
+
+  if (!data || data.is_empty || !data.totals) {
+    return (
+      <PremiumShell>
+        <div className="px-4 pt-4 pb-3.5 relative z-10">
+          <div className="flex items-start justify-between gap-3 mb-3">
+            <div className="flex items-center gap-3">
+              <MentorAvatar />
+              <div>
+                <span className="text-[0.625rem] font-bold tracking-widest uppercase" style={{ color: MENTOR_COLORS.label }}>
+                  Orchard Mentor
+                </span>
+                <p className="text-[0.9375rem] font-extrabold tracking-tight" style={{ color: MENTOR_COLORS.heading }}>
+                  Not enough activity yet
+                </p>
+              </div>
+            </div>
+            <ProBadge />
+          </div>
+          <p className="text-[0.8125rem] leading-relaxed" style={{ color: MENTOR_COLORS.body }}>
+            Once the family has a bit more chore and spending history this month, we'll pull together a family-wide summary here.
+          </p>
+        </div>
+      </PremiumShell>
+    )
+  }
 
   return (
     <PremiumShell>

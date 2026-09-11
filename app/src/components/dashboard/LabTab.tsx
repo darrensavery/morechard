@@ -40,7 +40,7 @@ export function LabTab({ appView }: LabTabProps) {
     return () => { cancelled = true }
   }, [])
 
-  const levels: AgeLevel[]      = [2, 3, 4]
+  const levels: AgeLevel[]      = [1, 2, 3, 4]
   const childAge                 = (labData?.ageLevel ?? 2) as AgeLevel
   const unlockedSlugs            = new Set(Object.keys(labData?.modules ?? {}))
   const childLabData: ChildLabData | null = labData
@@ -85,12 +85,12 @@ export function LabTab({ appView }: LabTabProps) {
 
           {appView === 'ORCHARD' ? (
             <p className="text-[0.8125rem] text-[var(--color-text-muted)] leading-relaxed">
-              Seventeen modules on the money skills that actually matter — how wages work, how to spot a financial trap before it closes, how savings compound into something real.
+              {MODULES.length} modules on the money skills that actually matter — how wages work, how to spot a financial trap before it closes, how savings compound into something real.
               The kind of knowledge most adults had to learn the hard way, usually after it cost them.
             </p>
           ) : (
             <p className="text-[0.8125rem] text-[var(--color-text-muted)] leading-relaxed">
-              17 modules covering earnings, tax, saving, debt, and investment — financial concepts most adults encountered too late.
+              {MODULES.length} modules covering earnings, tax, saving, debt, and investment — financial concepts most adults encountered too late.
               Each lesson uses your actual figures, not textbook examples.
             </p>
           )}
@@ -133,7 +133,7 @@ export function LabTab({ appView }: LabTabProps) {
                     ? 'bg-[var(--color-border)] text-[var(--color-text-muted)]'
                     : 'bg-[var(--brand-primary)] text-white'
                 }`}>
-                  {level - 1}
+                  {level}
                 </span>
                 <div>
                   <h2 className={`text-[0.6875rem] font-bold uppercase tracking-[0.08em] ${isFuture ? 'text-[var(--color-text-muted)]' : 'text-[var(--color-text)]'}`}>

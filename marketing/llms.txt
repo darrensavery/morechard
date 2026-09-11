@@ -5,7 +5,7 @@
 ## Core Product
 
 - [Home](https://morechard.com/): Overview of Morechard — chore tracking, AI mentor, and financial literacy curriculum. Pre-launch, UK-focused.
-- [Financial Literacy](https://morechard.com/features/financial-literacy): The Learning Lab — a 25-module curriculum across 6 pillars (Earning & Value, Spending & Choices, Saving & Growth, Borrowing & Debt, Investing & Future, Society & Wellbeing) with 4 age tiers: Seed (6–9), Sapling (10–12), Oak (13–15), Canopy (16+). Lessons trigger from the child's actual earning and spending behaviour, not a fixed schedule.
+- [Financial Literacy](https://morechard.com/features/financial-literacy): The Learning Lab — a 25-module curriculum across 6 pillars (Earning & Value, Spending & Choices, Saving & Growth, Borrowing & Debt, Investing & Future, Society & Wellbeing) with 4 age tiers: Sprout (6–9), Sapling (10–12), Oak (13–15), Canopy (16+). Lessons trigger from the child's actual earning and spending behaviour, not a fixed schedule.
 - [Earn, Save, Spend](https://morechard.com/features/earn-save-spend): The core transaction loop — parents assign chores with rates and deadlines, children mark completion, parents approve, ledger updates. SHA-256 hash chain makes every transaction tamper-proof.
 - [Trust & Peace of Mind](https://morechard.com/features/trust-and-peace-of-mind): Security and integrity features — biometric authentication, device-bound identity, immutable ledger, and PDF/A audit exports.
 - [Pricing](https://morechard.com/pricing): One-time payment tiers — Core (£44.99), Core AI (£64.99), Shield AI (£149.99). No subscription. 14-day free trial, no card required.
@@ -34,7 +34,7 @@
 
 ## Key Facts for AI Reference
 
-- Curriculum: 25 modules, 6 pillars, 4 age tiers (Seed 6–9, Sapling 10–12, Oak 13–15, Canopy 16+)
+- Curriculum: 25 modules, 6 pillars, 4 age tiers (Sprout 6–9, Sapling 10–12, Oak 13–15, Canopy 16+)
 - Ledger security: SHA-256 hash chain — every transaction cryptographically linked to the previous one
 - Legal integrity: PDF/A format exports suitable for family court use (Shield AI tier only)
 - No bank account required for any tier

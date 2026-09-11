@@ -17,7 +17,7 @@
     { "@type": "Question", "name": "Which frameworks does the Learning Lab map to?", "acceptedAnswer": { "@type": "Answer", "text": "All 25 modules are mapped against the PSHE Association Programme of Study (2026 edition), England Citizenship and Mathematics (statutory), Curriculum for Wales, and Scotland's Curriculum for Excellence. Mapping is drawn from the published programmes of study, cited on the page. Gatsby Benchmarks are referenced as contributory only, through the Earning and Value pillar." } },
     { "@type": "Question", "name": "What about pupil data and safeguarding?", "acceptedAnswer": { "@type": "Answer", "text": "Children are identified by nickname only. Morechard never asks for or stores a child's real name. No child personal data is sent to AI or language-model providers. Family data is stored in UK and EU regions, aligned with UK GDPR, COPPA and GDPR-K. There are no debit cards and no bank accounts." } },
     { "@type": "Question", "name": "Does Morechard cover the statutory financial-harms content?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. The 2026 PSHE Association Programme of Study places gambling and chance-based transactions in gaming (including loot boxes) within statutory Section 1 RSHE. Morechard's Gambling and Loot Boxes module covers the house edge, the gambler's fallacy, and the design features loot boxes use to encourage spending." } },
-    { "@type": "Question", "name": "Which year groups is it for?", "acceptedAnswer": { "@type": "Answer", "text": "The Learning Lab launches across three tiers: Sapling (ages 10-12, upper KS2/KS3), Oak (ages 13-15, KS3/KS4) and Canopy (ages 16+, KS4/post-16). A Seed tier for ages 6-9 is in development." } },
+    { "@type": "Question", "name": "Which year groups is it for?", "acceptedAnswer": { "@type": "Answer", "text": "The Learning Lab covers four tiers: Sprout (ages 6-9, KS1/lower KS2), Sapling (ages 10-12, upper KS2/KS3), Oak (ages 13-15, KS3/KS4) and Canopy (ages 16+, KS4/post-16)." } },
     { "@type": "Question", "name": "Is there independent or Quality Mark validation?", "acceptedAnswer": { "@type": "Answer", "text": "Morechard is preparing a submission for the Financial Education Quality Mark, and this curriculum-mapping matrix is the per-module evidence artifact behind it. Framework wording is verified against primary sources; an independent educationalist review is in progress." } }
   ]
 }
@@ -180,8 +180,8 @@
   @media (max-width: 560px) { .bento { grid-template-columns: 1fr; } .bt-wide, .bt-sm, .bt-banner { grid-column: span 1; } .bt-banner { grid-template-columns: 1fr; gap: 12px; } .bt-banner-fig { border-right: 0; padding-right: 0; } }
 
   /* ── Crosswalk: horizontal timeline ── */
-  .tl { position: relative; display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-top: 48px; }
-  .tl::before { content: ''; position: absolute; top: 7px; left: 16%; right: 16%; height: 2px; background: linear-gradient(90deg, var(--teal), var(--gold)); opacity: 0.5; }
+  .tl { position: relative; display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; margin-top: 48px; }
+  .tl::before { content: ''; position: absolute; top: 7px; left: 12%; right: 12%; height: 2px; background: linear-gradient(90deg, var(--teal), var(--gold)); opacity: 0.5; }
   @media (max-width: 760px) { .tl { grid-template-columns: 1fr; gap: 28px; } .tl::before { display: none; } }
   .tl-node { position: relative; text-align: center; padding-top: 28px; }
   .tl-node::before { content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 16px; height: 16px; border-radius: 50%; background: var(--bg-cream); border: 3px solid var(--teal); }
@@ -580,10 +580,19 @@
   <section class="audience-section">
     <div class="container">
       <span class="section-label reveal">Where it fits</span>
-      <h2 class="section-headline reveal">Three tiers, tracking your key stages.</h2>
-      <p class="section-sub reveal">The Lab's tiers follow each nation's progression structure. Ages are indicative - frameworks define progression by attainment, not age. A Seed tier (ages 6-9) is in development.</p>
+      <h2 class="section-headline reveal">Four tiers, tracking your key stages.</h2>
+      <p class="section-sub reveal">The Lab's tiers follow each nation's progression structure. Ages are indicative - frameworks define progression by attainment, not age.</p>
 
       <div class="tl">
+        <div class="tl-node reveal d1">
+          <div class="tl-tier">Sprout</div>
+          <div class="tl-age">Ages 6-9</div>
+          <ul class="tl-maps">
+            <li><b>England</b> KS1 / lower KS2</li>
+            <li><b>Wales</b> PS1-PS2</li>
+            <li><b>Scotland</b> Early / First</li>
+          </ul>
+        </div>
         <div class="tl-node reveal d1">
           <div class="tl-tier">Sapling</div>
           <div class="tl-age">Ages 10-12</div>
@@ -762,7 +771,7 @@
         <details class="reveal"><summary>Which frameworks does the Learning Lab map to?</summary><div class="faq-answer"><div class="faq-inner">All 25 modules are mapped against the PSHE Association Programme of Study (2026 edition), England Citizenship and Mathematics (statutory), Curriculum for Wales, and Scotland's Curriculum for Excellence. The mapping is drawn from the published programmes of study, cited on this page. Gatsby Benchmarks are referenced as contributory only, through the Earning &amp; Value pillar.</div></div></details>
         <details class="reveal"><summary>What about pupil data and safeguarding?</summary><div class="faq-answer"><div class="faq-inner">Children are identified by nickname only - Morechard never asks for or stores a child's real name. No child personal data is sent to AI or language-model providers. Family data is stored in UK and EU regions, aligned with UK GDPR, COPPA and GDPR-K. There are no debit cards and no bank accounts.</div></div></details>
         <details class="reveal"><summary>Does it cover the statutory financial-harms content?</summary><div class="faq-answer"><div class="faq-inner">Yes. The 2026 PSHE Association Programme of Study places gambling and chance-based transactions in gaming - including loot boxes - within statutory Section 1 RSHE. Morechard's Gambling &amp; Loot Boxes module covers the house edge, the gambler's fallacy, and the design features loot boxes use to encourage spending.</div></div></details>
-        <details class="reveal"><summary>Which year groups is it for?</summary><div class="faq-answer"><div class="faq-inner">The Learning Lab launches across three tiers: Sapling (ages 10-12, upper KS2/KS3), Oak (ages 13-15, KS3/KS4) and Canopy (ages 16+, KS4/post-16). A Seed tier for ages 6-9 is in development.</div></div></details>
+        <details class="reveal"><summary>Which year groups is it for?</summary><div class="faq-answer"><div class="faq-inner">The Learning Lab covers four tiers: Sprout (ages 6-9, KS1/lower KS2), Sapling (ages 10-12, upper KS2/KS3), Oak (ages 13-15, KS3/KS4) and Canopy (ages 16+, KS4/post-16).</div></div></details>
         <details class="reveal"><summary>Is there independent or Quality Mark validation?</summary><div class="faq-answer"><div class="faq-inner">Morechard is preparing a submission for the Financial Education Quality Mark, and this curriculum-mapping matrix is the per-module evidence artifact behind it. Framework wording is verified against primary sources, and an independent educationalist review is in progress. We will publish the reviewer's name on completion.</div></div></details>
       </div>
     </div>
