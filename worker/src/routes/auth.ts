@@ -22,7 +22,7 @@ import { hashPassword, verifyPassword, timingSafeEqual } from '../lib/crypto.js'
 import { signJwt } from '../lib/jwt.js';
 import type { JwtPayload } from '../lib/jwt.js';
 import { nanoid } from '../lib/nanoid.js';
-import { sha256, computeRecordHash, GENESIS_HASH } from '../lib/hash.js';
+import { sha256, computeRecordHash, GENESIS_HASH, prepareSystemNoteInsert } from '../lib/hash.js';
 import { setAuthCookie, clearAuthCookie, setSessionMarkerCookie, clearSessionMarkerCookie } from '../lib/cookies.js';
 import { recordPinFailure, clearPinLockout } from '../lib/pinLockout.js';
 import { z } from 'zod';
@@ -961,16 +961,9 @@ export async function handleLeaveFamily(request: Request & { auth?: JwtPayload }
     }
   }
 
-  // Ledger: compute hash chain
-  const prevRow = await env.DB
-    .prepare('SELECT id, record_hash FROM ledger WHERE family_id = ? ORDER BY id DESC LIMIT 1')
-    .bind(familyId)
-    .first<{ id: number; record_hash: string }>();
-  const previousHash = prevRow?.record_hash ?? GENESIS_HASH;
-  const newId        = (prevRow?.id ?? 0) + 1;
-  const recordHash   = await computeRecordHash(newId, familyId, '', 0, 'GBP', 'system_note', previousHash);
-
-  const capturedName = caller.display_name;
+  const { statement: systemNoteStatement } = await prepareSystemNoteInsert(
+    env.DB, familyId, 'GBP', `🌱 ${caller.display_name} has left the orchard.`, ip,
+  );
 
   const batch: ReturnType<typeof env.DB.prepare>[] = [
     // Anonymise caller
@@ -983,8 +976,7 @@ export async function handleLeaveFamily(request: Request & { auth?: JwtPayload }
     env.DB.prepare(`DELETE FROM family_roles WHERE user_id = ? AND family_id = ?`)
       .bind(userId, familyId),
     // Audit note
-    env.DB.prepare(`INSERT INTO ledger (id, family_id, child_id, entry_type, amount, currency, description, verification_status, previous_hash, record_hash, ip_address) VALUES (?,?,NULL,'system_note',0,'GBP',?,'verified_auto',?,?,?)`)
-      .bind(newId, familyId, `🌱 ${capturedName} has left the orchard.`, previousHash, recordHash, ip),
+    systemNoteStatement,
   ];
 
   if (promotionStmt) batch.unshift(promotionStmt); // promote first, then remove
@@ -1078,15 +1070,9 @@ export async function handleRemoveCoParent(request: Request & { auth?: JwtPayloa
     .first<{ cnt: number }>();
   const isLastCoParent = (remainingCoParents?.cnt ?? 0) === 0;
 
-  // Ledger audit note — hash chain
-  const prevRow = await env.DB
-    .prepare('SELECT id, record_hash FROM ledger WHERE family_id = ? ORDER BY id DESC LIMIT 1')
-    .bind(familyId)
-    .first<{ id: number; record_hash: string }>();
-  const previousHash = prevRow?.record_hash ?? GENESIS_HASH;
-  const newId        = (prevRow?.id ?? 0) + 1;
-  const recordHash   = await computeRecordHash(newId, familyId, '', 0, 'GBP', 'system_note', previousHash);
-  const capturedName = target.display_name;
+  const { statement: systemNoteStatement } = await prepareSystemNoteInsert(
+    env.DB, familyId, 'GBP', `🌿 ${target.display_name} has been removed from the orchard.`, ip,
+  );
 
   const batch = [
     // Anonymise removed user's PII
@@ -1106,12 +1092,7 @@ export async function handleRemoveCoParent(request: Request & { auth?: JwtPayloa
       .bind(targetUserId, familyId),
 
     // Immutable audit trail
-    env.DB.prepare(`
-      INSERT INTO ledger
-        (id, family_id, child_id, entry_type, amount, currency,
-         description, verification_status, previous_hash, record_hash, ip_address)
-      VALUES (?,?,NULL,'system_note',0,'GBP',?,'verified_auto',?,?,?)
-    `).bind(newId, familyId, `🌿 ${capturedName} has been removed from the orchard.`, previousHash, recordHash, ip),
+    systemNoteStatement,
   ];
 
   if (isLastCoParent) {
