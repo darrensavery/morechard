@@ -419,6 +419,15 @@ export async function updateFamily(body: Record<string, unknown>): Promise<void>
   await request('/api/family', { method: 'PATCH', body: JSON.stringify(body) });
 }
 
+export async function relocateFamily(
+  newCurrency: 'GBP' | 'USD' | 'PLN', note?: string,
+): Promise<{ ok: boolean; new_currency: string }> {
+  return request('/api/family/relocate', {
+    method: 'POST',
+    body: JSON.stringify({ new_currency: newCurrency, note }),
+  });
+}
+
 export interface ChildRecord {
   id: string; display_name: string; avatar_id: string | null; locked_until: number | null;
   monzo_handle: string | null;

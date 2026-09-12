@@ -73,7 +73,7 @@ import { clearDeviceIdentity, getDeviceIdentity, updateDeviceIdentity } from '..
 import type { ChildRecord, ChildGrowthSettings } from '../../lib/api'
 import {
   getChildren, addChild, generateInvite,
-  getFamily, updateFamily, getSettings, updateSettings,
+  getFamily, updateFamily, relocateFamily, getSettings, updateSettings,
   getChildSettings, updateChildSettings,
   getChildGrowth, updateChildGrowth,
   getMe, updateProfile, getLeadCount, getTrialStatus,
@@ -380,6 +380,13 @@ export function ParentSettingsTab({ familyId, online, onChildrenChange, onClose,
     showToast('Co-parent removed')
   }
 
+  async function handleRelocate(newCurrency: 'GBP' | 'USD' | 'PLN', note?: string) {
+    await relocateFamily(newCurrency, note)
+    const updated = await getFamily()
+    setFamily(updated)
+    showToast('Relocation Audit recorded')
+  }
+
   // ── Section views ────────────────────────────────────────────────────────────
 
   const back = () => setView({ type: 'menu' })
@@ -392,7 +399,9 @@ onSavePocketMoneyDay={handleSavePocketMoneyDay}
 overdraftEnabled={overdraftEnabled}
 overdraftLimitPence={overdraftLimitPence}
 onSaveOverdraftPolicy={handleSaveOverdraftPolicy}
-onCoParentRemoved={handleCoParentRemoved} /></ProfileSection>
+onCoParentRemoved={handleCoParentRemoved}
+currentCurrency={(family?.base_currency as string) ?? 'GBP'}
+onRelocate={handleRelocate} /></ProfileSection>
     if (view.section === 'security')   return <ProfileSection><SecuritySettings   profile={profile} toast={toast} onBack={back} onComingSoon={comingSoon} /></ProfileSection>
     if (view.section === 'appearance') return <ProfileSection><AppearanceSettings toast={toast} onBack={back} /></ProfileSection>
     if (view.section === 'billing')    return <ProfileSection><BillingSettings    toast={toast} onBack={back} onComingSoon={comingSoon} initialView={view.billingSubView} shieldUpgradePrice={shieldUpgradePrice} /></ProfileSection>

@@ -9,7 +9,7 @@
 import { useState, useRef, useEffect, type FormEvent } from 'react'
 import { copyText } from '../../../lib/clipboard'
 import { CurrencyAmountInput } from '../../ui/CurrencyAmountInput'
-import { Users, Shield, Calendar, ChevronRight, AlertTriangle } from 'lucide-react'
+import { Users, Shield, Calendar, ChevronRight, AlertTriangle, Globe } from 'lucide-react'
 import type { ChildRecord, ChildGrowthSettings } from '../../../lib/api'
 import { getCoParents, removeCoParent } from '../../../lib/api'
 import { AvatarSVG } from '../../../lib/avatars'
@@ -17,6 +17,7 @@ import { Toast, SettingsRow, SectionCard, SectionHeader, ReadOnlyBadge } from '.
 import { ChildProfileSettings } from './ChildProfileSettings'
 import { GovernanceConsentBanner } from './GovernanceConsentBanner'
 import { useTone } from '../../../lib/useTone'
+import { currencySymbol } from '../../../lib/locale'
 import { Toggle } from '../../ui/Toggle'
 
 // ── Props ─────────────────────────────────────────────────────────────────────
@@ -52,6 +53,8 @@ interface Props {
   overdraftLimitPence:   number
   onSaveOverdraftPolicy: (enabled: boolean, limitPence: number) => Promise<void>
   onCoParentRemoved:     () => Promise<void>
+  currentCurrency:  string
+  onRelocate:       (newCurrency: 'GBP' | 'USD' | 'PLN', note?: string) => Promise<void>
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -66,6 +69,7 @@ export function FamilySettings({
   pocketMoneyDay, onSavePocketMoneyDay,
   overdraftEnabled, overdraftLimitPence, onSaveOverdraftPolicy,
   onCoParentRemoved,
+  currentCurrency, onRelocate,
 }: Props) {
   const { terminology } = useTone(0)  // parent settings — never teen view
   const [activeChildId,       setActiveChildId]       = useState<string | null>(null)
@@ -97,6 +101,12 @@ export function FamilySettings({
   const [loadingCoParent,      setLoadingCoParent]      = useState(false)
   const [removingCoParent,     setRemovingCoParent]     = useState(false)
   const [removeCoParentError,  setRemoveCoParentError]  = useState<string | null>(null)
+
+  const [showRelocationAudit, setShowRelocationAudit] = useState(false)
+  const [selectedCurrency,    setSelectedCurrency]    = useState<'GBP' | 'USD' | 'PLN'>('GBP')
+  const [relocationNote,      setRelocationNote]      = useState('')
+  const [relocating,          setRelocating]          = useState(false)
+  const [relocationError,     setRelocationError]     = useState<string | null>(null)
 
   async function handleAddChild(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -166,6 +176,19 @@ export function FamilySettings({
       setRemoveCoParentError(err instanceof Error ? err.message : 'Something went wrong.')
     } finally {
       setRemovingCoParent(false)
+    }
+  }
+
+  async function handleConfirmRelocate() {
+    setRelocating(true)
+    setRelocationError(null)
+    try {
+      await onRelocate(selectedCurrency, relocationNote.trim() || undefined)
+      setShowRelocationAudit(false)
+    } catch (err) {
+      setRelocationError(err instanceof Error ? err.message : 'Something went wrong.')
+    } finally {
+      setRelocating(false)
     }
   }
 
@@ -280,6 +303,63 @@ export function FamilySettings({
           className="w-full bg-[var(--brand-primary)] text-white font-semibold text-[0.875rem] py-3 rounded-xl disabled:opacity-50 cursor-pointer"
         >
           {savingOverdraft ? 'Saving…' : 'Save Changes'}
+        </button>
+      </div>
+    )
+  }
+
+  if (showRelocationAudit) {
+    const currencies: Array<'GBP' | 'USD' | 'PLN'> = ['GBP', 'USD', 'PLN']
+    return (
+      <div className="space-y-4">
+        {toast && <Toast message={toast} />}
+        <SectionHeader title="Relocation Audit" onBack={() => setShowRelocationAudit(false)} />
+
+        <SectionCard>
+          <div className="px-4 py-3.5">
+            <p className="text-[0.8125rem] font-semibold text-[var(--color-text)] mb-0.5">New currency</p>
+            <p className="text-[0.75rem] text-[var(--color-text-muted)] mb-3 leading-snug">
+              New chores and goals will use this currency. Past entries stay recorded in their original currency — this is permanent and added to your ledger.
+            </p>
+            <div className="flex gap-1.5 mb-3">
+              {currencies.map(c => (
+                <button
+                  key={c}
+                  type="button"
+                  onClick={() => setSelectedCurrency(c)}
+                  disabled={c === currentCurrency}
+                  className={`flex-1 py-2 rounded-lg text-[0.75rem] font-semibold border cursor-pointer transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
+                    selectedCurrency === c
+                      ? 'bg-[var(--brand-primary)] text-white border-[var(--brand-primary)]'
+                      : 'bg-[var(--color-surface)] text-[var(--color-text-muted)] border-[var(--color-border)] hover:bg-[var(--color-surface-alt)]'
+                  }`}
+                >
+                  {currencySymbol(c)} {c}{c === currentCurrency ? ' (current)' : ''}
+                </button>
+              ))}
+            </div>
+            <label htmlFor="relocation-note" className="text-[0.8125rem] font-semibold text-[var(--color-text)] block mb-1">Note (optional)</label>
+            <textarea
+              id="relocation-note"
+              value={relocationNote}
+              onChange={e => setRelocationNote(e.target.value.slice(0, 200))}
+              placeholder="e.g. Moved to the US"
+              rows={2}
+              className="w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] text-[0.8125rem] text-[var(--color-text)] p-2.5 resize-none"
+            />
+          </div>
+        </SectionCard>
+
+        {relocationError && (
+          <p className="text-[0.8125rem] text-red-600 font-semibold px-1">{relocationError}</p>
+        )}
+
+        <button
+          onClick={handleConfirmRelocate}
+          disabled={relocating || selectedCurrency === currentCurrency}
+          className="w-full bg-[var(--brand-primary)] text-white font-semibold text-[0.875rem] py-3 rounded-xl disabled:opacity-50 cursor-pointer"
+        >
+          {relocating ? 'Recording…' : `Switch to ${selectedCurrency}`}
         </button>
       </div>
     )
@@ -562,6 +642,7 @@ export function FamilySettings({
         <SectionCard>
           <SettingsRow icon={<Calendar size={15} />} label={`${terminology.allowanceLabel} Day`} description={`Weekly day for automated ${terminology.money} drops — your family's harvest day`} onClick={() => { setSelectedDay(pocketMoneyDay); setShowPocketMoneyDay(true) }} disabled={!isLead} disabledReason="Only the family lead can change this" />
           <SettingsRow icon={<Shield size={15} />} label="Global Overdraft Policy" description="Toggle bailouts — default: off / £0" onClick={() => { setLocalEnabled(overdraftEnabled); setLocalLimitPence(overdraftLimitPence); setShowOverdraftPolicy(true) }} disabled={!isLead} disabledReason="Only the family lead can change this" />
+          <SettingsRow icon={<Globe size={15} />} label="Relocation Audit" description={`Currently ${currentCurrency} — mark a move to a new currency`} onClick={() => { setSelectedCurrency(currentCurrency as 'GBP' | 'USD' | 'PLN'); setRelocationNote(''); setRelocationError(null); setShowRelocationAudit(true) }} disabled={!isLead} disabledReason="Only the family lead can change this" />
         </SectionCard>
       </div>
     </div>
