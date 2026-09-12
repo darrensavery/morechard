@@ -42,3 +42,109 @@ describe('Shield upgrade delta calculation', () => {
     expect(computeDelta(19999, 0)).toBe(19999);
   });
 });
+
+interface CheckoutIntent {
+  family_id: string;
+  sku: string;
+  expected_amount_pence: number;
+  currency: string;
+}
+
+interface SessionLike {
+  amount_subtotal?: number;
+  amount_total?: number;
+  currency?: string;
+  metadata?: { family_id?: string; payment_type?: string };
+}
+
+function verifyCheckoutAmount(session: SessionLike, intent: CheckoutIntent | null, normalisedSku: string): boolean {
+  if (!intent) return false;
+  const charged = session.amount_subtotal ?? session.amount_total;
+  const currencyMatches = (session.currency ?? '').toLowerCase() === intent.currency.toLowerCase();
+  const amountMatches = charged === intent.expected_amount_pence;
+  const familyMatches = intent.family_id === session.metadata?.family_id;
+  const skuMatches = intent.sku === normalisedSku;
+  return currencyMatches && amountMatches && familyMatches && skuMatches;
+}
+
+describe('Webhook checkout amount verification', () => {
+  const intent: CheckoutIntent = {
+    family_id: 'fam_123',
+    sku: 'COMPLETE',
+    expected_amount_pence: 4499,
+    currency: 'GBP',
+  };
+
+  it('passes when subtotal matches exactly, no discount', () => {
+    const session: SessionLike = {
+      amount_subtotal: 4499,
+      amount_total: 4499,
+      currency: 'gbp',
+      metadata: { family_id: 'fam_123', payment_type: 'COMPLETE' },
+    };
+    expect(verifyCheckoutAmount(session, intent, 'COMPLETE')).toBe(true);
+  });
+
+  it('passes when a promo code discounts amount_total but not amount_subtotal', () => {
+    const session: SessionLike = {
+      amount_subtotal: 4499,
+      amount_total: 2000, // promo code applied
+      currency: 'gbp',
+      metadata: { family_id: 'fam_123', payment_type: 'COMPLETE' },
+    };
+    expect(verifyCheckoutAmount(session, intent, 'COMPLETE')).toBe(true);
+  });
+
+  it('passes for a Shield dynamic upgrade price where subtotal IS the discounted amount', () => {
+    const shieldIntent: CheckoutIntent = {
+      family_id: 'fam_123',
+      sku: 'SHIELD_AI',
+      expected_amount_pence: 10500, // credited delta, not the £149.99 catalogue price
+      currency: 'GBP',
+    };
+    const session: SessionLike = {
+      amount_subtotal: 10500,
+      amount_total: 10500,
+      currency: 'gbp',
+      metadata: { family_id: 'fam_123', payment_type: 'SHIELD_AI' },
+    };
+    expect(verifyCheckoutAmount(session, shieldIntent, 'SHIELD_AI')).toBe(true);
+  });
+
+  it('fails when no checkout_intents row was found', () => {
+    const session: SessionLike = {
+      amount_subtotal: 4499,
+      currency: 'gbp',
+      metadata: { family_id: 'fam_123', payment_type: 'COMPLETE' },
+    };
+    expect(verifyCheckoutAmount(session, null, 'COMPLETE')).toBe(false);
+  });
+
+  it('fails when the charged amount is lower than expected with no legitimate discount shape', () => {
+    const session: SessionLike = {
+      amount_subtotal: 100, // tampered/incorrect — doesn't match intent at all
+      amount_total: 100,
+      currency: 'gbp',
+      metadata: { family_id: 'fam_123', payment_type: 'COMPLETE' },
+    };
+    expect(verifyCheckoutAmount(session, intent, 'COMPLETE')).toBe(false);
+  });
+
+  it('fails on currency mismatch', () => {
+    const session: SessionLike = {
+      amount_subtotal: 4499,
+      currency: 'usd',
+      metadata: { family_id: 'fam_123', payment_type: 'COMPLETE' },
+    };
+    expect(verifyCheckoutAmount(session, intent, 'COMPLETE')).toBe(false);
+  });
+
+  it('fails when family_id does not match the intent', () => {
+    const session: SessionLike = {
+      amount_subtotal: 4499,
+      currency: 'gbp',
+      metadata: { family_id: 'fam_999', payment_type: 'COMPLETE' },
+    };
+    expect(verifyCheckoutAmount(session, intent, 'COMPLETE')).toBe(false);
+  });
+});

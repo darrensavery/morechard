@@ -398,6 +398,47 @@ async function handleCheckoutCompleted(session: StripeSession, env: Env): Promis
     return;
   }
 
+  // Verify the charged amount against what we told Stripe to charge when we
+  // created this specific session — the source of truth for "did the
+  // customer actually pay what this SKU costs", independent of metadata.
+  const intent = await env.DB
+    .prepare('SELECT family_id, sku, expected_amount_pence, currency FROM checkout_intents WHERE stripe_session_id = ?')
+    .bind(session.id)
+    .first<{ family_id: string; sku: string; expected_amount_pence: number; currency: string }>();
+
+  if (!intent) {
+    Sentry.captureMessage('Stripe checkout completed with no matching checkout_intents row', {
+      level: 'error',
+      fingerprint: ['stripe-checkout-intent-missing'],
+      extra: { stripe_session_id: session.id, family_id, payment_type },
+    });
+    return;
+  }
+
+  const chargedAmount = session.amount_subtotal ?? session.amount_total;
+  const currencyMatches = (session.currency ?? '').toLowerCase() === intent.currency.toLowerCase();
+  const amountMatches = chargedAmount === intent.expected_amount_pence;
+  const familyMatches = intent.family_id === family_id;
+  const skuMatches = intent.sku === payment_type;
+
+  if (!amountMatches || !currencyMatches || !familyMatches || !skuMatches) {
+    Sentry.captureMessage('Stripe checkout amount/product mismatch — refusing to grant', {
+      level: 'error',
+      fingerprint: ['stripe-amount-mismatch'],
+      extra: {
+        stripe_session_id: session.id,
+        family_id, payment_type,
+        expected_amount_pence: intent.expected_amount_pence,
+        charged_amount: chargedAmount,
+        expected_currency: intent.currency,
+        charged_currency: session.currency,
+        intent_sku: intent.sku,
+        intent_family_id: intent.family_id,
+      },
+    });
+    return;
+  }
+
   // Write audit record first — never lose the payment fact
   await env.DB
     .prepare(`
@@ -641,6 +682,8 @@ interface StripeEvent {
 interface StripeSession {
   id: string;
   metadata?: Record<string, string>;
-  amount_total?: number;  // actual charge in minor units (pence for GBP)
+  amount_total?: number;     // actual charge in minor units (pence for GBP)
+  amount_subtotal?: number;  // pre-discount line-item total in minor units
+  currency?: string;
   discounts?: Array<{ promotion_code: string | null }>;
 }
