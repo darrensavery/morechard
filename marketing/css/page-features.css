@@ -2155,6 +2155,7 @@ body.dark .fl-gap-list--grey li { color: var(--text-light-sub); }
   font-size: 40px; line-height: 1;
   animation: fp-lab-pop 0.5s cubic-bezier(0.34,1.56,0.64,1) both;
 }
+.fp-lab-celebrate-icon--tree { display: inline-flex; }
 @keyframes fp-lab-pop {
   from { transform: scale(0.4); opacity: 0; }
   to   { transform: scale(1); opacity: 1; }
