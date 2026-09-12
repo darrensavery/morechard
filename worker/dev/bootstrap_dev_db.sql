@@ -772,6 +772,12 @@ CREATE TABLE IF NOT EXISTS checkout_intents (
 
 CREATE INDEX IF NOT EXISTS idx_checkout_intents_family ON checkout_intents (family_id);
 
+INSERT OR IGNORE INTO products (sku, name, stripe_product_id, stripe_price_id, unit_amount_pence, currency, active) VALUES
+  ('COMPLETE', 'Morechard Core', 'prod_UOe8ZtEJmwuNj6', 'price_1TPqqZKGVFJVwtJFo37uEPPW', 4499, 'GBP', 1),
+  ('COMPLETE_AI', 'Morechard Core AI', 'prod_UOe8ZtEJmwuNj6', 'price_1TQVUFKGVFJVwtJFmYUryKw6', 6499, 'GBP', 1),
+  ('SHIELD_AI', 'Morechard Shield AI', 'prod_UOe8ZtEJmwuNj6', 'price_1TPqqcKGVFJVwtJF6cFgzWf9', 14999, 'GBP', 1),
+  ('AI_UPGRADE', 'AI Mentor + Learning Lab Upgrade', 'prod_UOe8ZtEJmwuNj6', 'price_1TQVViKGVFJVwtJFLhSnEuh7', 2999, 'GBP', 1);
+
 CREATE TABLE IF NOT EXISTS referral_clicks (
   id            INTEGER PRIMARY KEY AUTOINCREMENT,
   referral_code TEXT    NOT NULL,
