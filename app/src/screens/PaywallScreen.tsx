@@ -1,46 +1,23 @@
 /**
  * PaywallScreen — shown when the trial has expired.
- * Embeds the Stripe pricing table for all three plans.
- * Also used as the cancel_url target from Stripe Checkout.
- *
- * The Stripe pricing table handles checkout itself — no custom
- * createCheckoutSession() call needed here.
+ * Reuses the same PlanPurchaseCards component as BillingSettings so there
+ * is exactly one checkout path in the app — no separate Stripe-hosted
+ * widget with its own catalogue/config to keep in sync.
  */
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { FullLogo } from '../components/ui/Logo'
 import { getDeviceIdentity } from '../lib/deviceIdentity'
-
-// Tell TypeScript about the Stripe web component
-declare module 'react' {
-  namespace JSX {
-    interface IntrinsicElements {
-      'stripe-pricing-table': React.DetailedHTMLProps<
-        React.HTMLAttributes<HTMLElement> & {
-          'pricing-table-id': string
-          'publishable-key': string
-          'client-reference-id'?: string
-          'customer-email'?: string
-        },
-        HTMLElement
-      >
-    }
-  }
-}
-
-const PRICING_TABLE_ID  = 'prctbl_1TQYdxKGVFJVwtJFQaPnNZ4o'
-const PUBLISHABLE_KEY   = 'pk_test_51THVv1KGVFJVwtJFaOZkDxHkLTLJghe7vHq9mm3VgTht8FHDdBcJ86gDXtRyInJoUNsZVtprIpxroG5cO97amkFG00vtLk0Dj0'
+import { PlanPurchaseCards } from '../components/billing/PlanPurchaseCards'
+import { getTrialStatus, type TrialStatus } from '../lib/api'
 
 export function PaywallScreen() {
   const identity = getDeviceIdentity()
+  const [trial, setTrial] = useState<TrialStatus | null>(null)
+  const [errorToast, setErrorToast] = useState<string | null>(null)
 
-  // Inject the Stripe pricing table script once
   useEffect(() => {
-    if (document.querySelector('script[src*="pricing-table.js"]')) return
-    const script = document.createElement('script')
-    script.src = 'https://js.stripe.com/v3/pricing-table.js'
-    script.async = true
-    document.head.appendChild(script)
+    getTrialStatus().then(setTrial).catch(() => setTrial(null))
   }, [])
 
   return (
@@ -73,12 +50,17 @@ export function PaywallScreen() {
         </p>
       </div>
 
-      {/* Stripe pricing table */}
-      <div className="flex-1 w-full max-w-4xl mx-auto px-4 pb-12">
-        <stripe-pricing-table
-          pricing-table-id={PRICING_TABLE_ID}
-          publishable-key={PUBLISHABLE_KEY}
-          client-reference-id={identity?.user_id ?? undefined}
+      {/* Purchase cards */}
+      <div className="flex-1 w-full max-w-lg mx-auto px-5 pb-12">
+        {errorToast && (
+          <div className="mb-3 rounded-xl bg-red-50 text-red-700 text-[0.8125rem] font-semibold px-3 py-2 text-center">
+            {errorToast}
+          </div>
+        )}
+        <PlanPurchaseCards
+          trial={trial}
+          shieldUpgradePrice={null}
+          onBuyError={setErrorToast}
         />
       </div>
 
