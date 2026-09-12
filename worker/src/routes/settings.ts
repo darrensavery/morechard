@@ -14,10 +14,11 @@
 
 import { Env } from '../types.js';
 
-import { json, error } from '../lib/response.js';
+import { json, error, clientIp } from '../lib/response.js';
 import { JwtPayload } from '../lib/jwt.js';
 import { z } from 'zod';
 import { parseValidatedBody } from '../lib/validate.js';
+import { prepareSystemNoteInsert } from '../lib/hash.js';
 
 type AuthedRequest = Request & { auth: JwtPayload };
 
@@ -199,7 +200,9 @@ export async function handleFamilyGet(request: Request, env: Env): Promise<Respo
 // consent gating for co-parenting families).
 // ----------------------------------------------------------------
 const familyUpdateSchema = z.object({
-  base_currency:  z.enum(['GBP', 'PLN', 'USD'], { message: 'Invalid base_currency' }).optional(),
+  // base_currency is deliberately NOT editable here — it must go through
+  // POST /api/family/relocate, which is lead-gated and writes a ledger
+  // audit note. See docs/superpowers/specs/2026-09-12-relocation-audit-design.md.
   parenting_mode: z.enum(['single', 'co-parenting'], { message: 'Invalid parenting_mode' }).optional(),
   verify_mode:    z.any().optional(),
   fast_track_enabled: z.any().optional().refine(
@@ -230,9 +233,6 @@ export async function handleFamilyUpdate(request: Request, env: Env): Promise<Re
   const updates: string[] = [];
   const values: unknown[] = [];
 
-  if ('base_currency' in parsed) {
-    updates.push('base_currency = ?'); values.push(parsed.base_currency);
-  }
   if ('parenting_mode' in parsed) {
     updates.push('parenting_mode = ?'); values.push(parsed.parenting_mode);
   }
@@ -282,6 +282,65 @@ export async function handleFamilyUpdate(request: Request, env: Env): Promise<Re
   await env.CACHE.delete(`family:config:${auth.family_id}`);
 
   return json({ ok: true });
+}
+
+// ----------------------------------------------------------------
+// POST /api/family/relocate
+// Body: { new_currency: 'GBP' | 'USD' | 'PLN', note?: string }
+// Lead-only. Writes a system_note ledger entry marking the currency
+// switch, then updates families.currency/base_currency going forward.
+// Past ledger rows, chores, and goals keep whatever currency they were
+// created with — see docs/superpowers/specs/2026-09-12-relocation-audit-design.md.
+// ----------------------------------------------------------------
+const relocateSchema = z.object({
+  new_currency: z.enum(['GBP', 'USD', 'PLN'], { message: 'new_currency must be GBP, USD, or PLN' }),
+  note: z.string().max(200, 'note must be 200 characters or fewer').optional(),
+});
+
+export async function handleFamilyRelocate(request: Request, env: Env): Promise<Response> {
+  const auth = (request as AuthedRequest).auth;
+  if (auth.role !== 'parent') return error('Only parents can relocate the family', 403);
+
+  const callerRole = await env.DB
+    .prepare(`SELECT parent_role FROM family_roles WHERE user_id = ? AND family_id = ? AND role = 'parent'`)
+    .bind(auth.sub, auth.family_id)
+    .first<{ parent_role: string | null }>();
+  if (!callerRole || callerRole.parent_role !== 'lead') {
+    return error('Only the family lead can run a Relocation Audit', 403);
+  }
+
+  const parsed = await parseValidatedBody(request, relocateSchema);
+  if (parsed instanceof Response) return parsed;
+
+  const family = await env.DB
+    .prepare('SELECT base_currency FROM families WHERE id = ?')
+    .bind(auth.family_id)
+    .first<{ base_currency: string }>();
+  if (!family) return error('Family not found', 404);
+
+  const oldCurrency = family.base_currency;
+  const newCurrency = parsed.new_currency;
+  if (newCurrency === oldCurrency) {
+    return error(`Family is already using ${newCurrency}`, 400);
+  }
+
+  const ip = clientIp(request);
+  const description = `🧭 Relocation Audit: currency changed from ${oldCurrency} to ${newCurrency}.`
+    + (parsed.note ? ` Note: ${parsed.note}` : '');
+
+  const { statement: noteStatement } = await prepareSystemNoteInsert(
+    env.DB, auth.family_id, newCurrency, description, ip, auth.sub,
+  );
+
+  await env.DB.batch([
+    noteStatement,
+    env.DB.prepare('UPDATE families SET currency = ?, base_currency = ? WHERE id = ?')
+      .bind(newCurrency, newCurrency, auth.family_id),
+  ]);
+
+  await env.CACHE.delete(`family:config:${auth.family_id}`);
+
+  return json({ ok: true, new_currency: newCurrency });
 }
 
 // ----------------------------------------------------------------

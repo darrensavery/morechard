@@ -101,7 +101,7 @@ import {
 } from './routes/suggestions.js';
 import {
   handleSettingsGet, handleSettingsUpdate,
-  handleFamilyGet, handleFamilyUpdate,
+  handleFamilyGet, handleFamilyUpdate, handleFamilyRelocate,
   handleChildrenList,
   handleAccountLock, handleAccountUnlock, handleAccountLockStatusMe,
   handleParentMessageSet, handleParentMessageGet,
@@ -886,6 +886,7 @@ async function route(request: Request, env: Env, ctx: ExecutionContext, method: 
 
   // Family write (parent only)
   if (path === '/api/family' && method === 'PATCH') return withAuth(request, auth, env, ctx, handleFamilyUpdate);
+  if (path === '/api/family/relocate' && method === 'POST') return withAuth(request, auth, env, ctx, handleFamilyRelocate);
 
   // Chores write (parent only)
   if (path === '/api/chores' && method === 'POST')  return withAuth(request, auth, env, ctx, handleChoreCreate);
