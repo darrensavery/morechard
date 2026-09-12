@@ -49,7 +49,7 @@ const payoutCreateSchema = z.object({
     (v) => Number.isInteger(v) && v > 0,
     { message: 'amount must be a positive integer' },
   ),
-  currency:  z.enum(['GBP', 'PLN'], { message: 'Invalid currency' }),
+  currency:  z.enum(['GBP', 'PLN', 'USD'], { message: 'Invalid currency' }),
   note:      z.string().nullable().optional(),
 });
 
@@ -61,7 +61,7 @@ const bonusCreateSchema = z.object({
     (v) => Number.isInteger(v) && v > 0,
     { message: 'amount must be a positive integer' },
   ),
-  currency:  z.enum(['GBP', 'PLN'], { message: 'Invalid currency' }),
+  currency:  z.enum(['GBP', 'PLN', 'USD'], { message: 'Invalid currency' }),
 });
 
 const subscriptionCreateSchema = z.object({
@@ -73,7 +73,7 @@ const subscriptionCreateSchema = z.object({
     (v) => Number.isInteger(v) && v > 0,
     { message: 'amount must be a positive integer' },
   ),
-  currency:   z.enum(['GBP', 'PLN'], { message: 'Invalid currency' }),
+  currency:   z.enum(['GBP', 'PLN', 'USD'], { message: 'Invalid currency' }),
   frequency:  z.enum(['weekly', 'monthly', 'annual'], { message: 'frequency must be weekly, monthly, or annual' }),
   start_date: z.string().min(1, 'start_date required'),
 });

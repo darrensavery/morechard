@@ -38,7 +38,7 @@ const goalCreateSchema = z.object({
     (v) => Number.isInteger(v) && v > 0,
     { message: 'target_amount must be a positive integer' },
   ),
-  currency:  z.enum(['GBP', 'PLN'], { message: 'Invalid currency' }),
+  currency:  z.enum(['GBP', 'PLN', 'USD'], { message: 'Invalid currency' }),
   category:  z.string().nullable().optional(),
   deadline:  z.string().nullable().optional(),
   alloc_pct: z.number().nullable().optional(),
