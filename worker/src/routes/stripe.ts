@@ -33,33 +33,27 @@ import { JwtPayload } from '../lib/jwt.js';
 
 // ----------------------------------------------------------------
 // Product catalogue
-// Price IDs are read from environment variables so test/live values
-// are swapped without a code deploy. Set in wrangler.toml [vars]
-// for dev (test-mode IDs) and [env.production] vars for live IDs.
+// Prices are read from the `products` D1 table (Task 1/2) so that
+// live/test values are swapped by editing a row, not the codebase.
 // All modes are 'payment' (one-time). No 'subscription' mode used.
 // ----------------------------------------------------------------
 
-function getPriceId(env: Env, paymentType: PaymentType): string | undefined {
-  switch (paymentType) {
-    case 'COMPLETE':    return env.STRIPE_PRICE_COMPLETE;
-    case 'COMPLETE_AI': return env.STRIPE_PRICE_COMPLETE_AI;
-    case 'SHIELD_AI':   return env.STRIPE_PRICE_SHIELD_AI;
-    case 'AI_UPGRADE':  return env.STRIPE_PRICE_AI_UPGRADE;
-    default:            return undefined;
-  }
+interface ProductRow {
+  sku:               PaymentType;
+  name:              string;
+  stripe_product_id: string;
+  stripe_price_id:   string;
+  unit_amount_pence: number;
+  currency:          string;
+  active:            number;
 }
 
-// Amounts in minor units (pence), for audit log only.
-// Stripe is authoritative for the actual charge.
-const AUDIT_AMOUNTS: Partial<Record<PaymentType, number>> = {
-  COMPLETE:    4499,
-  COMPLETE_AI: 6499,
-  SHIELD_AI:   14999,
-  AI_UPGRADE:  2999,
-  LIFETIME:    4499,  // legacy: mapped to COMPLETE price
-  AI_ANNUAL:   2999,  // legacy: mapped to AI_UPGRADE price
-  SHIELD:      14999, // legacy alias
-};
+async function getProduct(env: Env, sku: PaymentType): Promise<ProductRow | null> {
+  return env.DB
+    .prepare('SELECT * FROM products WHERE sku = ? AND active = 1')
+    .bind(sku)
+    .first<ProductRow>();
+}
 
 // SKUs accepted at checkout (legacy and alias SKUs not directly purchasable)
 const PURCHASABLE: PaymentType[] = ['COMPLETE', 'COMPLETE_AI', 'SHIELD_AI', 'AI_UPGRADE'];
@@ -69,7 +63,6 @@ const PURCHASABLE: PaymentType[] = ['COMPLETE', 'COMPLETE_AI', 'SHIELD_AI', 'AI_
 // toward the Shield licence price.
 // ----------------------------------------------------------------
 
-const SHIELD_FULL_PRICE_PENCE = 14999;
 const STRIPE_MINIMUM_PENCE = 30;
 
 interface ShieldCreditResult {
@@ -77,7 +70,7 @@ interface ShieldCreditResult {
   delta: number;        // pence — amount to charge
 }
 
-async function calcShieldCredit(env: Env, familyId: string): Promise<ShieldCreditResult> {
+async function calcShieldCredit(env: Env, familyId: string, fullPricePence: number): Promise<ShieldCreditResult> {
   const row = await env.DB
     .prepare(`
       SELECT COALESCE(SUM(amount_paid_int), 0) AS total
@@ -91,7 +84,7 @@ async function calcShieldCredit(env: Env, familyId: string): Promise<ShieldCredi
     .first<{ total: number }>();
 
   const alreadyPaid = row?.total ?? 0;
-  const raw = SHIELD_FULL_PRICE_PENCE - alreadyPaid;
+  const raw = fullPricePence - alreadyPaid;
   const delta = Math.max(raw, STRIPE_MINIMUM_PENCE);
 
   return { alreadyPaid, delta };
@@ -229,13 +222,16 @@ export async function handleShieldUpgradePrice(
   if (!family) return error('Family not found', 404);
   if (family.has_shield) return error('Already purchased', 400);
 
-  const { alreadyPaid, delta } = await calcShieldCredit(env, auth.family_id);
+  const product = await getProduct(env, 'SHIELD_AI');
+  if (!product) return error('Shield AI is not available for purchase', 503);
+
+  const { alreadyPaid, delta } = await calcShieldCredit(env, auth.family_id, product.unit_amount_pence);
 
   return json({
-    full_price:   SHIELD_FULL_PRICE_PENCE,
+    full_price:   product.unit_amount_pence,
     already_paid: alreadyPaid,
     delta,
-    currency:     'GBP',
+    currency:     product.currency,
   });
 }
 
@@ -256,42 +252,51 @@ export async function handleCreateCheckout(
     return error(`payment_type must be one of: ${PURCHASABLE.join(', ')}`, 400);
   }
 
-  let priceId: string | undefined = getPriceId(env, payment_type);
+  const product = await getProduct(env, payment_type);
+  if (!product) {
+    console.error(`No product configured for SKU ${payment_type}`);
+    return error('This product is not yet available for purchase', 503);
+  }
+
+  let priceId = product.stripe_price_id;
+  let expectedAmountPence = product.unit_amount_pence;
 
   // For Shield, calculate upgrade credit and use a dynamic price if applicable
   if (payment_type === 'SHIELD_AI') {
-    const { delta } = await calcShieldCredit(env, auth.family_id);
-    if (delta < SHIELD_FULL_PRICE_PENCE) {
-      if (!env.STRIPE_SHIELD_PRODUCT_ID) {
-        console.error('STRIPE_SHIELD_PRODUCT_ID is not configured');
-        return error('Shield upgrade not available — please contact support', 503);
-      }
+    const { delta } = await calcShieldCredit(env, auth.family_id, product.unit_amount_pence);
+    if (delta < product.unit_amount_pence) {
       try {
         priceId = await createDynamicPrice(
-          env.STRIPE_SHIELD_PRODUCT_ID,
+          product.stripe_product_id,
           delta,
-          'gbp',
+          product.currency.toLowerCase(),
           env.STRIPE_SECRET_KEY,
         );
       } catch {
         return error('Failed to calculate upgrade price', 502);
       }
+      expectedAmountPence = delta;
     }
   }
 
-  if (!priceId || priceId.startsWith('price_PLACEHOLDER')) {
-    console.error(`No live price ID configured for ${payment_type}`);
-    return error('This product is not yet available for purchase', 503);
-  }
-
+  let sessionResult: { url: string; sessionId: string };
   try {
-    const { url, sessionId } = await createCheckoutSession(
+    sessionResult = await createCheckoutSession(
       priceId, auth.family_id, payment_type, env.APP_URL, env.STRIPE_SECRET_KEY,
     );
-    return json({ url, session_id: sessionId });
   } catch {
     return error('Failed to create checkout session', 502);
   }
+
+  await env.DB
+    .prepare(`
+      INSERT INTO checkout_intents (stripe_session_id, family_id, sku, stripe_price_id, expected_amount_pence, currency)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `)
+    .bind(sessionResult.sessionId, auth.family_id, payment_type, priceId, expectedAmountPence, product.currency)
+    .run();
+
+  return json({ url: sessionResult.url, session_id: sessionResult.sessionId });
 }
 
 // ----------------------------------------------------------------
@@ -385,7 +390,7 @@ async function handleCheckoutCompleted(session: StripeSession, env: Env): Promis
       INSERT INTO payment_audit_log (family_id, stripe_session_id, amount_paid_int, currency, payment_type)
       VALUES (?, ?, ?, ?, ?)
     `)
-    .bind(family_id, session.id, session.amount_total ?? AUDIT_AMOUNTS[payment_type] ?? 0, 'GBP', payment_type)
+    .bind(family_id, session.id, session.amount_total ?? 0, 'GBP', payment_type)
     .run();
 
   // Grant license flags

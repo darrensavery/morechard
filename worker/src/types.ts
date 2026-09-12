@@ -14,11 +14,6 @@ export interface Env {
   WORKER_URL: string;
   STRIPE_SECRET_KEY: string;
   STRIPE_WEBHOOK_SECRET: string;
-  STRIPE_PRICE_COMPLETE:    string;
-  STRIPE_PRICE_COMPLETE_AI: string;
-  STRIPE_PRICE_SHIELD_AI:   string;
-  STRIPE_PRICE_AI_UPGRADE:  string;
-  STRIPE_SHIELD_PRODUCT_ID: string;
   GOOGLE_CLIENT_ID:     string;
   GOOGLE_CLIENT_SECRET: string;
   POSTHOG_API_KEY:      string;

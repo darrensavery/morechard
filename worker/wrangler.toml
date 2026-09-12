@@ -45,14 +45,6 @@ bucket_name = "morechard-receipts"
 ENVIRONMENT = "development"
 APP_URL = "https://app.morechard.com"
 POSTHOG_HOST = "https://eu.i.posthog.com"
-# Stripe price IDs — test-mode values (find in Stripe Dashboard → Product catalogue)
-STRIPE_PRICE_COMPLETE    = "price_1TPqqZKGVFJVwtJFo37uEPPW"
-STRIPE_PRICE_COMPLETE_AI = "price_1TQVUFKGVFJVwtJFmYUryKw6"
-STRIPE_PRICE_SHIELD_AI   = "price_1TQVVRKGVFJVwtJFbtozHn3b"
-STRIPE_PRICE_AI_UPGRADE  = "price_1TQVViKGVFJVwtJFLhSnEuh7"
-# Stripe product ID for Shield AI (used for upgrade credit dynamic pricing)
-# Find in Stripe Dashboard → Product catalogue → Morechard Shield AI → copy the prod_... ID
-STRIPE_SHIELD_PRODUCT_ID = "prod_UOe8ZtEJmwuNj6"
 # EU data center — this Morechard Zoho account was created under .eu, not .com.
 # Confirmed live against the account during setup (see docs/superpowers/plans/
 # 2026-07-14-freshdesk-to-zoho-desk-migration.md, Task 1). Zoho refresh tokens
@@ -107,7 +99,7 @@ crons = ["0 8 * * 6", "0 3 * * 1", "0 6 * * *", "0 0 * * *", "*/5 * * * *"]
 #   npx wrangler deploy --env production
 [env.production]
 name = "morechard-api"
-vars = { ENVIRONMENT = "production", APP_URL = "https://app.morechard.com", WORKER_URL = "https://api.morechard.com", POSTHOG_HOST = "https://eu.i.posthog.com", STRIPE_PRICE_COMPLETE = "price_REPLACE_WITH_LIVE_COMPLETE", STRIPE_PRICE_COMPLETE_AI = "price_REPLACE_WITH_LIVE_COMPLETE_AI", STRIPE_PRICE_SHIELD_AI = "price_REPLACE_WITH_LIVE_SHIELD_AI", STRIPE_PRICE_AI_UPGRADE = "price_REPLACE_WITH_LIVE_AI_UPGRADE", STRIPE_SHIELD_PRODUCT_ID = "prod_REPLACE_WITH_LIVE_SHIELD_PRODUCT_ID", ZOHO_API_DOMAIN = "https://desk.zoho.eu", ZOHO_ACCOUNTS_DOMAIN = "https://accounts.zoho.eu", ZOHO_FROM_EMAIL = "support@morechard.zohodesk.eu" }
+vars = { ENVIRONMENT = "production", APP_URL = "https://app.morechard.com", WORKER_URL = "https://api.morechard.com", POSTHOG_HOST = "https://eu.i.posthog.com", ZOHO_API_DOMAIN = "https://desk.zoho.eu", ZOHO_ACCOUNTS_DOMAIN = "https://accounts.zoho.eu", ZOHO_FROM_EMAIL = "support@morechard.zohodesk.eu" }
 
 # Enabled via the Cloudflare dashboard while diagnosing the Zoho Desk cron
 # poll (2026-07-14) — mirrored here so a future declarative deploy doesn't
