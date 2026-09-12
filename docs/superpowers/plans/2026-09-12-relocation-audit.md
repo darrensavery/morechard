@@ -555,27 +555,35 @@ function makeRelocateEnv(opts: {
 
   const DB = {
     prepare(sql: string) {
+      // resolveFirst backs both call shapes production code uses: a parameterised
+      // query via `.bind(args).first()`, and a bind-less `.first()` directly on
+      // `.prepare()` — real D1 allows .first()/.run() with no .bind() when a query
+      // has no placeholders, and prepareSystemNoteInsert's `SELECT MAX(id) FROM
+      // ledger` relies on exactly that (no `?` in the SQL, so no bind is ever
+      // called on it in production).
+      const resolveFirst = async <T>(args: unknown[]): Promise<T> => {
+        if (sql.includes('FROM family_roles')) {
+          return (opts.parentRole ? { parent_role: opts.parentRole } : null) as unknown as T;
+        }
+        if (sql.includes('SELECT base_currency FROM families')) {
+          return { base_currency: opts.baseCurrency } as unknown as T;
+        }
+        if (sql.includes('MAX(id) AS max_id')) {
+          const maxId = ledgerRows.length ? Math.max(...ledgerRows.map(r => r.id)) : null;
+          return { max_id: maxId } as unknown as T;
+        }
+        if (sql.includes('SELECT record_hash FROM ledger')) {
+          const [familyId] = args as [string];
+          const tip = ledgerRows.filter(r => r.family_id === familyId).sort((a, b) => b.id - a.id)[0];
+          return (tip ? { record_hash: tip.record_hash } : null) as unknown as T;
+        }
+        return null as unknown as T;
+      };
       return {
+        first: <T>() => resolveFirst<T>([]),
         bind(...args: unknown[]) {
           return {
-            async first<T>() {
-              if (sql.includes('FROM family_roles')) {
-                return (opts.parentRole ? { parent_role: opts.parentRole } : null) as unknown as T;
-              }
-              if (sql.includes('SELECT base_currency FROM families')) {
-                return { base_currency: opts.baseCurrency } as unknown as T;
-              }
-              if (sql.includes('MAX(id) AS max_id')) {
-                const maxId = ledgerRows.length ? Math.max(...ledgerRows.map(r => r.id)) : null;
-                return { max_id: maxId } as unknown as T;
-              }
-              if (sql.includes('SELECT record_hash FROM ledger')) {
-                const [familyId] = args as [string];
-                const tip = ledgerRows.filter(r => r.family_id === familyId).sort((a, b) => b.id - a.id)[0];
-                return (tip ? { record_hash: tip.record_hash } : null) as unknown as T;
-              }
-              return null as unknown as T;
-            },
+            first: <T>() => resolveFirst<T>(args),
             async run() {
               if (sql.includes('UPDATE families SET currency')) {
                 const [currency, baseCurrency, id] = args as [string, string, string];
