@@ -64,7 +64,16 @@ export async function fetchAndVerifyChainTip(
     .bind(familyId)
     .first<ChainTipRow>();
 
-  if (!tip) return { previousHash: GENESIS_HASH, newId: 1 };
+  // `ledger.id` is a single AUTOINCREMENT sequence shared by every family,
+  // not scoped per family — the next id must come from the table-wide max,
+  // not this family's own last row, or a family that isn't the most recent
+  // writer to the table collides with another family's row on every write.
+  const globalMax = await db
+    .prepare('SELECT MAX(id) AS max_id FROM ledger')
+    .first<{ max_id: number | null }>();
+  const newId = (globalMax?.max_id ?? 0) + 1;
+
+  if (!tip) return { previousHash: GENESIS_HASH, newId };
 
   const expected = await computeRecordHash(
     tip.id,
@@ -83,7 +92,7 @@ export async function fetchAndVerifyChainTip(
     );
   }
 
-  return { previousHash: tip.record_hash, newId: tip.id + 1 };
+  return { previousHash: tip.record_hash, newId };
 }
 
 const MAX_LEDGER_WRITE_ATTEMPTS = 3;
