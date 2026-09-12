@@ -40,7 +40,7 @@ Map the error:
 | Error | Cause | Resolution |
 |-------|-------|------------|
 | `This product is not yet available for purchase` (503) | Stripe price ID not configured / still a placeholder for that SKU/region | Ops issue — escalate; a live price ID is missing from env config |
-| `Shield upgrade not available — please contact support` (503) | `STRIPE_SHIELD_PRODUCT_ID` not configured | Ops issue — escalate |
+| `Shield AI is not available for purchase` / `This product is not yet available for purchase` (503) | The `products` D1 table is missing a row (or has an inactive row) for that SKU — no env var involved anymore | Ops issue — escalate; run `SELECT * FROM products WHERE sku = 'SHIELD_AI'` (or the relevant SKU) against `morechard-dev` or `morechard` (whichever the request hit) to confirm |
 | `Failed to create checkout session` (502) | Stripe API call failed | Retry; if persistent, check Stripe status + Worker logs, escalate |
 | `Only parents can purchase` (403) | A child session hit checkout | Purchases are parent-only; log in as the parent |
 

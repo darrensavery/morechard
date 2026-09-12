@@ -5,7 +5,7 @@ title: Gatekeeper & Paywall
 
 ### Purpose
 
-The Gatekeeper protects sensitive parent actions (destructive writes, settings changes) by re-challenging the parent's biometric or PIN without requiring a full logout. The Paywall intercepts expired-trial sessions and routes parents to purchase a one-time licence via Stripe's hosted pricing table. Together they form the two access-control layers that separate authenticated-but-unpaid users from the full app.
+The Gatekeeper protects sensitive parent actions (destructive writes, settings changes) by re-challenging the parent's biometric or PIN without requiring a full logout. The Paywall intercepts expired-trial sessions and routes parents to purchase a one-time licence via Morechard's own Stripe Checkout integration. Together they form the two access-control layers that separate authenticated-but-unpaid users from the full app.
 
 ### Methodology
 
@@ -24,9 +24,9 @@ The Gatekeeper protects sensitive parent actions (destructive writes, settings c
 **PaywallScreen**
 
 - Mounted by the router when the family's trial has expired (enforced upstream by route guards reading trial/licence state from the API).
-- Dynamically injects `https://js.stripe.com/v3/pricing-table.js` into `<head>` on first render.
-- Renders the `<stripe-pricing-table>` web component with a hardcoded `pricing-table-id` and `publishable-key`; passes the device UUID as `client-reference-id` so Stripe Checkout can correlate the purchase to the correct family record.
-- No custom `createCheckoutSession` call — Stripe's hosted table handles checkout, success redirect, and cancel redirect (`cancel_url` lands back here).
+- Renders the shared `PlanPurchaseCards` component — the same Core / Core AI / Shield AI purchase cards used in Settings → Billing — so there is exactly one checkout entry point in the app, not a separate widget.
+- `PlanPurchaseCards` reads live prices from `GET /api/products` (D1-backed `products` table) and, on purchase, calls `POST /api/stripe/create-checkout`, which creates a Stripe Checkout Session server-side and returns its URL for `window.location.href` redirect.
+- Both `GET /api/products` and `POST /api/stripe/create-checkout` are registered ahead of the trial/paywall gate in `worker/src/index.ts` so a family with an expired trial can still reach and complete checkout — the very purpose of this screen.
 - "Back to app" link is shown only when a device identity already exists (i.e., partially onboarded users who hit the paywall mid-session).
 
 **LandingGate**
@@ -36,6 +36,6 @@ The Gatekeeper protects sensitive parent actions (destructive writes, settings c
 
 ### Dependencies
 
-- **External packages**: React (`useState`, `useCallback`, `useRef`, `useEffect`), React Router (`useNavigate`), Lucide React (`Users` icon), Stripe pricing-table web component (`pricing-table.js` CDN)
-- **Internal modules**: `app/src/lib/biometrics.ts` (`hasBiometricCredential`, `challengeBiometrics`), `app/src/lib/api.ts` (`verifyPin`), `app/src/lib/deviceIdentity.ts` (`getDeviceIdentity`), `app/src/lib/analytics.ts` (`track`), `app/src/components/ui/Logo.tsx` (`FullLogo`)
-- **APIs / services**: `POST /auth/verify-pin` (worker route — validates PIN, returns 401 on mismatch, 429 with lockout duration on rate limit); Stripe Pricing Table (hosted, no server-side session creation required); WebAuthn browser API (via biometrics wrapper)
+- **External packages**: React (`useState`, `useCallback`, `useRef`, `useEffect`), React Router (`useNavigate`), Lucide React (`Users` icon)
+- **Internal modules**: `app/src/lib/biometrics.ts` (`hasBiometricCredential`, `challengeBiometrics`), `app/src/lib/api.ts` (`verifyPin`, `getProducts`, `createCheckoutSession`), `app/src/lib/deviceIdentity.ts` (`getDeviceIdentity`), `app/src/lib/analytics.ts` (`track`), `app/src/components/ui/Logo.tsx` (`FullLogo`), `app/src/components/billing/PlanPurchaseCards.tsx`
+- **APIs / services**: `POST /auth/verify-pin` (worker route — validates PIN, returns 401 on mismatch, 429 with lockout duration on rate limit); `GET /api/products` and `POST /api/stripe/create-checkout` (worker routes — Stripe Checkout session creation); WebAuthn browser API (via biometrics wrapper)
