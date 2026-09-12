@@ -88,7 +88,7 @@ match the existing `PaymentType` union: `COMPLETE`, `COMPLETE_AI`,
 ```sql
 CREATE TABLE checkout_intents (
   stripe_session_id    TEXT PRIMARY KEY,
-  family_id             TEXT NOT NULL,
+  family_id             TEXT NOT NULL REFERENCES families(id),
   sku                   TEXT NOT NULL,
   stripe_price_id       TEXT NOT NULL,
   expected_amount_pence INTEGER NOT NULL,
@@ -104,6 +104,17 @@ user can possibly reach the webhook). Covers both fixed-price SKUs and the
 Shield AI dynamic upgrade-credit price (computed per family today via
 `calcShieldCredit`), because in both cases we know exactly what we expect to
 be charged at the moment we create the session.
+
+**`stripe_price_id` and `expected_amount_pence` always describe the price ID
+actually sent to Stripe for this session, not the catalogue default.** For
+`COMPLETE` / `COMPLETE_AI` / `AI_UPGRADE` that's the catalogue row's own
+`stripe_price_id` / `unit_amount_pence`. For a discounted `SHIELD_AI`
+upgrade, `createDynamicPrice` returns a new one-off Stripe Price ID for
+exactly the credited amount — *that* ID and *that* (lower) pence amount are
+what get written here, not Shield's £149.99 catalogue price. The dynamic
+price bakes the discount into its own `unit_amount`, so this is the only
+amount Stripe will ever report back for that session — there is no separate
+"full price minus coupon" to reconcile.
 
 ## Checkout flow (`POST /api/stripe/create-checkout`)
 
@@ -202,10 +213,21 @@ straight cutover:
 
 - Unit tests for `handleCreateCheckout`: DB-missing SKU → 503; correct price
   ID selected per SKU; `checkout_intents` row written with the right
-  expected amount; Shield dynamic-price path uses the DB product ID.
-- Unit tests for `handleCheckoutCompleted`: matching intent → grants as
-  today; missing intent → no grant + Sentry capture; amount mismatch → no
-  grant + Sentry capture; currency mismatch → no grant.
+  expected amount; Shield dynamic-price path uses the DB product ID and
+  writes the *dynamic* price ID + discounted amount (not the catalogue
+  price/amount) into `checkout_intents`.
+- Unit tests for `handleCheckoutCompleted`, covering both pricing shapes:
+  - Standard SKU (e.g. `COMPLETE`) paid **with a promo code applied** →
+    `amount_total` < `amount_subtotal`, but `amount_subtotal` still equals
+    `expected_amount_pence` → grants as today.
+  - `SHIELD_AI` dynamic upgrade credit (no promo code) → `amount_subtotal`
+    equals the discounted `expected_amount_pence` directly → grants as
+    today.
+  - Matching intent, no discount → grants as today.
+  - Missing intent → no grant + Sentry capture.
+  - Amount mismatch (neither of the two legitimate-discount shapes above) →
+    no grant + Sentry capture.
+  - Currency mismatch → no grant.
 - Existing `stripe.test.ts` shield-credit-calculation tests updated to read
   the full price from a fixture `products` row instead of the deleted
   constant.
