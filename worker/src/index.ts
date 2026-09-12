@@ -155,7 +155,7 @@ import { requireAuth, requireRole, requireFamilyMatch, requireCsrfHeader } from 
 import { getAuthCookie } from './lib/cookies.js';
 import { requireAdmin, requireAdminBasicAuth } from './lib/adminAuth.js';
 import { checkTrialStatus, getTrialStatus } from './lib/trial.js';
-import { handleCreateCheckout, handleStripeWebhook, handleCancelPlan, handleShieldUpgradePrice } from './routes/stripe.js';
+import { handleCreateCheckout, handleStripeWebhook, handleCancelPlan, handleShieldUpgradePrice, handleGetProducts } from './routes/stripe.js';
 import {
   handleCreatePromoCode, handleListPromoCodes, handleGetPromoCode,
   handleListPromotionCandidates, handlePromotePromotionCandidate, handleDismissPromotionCandidate,
@@ -845,6 +845,11 @@ async function route(request: Request, env: Env, ctx: ExecutionContext, method: 
   // ── Trial status endpoint (any role) ─────────────────────────
   if (path === '/api/trial/status' && method === 'GET') {
     return json(await getTrialStatus(env, auth.family_id));
+  }
+
+  // Product catalogue (any role, post-auth) ────────────────────
+  if (path === '/api/products' && method === 'GET') {
+    return handleGetProducts(request, env);
   }
 
   // ── Parent-only routes ────────────────────────────────────────

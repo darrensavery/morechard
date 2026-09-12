@@ -400,6 +400,17 @@ export async function getShieldUpgradePrice(): Promise<ShieldUpgradePrice> {
   return request('/api/stripe/shield-upgrade-price')
 }
 
+export interface Product {
+  sku:               'COMPLETE' | 'COMPLETE_AI' | 'SHIELD_AI' | 'AI_UPGRADE'
+  name:              string
+  unit_amount_pence: number
+  currency:          string
+}
+
+export async function getProducts(): Promise<{ products: Product[] }> {
+  return request('/api/products')
+}
+
 export async function cancelPlan(): Promise<{ refunded: boolean }> {
   return request('/api/billing/cancel', { method: 'DELETE' })
 }

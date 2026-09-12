@@ -203,6 +203,20 @@ async function verifyWebhookSignature(
 }
 
 // ----------------------------------------------------------------
+// Route: GET /api/products
+// ----------------------------------------------------------------
+export async function handleGetProducts(
+  _request: Request,
+  env: Env,
+): Promise<Response> {
+  const rows = await env.DB
+    .prepare('SELECT sku, name, unit_amount_pence, currency FROM products WHERE active = 1')
+    .all<{ sku: string; name: string; unit_amount_pence: number; currency: string }>();
+
+  return json({ products: rows.results });
+}
+
+// ----------------------------------------------------------------
 // Route: GET /api/stripe/shield-upgrade-price
 // ----------------------------------------------------------------
 export async function handleShieldUpgradePrice(
