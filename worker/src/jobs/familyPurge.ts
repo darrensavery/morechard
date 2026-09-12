@@ -92,6 +92,7 @@ export async function runSoftDeletePurge(env: Env, nowEpoch: number): Promise<vo
       'referral_conversions',
       'family_governance_log',
       'mentor_chat_messages',
+      'checkout_intents',
     ];
     for (const table of familyTables) {
       batch.push(
