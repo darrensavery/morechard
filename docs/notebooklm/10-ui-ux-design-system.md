@@ -68,6 +68,7 @@ premium shell only), `#d4a017` gold accent.
 ## 2. Typography
 
 - Font: **Manrope** (Google Fonts), weights 400/500/600/700/800.
+- Wordmark: the "morechard" logotype itself (`FullLogo`/`BrandWordmark` in `app/src/components/ui/Logo.tsx`) also uses Manrope, all lowercase at Regular weight (400) — same typeface as the rest of the UI, no separate display font. See `03-brand-book.md` §5 for history (previously LEMON MILK Light, switched 2026-09-12 because the bundled free font had no lowercase glyphs and was silently falling back to sans-serif).
 - Numbers/prices: always `tabular-nums`. Prices are the hero — `font-bold`, never muted.
 - Section labels: `text-[13px] font-extrabold uppercase tracking-wider text-[var(--color-text-muted)]`.
 - Button labels: weight 600, sentence case, no all-caps.

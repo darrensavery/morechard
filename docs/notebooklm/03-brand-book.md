@@ -57,9 +57,10 @@ FROM NOTEBOOKLM — BRAND BOOK EXPORT
     - Charcoal: #2D3436
     - Soft White: #F9FBFB
 - **Typography (primary/secondary; sizes if specified):**
-    - Primary (Headlines): Inter Bold (tracking: -0.02em).
-    - Secondary (Body): Inter Regular (line-height: 1.6).
-    - Technical/Data: JetBrains Mono.
+    - UI/App (headlines & body): **Manrope**, self-hosted variable font, weights 400/500/600/700/800 (see `10-ui-ux-design-system.md` §2 — that file is the authority for in-app typography; this entry exists so brand and product don't drift apart).
+    - Wordmark/logotype: **Manrope Regular** (weight 400), all lowercase — "morechard" (`app/src/components/ui/Logo.tsx` → `FullLogo`/`BrandWordmark`), colour-split m/e in Ochre Gold and or/chard in Deep Teal. One typeface across brand and product — no separate display font.
+        - History: previously spec'd as LEMON MILK Light, a display font whose free/bundled version is uppercase-only (no lowercase glyphs). Since the wordmark renders "morechard" in lowercase, it was silently falling back to the system sans-serif font at runtime — the LEMON MILK spec never actually rendered as intended. Switched to Manrope 2026-09-12; LEMON MILK font files removed from the repo.
+    - Technical/Data (hashes, child codes, share links): Tailwind's default `font-mono` stack (ui-monospace/SFMono/Menlo/Consolas) — **not** JetBrains Mono; that was the original spec but was never implemented.
 - **UI style cues (e.g., spacing, corners, icon style):** 12px corner radius for all cards and buttons; high white-space; 4px Teal border for "Verified" records and Ochre border for "Action Needed."
 
 **6) Copy Examples (copy-ready)**

@@ -23,22 +23,6 @@
   unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
-/* ── LEMON MILK — wordmark font ────────────────────────────────────────────── */
-@font-face {
-  font-family: 'LEMON MILK';
-  src: url('/fonts/LEMONMILK-Light.otf') format('opentype');
-  font-weight: 300;
-  font-style: normal;
-  font-display: block;
-}
-@font-face {
-  font-family: 'LEMON MILK';
-  src: url('/fonts/LEMONMILK-Regular.otf') format('opentype');
-  font-weight: 400;
-  font-style: normal;
-  font-display: block;
-}
-
 @layer base {
   /* ── Brand palette (Tier 1 tokens — never change these) ─────────────── */
   :root {
@@ -250,19 +234,36 @@
   }
 }
 
-@keyframes treeSway {
-  0%   { transform: rotate(0deg);    animation-timing-function: ease-in-out; }
-  20%  { transform: rotate(2.5deg);  animation-timing-function: ease-in-out; }
-  50%  { transform: rotate(-2deg);   animation-timing-function: ease-in-out; }
-  75%  { transform: rotate(0.8deg);  animation-timing-function: ease-in-out; }
-  90%  { transform: rotate(-0.3deg); animation-timing-function: ease-out;    }
-  100% { transform: rotate(0deg);    }
+/* BrandTree's sway — a single push that rings out like a plucked, slightly
+   elastic branch: each swing overshoots less than the last (~55% of the
+   previous one) instead of snapping straight back to rest. Fired
+   occasionally rather than looping. Applied verbatim (same --amt, same
+   pivot, no delay) to the trunk paths and the canopy group alike, so the
+   whole tree rotates together as one rigid body from a single ground-level
+   pivot — sway is near-zero at the base and grows with height for free,
+   with no separate canopy amplitude needed. */
+@keyframes sway {
+  0%   { transform: rotate(0deg); }
+  11%  { transform: rotate(var(--amt)); }
+  24%  { transform: rotate(calc(var(--amt) * -0.54)); }
+  37%  { transform: rotate(calc(var(--amt) * 0.30)); }
+  50%  { transform: rotate(calc(var(--amt) * -0.17)); }
+  63%  { transform: rotate(calc(var(--amt) * 0.09)); }
+  76%  { transform: rotate(calc(var(--amt) * -0.05)); }
+  89%  { transform: rotate(calc(var(--amt) * 0.02)); }
+  100% { transform: rotate(0deg); }
 }
 
 @keyframes leafFall {
   0%   { transform: translateX(-50%) translateY(0)   rotate(0deg);   opacity: 1; }
   40%  { transform: translateX(calc(-50% + var(--drift))) translateY(28px) rotate(40deg);  opacity: 0.9; }
   100% { transform: translateX(calc(-50% + calc(var(--drift) * 2))) translateY(70px) rotate(90deg); opacity: 0; }
+}
+
+@keyframes blobPop {
+  0%   { opacity: 0; transform: scale(0.3); }
+  70%  { opacity: 1; transform: scale(1.08); }
+  100% { opacity: 1; transform: scale(1); }
 }
 
 @keyframes shake {

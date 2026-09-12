@@ -2,9 +2,8 @@
  * Logo components — Morechard brand mark + wordmark.
  *
  * BrandMark   — the split-gradient 'M' tree icon (SVG paths only, no font dependency)
- * BrandWordmark — "morechard" text in LEMON MILK Light (weight 300), matching
- *                 the original wordmark SVG spec. Colour split: yellow M+e,
- *                 teal or+chard — all via CSS variables.
+ * BrandWordmark — "morechard" text in Manrope Regular (weight 400).
+ *                 Colour split: yellow m+e, teal or+chard — all via CSS variables.
  * FullLogo    — BrandMark + BrandWordmark side-by-side.
  *
  * All colours reference CSS variables so the logo responds to light/dark theme.
@@ -85,7 +84,7 @@ interface BrandWordmarkProps {
  *   e  → yellow  (var(--brand-accent))
  *   chard → teal (var(--brand-primary))
  *
- * Font: LEMON MILK Light (weight 300) — matches the original wordmark SVG spec.
+ * Font: Manrope Regular (weight 400) — matches the app-wide UI typeface.
  */
 export function BrandWordmark({ fontSize = 22, className = '' }: BrandWordmarkProps) {
   return (
@@ -93,16 +92,16 @@ export function BrandWordmark({ fontSize = 22, className = '' }: BrandWordmarkPr
       className={className}
       style={{
         fontSize,
-        fontFamily: "'LEMON MILK', 'LEMONMILK-Light', sans-serif",
-        fontWeight: 300,
-        letterSpacing: '0.01em',
+        fontFamily: "'Manrope', -apple-system, 'Segoe UI', sans-serif",
+        fontWeight: 400,
+        letterSpacing: '-0.01em',
         lineHeight: 1,
         display: 'inline-flex',
         alignItems: 'baseline',
       }}
       aria-label="Morechard"
     >
-      <span style={{ color: 'var(--brand-accent)' }}>M</span>
+      <span style={{ color: 'var(--brand-accent)' }}>m</span>
       <span style={{ color: 'var(--brand-primary)' }}>or</span>
       <span style={{ color: 'var(--brand-accent)' }}>e</span>
       <span style={{ color: 'var(--brand-primary)' }}>chard</span>
@@ -128,10 +127,10 @@ export function FullLogo({ iconSize = 28, className = '', light = false }: FullL
     >
       <BrandMark size={iconSize} aria-hidden />
       <span
-        className={`font-semibold tracking-tight ${light ? '' : 'text-main'}`}
+        className={`font-normal tracking-tight ${light ? '' : 'text-main'}`}
         style={{ fontSize: Math.round(iconSize * 0.65), color: light ? '#f9f7f2' : undefined }}
       >
-        Morechard
+        morechard
       </span>
     </span>
   )
