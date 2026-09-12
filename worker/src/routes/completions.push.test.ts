@@ -91,7 +91,11 @@ function makeApproveEnv(opts: {
     }
     return Promise.resolve({ success: true, meta: { changes: 1 } });
   });
+  // fetchAndVerifyChainTip()'s table-wide `SELECT MAX(id) FROM ledger` has no
+  // placeholders, so production code calls `.first()` directly on `.prepare()`
+  // with no `.bind()` in between — support both call shapes here.
   const prepare = vi.fn((sql: string) => ({
+    first: () => first(sql, []),
     bind: (...args: unknown[]) => ({
       first: () => first(sql, args),
       all: () => all(),
