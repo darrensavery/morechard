@@ -302,13 +302,18 @@ export async function handleCreateCheckout(
     return error('Failed to create checkout session', 502);
   }
 
-  await env.DB
-    .prepare(`
-      INSERT INTO checkout_intents (stripe_session_id, family_id, sku, stripe_price_id, expected_amount_pence, currency)
-      VALUES (?, ?, ?, ?, ?, ?)
-    `)
-    .bind(sessionResult.sessionId, auth.family_id, payment_type, priceId, expectedAmountPence, product.currency)
-    .run();
+  try {
+    await env.DB
+      .prepare(`
+        INSERT INTO checkout_intents (stripe_session_id, family_id, sku, stripe_price_id, expected_amount_pence, currency)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `)
+      .bind(sessionResult.sessionId, auth.family_id, payment_type, priceId, expectedAmountPence, product.currency)
+      .run();
+  } catch (err) {
+    console.error('Failed to write checkout_intents row:', String(err));
+    return error('Failed to create checkout session', 502);
+  }
 
   return json({ url: sessionResult.url, session_id: sessionResult.sessionId });
 }
@@ -376,8 +381,14 @@ export async function handleStripeWebhook(
 
 // ----------------------------------------------------------------
 // License grant logic — provider-neutral
+//
+// Exported (rather than kept module-private) purely for unit testability —
+// handleStripeWebhook's own entry point requires a valid HMAC-SHA256
+// signature over the raw body, which makes driving it directly in tests
+// impractical for the scenarios that matter here (missing/duplicate/mismatched
+// checkout_intents). See stripe.test.ts.
 // ----------------------------------------------------------------
-async function handleCheckoutCompleted(session: StripeSession, env: Env): Promise<void> {
+export async function handleCheckoutCompleted(session: StripeSession, env: Env): Promise<void> {
   const { family_id, payment_type: rawType } = session.metadata ?? {};
 
   const KNOWN: string[] = [...PURCHASABLE, 'LIFETIME', 'AI_ANNUAL', 'SHIELD'];
@@ -445,7 +456,7 @@ async function handleCheckoutCompleted(session: StripeSession, env: Env): Promis
       INSERT INTO payment_audit_log (family_id, stripe_session_id, amount_paid_int, currency, payment_type)
       VALUES (?, ?, ?, ?, ?)
     `)
-    .bind(family_id, session.id, session.amount_total ?? 0, 'GBP', payment_type)
+    .bind(family_id, session.id, session.amount_total ?? 0, intent.currency, payment_type)
     .run();
 
   // Grant license flags
