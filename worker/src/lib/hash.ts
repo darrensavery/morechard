@@ -134,10 +134,54 @@ export async function writeLedgerEntry(
   throw new Error(`Ledger write for family ${familyId} failed after ${MAX_LEDGER_WRITE_ATTEMPTS} attempts — concurrent writer contention`);
 }
 
+/**
+ * Prepares (but does not execute) a zero-amount, non-monetary `system_note`
+ * ledger row — the standard way to record an account-lifecycle event
+ * (co-parent left, currency relocated, etc.) on the hash chain without it
+ * representing money movement. Returns a D1PreparedStatement so callers can
+ * bundle it into their own `db.batch([...])` alongside other writes that
+ * must land atomically with it.
+ *
+ * `child_id` is always NULL for these rows; NULL is hashed as the literal
+ * string 'NULL' to match how fetchAndVerifyChainTip() re-derives the hash of
+ * a NULL child_id row on every subsequent write.
+ */
+export async function prepareSystemNoteInsert(
+  db: D1Database,
+  familyId: string,
+  currency: string,
+  description: string,
+  ipAddress: string,
+  authorisedBy: string | null = null,
+): Promise<{ statement: ReturnType<D1Database['prepare']>; id: number; recordHash: string }> {
+  const prevRow = await db
+    .prepare('SELECT record_hash FROM ledger WHERE family_id = ? ORDER BY id DESC LIMIT 1')
+    .bind(familyId)
+    .first<{ record_hash: string }>();
+  const previousHash = prevRow?.record_hash ?? GENESIS_HASH;
+
+  const globalMax = await db
+    .prepare('SELECT MAX(id) AS max_id FROM ledger')
+    .first<{ max_id: number | null }>();
+  const newId = (globalMax?.max_id ?? 0) + 1;
+
+  const recordHash = await computeRecordHash(newId, familyId, 'NULL', 0, currency, 'system_note', previousHash);
+
+  const statement = db.prepare(`
+    INSERT INTO ledger
+      (id, family_id, child_id, chore_id, entry_type, amount, currency,
+       description, verification_status, authorised_by,
+       previous_hash, record_hash, ip_address)
+    VALUES (?,?,NULL,NULL,'system_note',0,?,?,'verified_auto',?,?,?,?)
+  `).bind(newId, familyId, currency, description, authorisedBy, previousHash, recordHash, ipAddress);
+
+  return { statement, id: newId, recordHash };
+}
+
 export async function verifyChain(entries: Array<{
   id: number;
   family_id: string;
-  child_id: string;
+  child_id: string | null;
   amount: number;
   currency: string;
   entry_type: string;
@@ -148,7 +192,7 @@ export async function verifyChain(entries: Array<{
     const expected = await computeRecordHash(
       entry.id,
       entry.family_id,
-      entry.child_id,
+      entry.child_id ?? 'NULL',
       entry.amount,
       entry.currency,
       entry.entry_type,

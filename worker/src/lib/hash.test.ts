@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { GENESIS_HASH, computeRecordHash, fetchAndVerifyChainTip } from './hash.js';
+import { GENESIS_HASH, computeRecordHash, fetchAndVerifyChainTip, prepareSystemNoteInsert, verifyChain } from './hash.js';
 
 interface FakeRow {
   id: number; family_id: string; child_id: string | null; amount: number;
@@ -73,5 +73,45 @@ describe('fetchAndVerifyChainTip', () => {
       { id: 1, family_id: 'fam_a', child_id: null, amount: 0, currency: 'GBP', entry_type: 'system_note', previous_hash: GENESIS_HASH, record_hash: 'tampered-hash' },
     ]);
     await expect(fetchAndVerifyChainTip(db, 'fam_a')).rejects.toThrow(/chain integrity failure/i);
+  });
+});
+
+describe('prepareSystemNoteInsert', () => {
+  it('prepares a statement whose id/hash come from the table-wide max, and hashes NULL child_id as the literal string \'NULL\'', async () => {
+    const famBHash = await computeRecordHash(20, 'fam_b', 'NULL', 0, 'GBP', 'system_note', GENESIS_HASH);
+    const { db } = makeFakeLedgerDb([
+      { id: 20, family_id: 'fam_b', child_id: null, amount: 0, currency: 'GBP', entry_type: 'system_note', previous_hash: GENESIS_HASH, record_hash: famBHash },
+    ]);
+
+    const expectedHash = await computeRecordHash(21, 'fam_a', 'NULL', 0, 'USD', 'system_note', GENESIS_HASH);
+    const { id, recordHash } = await prepareSystemNoteInsert(db, 'fam_a', 'USD', 'test note', '1.2.3.4', 'user_1');
+
+    expect(id).toBe(21);
+    expect(recordHash).toBe(expectedHash);
+  });
+});
+
+describe('verifyChain', () => {
+  it('validates a row whose NULL child_id was hashed as the literal string \'NULL\'', async () => {
+    const hash = await computeRecordHash(1, 'fam_a', 'NULL', 0, 'GBP', 'system_note', GENESIS_HASH);
+    const entries = [{
+      id: 1, family_id: 'fam_a', child_id: null, amount: 0, currency: 'GBP',
+      entry_type: 'system_note', previous_hash: GENESIS_HASH, record_hash: hash,
+    }];
+    const result = await verifyChain(entries);
+    expect(result).toEqual({ valid: true, brokenAt: null });
+  });
+
+  it('flags a broken chain when a NULL child_id was hashed with a different convention at write time', async () => {
+    // Reproduces the pre-fix bug: a row written with child_id hashed as ''
+    // instead of 'NULL' fails verification forever after.
+    const wrongHash = await computeRecordHash(1, 'fam_a', '', 0, 'GBP', 'system_note', GENESIS_HASH);
+    const entries = [{
+      id: 1, family_id: 'fam_a', child_id: null, amount: 0, currency: 'GBP',
+      entry_type: 'system_note', previous_hash: GENESIS_HASH, record_hash: wrongHash,
+    }];
+    const result = await verifyChain(entries);
+    expect(result.valid).toBe(false);
+    expect(result.brokenAt).toBe(1);
   });
 });

@@ -17,7 +17,7 @@ import { json, error } from '../lib/response.js';
 interface LedgerRow {
   id: number;
   family_id: string;
-  child_id: string;
+  child_id: string | null;
   amount: number;
   currency: string;
   entry_type: string;
