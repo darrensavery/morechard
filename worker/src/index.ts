@@ -838,6 +838,11 @@ async function route(request: Request, env: Env, ctx: ExecutionContext, method: 
   // Parent message — child reads
   if (path === '/api/parent-message' && method === 'GET') return withAuth(request, auth, env, ctx, handleParentMessageGet);
 
+  // ── Stripe checkout (must work even when trial-expired — this IS the paywall's purchase flow) ──
+  if (path === '/api/stripe/create-checkout' && method === 'POST') {
+    return handleCreateCheckout(request, env, auth);
+  }
+
   // ── Trial / paywall gate (all authenticated routes) ──────────
   const trialBlock = await checkTrialStatus(request, env, auth.family_id);
   if (trialBlock) return trialBlock;
@@ -1005,11 +1010,6 @@ async function route(request: Request, env: Env, ctx: ExecutionContext, method: 
   // Shield upgrade price preview (parent only, post-auth)
   if (path === '/api/stripe/shield-upgrade-price' && method === 'GET') {
     return handleShieldUpgradePrice(request, env, auth);
-  }
-
-  // Stripe checkout (parent only, post-auth)
-  if (path === '/api/stripe/create-checkout' && method === 'POST') {
-    return handleCreateCheckout(request, env, auth);
   }
 
   if (path === '/api/billing/cancel' && method === 'DELETE') {
