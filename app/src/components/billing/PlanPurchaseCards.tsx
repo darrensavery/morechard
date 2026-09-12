@@ -145,6 +145,7 @@ interface Props {
 
 export function PlanPurchaseCards({ trial, shieldUpgradePrice, onBuyError }: Props) {
   const [products, setProducts]       = useState<Record<string, Product> | null>(null)
+  const [productsError, setProductsError] = useState(false)
   const [buying, setBuying]           = useState<string | null>(null)
   const [showCompare, setShowCompare] = useState(false)
   const [resolvedShieldPrice, setResolvedShieldPrice] = useState<ShieldUpgradePrice | null>(shieldUpgradePrice)
@@ -155,7 +156,7 @@ export function PlanPurchaseCards({ trial, shieldUpgradePrice, onBuyError }: Pro
       .then(({ products: rows }) => {
         setProducts(Object.fromEntries(rows.map(p => [p.sku, p])))
       })
-      .catch(() => setProducts({}))
+      .catch(() => setProductsError(true))
   }, [])
 
   useEffect(() => {
@@ -183,14 +184,17 @@ export function PlanPurchaseCards({ trial, shieldUpgradePrice, onBuyError }: Pro
   const hasAi     = trial?.has_ai_mentor
   const hasShield = trial?.has_shield
 
-  const shieldDelta        = resolvedShieldPrice?.delta ?? products?.SHIELD_AI?.unit_amount_pence ?? 14999
-  const shieldPaid         = resolvedShieldPrice?.already_paid ?? 0
-  const shieldIsUpgrade    = shieldPaid > 0
-  const shieldPriceUnknown = resolvedShieldPrice === null && (hasBase || hasAi)
-
   if (hasShield) return null
 
-  if (!products) {
+  if (products === null) {
+    if (productsError) {
+      return (
+        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-center">
+          <p className="text-[0.8125rem] font-semibold text-red-700">Couldn't load plan prices</p>
+          <p className="text-[0.75rem] text-red-600 mt-1">Please reload the page and try again.</p>
+        </div>
+      )
+    }
     return (
       <div className="space-y-3">
         <div className="h-48 rounded-xl bg-[var(--color-surface-alt)] animate-pulse" />
@@ -198,10 +202,24 @@ export function PlanPurchaseCards({ trial, shieldUpgradePrice, onBuyError }: Pro
     )
   }
 
-  const completePrice   = products.COMPLETE?.unit_amount_pence ?? 0
-  const completeAiPrice = products.COMPLETE_AI?.unit_amount_pence ?? 0
-  const shieldFullPrice = products.SHIELD_AI?.unit_amount_pence ?? 14999
-  const upgradePrice    = products.AI_UPGRADE?.unit_amount_pence ?? 0
+  if (Object.keys(products).length === 0) {
+    return (
+      <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-center">
+        <p className="text-[0.8125rem] font-semibold text-red-700">Couldn't load plan prices</p>
+        <p className="text-[0.75rem] text-red-600 mt-1">Please reload the page and try again.</p>
+      </div>
+    )
+  }
+
+  const shieldDelta        = resolvedShieldPrice?.delta ?? products.SHIELD_AI.unit_amount_pence
+  const shieldPaid         = resolvedShieldPrice?.already_paid ?? 0
+  const shieldIsUpgrade    = shieldPaid > 0
+  const shieldPriceUnknown = resolvedShieldPrice === null && (hasBase || hasAi)
+
+  const completePrice   = products.COMPLETE.unit_amount_pence
+  const completeAiPrice = products.COMPLETE_AI.unit_amount_pence
+  const shieldFullPrice = products.SHIELD_AI.unit_amount_pence
+  const upgradePrice    = products.AI_UPGRADE.unit_amount_pence
 
   return (
     <>
