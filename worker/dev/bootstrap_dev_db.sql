@@ -750,6 +750,28 @@ CREATE TABLE IF NOT EXISTS promo_code_redemptions (
   UNIQUE (promo_code_id, family_id)
 );
 
+CREATE TABLE IF NOT EXISTS products (
+  sku               TEXT PRIMARY KEY,
+  name              TEXT NOT NULL,
+  stripe_product_id TEXT NOT NULL,
+  stripe_price_id   TEXT NOT NULL,
+  unit_amount_pence INTEGER NOT NULL,
+  currency          TEXT NOT NULL DEFAULT 'GBP',
+  active            INTEGER NOT NULL DEFAULT 1
+);
+
+CREATE TABLE IF NOT EXISTS checkout_intents (
+  stripe_session_id     TEXT PRIMARY KEY,
+  family_id             TEXT NOT NULL REFERENCES families(id),
+  sku                   TEXT NOT NULL,
+  stripe_price_id       TEXT NOT NULL,
+  expected_amount_pence INTEGER NOT NULL,
+  currency              TEXT NOT NULL DEFAULT 'GBP',
+  created_at            TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_checkout_intents_family ON checkout_intents (family_id);
+
 CREATE TABLE IF NOT EXISTS referral_clicks (
   id            INTEGER PRIMARY KEY AUTOINCREMENT,
   referral_code TEXT    NOT NULL,
@@ -925,6 +947,7 @@ INSERT OR IGNORE INTO d1_migrations (name) VALUES ('0073_child_nudges.sql');
 INSERT OR IGNORE INTO d1_migrations (name) VALUES ('0074_forensic_completion_columns.sql');
 INSERT OR IGNORE INTO d1_migrations (name) VALUES ('repair_production.sql');
 INSERT OR IGNORE INTO d1_migrations (name) VALUES ('seed_test_data_expand.sql');
+INSERT OR IGNORE INTO d1_migrations (name) VALUES ('0095_products_and_checkout_intents.sql');
 
 -- ---------------------------------------------------------------------------
 
