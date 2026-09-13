@@ -24,11 +24,12 @@ import { PremiumShell, MentorAvatar, ProBadge, injectPremiumStyles, MENTOR_COLOR
 const MATCH_OPTIONS = [0, 10, 25, 50, 100]
 
 interface Props {
-  familyId: string
-  child:    ChildRecord
+  familyId:  string
+  child:     ChildRecord
+  onUpgrade: () => void
 }
 
-export function GoalBoostingTab({ familyId, child }: Props) {
+export function GoalBoostingTab({ familyId, child, onUpgrade }: Props) {
   const [goals,     setGoals]     = useState<Goal[]>([])
   const [loading,   setLoading]   = useState(true)
   const [err,       setErr]       = useState<string | null>(null)
@@ -152,6 +153,34 @@ export function GoalBoostingTab({ familyId, child }: Props) {
         </h2>
         <span className="text-[0.75rem] text-[var(--color-text-muted)]">— {goals.length} goal{goals.length !== 1 ? 's' : ''}</span>
       </div>
+
+      {/* AI Mentor upsell — shown once, in place of the per-goal nudges Core-only parents don't get */}
+      {!hasAiMentor && (
+        <PremiumShell>
+          <div className="px-4 pt-4 pb-3 relative z-10">
+            <div className="flex items-center justify-between gap-3 mb-3">
+              <div className="flex items-center gap-2">
+                <MentorAvatar />
+                <span className="text-[0.625rem] font-bold tracking-widest uppercase" style={{ color: MENTOR_COLORS.label }}>
+                  Orchard Mentor
+                </span>
+              </div>
+              <ProBadge />
+            </div>
+            <p className="text-[0.8125rem] leading-relaxed mb-3" style={{ color: MENTOR_COLORS.body }}>
+              We could tell you if {child.display_name}'s goals are on pace, and nudge them when a boost would help — Core AI adds that coaching.
+            </p>
+            <button
+              type="button"
+              onClick={onUpgrade}
+              className="text-[0.75rem] font-bold underline"
+              style={{ color: MENTOR_COLORS.label }}
+            >
+              Add AI Mentor + Learning Lab →
+            </button>
+          </div>
+        </PremiumShell>
+      )}
 
       {goals.map(goal => {
         const effTarget = effectiveTarget(goal)

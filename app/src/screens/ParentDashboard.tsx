@@ -477,7 +477,7 @@ export function ParentDashboard() {
               />
             </div>
             <div className={tab === 'insights' ? 'tab-panel' : 'tab-panel hidden'}><InsightsTab     familyId={familyId} child={activeChild} children={children} trialStatus={trialStatus} onUpgrade={openBillingUpgrade} /></div>
-            <div className={tab === 'goals'    ? 'tab-panel' : 'tab-panel hidden'}><GoalBoostingTab familyId={familyId} child={activeChild} /></div>
+            <div className={tab === 'goals'    ? 'tab-panel' : 'tab-panel hidden'}><GoalBoostingTab familyId={familyId} child={activeChild} onUpgrade={openBillingUpgrade} /></div>
           </>
         ) : (
           (() => {
@@ -560,7 +560,9 @@ export function ParentDashboard() {
           <SettlementCard
             period={new Date().toISOString().slice(0, 7)}
             onClose={() => setShowSettlement(false)}
-            onReconciled={() => { setShowSettlement(false) }}
+            onReconciled={() => { setPoolRefreshKey(k => k + 1) }}
+            hasShield={!!trialStatus?.has_shield}
+            onUpgrade={() => { setShowSettlement(false); openBillingUpgrade() }}
           />
         )}
         {bridgeCtx && (

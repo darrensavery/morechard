@@ -138,6 +138,17 @@ function InsightsDashboard({
   const [childNudgeSummary, setChildNudgeSummary] = useState<string | null>(null)
   const childFirstName = child.display_name.split(' ')[0]
 
+  // Show the Learning Lab upsell once the trial has expired, OR in its final
+  // week for a family that already owns Core — otherwise the entire trial
+  // period is a blind spot with zero upgrade signal in this tab. Gated on
+  // has_lifetime_license because the card advertises the £29.99 upgrade-only
+  // price, which only applies once Core is already owned.
+  const showLearningLabUpsell =
+    Boolean(trialStatus?.has_lifetime_license) &&
+    !trialStatus?.has_ai_mentor &&
+    !trialStatus?.has_shield &&
+    (trialStatus?.is_expired || (trialStatus?.days_remaining !== null && (trialStatus?.days_remaining ?? 99) <= 7))
+
   useEffect(() => {
     getChildNudges(child.id)
       .then(r => {
@@ -254,7 +265,7 @@ function InsightsDashboard({
           completedSlugs={data.completed_module_slugs}
         />
       ) : (
-        trialStatus?.is_expired && !trialStatus.has_ai_mentor && !trialStatus.has_shield && (
+        showLearningLabUpsell && (
           <LearningLabUpsellCard
             childName={child.display_name.split(' ')[0]}
             onUpgrade={onUpgrade}
@@ -293,6 +304,7 @@ function InsightsDashboard({
               hasLearningLab={data.learning_lab_enabled}
               nextModuleTitle={data.current_module?.title ?? null}
               onClose={() => setExpandedMetric(null)}
+              onUpgrade={() => { setExpandedMetric(null); onUpgrade() }}
             />
           )
         })()}

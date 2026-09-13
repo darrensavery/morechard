@@ -14,6 +14,7 @@ interface Props {
   hasLearningLab:  boolean;
   nextModuleTitle: string | null;
   onClose:         () => void;
+  onUpgrade:       () => void;
 }
 
 // Internal SVG coordinate space — aspect ratio is kept via viewBox + meet
@@ -73,7 +74,7 @@ function buildXLabels(numPoints: number, numBuckets: number): { idx: number; lab
 }
 
 export function SparklineExpanded({
-  label, value, points, milestones, choreEvents, hasLearningLab, nextModuleTitle, onClose,
+  label, value, points, milestones, choreEvents, hasLearningLab, nextModuleTitle, onClose, onUpgrade,
 }: Props) {
   useAndroidBack(true, onClose)
 
@@ -323,6 +324,25 @@ export function SparklineExpanded({
           <p className="text-[0.8125rem] text-[var(--color-text)] leading-snug">
             To strengthen this metric, try <strong>"{nextModuleTitle}"</strong> in the Learning Lab.
           </p>
+        </div>
+      )}
+
+      {/* ── Learning Lab upsell (locked) ── */}
+      {!hasLearningLab && (
+        <div className="mx-5 mb-4 shrink-0">
+          <button
+            type="button"
+            onClick={onUpgrade}
+            className="w-full text-left rounded-xl px-4 py-3 border transition-colors hover:bg-[color-mix(in_srgb,var(--brand-primary)_5%,var(--color-surface))]"
+            style={{
+              background:  'color-mix(in srgb, var(--brand-primary) 4%, var(--color-surface))',
+              borderColor: 'color-mix(in srgb, var(--brand-primary) 20%, transparent)',
+            }}
+          >
+            <p className="text-[0.8125rem] text-[var(--color-text)] leading-snug">
+              Learning Lab has a module to help strengthen this — <span className="font-bold" style={{ color: 'var(--brand-primary)' }}>add AI Mentor + Learning Lab →</span>
+            </p>
+          </button>
         </div>
       )}
     </motion.div>

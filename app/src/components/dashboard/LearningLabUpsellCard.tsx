@@ -1,7 +1,8 @@
 /**
  * LearningLabUpsellCard — shown in the Insights tab's Learning Lab slot for
- * post-trial Core-only parents (has_ai_mentor and has_shield both false).
- * Deep-links to Settings → Plans & Upgrades via onUpgrade.
+ * Core-only parents (has_ai_mentor and has_shield both false) once the trial
+ * has expired, or during its final week. Deep-links to Settings →
+ * Plans & Upgrades via onUpgrade.
  */
 
 import { PremiumShell, MentorAvatar } from '../ui/PremiumShell'

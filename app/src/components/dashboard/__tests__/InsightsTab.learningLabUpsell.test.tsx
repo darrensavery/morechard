@@ -45,7 +45,7 @@ describe('InsightsTab — Learning Lab upsell', () => {
     await waitFor(() => expect(screen.getByText('Unlock Learning Lab for Ellie')).toBeTruthy())
   })
 
-  it('does not show the upsell card while the trial is still active', async () => {
+  it('does not show the upsell card early in an active trial (more than a week left)', async () => {
     vi.spyOn(api, 'getInsights').mockResolvedValue(baseData)
     vi.spyOn(api, 'getChildNudges').mockResolvedValue({ nudges: { earn: null, money: null, goals: null } } as never)
 
@@ -54,7 +54,7 @@ describe('InsightsTab — Learning Lab upsell', () => {
         familyId="fam1"
         child={child}
         children={[child]}
-        trialStatus={trial({ is_expired: false })}
+        trialStatus={trial({ is_expired: false, days_remaining: 10 })}
         onUpgrade={() => {}}
       />,
     )
@@ -62,6 +62,41 @@ describe('InsightsTab — Learning Lab upsell', () => {
     // Wait for a guaranteed-rendered element (the Responsibility sparkline
     // label) before asserting absence — otherwise the negative assertion
     // could pass during the loading state, before data ever resolves.
+    await waitFor(() => expect(screen.getByText('Responsibility')).toBeTruthy())
+    expect(screen.queryByText('Unlock Learning Lab for Ellie')).toBeNull()
+  })
+
+  it('shows the upsell card in the final week of an active trial for a family that already owns Core', async () => {
+    vi.spyOn(api, 'getInsights').mockResolvedValue(baseData)
+    vi.spyOn(api, 'getChildNudges').mockResolvedValue({ nudges: { earn: null, money: null, goals: null } } as never)
+
+    render(
+      <InsightsTab
+        familyId="fam1"
+        child={child}
+        children={[child]}
+        trialStatus={trial({ is_expired: false, days_remaining: 5 })}
+        onUpgrade={() => {}}
+      />,
+    )
+
+    await waitFor(() => expect(screen.getByText('Unlock Learning Lab for Ellie')).toBeTruthy())
+  })
+
+  it('does not show the upsell card in the final week of an active trial if Core has not been purchased', async () => {
+    vi.spyOn(api, 'getInsights').mockResolvedValue(baseData)
+    vi.spyOn(api, 'getChildNudges').mockResolvedValue({ nudges: { earn: null, money: null, goals: null } } as never)
+
+    render(
+      <InsightsTab
+        familyId="fam1"
+        child={child}
+        children={[child]}
+        trialStatus={trial({ is_expired: false, days_remaining: 5, has_lifetime_license: false })}
+        onUpgrade={() => {}}
+      />,
+    )
+
     await waitFor(() => expect(screen.getByText('Responsibility')).toBeTruthy())
     expect(screen.queryByText('Unlock Learning Lab for Ellie')).toBeNull()
   })

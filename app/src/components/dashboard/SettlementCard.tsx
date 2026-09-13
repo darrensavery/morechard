@@ -25,6 +25,8 @@ type Props = {
   period: string;
   onClose: () => void;
   onReconciled: () => void;
+  hasShield: boolean;
+  onUpgrade: () => void;
 };
 
 function formatAmount(pence: number, currency: string): string {
@@ -32,7 +34,7 @@ function formatAmount(pence: number, currency: string): string {
   return `${symbol}${(pence / 100).toFixed(2)}`;
 }
 
-export function SettlementCard({ period, onClose, onReconciled }: Props) {
+export function SettlementCard({ period, onClose, onReconciled, hasShield, onUpgrade }: Props) {
   const [result, setResult] = useState<ReconcileResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -146,6 +148,17 @@ export function SettlementCard({ period, onClose, onReconciled }: Props) {
             >
               {copied ? '✓ Copied to clipboard' : 'Share summary'}
             </button>
+
+            {!hasShield && (
+              <button
+                type="button"
+                onClick={onUpgrade}
+                className="text-[0.75rem] text-[var(--color-text-muted)] text-center leading-relaxed underline decoration-dotted"
+              >
+                Want this tamper-sealed for both households? Shield AI adds a verified record.
+              </button>
+            )}
+
             <button onClick={onClose} className="text-sm text-[var(--color-text-muted)] text-center">
               Close
             </button>
