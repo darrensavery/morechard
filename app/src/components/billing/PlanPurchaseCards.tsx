@@ -43,7 +43,21 @@ const COMPARE_ROWS: {
   { feature: 'Court-admissible hashed records',     complete: false, completeAi: false, shieldAi: true  },
 ]
 
-function ComparePlansModal({ prices, onClose }: { prices: Record<string, number>; onClose: () => void }) {
+interface ComparePlansModalProps {
+  prices:            Record<string, number>
+  hasBase:           boolean
+  hasAi:             boolean
+  buying:            string | null
+  shieldDelta:       number
+  shieldIsUpgrade:   boolean
+  shieldPriceUnknown: boolean
+  onPurchase:        (sku: PurchasableSku) => void
+  onClose:           () => void
+}
+
+function ComparePlansModal({
+  prices, hasBase, hasAi, buying, shieldDelta, shieldIsUpgrade, shieldPriceUnknown, onPurchase, onClose,
+}: ComparePlansModalProps) {
   const panelRef = useRef<HTMLDivElement>(null)
   useFocusTrap(panelRef, true)
 
@@ -97,11 +111,55 @@ function ComparePlansModal({ prices, onClose }: { prices: Record<string, number>
           </div>
           <div className="text-center">
             <p className="text-[0.625rem] font-bold text-amber-600 uppercase tracking-wide">Shield</p>
-            <p className="text-[0.6875rem] font-semibold text-[var(--color-text)] mt-0.5">{formatGBP(prices.SHIELD_AI ?? 0)}</p>
+            <p className="text-[0.6875rem] font-semibold text-[var(--color-text)] mt-0.5">
+              {shieldPriceUnknown ? formatGBP(prices.SHIELD_AI ?? 0) : formatGBP(shieldDelta)}
+            </p>
           </div>
         </div>
 
-        <div className="overflow-y-auto px-5 pb-6" style={{ maxHeight: '55vh' }}>
+        <div className="grid grid-cols-4 gap-1.5 px-5 pb-3">
+          <div className="col-span-1" />
+          <div>
+            {hasBase ? (
+              <p className="text-center text-[0.625rem] font-semibold text-teal-600">✓ Owned</p>
+            ) : (
+              <button
+                type="button"
+                disabled={buying !== null}
+                onClick={() => onPurchase('COMPLETE')}
+                className="w-full py-1.5 rounded-lg bg-teal-500 text-white text-[0.625rem] font-bold hover:opacity-90 active:opacity-80 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {buying === 'COMPLETE' ? '…' : 'Buy'}
+              </button>
+            )}
+          </div>
+          <div>
+            {hasAi ? (
+              <p className="text-center text-[0.625rem] font-semibold text-violet-600">✓ Owned</p>
+            ) : (
+              <button
+                type="button"
+                disabled={buying !== null}
+                onClick={() => onPurchase(hasBase ? 'AI_UPGRADE' : 'COMPLETE_AI')}
+                className="w-full py-1.5 rounded-lg bg-violet-500 text-white text-[0.625rem] font-bold hover:opacity-90 active:opacity-80 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {buying === 'COMPLETE_AI' || buying === 'AI_UPGRADE' ? '…' : hasBase ? 'Upgrade' : 'Buy'}
+              </button>
+            )}
+          </div>
+          <div>
+            <button
+              type="button"
+              disabled={buying !== null || shieldPriceUnknown}
+              onClick={() => onPurchase('SHIELD_AI')}
+              className="w-full py-1.5 rounded-lg bg-amber-500 text-white text-[0.625rem] font-bold hover:opacity-90 active:opacity-80 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {buying === 'SHIELD_AI' ? '…' : shieldPriceUnknown ? 'N/A' : shieldIsUpgrade ? 'Upgrade' : 'Buy'}
+            </button>
+          </div>
+        </div>
+
+        <div className="overflow-y-auto px-5 pb-6 border-t border-[var(--color-border)] pt-3" style={{ maxHeight: '55vh' }}>
           {COMPARE_ROWS.map(row => (
             <div key={row.feature} className="grid grid-cols-4 gap-0 py-2.5 border-b border-[var(--color-border)] last:border-0 items-center">
               <p className="col-span-1 text-[0.75rem] text-[var(--color-text)] pr-2 leading-snug">{row.feature}</p>
@@ -226,6 +284,13 @@ export function PlanPurchaseCards({ trial, shieldUpgradePrice, onBuyError }: Pro
       {showCompare && (
         <ComparePlansModal
           prices={{ COMPLETE: completePrice, COMPLETE_AI: completeAiPrice, SHIELD_AI: shieldFullPrice, AI_UPGRADE: upgradePrice }}
+          hasBase={!!hasBase}
+          hasAi={!!hasAi}
+          buying={buying}
+          shieldDelta={shieldDelta}
+          shieldIsUpgrade={shieldIsUpgrade}
+          shieldPriceUnknown={!!shieldPriceUnknown}
+          onPurchase={sku => { setShowCompare(false); handlePurchase(sku) }}
           onClose={() => setShowCompare(false)}
         />
       )}
