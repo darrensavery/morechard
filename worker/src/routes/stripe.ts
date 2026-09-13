@@ -669,11 +669,35 @@ async function revokeLicense(env: Env, familyId: string, paymentType: PaymentTyp
         .prepare('UPDATE families SET has_lifetime_license = 0, has_ai_mentor = 0 WHERE id = ?')
         .bind(familyId).run();
       break;
-    case 'SHIELD_AI':
-      await env.DB
-        .prepare('UPDATE families SET has_lifetime_license = 0, has_ai_mentor = 0, has_shield = 0 WHERE id = ?')
-        .bind(familyId).run();
+    case 'SHIELD_AI': {
+      // A Shield purchase can either be a standalone purchase (grants all three
+      // flags) or an upgrade on top of a separately-paid base license (only the
+      // delta was charged). Only clear the base flags if no other non-refunded
+      // base payment exists — otherwise refunding the Shield delta would wrongly
+      // revoke Core/AI Mentor access the family already paid for separately.
+      const otherBasePayment = await env.DB
+        .prepare(`
+          SELECT id FROM payment_audit_log
+          WHERE family_id = ?
+            AND payment_type IN ('COMPLETE', 'COMPLETE_AI', 'AI_UPGRADE')
+            AND refunded_at IS NULL
+            AND currency = 'GBP'
+          LIMIT 1
+        `)
+        .bind(familyId)
+        .first<{ id: number }>();
+
+      if (otherBasePayment) {
+        await env.DB
+          .prepare('UPDATE families SET has_shield = 0 WHERE id = ?')
+          .bind(familyId).run();
+      } else {
+        await env.DB
+          .prepare('UPDATE families SET has_lifetime_license = 0, has_ai_mentor = 0, has_shield = 0 WHERE id = ?')
+          .bind(familyId).run();
+      }
       break;
+    }
     case 'AI_UPGRADE':
       await env.DB
         .prepare('UPDATE families SET has_ai_mentor = 0 WHERE id = ?')

@@ -5,7 +5,7 @@ vi.mock('@sentry/cloudflare', () => ({
   captureMessage: vi.fn(),
 }));
 
-import { handleCreateCheckout, handleCheckoutCompleted } from './stripe.js';
+import { handleCreateCheckout, handleCheckoutCompleted, handleCancelPlan } from './stripe.js';
 import type { Env } from '../types.js';
 import type { JwtPayload } from '../lib/jwt.js';
 
@@ -193,6 +193,9 @@ interface MockDbOptions {
   existingAuditLog?: { id: number } | null;
   checkoutIntent?: CheckoutIntentFixture | null;
   familyReferredByCode?: string | null;
+  mostRecentPurchase?: { id: number; stripe_session_id: string; payment_type: string; created_at: string } | null;
+  familyTrial?: { trial_start_date: string | null; is_activated: number } | null;
+  otherBasePayment?: { id: number } | null;
 }
 
 function makeMockDb(opts: MockDbOptions = {}) {
@@ -222,6 +225,15 @@ function makeMockDb(opts: MockDbOptions = {}) {
               }
               if (sql.includes('FROM promo_codes WHERE stripe_promo_code_id')) {
                 return null as T;
+              }
+              if (sql.includes('payment_type IN (\'COMPLETE\', \'COMPLETE_AI\', \'AI_UPGRADE\')') && sql.includes('LIMIT 1')) {
+                return (opts.otherBasePayment ?? null) as T;
+              }
+              if (sql.includes('FROM payment_audit_log') && sql.includes('ORDER BY created_at DESC')) {
+                return (opts.mostRecentPurchase ?? null) as T;
+              }
+              if (sql.includes('SELECT trial_start_date, is_activated FROM families')) {
+                return (opts.familyTrial ?? null) as T;
               }
               return null as T;
             },
@@ -415,5 +427,66 @@ describe('handleCheckoutCompleted', () => {
 
     const grantCall = calls.find(c => c.sql.includes('has_lifetime_license'));
     expect(grantCall).toBeUndefined();
+  });
+});
+
+describe('handleCancelPlan', () => {
+  const baseAuth: JwtPayload = {
+    sub: 'user1', jti: 'sess1', family_id: 'fam1', role: 'parent', iat: 0, exp: 9999999999,
+  };
+
+  function makeEnv(db: D1Database): Env {
+    return { DB: db, STRIPE_SECRET_KEY: 'sk_test_fake' } as unknown as Env;
+  }
+
+  function stubStripeRefundFetch() {
+    return vi.stubGlobal('fetch', vi.fn(async (url: string) => {
+      if (url.includes('/v1/checkout/sessions/')) {
+        return new Response(JSON.stringify({ payment_intent: 'pi_test_1' }), { status: 200 });
+      }
+      if (url.includes('/v1/refunds')) {
+        return new Response(JSON.stringify({ id: 're_test_1' }), { status: 200 });
+      }
+      throw new Error(`Unexpected fetch to ${url}`);
+    }));
+  }
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('refunding a standalone Shield purchase revokes Core, AI Mentor, and Shield', async () => {
+    stubStripeRefundFetch();
+    const { db, calls } = makeMockDb({
+      mostRecentPurchase: { id: 1, stripe_session_id: 'cs_shield_1', payment_type: 'SHIELD_AI', created_at: new Date().toISOString() },
+      familyTrial: null,
+      otherBasePayment: null, // no other base purchase — this Shield purchase was standalone
+    });
+
+    const res = await handleCancelPlan(new Request('https://api.morechard.com/api/billing/cancel', { method: 'DELETE' }), makeEnv(db), baseAuth);
+    expect(res.status).toBe(200);
+
+    const revokeCall = findCall(calls, 'UPDATE families SET has_lifetime_license = 0, has_ai_mentor = 0, has_shield = 0');
+    expect(revokeCall).toBeDefined();
+  });
+
+  it('refunding a Shield UPGRADE only revokes has_shield, leaving the separately-paid Core AI license intact', async () => {
+    stubStripeRefundFetch();
+    const { db, calls } = makeMockDb({
+      mostRecentPurchase: { id: 2, stripe_session_id: 'cs_shield_upgrade_1', payment_type: 'SHIELD_AI', created_at: new Date().toISOString() },
+      familyTrial: null,
+      // Family has an earlier, still-unrefunded COMPLETE_AI payment — this Shield
+      // purchase was an upgrade on top of it, not a standalone purchase.
+      otherBasePayment: { id: 1 },
+    });
+
+    const res = await handleCancelPlan(new Request('https://api.morechard.com/api/billing/cancel', { method: 'DELETE' }), makeEnv(db), baseAuth);
+    expect(res.status).toBe(200);
+
+    const shieldOnlyRevoke = findCall(calls, 'UPDATE families SET has_shield = 0 WHERE id = ?');
+    expect(shieldOnlyRevoke).toBeDefined();
+
+    const fullRevoke = calls.find(c => c.sql.includes('has_lifetime_license = 0'));
+    expect(fullRevoke).toBeUndefined();
   });
 });
