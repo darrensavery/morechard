@@ -115,7 +115,8 @@ CREATE TABLE IF NOT EXISTS families (
   pocket_money_day            INTEGER NOT NULL DEFAULT 6 CHECK (pocket_money_day BETWEEN 0 AND 6),
   overdraft_enabled           INTEGER NOT NULL DEFAULT 0,
   overdraft_limit_pence       INTEGER NOT NULL DEFAULT 0 CHECK (overdraft_limit_pence >= 0),
-  child_analytics_consent     INTEGER NOT NULL DEFAULT 0
+  child_analytics_consent     INTEGER NOT NULL DEFAULT 0,
+  trial_summary_sent_at       INTEGER DEFAULT NULL
 );
 
 CREATE TABLE IF NOT EXISTS users (
@@ -954,6 +955,7 @@ INSERT OR IGNORE INTO d1_migrations (name) VALUES ('0074_forensic_completion_col
 INSERT OR IGNORE INTO d1_migrations (name) VALUES ('repair_production.sql');
 INSERT OR IGNORE INTO d1_migrations (name) VALUES ('seed_test_data_expand.sql');
 INSERT OR IGNORE INTO d1_migrations (name) VALUES ('0095_products_and_checkout_intents.sql');
+INSERT OR IGNORE INTO d1_migrations (name) VALUES ('0096_trial_summary_email.sql');
 
 -- ---------------------------------------------------------------------------
 

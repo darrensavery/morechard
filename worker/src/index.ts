@@ -190,6 +190,7 @@ import { runSuggestionPromotion } from './jobs/suggestionPromotion.js';
 import { runSoftDeletePurge, runLedgerPurge } from './jobs/familyPurge.js';
 import { runDemoReset } from './cron/demo-reset.js';
 import { runPassiveUnlockSweep } from './cron/passive-unlocks.js';
+import { runTrialSummaryEmail } from './jobs/trialSummaryEmail.js';
 import { handleLabModules, handleLabActComplete } from './routes/lab.js';
 import {
   handleReferralMe,
@@ -355,6 +356,15 @@ export default Sentry.withSentry<Env, IncidentQueueMessage>(
         // sweep runs once daily rather than on every cron tick.
         if (new Date(now * 1000).getUTCHours() === 0) {
           await runPassiveUnlockSweep(env);
+        }
+
+        // ── 7b. End-of-trial usage summary email ───────────────────
+        // Emails the lead parent a value-proof summary once their 14-day
+        // trial has ended, for families that showed meaningful activity
+        // (3+ verified completed chores) and haven't purchased anything.
+        // Gated to the 00:00 UTC tick, same as the passive-unlock sweep.
+        if (new Date(now * 1000).getUTCHours() === 0) {
+          await runTrialSummaryEmail(env, now * 1000);
         }
 
         // ── 8. Review feedback email digest ────────────────────────
