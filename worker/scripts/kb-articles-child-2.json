@@ -1,0 +1,37 @@
+[
+  {
+    "title": "[For kids] Why does my chore come back every week?",
+    "tags": ["child", "chores"],
+    "content": "<p>If your parent set a chore to repeat — daily, weekly, or on school days — a fresh one shows up automatically each time, so you don't need to ask for it again. Doing it several times in a row can also build up a streak, which is just a way of tracking how consistent you've been.</p>"
+  },
+  {
+    "title": "[For kids] What happens when I finish saving up for my goal?",
+    "tags": ["child", "goals"],
+    "content": "<p>Once you've saved enough, a <strong>Mark as Purchased</strong> button appears on your goal. Tapping it confirms you've bought (or are about to buy) the thing you saved for, and closes the goal out as done. It's there to celebrate finishing, not to nag you into spending — you can leave a fully-saved goal alone as long as you like.</p>"
+  },
+  {
+    "title": "[For kids] Why do both my parents see the same record of what I've earned?",
+    "tags": ["child", "ledger", "separated-families"],
+    "content": "<p>If your parents live apart, they both still see exactly the same record of your chores and earnings — it's shared, not split or different for each of them. That way nobody's guessing or arguing about what you've actually earned; you only have one true record, and both parents see it.</p>"
+  },
+  {
+    "title": "[For kids] Why does the app ask for my face or fingerprint?",
+    "tags": ["child", "account", "security"],
+    "content": "<p>It's just a quick, secure way to unlock the app without typing anything in — if it's set up on your device, Morechard checks automatically when you open it. If it's not set up, you'll use your code instead. Either way, it's there to make sure only you can get into your own account.</p>"
+  },
+  {
+    "title": "[For kids] How do notifications work for me?",
+    "tags": ["child", "account"],
+    "content": "<p>If you're using the phone app, you can get a notification when something happens that involves you — like when a new chore is assigned to you, or when one you finished gets approved and paid. You'll be asked once whether to allow them; you can always change your mind later in your phone's settings.</p>"
+  },
+  {
+    "title": "[For kids] What is High Contrast mode?",
+    "tags": ["child", "account", "accessibility"],
+    "content": "<p>It's a display setting that makes text and buttons stand out more clearly, which can make the app easier to read. You can turn it on or off yourself in Appearance settings — it doesn't change anything about your account, just how it looks.</p>"
+  },
+  {
+    "title": "[For kids] Why did I get a message from my Mentor?",
+    "tags": ["child", "ai-mentor"],
+    "content": "<p>Your Mentor doesn't send messages on a schedule — it notices things about what you're actually doing (like spending a lot quickly, or letting money pile up without a plan for it) and sends a short, relevant message when that happens. If you keep seeing the same one, it's usually because whatever it noticed is still true — once that changes, the message stops.</p>"
+  }
+]

@@ -44,7 +44,7 @@ Covers the child-facing AI Mentor (nudges + chat), the Learning Lab curriculum, 
 
 ## Learning Lab (curriculum)
 
-**Facts:** 20-module library across financial-literacy pillars, in a 4-tier age structure (Level 1 / Seed 6–9 is **reserved for Phase 2** and shows "Coming 2026"; Levels 2–4 are live). Each child has an `experience_level`: **ORCHARD** (metaphor labels — Sprout/Sapling/Oak) or **CLEAN** (functional Level 1–4 labels). Parents toggle it in Settings.
+**Facts:** 25-module library across financial-literacy pillars, in a 4-tier age structure (Level 1 / Seed 6–9 is **reserved for Phase 2** and shows "Coming 2026"; Levels 2–4 are live). Each child has an `experience_level`: **ORCHARD** (metaphor labels — Sprout/Sapling/Oak) or **CLEAN** (functional Level 1–4 labels). Parents toggle it in Settings.
 
 ### Symptom: "Level 1 / the youngest tier is greyed out"
 **Fact:** Intended. Level 1 (ages 6–9) launches in Phase 2 — it shows greyed with "Coming 2026." A parent who registered a child under 10 was told the younger curriculum is in development; the child's data is ready for when it launches.

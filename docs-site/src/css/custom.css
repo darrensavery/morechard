@@ -1,0 +1,53 @@
+/**
+ * Morechard brand system — Grove Teal / Harvest Gold / Deep Canopy / Parchment.
+ * See docs/notebooklm/03-brand-book.md in the main repo for the source palette.
+ */
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap');
+
+:root {
+  --ifm-font-family-base: 'Manrope', -apple-system, 'Segoe UI', sans-serif;
+  --ifm-heading-font-weight: 700;
+
+  --ifm-color-primary: #00959c;
+  --ifm-color-primary-dark: #007b81;
+  --ifm-color-primary-darker: #006c71;
+  --ifm-color-primary-darkest: #00565a;
+  --ifm-color-primary-light: #00abb3;
+  --ifm-color-primary-lighter: #1ec2ca;
+  --ifm-color-primary-lightest: #4fd6dd;
+
+  --ifm-background-color: #f9f7f2;
+  --ifm-navbar-background-color: #ffffff;
+  --ifm-footer-background-color: #f2efe7;
+  --ifm-code-font-size: 92%;
+  --docusaurus-highlighted-code-line-bg: rgba(0, 149, 156, 0.1);
+
+  --mc-gold: #e6b222;
+}
+
+[data-theme='dark'] {
+  --ifm-color-primary: #35c2c8;
+  --ifm-color-primary-dark: #2aa8ad;
+  --ifm-color-primary-darker: #259a9f;
+  --ifm-color-primary-darkest: #1c7d81;
+  --ifm-color-primary-light: #4fd0d5;
+  --ifm-color-primary-lighter: #6cdadf;
+  --ifm-color-primary-lightest: #94e6e9;
+
+  --ifm-background-color: #16221f;
+  --ifm-navbar-background-color: #1e2d2a;
+  --ifm-footer-background-color: #1e2d2a;
+  --docusaurus-highlighted-code-line-bg: rgba(53, 194, 200, 0.15);
+
+  --mc-gold: #f0c34e;
+}
+
+.navbar__title {
+  font-weight: 400;
+  letter-spacing: -0.01em;
+}
+
+.menu__link--active,
+.table-of-contents__link--active {
+  font-weight: 700;
+}

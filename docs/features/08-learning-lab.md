@@ -5,7 +5,7 @@ title: Learning Lab
 
 ### Purpose
 
-The Learning Lab delivers structured financial literacy education to children across 17 modules, unlocking lessons based on real account activity rather than manual progression. It ensures each module arrives when the child's own data — balance, streak, chore history, goals — makes the lesson directly relevant, not as abstract theory.
+The Learning Lab delivers structured financial literacy education to children across 25 modules, unlocking lessons based on real account activity rather than manual progression. It ensures each module arrives when the child's own data — balance, streak, chore history, goals — makes the lesson directly relevant, not as abstract theory.
 
 ### Methodology
 

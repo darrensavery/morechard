@@ -12,9 +12,9 @@ _Tone: Professional, precise, concise. Bank-grade authority. Technical terms exp
 No setup required. The Learning Lab is available to all children on your account. Lessons activate automatically based on your child's activity.
 
 **Things to know:**
-- The curriculum covers 20 modules across 5 Financial Literacy Pillars: Earning, Saving, Spending, Giving, and Investing.
-- Modules are age-tiered: Sprout (younger), Sapling, Oak, and Canopy (most advanced). The app selects the right tier based on your child's age.
-- The AI Mentor add-on (£19.99/yr) unlocks personalised coaching alongside the curriculum. Without it, the curriculum remains accessible but without personalised guidance.
+- The curriculum covers 25 modules across 5 Financial Literacy Pillars: Earning, Saving, Spending, Giving, and Investing.
+- Modules are age-tiered: Sprout (younger), Sapling, Oak, and Canopy (most advanced). The app selects the right tier based on your child's age. The Sprout tier (ages 6–9) is reserved for a future release and currently shows "Coming 2026" — the other three tiers are live today.
+- Learning Lab is included with Morechard Core AI, Shield AI, or the one-time £29.99 AI Mentor upgrade added to an existing Core purchase — it isn't available on Core alone.
 
 **Still need help?** Use the **Contact Support** option in Settings → Help & Support within the app, or [browse the help desk](https://support.morechard.com).
 
@@ -49,13 +49,16 @@ _Tone: Mistrz Sadu — direct, formal, no small talk. Financial literacy as seri
 
 ## Module library overview
 
-**What this is:** A summary of the 20 modules available in the Learning Lab and what each one covers.
+**What this is:** A summary of the 25 modules available in the Learning Lab and what each one covers.
 
 **How to do it:**
 Your child accesses modules from the **Learning Lab** tab on their dashboard. You can preview module topics from **Settings** → **Learning Lab**.
 
 **Things to know:**
-Modules include: Effort vs Reward, Taxes & Net Pay, Entrepreneurship, Needs vs Wants, Scams & Digital Safety, Advertising & Influence, The Patience Tree (delayed gratification), Banking 101, Opportunity Cost, The Snowball (compound savings), The Interest Trap, Credit Scores & Trust, Good vs Bad Debt, Compound Growth, Inflation, Risk & Diversification, Giving & Charity, Digital vs Physical Currency, Money & Mental Health, and Cryptocurrency.
+- **Sprout (ages 6–9, "Coming 2026"):** Effort vs Reward, Needs vs Wants, Patience, Giving & Charity.
+- **Sapling:** Taxes & Net Pay, Scams & Digital Safety, Banking 101, The Interest Trap, Inflation, Digital vs Physical Currency, The Snowball (compound savings).
+- **Oak:** Entrepreneurship, Advertising & Influence, Opportunity Cost, Credit Scores & Trust, Good vs Bad Debt, Insurance & Protection, Money & Mental Health, Gambling & Loot Boxes, Consumer Rights & Contracts, Gig Trap vs Salary Safety, Social Comparison.
+- **Canopy (most advanced):** Stocks & Shares, Risk & Diversification, Pensions & The Long Game.
 
 Modules unlock progressively as your child's activity in the app provides real data to ground them.
 
