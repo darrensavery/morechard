@@ -1,0 +1,32 @@
+[
+  {
+    "title": "The app is stuck on an old version",
+    "tags": ["troubleshooting"],
+    "content": "<p>Morechard updates itself automatically in the background, but a new version only takes effect the next time you fully close and reopen the app — a simple in-app refresh isn't enough while it's already running.</p><p>Try this: close the app completely (swipe it away from your recent apps, or close the browser tab entirely) and reopen it. On the web, a hard refresh (<span class=\"inline-code\">Ctrl+Shift+R</span> on Windows, <span class=\"inline-code\">Cmd+Shift+R</span> on Mac) works too.</p>"
+  },
+  {
+    "title": "A chore I created isn't showing up on my child's dashboard",
+    "tags": ["troubleshooting", "chores"],
+    "content": "<p>A few things can explain this — check these first:</p><ul><li><strong>Wrong day.</strong> Recurring chores only appear on the days they're scheduled (e.g. a \"school days\" chore won't show on a Saturday).</li><li><strong>Assigned to a different child.</strong> Double-check who the chore is assigned to in Settings.</li><li><strong>It's overdue.</strong> A one-off chore past its due date moves into a separate overdue section rather than the main list.</li><li><strong>It was archived.</strong> An archived chore stops appearing entirely until restored.</li></ul><p>If none of these explain it, contact support and we'll check the assignment on our end.</p>"
+  },
+  {
+    "title": "The app isn't working — it says there's no connection",
+    "tags": ["troubleshooting"],
+    "content": "<p>Morechard needs an internet connection for anything that reads or writes your family's data (approving chores, checking balances, etc.) — actions don't currently queue up to sync automatically once you're back online, so if something fails while you're offline, you'll need to try it again once your connection is back.</p><p>The app itself (the screens and navigation) will still open without a connection, since that part is cached on your device — it's specifically actions that need a live connection to work.</p>"
+  },
+  {
+    "title": "Face ID or fingerprint login keeps asking for my PIN instead",
+    "tags": ["troubleshooting", "account", "security"],
+    "content": "<p>This usually means your device's saved biometric sign-in has been reset or invalidated — for example if you cleared your browser data, reinstalled the app, or changed your device passcode. Your account itself is fine — this only affects the device-level shortcut.</p><p>Use your PIN to get back in, then re-register biometrics from Settings if the option is available on your device. If it keeps happening, contact support.</p>"
+  },
+  {
+    "title": "My invite link says it's expired or already used",
+    "tags": ["troubleshooting", "account", "separated-families"],
+    "content": "<p>Invite codes (for a co-parent or a child joining a device) are valid for 72 hours and can only be redeemed once. If you see this message, the code has either timed out or someone already used it to link a device.</p><p>The fix is simple: go back to the parent dashboard and generate a fresh code, then use that one instead. Sign-in links sent by email work the same way — request a new one if an old one has expired.</p>"
+  },
+  {
+    "title": "I can't find the Approve button for a chore",
+    "tags": ["troubleshooting", "chores", "approvals"],
+    "content": "<p>Two common explanations:</p><ul><li><strong>The chore is set to Skip Approval.</strong> If you turned this on when creating it, it pays out automatically the moment your child marks it done — there's nothing to approve, by design.</li><li><strong>Your child hasn't marked it done yet.</strong> A chore only needs your approval after your child has submitted it. If it's still sitting as in-progress on their end, there's nothing for you to approve yet.</li></ul><p>Chores actually awaiting your review show up together on your dashboard — if you expect one there and don't see it, check which of the above applies.</p>"
+  }
+]

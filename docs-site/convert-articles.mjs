@@ -7,6 +7,9 @@ const childArticles = [
   ...JSON.parse(readFileSync(join(root, 'kb-articles-child.json'), 'utf-8')),
   ...JSON.parse(readFileSync(join(root, 'kb-articles-child-2.json'), 'utf-8')),
 ];
+const billingExtraArticles = JSON.parse(readFileSync(join(root, 'kb-articles-billing-extra.json'), 'utf-8'));
+const troubleshootingArticles = JSON.parse(readFileSync(join(root, 'kb-articles-troubleshooting.json'), 'utf-8'));
+const trustComplianceArticles = JSON.parse(readFileSync(join(root, 'kb-articles-trust-compliance.json'), 'utf-8'));
 
 const docsDir = 'E:\\Web-Video Design\\Claude\\Apps\\Pocket Money\\docs-site\\docs';
 rmSync(join(docsDir, 'tutorial-basics'), { recursive: true, force: true });
@@ -150,6 +153,36 @@ if (idx !== parentArticles.length) {
   throw new Error(`Category counts (${idx}) don't match parent article total (${parentArticles.length})`);
 }
 
+// ---- Billing extras: appended into the existing Billing & Plans folder ----
+{
+  const dir = join(docsDir, 'for-parents', 'billing-and-plans');
+  const baseCount = parentCategories.find((c) => c.key === 'billing-and-plans').count;
+  billingExtraArticles.forEach((article, i) => {
+    const filename = `${String(baseCount + i + 1).padStart(2, '0')}-${slugify(article.title)}.mdx`;
+    writeFileSync(join(dir, filename), toMdx(article, 'Billing & Plans'));
+  });
+}
+
+// ---- Troubleshooting: new category, positioned right after Chores & Approvals ----
+{
+  const dir = join(docsDir, 'for-parents', 'troubleshooting');
+  writeCategory(dir, 'Troubleshooting', 1.5);
+  troubleshootingArticles.forEach((article, i) => {
+    const filename = `${String(i + 1).padStart(2, '0')}-${slugify(article.title)}.mdx`;
+    writeFileSync(join(dir, filename), toMdx(article, 'Troubleshooting'));
+  });
+}
+
+// ---- Trust & Compliance: new category, at the end of For Parents ----
+{
+  const dir = join(docsDir, 'for-parents', 'trust-and-compliance');
+  writeCategory(dir, 'Trust & Compliance', 7);
+  trustComplianceArticles.forEach((article, i) => {
+    const filename = `${String(i + 1).padStart(2, '0')}-${slugify(article.title)}.mdx`;
+    writeFileSync(join(dir, filename), toMdx(article, 'Trust & Compliance'));
+  });
+}
+
 // ---- Child articles: one flat "For Kids" category ----
 const kidsDir = join(docsDir, 'for-kids');
 writeCategory(kidsDir, 'For Kids', 2);
@@ -158,4 +191,5 @@ childArticles.forEach((article, i) => {
   writeFileSync(join(kidsDir, filename), toMdx(article, 'For Kids'));
 });
 
-console.log(`Converted ${parentArticles.length} parent articles + ${childArticles.length} child articles.`);
+const totalParent = parentArticles.length + billingExtraArticles.length + troubleshootingArticles.length + trustComplianceArticles.length;
+console.log(`Converted ${totalParent} parent articles (${parentArticles.length} core + ${billingExtraArticles.length} billing-extra + ${troubleshootingArticles.length} troubleshooting + ${trustComplianceArticles.length} trust-and-compliance) + ${childArticles.length} child articles.`);
