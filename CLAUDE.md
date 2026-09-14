@@ -182,6 +182,72 @@ npx wrangler secret put APNS_BUNDLE_ID --env production
 - `APNS_PRIVATE_KEY`: The full content of the `.p8` file downloaded from Apple Developer (copy as-is)
 - `APNS_BUNDLE_ID`: Should match `com.morechard.app`
 
+## Known issue — Google login needs 2 attempts on installed Android PWA
+
+On Android, when Morechard is installed as a standalone home-screen PWA (not
+the native Capacitor app), the first tap of "Continue with Google" silently
+lands back on a clean `/auth/login` (no error banner) instead of completing
+sign-in; the second attempt works. Confirmed via production `slt_tokens`
+query on 2026-09-14: the table was empty immediately after a reproduced
+failure, meaning the redirect chain never reaches
+`worker/src/routes/auth.ts`'s `/auth/google/callback` on the first attempt —
+the failure is client-side, before our code runs. Root cause not proven, but
+consistent with a documented Chrome-for-Android quirk: navigating a
+standalone PWA (manifest has no explicit `scope`, defaults to
+`app.morechard.com/`) top-level to an out-of-scope origin (`accounts.google.com`)
+has a flaky first-attempt hand-off back into the installed app shell; the
+retry works because Google shortens the redirect chain (skips re-consent)
+once a session already exists.
+
+**Decided (2026-09-14): leave as-is.** It's a one-tap inconvenience that
+self-resolves, not a broken flow, and any fix (e.g. opening the OAuth flow
+via `window.open` in standalone mode + a `storage`-event handoff back into
+the app) touches the auth callback path with no way to verify on a real
+device from this build environment. Not worth the regression risk to save
+one tap. Revisit if it generates real support complaints, or once there's
+a real Android device available to verify a fix properly.
+
+## Outstanding — Sign in with Apple portal setup
+
+Code for "Continue with Apple" (login only, mirrors the existing Google OAuth
+bridge in `worker/src/routes/auth.ts`) is implemented, but the Apple
+Developer Portal setup and Worker secrets below still need to be done before
+it works in production. Migration `0097_apple_oauth.sql` adds the
+`apple_sub` column and needs applying (see migration rules below).
+
+**Apple Developer Portal:**
+
+1. Go to [developer.apple.com](https://developer.apple.com) → Certificates, Identifiers & Profiles → Identifiers
+2. Create a new **Services ID** (e.g. `com.morechard.app.web`) — this, not the app's bundle ID, is `APPLE_CLIENT_ID`
+3. Enable "Sign in with Apple" on the Services ID, configure it:
+   - Primary App ID: `com.morechard.app`
+   - Domains: `api.morechard.com`
+   - Return URLs: `https://api.morechard.com/auth/apple/callback`
+4. Under Keys, create a new key with "Sign in with Apple" enabled:
+   - Download the `.p8` file (only downloadable once) → this is `APPLE_PRIVATE_KEY`
+   - Record the Key ID shown after generation → `APPLE_KEY_ID`
+5. Record your Team ID (Account Settings) → `APPLE_TEAM_ID`
+
+**Worker secrets (Cloudflare):**
+
+```bash
+# Dev database:
+npx wrangler secret put APPLE_CLIENT_ID
+npx wrangler secret put APPLE_TEAM_ID
+npx wrangler secret put APPLE_KEY_ID
+npx wrangler secret put APPLE_PRIVATE_KEY
+
+# Production database:
+npx wrangler secret put APPLE_CLIENT_ID --env production
+npx wrangler secret put APPLE_TEAM_ID --env production
+npx wrangler secret put APPLE_KEY_ID --env production
+npx wrangler secret put APPLE_PRIVATE_KEY --env production
+```
+
+Until these secrets are set, `/auth/apple` will fail at the Apple token
+exchange step (surfaced to the user as `?error=apple_exchange` on the login
+screen) — it won't 500 or break any other auth path.
+
 ## Database & Deployment Rules (CRITICAL — read before touching any wrangler command)
 
 ### The two databases

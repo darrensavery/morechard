@@ -65,6 +65,11 @@ nav:not(.scrolled):not(:has(.nav-group.is-expanded)) .nav-toggle span {
     height: auto;
     min-height: 0;
     aspect-ratio: 3 / 4;
+    /* Hard reserve for the fixed nav (--h-nav) + breathing room, so
+       hero-content — packed to the bottom via justify-content: flex-end —
+       can never grow tall enough to reach behind the logo, regardless of
+       how much a mobile browser's address bar shrinks the visible viewport. */
+    padding-top: calc(var(--h-nav) + 24px);
   }
   .hero-img {
     object-position: center 15%;

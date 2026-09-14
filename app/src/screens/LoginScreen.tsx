@@ -70,10 +70,10 @@ export default function LoginScreen() {
           )}
           {errorCode === 'unverified' && (
             <div className="w-full rounded-2xl bg-red-50 border border-red-200 px-4 py-3 text-[0.8125rem] text-red-700">
-              Google couldn't verify this email address. Try a different account.
+              Your sign-in provider couldn't verify this email address. Try a different account.
             </div>
           )}
-          {(errorCode === 'csrf' || errorCode === 'google_exchange') && (
+          {(errorCode === 'csrf' || errorCode === 'google_exchange' || errorCode === 'apple_exchange') && (
             <div className="w-full rounded-2xl bg-red-50 border border-red-200 px-4 py-3 text-[0.8125rem] text-red-700">
               Something went wrong. Please try again.
             </div>
@@ -105,6 +105,12 @@ export default function LoginScreen() {
               </svg>
               Continue with Google
             </a>
+
+            {/* Apple — hidden until an Apple Developer Program account exists
+                to configure the Services ID / Sign in with Apple key.
+                Backend routes (/auth/apple, /auth/apple/callback) are built
+                and ready; see CLAUDE.md "Outstanding — Sign in with Apple
+                portal setup". Re-add this button once enrolled. */}
 
             {/* Divider */}
             <div className="flex items-center gap-3 py-1">

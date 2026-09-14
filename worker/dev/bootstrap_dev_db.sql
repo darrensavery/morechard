@@ -141,6 +141,7 @@ CREATE TABLE IF NOT EXISTS users (
   pin_locked_until    INTEGER,
   google_sub          TEXT,
   google_picture      TEXT,
+  apple_sub           TEXT,
   monzo_handle        TEXT,
   revolut_handle      TEXT,
   paypal_handle       TEXT,
@@ -872,6 +873,7 @@ CREATE INDEX IF NOT EXISTS idx_subs_child       ON subscriptions (child_id, acti
 CREATE INDEX IF NOT EXISTS idx_plans_child_week ON plans (child_id, week_start);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email      ON users (email) WHERE email IS NOT NULL;
 CREATE UNIQUE INDEX IF NOT EXISTS idx_users_google_sub ON users (google_sub) WHERE google_sub IS NOT NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS idx_users_apple_sub   ON users (apple_sub) WHERE apple_sub IS NOT NULL;
 CREATE UNIQUE INDEX IF NOT EXISTS idx_demo_registrations_email ON demo_registrations (email);
 
 -- ---------------------------------------------------------------------------

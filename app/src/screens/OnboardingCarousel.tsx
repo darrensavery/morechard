@@ -96,8 +96,7 @@ export function OnboardingCarousel() {
         <motion.div
           key={activeIndex}
           drag="x"
-          dragConstraints={{ left: 0, right: 0 }}
-          dragElastic={0.2}
+          dragSnapToOrigin
           onDragEnd={(_e, info) => {
             if (info.offset.x < -60) goNext()
             else if (info.offset.x > 60 && activeIndex > 0) goToSlide(activeIndex - 1)

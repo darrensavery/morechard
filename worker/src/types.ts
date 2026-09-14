@@ -16,6 +16,13 @@ export interface Env {
   STRIPE_WEBHOOK_SECRET: string;
   GOOGLE_CLIENT_ID:     string;
   GOOGLE_CLIENT_SECRET: string;
+  // Sign in with Apple — APPLE_CLIENT_ID is the Services ID (not the app's
+  // bundle ID); APPLE_PRIVATE_KEY is the contents of the .p8 Sign in with
+  // Apple key downloaded from the Apple Developer Portal.
+  APPLE_CLIENT_ID:      string;
+  APPLE_TEAM_ID:         string;
+  APPLE_KEY_ID:          string;
+  APPLE_PRIVATE_KEY:     string;
   POSTHOG_API_KEY:      string;
   POSTHOG_HOST:         string;
   OPENAI_API_KEY:        string;

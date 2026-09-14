@@ -145,6 +145,8 @@ import {
   handleRevokeOtherSessions,
   handleGoogleAuth,
   handleGoogleCallback,
+  handleAppleAuth,
+  handleAppleCallback,
   handleSltExchange,
 } from './routes/auth.js';
 import {
@@ -587,6 +589,8 @@ async function route(request: Request, env: Env, ctx: ExecutionContext, method: 
   if (path === '/auth/invite/redeem' && method === 'POST') return handleRedeemInvite(request, env);
   if (path === '/auth/google'          && method === 'GET')  return handleGoogleAuth(request, env);
   if (path === '/auth/google/callback' && method === 'GET')  return handleGoogleCallback(request, env);
+  if (path === '/auth/apple'           && method === 'GET')  return handleAppleAuth(request, env);
+  if (path === '/auth/apple/callback'  && method === 'POST') return handleAppleCallback(request, env);
   if (path === '/auth/slt/exchange'    && method === 'POST') return handleSltExchange(request, env);
   if (path === '/auth/webauthn/login/options' && method === 'POST') return handleWebauthnLoginOptions(request, env);
   if (path === '/auth/webauthn/login/verify' && method === 'POST') return handleWebauthnLoginVerify(request, env);

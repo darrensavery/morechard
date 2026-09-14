@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import * as Sentry from '@sentry/react'
 
 /**
  * Cloudflare Turnstile bot-challenge widget. Renders nothing (and never
@@ -18,7 +19,7 @@ declare global {
       render: (container: HTMLElement, options: {
         sitekey: string;
         callback: (token: string) => void;
-        'error-callback'?: () => void;
+        'error-callback'?: (errorCode: string) => void;
         theme?: 'light' | 'dark' | 'auto';
       }) => string;
       remove: (widgetId: string) => void;
@@ -63,10 +64,22 @@ export function TurnstileWidget({ onVerify }: Props) {
         widgetIdRef.current = window.turnstile.render(containerRef.current, {
           sitekey: siteKey,
           callback: onVerify,
-          'error-callback': () => setError(true),
+          'error-callback': (errorCode: string) => {
+            setError(true);
+            Sentry.captureMessage('Turnstile widget error-callback fired', {
+              level: 'warning',
+              extra: { errorCode },
+            });
+          },
         });
       })
-      .catch(() => setError(true));
+      .catch((err: unknown) => {
+        setError(true);
+        Sentry.captureMessage('Turnstile script failed to load', {
+          level: 'warning',
+          extra: { detail: err instanceof Error ? err.message : String(err) },
+        });
+      });
 
     return () => {
       cancelled = true;

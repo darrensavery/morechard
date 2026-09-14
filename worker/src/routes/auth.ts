@@ -1487,6 +1487,160 @@ async function _handleGoogleCallback(request: Request, env: Env, appUrl: string)
 }
 
 // ----------------------------------------------------------------
+// GET /auth/apple
+// Initiates Sign in with Apple. Sets CSRF state param and redirects
+// to Apple's authorisation endpoint. response_mode=form_post is
+// required by Apple whenever the `email` scope is requested.
+// ----------------------------------------------------------------
+export async function handleAppleAuth(_request: Request, env: Env): Promise<Response> {
+  const nonce       = nanoid(16);
+  const sig         = await hmacSign(`oauth-state.${nonce}`, env.JWT_SECRET);
+  const state       = `${nonce}.${sig}`;
+  const redirectUri = `${env.WORKER_URL ?? 'https://api.morechard.com'}/auth/apple/callback`;
+
+  const params = new URLSearchParams({
+    client_id:     env.APPLE_CLIENT_ID,
+    redirect_uri:  redirectUri,
+    response_type: 'code',
+    response_mode: 'form_post',
+    scope:         'email',
+    state,
+  });
+
+  return new Response(null, {
+    status: 302,
+    headers: {
+      'Location': `https://appleid.apple.com/auth/authorize?${params}`,
+    },
+  });
+}
+
+// ----------------------------------------------------------------
+// POST /auth/apple/callback
+// Apple POSTs here (application/x-www-form-urlencoded) rather than
+// redirecting with a GET, per response_mode=form_post. Verifies
+// CSRF, exchanges code for tokens, verifies the ID token, merges
+// the user, issues SLT, redirects.
+// ----------------------------------------------------------------
+export async function handleAppleCallback(request: Request, env: Env): Promise<Response> {
+  const appUrl = env.APP_URL ?? 'https://app.morechard.com';
+  try {
+    return await _handleAppleCallback(request, env, appUrl);
+  } catch (err) {
+    logger.error('handleAppleCallback', 'unhandled error', { err: String(err) });
+    return new Response(null, {
+      status: 302,
+      headers: { 'Location': `${appUrl}/auth/login?error=apple_exchange&detail=${encodeURIComponent(String(err).slice(0, 200))}` },
+    });
+  }
+}
+
+async function _handleAppleCallback(request: Request, env: Env, appUrl: string): Promise<Response> {
+  const form        = await request.formData();
+  const code        = form.get('code');
+  const stateParam  = form.get('state');
+  const redirectUri = `${env.WORKER_URL ?? 'https://api.morechard.com'}/auth/apple/callback`;
+
+  // ── Step 1: CSRF validation (HMAC-signed state, no cookie needed) ──
+  if (typeof stateParam !== 'string' || typeof code !== 'string' || !stateParam || !code) {
+    return new Response(null, { status: 302, headers: { 'Location': `${appUrl}/auth/login?error=csrf` } });
+  }
+  const dotIdx = stateParam.lastIndexOf('.');
+  if (dotIdx === -1) {
+    return new Response(null, { status: 302, headers: { 'Location': `${appUrl}/auth/login?error=csrf` } });
+  }
+  const nonce        = stateParam.slice(0, dotIdx);
+  const receivedSig  = stateParam.slice(dotIdx + 1);
+  const expectedSig  = await hmacSign(`oauth-state.${nonce}`, env.JWT_SECRET);
+  const sigsMatch = timingSafeEqual(
+    new TextEncoder().encode(receivedSig),
+    new TextEncoder().encode(expectedSig),
+  );
+  if (!sigsMatch) {
+    return new Response(null, { status: 302, headers: { 'Location': `${appUrl}/auth/login?error=csrf` } });
+  }
+
+  // ── Step 2: Token exchange ────────────────────────────────────
+  const clientSecret = await signAppleClientSecret(env);
+  const tokenRes = await fetch('https://appleid.apple.com/auth/token', {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      code,
+      client_id:     env.APPLE_CLIENT_ID,
+      client_secret: clientSecret,
+      redirect_uri:  redirectUri,
+      grant_type:    'authorization_code',
+    }),
+  });
+
+  if (!tokenRes.ok) {
+    const errBody = await tokenRes.text();
+    return new Response(null, {
+      status: 302,
+      headers: { 'Location': `${appUrl}/auth/login?error=apple_exchange&detail=${encodeURIComponent(errBody.slice(0, 100))}` },
+    });
+  }
+
+  const tokenData = await tokenRes.json<{ id_token: string }>();
+
+  // ── Step 3: Verify ID token ───────────────────────────────────
+  let applePayload: AppleIdTokenPayload;
+  try {
+    applePayload = await verifyAppleIdToken(tokenData.id_token, env.APPLE_CLIENT_ID);
+  } catch (err) {
+    return new Response(null, {
+      status: 302,
+      headers: { 'Location': `${appUrl}/auth/login?error=apple_exchange&detail=${encodeURIComponent(String(err).slice(0, 100))}` },
+    });
+  }
+
+  if (applePayload.email_verified !== true && applePayload.email_verified !== 'true') {
+    return new Response(null, {
+      status: 302,
+      headers: { 'Location': `${appUrl}/auth/login?error=unverified` },
+    });
+  }
+
+  const { sub, email } = applePayload;
+  const normEmail = email.toLowerCase().trim();
+
+  // ── Step 4: Merge / bridge logic ─────────────────────────────
+  const user = await env.DB
+    .prepare('SELECT id, family_id, display_name FROM users WHERE email = ? LIMIT 1')
+    .bind(normEmail)
+    .first<{ id: string; family_id: string; display_name: string }>();
+
+  if (!user) {
+    return new Response(null, {
+      status: 302,
+      headers: { 'Location': `${appUrl}/auth/login?error=no_account&hint=${encodeURIComponent(normEmail)}` },
+    });
+  }
+
+  await env.DB
+    .prepare('UPDATE users SET apple_sub = ?, email_verified = 1 WHERE id = ?')
+    .bind(sub, user.id)
+    .run();
+
+  // ── Step 5: Issue SLT ─────────────────────────────────────────
+  const rawSlt  = nanoid(32);
+  const sltHash = await sha256(rawSlt);
+  const now = Math.floor(Date.now() / 1000);
+
+  await env.DB
+    .prepare('INSERT INTO slt_tokens (token, user_id, expires_at, ip_address, user_agent) VALUES (?, ?, ?, ?, ?)')
+    .bind(sltHash, user.id, now + 300, clientIp(request), request.headers.get('User-Agent') ?? '')
+    .run();
+
+  // ── Step 6: Redirect to frontend ─────────────────────────────
+  return new Response(null, {
+    status: 302,
+    headers: { 'Location': `${appUrl}/auth/callback?slt=${rawSlt}` },
+  });
+}
+
+// ----------------------------------------------------------------
 // POST /auth/slt/exchange
 // Consumes a Short-Lived Token, returns a long-lived JWT.
 // Body: { slt: string }
@@ -1671,6 +1825,117 @@ async function verifyGoogleIdToken(
   const sigBytes  = Uint8Array.from(atob(b64url(sigB64)),  c => c.charCodeAt(0));
   const dataBytes = new TextEncoder().encode(`${headerB64}.${payloadB64}`);
   const valid     = await crypto.subtle.verify('RSASSA-PKCS1-v1_5', publicKey, sigBytes, dataBytes);
+  if (!valid) throw new Error('Invalid signature');
+
+  return payload;
+}
+
+interface AppleIdTokenPayload {
+  sub:            string;
+  email:          string;
+  email_verified: boolean | string;
+  exp:            number;
+  aud:            string;
+  iss:            string;
+}
+
+function b64urlEncode(bytes: Uint8Array): string {
+  return btoa(String.fromCharCode(...bytes))
+    .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+// Apple's token endpoint requires a client_secret that is itself a JWT
+// (ES256), signed with the private key from the Sign in with Apple key
+// downloaded from the Apple Developer Portal — Apple has no static secret.
+async function signAppleClientSecret(env: Env): Promise<string> {
+  const now = Math.floor(Date.now() / 1000);
+  const header  = { alg: 'ES256', kid: env.APPLE_KEY_ID };
+  const payload = {
+    iss: env.APPLE_TEAM_ID,
+    iat: now,
+    exp: now + 300,
+    aud: 'https://appleid.apple.com',
+    sub: env.APPLE_CLIENT_ID,
+  };
+
+  const headerB64  = b64urlEncode(new TextEncoder().encode(JSON.stringify(header)));
+  const payloadB64 = b64urlEncode(new TextEncoder().encode(JSON.stringify(payload)));
+  const signingInput = `${headerB64}.${payloadB64}`;
+
+  const pkcs8Pem = env.APPLE_PRIVATE_KEY
+    .replace(/-----BEGIN PRIVATE KEY-----/, '')
+    .replace(/-----END PRIVATE KEY-----/, '')
+    .replace(/\s+/g, '');
+  const pkcs8Bytes = Uint8Array.from(atob(pkcs8Pem), c => c.charCodeAt(0));
+
+  const privateKey = await crypto.subtle.importKey(
+    'pkcs8',
+    pkcs8Bytes,
+    { name: 'ECDSA', namedCurve: 'P-256' },
+    false,
+    ['sign'],
+  );
+
+  const sig = await crypto.subtle.sign(
+    { name: 'ECDSA', hash: 'SHA-256' },
+    privateKey,
+    new TextEncoder().encode(signingInput),
+  );
+
+  return `${signingInput}.${b64urlEncode(new Uint8Array(sig))}`;
+}
+
+async function verifyAppleIdToken(
+  idToken: string,
+  expectedClientId: string,
+): Promise<AppleIdTokenPayload> {
+  const parts = idToken.split('.');
+  if (parts.length !== 3) throw new Error('Invalid token format');
+  const [headerB64, payloadB64, sigB64] = parts;
+
+  function b64url(s: string): string {
+    return s.replace(/-/g, '+').replace(/_/g, '/');
+  }
+
+  const header  = JSON.parse(atob(b64url(headerB64)))  as { kid: string; alg: string };
+  const payload = JSON.parse(atob(b64url(payloadB64))) as AppleIdTokenPayload;
+
+  const now = Math.floor(Date.now() / 1000);
+  if (payload.exp < now)                      throw new Error('Token expired');
+  if (payload.aud !== expectedClientId)       throw new Error('Wrong audience');
+  if (payload.iss !== 'https://appleid.apple.com') throw new Error('Wrong issuer');
+
+  // Fetch Apple's public JWK set — cached for its Cache-Control max-age.
+  const JWKS_URL = 'https://appleid.apple.com/auth/keys';
+  const cache    = caches.default;
+  let certsRes   = await cache.match(JWKS_URL);
+  if (!certsRes) {
+    certsRes = await fetch(JWKS_URL);
+    if (certsRes.ok) await cache.put(JWKS_URL, certsRes.clone());
+  }
+  const certs = await certsRes.json<{ keys: Array<{ kid: string; kty: string; alg: string; crv?: string; x?: string; y?: string; n?: string; e?: string }> }>();
+  const jwk = certs.keys.find(k => k.kid === header.kid);
+  if (!jwk) throw new Error('JWK not found for kid: ' + header.kid);
+
+  const isEc = jwk.kty === 'EC';
+  const publicKey = await crypto.subtle.importKey(
+    'jwk',
+    jwk,
+    isEc
+      ? { name: 'ECDSA', namedCurve: jwk.crv ?? 'P-256' }
+      : { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' },
+    false,
+    ['verify'],
+  );
+
+  const sigBytes  = Uint8Array.from(atob(b64url(sigB64)),  c => c.charCodeAt(0));
+  const dataBytes = new TextEncoder().encode(`${headerB64}.${payloadB64}`);
+  const valid     = await crypto.subtle.verify(
+    isEc ? { name: 'ECDSA', hash: 'SHA-256' } : 'RSASSA-PKCS1-v1_5',
+    publicKey,
+    sigBytes,
+    dataBytes,
+  );
   if (!valid) throw new Error('Invalid signature');
 
   return payload;

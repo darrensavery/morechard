@@ -27,8 +27,7 @@ vi.mock('framer-motion', () => ({
             exit: _exit,
             transition: _transition,
             drag: _drag,
-            dragConstraints: _dragConstraints,
-            dragElastic: _dragElastic,
+            dragSnapToOrigin: _dragSnapToOrigin,
             onDragEnd: _onDragEnd,
             ...domProps
           } = props
@@ -80,6 +79,19 @@ describe('OnboardingCarousel', () => {
     renderCarousel()
     fireEvent.click(screen.getByRole('tab', { name: 'Go to slide 3' }))
     expect(screen.getByText('25 lessons kids actually finish')).toBeInTheDocument()
+  })
+
+  it('does not show a Previous button on the first slide', () => {
+    renderCarousel()
+    expect(screen.queryByRole('button', { name: 'Previous slide' })).not.toBeInTheDocument()
+  })
+
+  it('goes back to the previous slide when Previous is tapped', () => {
+    renderCarousel()
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }))
+    expect(screen.getByText('Money lessons that actually stick')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Previous slide' }))
+    expect(screen.getByText('Chores that actually pay')).toBeInTheDocument()
   })
 
   it('marks onboarding seen and does not stay on /onboarding when Skip is tapped', () => {
