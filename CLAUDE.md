@@ -321,18 +321,22 @@ permanent; `wrangler pages project` has no rename command, and migrating to
 a new project would require a live-domain DNS cutover for a purely cosmetic
 win. Not worth it since customers only ever see `app.morechard.com`.)
 
-Verified 2026-09-14: on this account, the **per-deployment hash URL** that
-`wrangler pages deployment list` prints in its `Deployment` column (e.g.
-`https://47ec1458.moneysteps.pages.dev`) returns a 404 "nothing is here yet"
-— those unique-deployment aliases are not reachable here, only the
-**branch-alias** URL above is.
+Cloudflare also gives every individual **successful** deployment its own
+unique hash URL (e.g. `https://47ec1458.moneysteps.pages.dev`) — check the
+Cloudflare dashboard's Deployments tab (or `wrangler pages deployment list`)
+for a ✓ and a real `Deployment` URL vs "No deployment available" (still
+building, or the build was cancelled/superseded — e.g. by pushing another
+commit or deleting the branch before it finished). A ✓'d hash URL works
+fine; don't conclude the mechanism is broken just because one specific hash
+404s — that almost always means that particular deployment never completed,
+not that hash URLs don't work. (Corrected 2026-09-14 — an earlier version of
+this note wrongly claimed hash URLs 404 "on this account"; they were just
+tested against incomplete/superseded deployments.)
 
-The branch-alias URL always serves the **latest** push to the `preview`
-branch — no need for a new link after each additional commit. A fresh push
-takes a minute or two to build before the alias updates; a 404 or stale
-content right after pushing usually just means the build is still running
-(check `npx wrangler pages deployment list --project-name morechard-app`
-for status `Idle` = done vs `Active` = still building).
+The **branch-alias** URL above is still the better day-to-day link since it
+always serves the *latest* push to `preview` — no need for a new link after
+each commit. A fresh push takes a minute or two to build before the alias
+updates.
 
 Once you've verified the branch preview looks right, merge/push to `main` to
 promote it live (same mental model as the Worker's `deploy:promote` — except
