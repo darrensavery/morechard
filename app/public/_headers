@@ -4,13 +4,17 @@
 # scoped to only the literal "/" path leaves every other route with no CSP
 # at all. https://challenges.cloudflare.com is Turnstile (script + iframe +
 # its own verification XHR) used by the login screen's magic-link form.
+# api.dicebear.com is in connect-src (not just img-src) because the service
+# worker's own CacheFirst runtime-caching fetch() for avatars (vite.config.ts)
+# runs under this same CSP — a worker's own fetch() is governed by
+# connect-src regardless of what the *page*-level <img> request needs.
 /*
   X-Frame-Options: DENY
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: camera=(), microphone=(), geolocation=()
   Strict-Transport-Security: max-age=31536000; includeSubDomains
-  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://js.stripe.com https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: https://api.dicebear.com https://*.googleusercontent.com; connect-src 'self' https://api.morechard.com https://sap.morechard.com https://eu.posthog.com https://*.ingest.de.sentry.io https://*.ingest.sentry.io https://challenges.cloudflare.com; frame-src https://js.stripe.com https://challenges.cloudflare.com; object-src 'none'; base-uri 'self'; frame-ancestors 'none'
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://js.stripe.com https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: https://api.dicebear.com https://*.googleusercontent.com; connect-src 'self' https://api.morechard.com https://sap.morechard.com https://eu.posthog.com https://*.ingest.de.sentry.io https://*.ingest.sentry.io https://challenges.cloudflare.com https://api.dicebear.com; frame-src https://js.stripe.com https://challenges.cloudflare.com; object-src 'none'; base-uri 'self'; frame-ancestors 'none'
 
 # index.html / SPA shell / 404 fallback — always revalidate so users pick up
 # new deployments immediately (headers here layer on top of the /* block
