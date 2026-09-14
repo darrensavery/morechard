@@ -258,13 +258,14 @@ export function ParentSettingsTab({ familyId, online, onChildrenChange, onClose,
       setTrial(t)
       setShieldUpgradePrice(shieldPrice)
       if (s?.avatar_id) localStorage.setItem('mc_parent_avatar', s.avatar_id)
-      // Seed locale from D1 only if localStorage has no valid locale yet.
+      // D1 is the source of truth for locale — always reconcile to it so a
+      // stale local cache (e.g. on a device that hasn't loaded Settings in a
+      // while) can't silently drift from what's actually saved server-side.
       // Normalise legacy 2-char 'en' → 'en-GB' before applying.
       const validLocales: string[] = ['en-GB', 'en-US', 'pl']
-      const stored = localStorage.getItem('mc_locale') ?? ''
-      if (s?.locale && !validLocales.includes(stored)) {
+      if (s?.locale) {
         const normalised = s.locale === 'en' ? 'en-GB' : s.locale
-        if (validLocales.includes(normalised)) {
+        if (validLocales.includes(normalised) && normalised !== locale) {
           setLocale(normalised as import('../../lib/locale').AppLocale)
         }
       }
