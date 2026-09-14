@@ -27,14 +27,18 @@ export function SwipeRevealCard({ onAction, actionLabel, children, className, au
   const startX = useRef<number | null>(null)
   const startOffset = useRef(0)
   const [offsetX, setOffsetX] = useState(0) // 0 = closed, -REVEAL_WIDTH = fully open
+  // Tracks which spring curve the release animation should use — a soft
+  // overshoot when snapping open (gives the reveal some momentum/weight),
+  // a plain deceleration when snapping shut (nothing to overshoot into).
+  const [snappingOpen, setSnappingOpen] = useState(false)
   const dragging = startX.current !== null
   const isOpen = offsetX !== 0
 
   // One-time coachmark: nudge the card open briefly, then spring it back.
   useEffect(() => {
     if (!autoPeek) return
-    const openTimer = setTimeout(() => setOffsetX(-PEEK_WIDTH), 500)
-    const closeTimer = setTimeout(() => setOffsetX(0), 1400)
+    const openTimer = setTimeout(() => { setSnappingOpen(true); setOffsetX(-PEEK_WIDTH) }, 500)
+    const closeTimer = setTimeout(() => { setSnappingOpen(false); setOffsetX(0) }, 1400)
     const doneTimer = setTimeout(() => onPeekComplete?.(), 1700)
     return () => { clearTimeout(openTimer); clearTimeout(closeTimer); clearTimeout(doneTimer) }
     // Runs once on mount only — re-triggering on prop identity changes would replay the hint.
@@ -61,24 +65,31 @@ export function SwipeRevealCard({ onAction, actionLabel, children, className, au
     setOffsetX(prev => {
       const next = Math.abs(prev) > OPEN_THRESHOLD ? -REVEAL_WIDTH : 0
       if (next !== 0 && prev === 0) void tick()
+      setSnappingOpen(next !== 0)
       return next
     })
   }
 
   function close() {
+    setSnappingOpen(false)
     setOffsetX(0)
   }
 
   return (
-    <div className={`relative ${className ?? ''}`}>
-      {/* Revealed action — sits behind the card, only reachable once swiped open. */}
-      <div className="absolute inset-y-0 right-0 flex" style={{ width: REVEAL_WIDTH }}>
+    <div className={`relative bg-red-500 ${className ?? ''}`}>
+      {/* Revealed action — sits behind the card, only reachable once swiped open.
+          Rounded on all corners (not just the outer edge) and inset from the
+          card's own edge so it reads as a floating button rather than a flat
+          slab with a hard seam where the card slides away from it. The
+          wrapper behind it is red too, so the inset gap (and any spring
+          overshoot past REVEAL_WIDTH) never flashes blank background. */}
+      <div className="absolute inset-y-0 right-0 flex py-1 pr-1" style={{ width: REVEAL_WIDTH }}>
         <button
           type="button"
           tabIndex={isOpen ? 0 : -1}
           aria-hidden={!isOpen}
           onClick={() => { onAction(); close() }}
-          className="flex-1 bg-red-500 text-white text-[0.6875rem] font-bold cursor-pointer"
+          className="flex-1 rounded-lg bg-red-500 text-white text-[0.6875rem] font-bold cursor-pointer"
         >
           {actionLabel}
         </button>
@@ -87,7 +98,13 @@ export function SwipeRevealCard({ onAction, actionLabel, children, className, au
         className="rounded-xl"
         style={{
           transform: `translateX(${offsetX}px)`,
-          transition: dragging ? 'none' : 'transform 200ms ease',
+          transition: dragging
+            ? 'none'
+            : snappingOpen
+              // Slight overshoot on the way open gives the reveal some
+              // momentum/weight instead of a linear, mechanical slide.
+              ? 'transform 320ms cubic-bezier(0.34, 1.56, 0.64, 1)'
+              : 'transform 260ms cubic-bezier(0.22, 1, 0.36, 1)',
           touchAction: 'pan-y',
           // Some card content (e.g. overdue/priority accents) uses a
           // semi-transparent background. Without an opaque backdrop here,
