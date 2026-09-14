@@ -69,3 +69,51 @@
 .theme-doc-card-title {
   line-height: 1.3;
 }
+
+/*
+ * Mobile navbar fixes.
+ * 1) Infima puts the sidebar toggle BEFORE the brand in source order, so on
+ *    mobile the hamburger sits top-left with the logo to its right — the
+ *    opposite of the main marketing site (morechard.com), which puts the
+ *    logo first and the toggle on the right. Reorder within the existing
+ *    flex container (.navbar__items) to match.
+ * 2) The search-local plugin collapses the input to an icon (width: 2rem)
+ *    when unfocused below 576px, but on focus it reverts to Infima's fixed
+ *    9rem/12.5rem width regardless of how much room the logo+toggle already
+ *    used — on a narrow enough device that overflows and overlaps the logo.
+ *    Cap it with calc() against the viewport so it can never exceed the
+ *    space actually left after the toggle+brand, however wide those are.
+ */
+@media (max-width: 996px) {
+  .navbar__toggle {
+    order: 2;
+  }
+  .navbar__brand {
+    order: 1;
+  }
+  .navbar__items > .navbar__toggle {
+    margin-left: 0.5rem;
+    margin-right: 0;
+  }
+}
+
+@media (max-width: 576px) {
+  .navbar__search-input:focus {
+    width: calc(100vw - 8rem) !important;
+    max-width: 12.5rem;
+  }
+}
+
+/*
+ * Infima's search-input widths (12.5rem, or 9rem under 996px) are fixed
+ * regardless of how much room is actually left after the logo+toggle — on
+ * a narrow enough phone that's still wider than the space available even
+ * after the calc() cap above. Free up real space instead of chasing exact
+ * pixel math: drop the "morechard" text at very narrow widths and keep
+ * just the mark, the same tradeoff most sites make at this width.
+ */
+@media (max-width: 420px) {
+  .navbar__title {
+    display: none;
+  }
+}
