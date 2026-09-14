@@ -105,6 +105,7 @@ function toMdx(article, category) {
 title: "${yamlEscape(title)}"
 description: "${yamlEscape(description)}"
 keywords: [${(category ? [category] : []).map((k) => `"${yamlEscape(k)}"`).join(', ')}]
+hide_table_of_contents: true
 ---
 
 import Head from '@docusaurus/Head';
