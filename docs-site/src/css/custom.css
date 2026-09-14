@@ -54,20 +54,30 @@
 
 /*
  * Docusaurus hardcodes `text--truncate` (single-line ellipsis) on category-page
- * card titles/descriptions — fine for a handful of very short items, but with
- * real question-length titles it makes every card unreadable ("What plans
- * does More…"). Override via the stable, documented ThemeClassNames selectors
- * (theme-doc-card-title / -description) rather than swizzling the component.
+ * card titles - fine for a handful of very short items, but with real
+ * question-length titles it makes every card unreadable ("What plans does
+ * More..."). Override via the stable, documented ThemeClassNames selector
+ * (theme-doc-card-title) rather than swizzling the component.
  */
-.theme-doc-card-title,
-.theme-doc-card-description {
+.theme-doc-card-title {
   overflow: visible;
   white-space: normal;
   text-overflow: clip;
+  line-height: 1.3;
 }
 
-.theme-doc-card-title {
-  line-height: 1.3;
+/*
+ * The card description (the article's meta `description`, reused here)
+ * mostly repeats content the reader is a click away from, since every
+ * title is already the full specific question - not a vague label that
+ * needs elaboration. With ~70 articles across categories (13 in Billing
+ * alone) a denser title-only list scans far faster than a grid of tall
+ * cards. The frontmatter `description` field itself stays untouched -
+ * still used for the page's own SEO meta description and the FAQPage
+ * JSON-LD answer text, this only hides it from the card grid.
+ */
+.theme-doc-card-description {
+  display: none;
 }
 
 /*
