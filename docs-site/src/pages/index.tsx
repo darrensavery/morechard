@@ -34,7 +34,7 @@ export default function Home(): ReactNode {
             How can we help?
           </Heading>
           <p className={styles.heroSubtitle}>
-            Guides for setting up chores, goals, and the family ledger — written
+            Guides for setting up chores, goals, and the family ledger - written
             for parents and for kids.
           </p>
         </div>
@@ -49,7 +49,7 @@ export default function Home(): ReactNode {
           <AudienceCard
             to="/category/for-kids"
             title="For Kids"
-            description="How chores, goals, and the Learning Lab work — written for you, not your parents."
+            description="How chores, goals, and the Learning Lab work - written for you, not your parents."
           />
         </div>
         <div className={styles.helpBanner}>

@@ -2,32 +2,32 @@
   {
     "title": "How do I create a chore for my child?",
     "tags": ["chores", "getting-started"],
-    "content": "<p>From your parent dashboard, tap <strong>Create Chore</strong> and fill in:</p><ul><li><strong>Title</strong> — pick an icon or let Morechard suggest one</li><li><strong>Reward amount</strong> — what the chore pays when approved</li><li><strong>Frequency</strong> — One-off, Daily, Weekly, Fortnightly, Monthly, or School days</li><li><strong>Assign to</strong> — a specific child, several named children, \"Anyone\" (first to claim it gets paid), or \"Everyone\" (each child gets their own copy)</li></ul><p>You can also require a <strong>photo as proof</strong> before it's marked done, or turn on <strong>Skip Approval</strong> so it pays instantly the moment your child completes it. These two options are mutually exclusive — you can only pick one.</p><p>Not sure what to pay? Tap <strong>Rate Guide</strong> from the creation screen to see typical amounts other families pay for similar chores, filterable by category.</p>"
+    "content": "<p>From your parent dashboard, tap <strong>Create Chore</strong> and fill in:</p><ul><li><strong>Title</strong> - pick an icon or let Morechard suggest one</li><li><strong>Reward amount</strong> - what the chore pays when approved</li><li><strong>Frequency</strong> - One-off, Daily, Weekly, Fortnightly, Monthly, or School days</li><li><strong>Assign to</strong> - a specific child, several named children, \"Anyone\" (first to claim it gets paid), or \"Everyone\" (each child gets their own copy)</li></ul><p>You can also require a <strong>photo as proof</strong> before it's marked done, or turn on <strong>Skip Approval</strong> so it pays instantly the moment your child completes it. These two options are mutually exclusive - you can only pick one.</p><p>Not sure what to pay? Tap <strong>Rate Guide</strong> from the creation screen to see typical amounts other families pay for similar chores, filterable by category.</p>"
   },
   {
     "title": "How does my child mark a chore as done?",
     "tags": ["chores"],
-    "content": "<p>Your child taps the chore on their dashboard and marks it done — if you required a photo, they'll attach one first. This moves the chore into <strong>Awaiting Review</strong>, where it sits until you approve it.</p><p>If you turned on <strong>Skip Approval</strong> for that chore, there's no waiting — it's marked completed and paid instantly, no review step.</p>"
+    "content": "<p>Your child taps the chore on their dashboard and marks it done - if you required a photo, they'll attach one first. This moves the chore into <strong>Awaiting Review</strong>, where it sits until you approve it.</p><p>If you turned on <strong>Skip Approval</strong> for that chore, there's no waiting - it's marked completed and paid instantly, no review step.</p>"
   },
   {
     "title": "How do I approve a completed chore, and what does \"needs redo\" mean?",
     "tags": ["chores", "approvals"],
-    "content": "<p>Chores waiting on you show up under <strong>Awaiting Review</strong> on your dashboard. You have three options:</p><ul><li><strong>Approve</strong> — marks it complete and writes the payment to your child's ledger immediately.</li><li><strong>Send back (\"needs redo\")</strong> — sends it back to your child with a note so they can fix it and resubmit. No payment happens yet, and it can go back and forth as many times as needed.</li><li><strong>Reject</strong> — closes it out with no payment. This one is final; your child would need to do the chore again from scratch next time it's due.</li></ul>"
+    "content": "<p>Chores waiting on you show up under <strong>Awaiting Review</strong> on your dashboard. You have three options:</p><ul><li><strong>Approve</strong> - marks it complete and writes the payment to your child's ledger immediately.</li><li><strong>Send back (\"needs redo\")</strong> - sends it back to your child with a note so they can fix it and resubmit. No payment happens yet, and it can go back and forth as many times as needed.</li><li><strong>Reject</strong> - closes it out with no payment. This one is final; your child would need to do the chore again from scratch next time it's due.</li></ul>"
   },
   {
     "title": "What is the Ledger, and why does every entry get hashed?",
     "tags": ["chores", "ledger", "separated-families"],
-    "content": "<p>The Ledger is Morechard's permanent record of what your child has earned and when. Every time you approve a chore, a new entry is added and cryptographically linked to the one before it — so if anyone tried to quietly edit or delete an old entry, the chain would visibly break.</p><p>Nothing is ever silently deleted. If a mistake needs correcting, a new linked entry reverses it — the original stays visible, just like a bank statement correction.</p><p>This matters most for co-parenting or separated families: it gives both parents one shared, tamper-evident record of exactly what was earned, ending arguments about \"how much do I actually owe for that?\" — see <strong>Exporting a court-ready PDF</strong> for how to share this record formally.</p>"
+    "content": "<p>The Ledger is Morechard's permanent record of what your child has earned and when. Every time you approve a chore, a new entry is added and cryptographically linked to the one before it - so if anyone tried to quietly edit or delete an old entry, the chain would visibly break.</p><p>Nothing is ever silently deleted. If a mistake needs correcting, a new linked entry reverses it - the original stays visible, just like a bank statement correction.</p><p>This matters most for co-parenting or separated families: it gives both parents one shared, tamper-evident record of exactly what was earned, ending arguments about \"how much do I actually owe for that?\" - see <strong>Exporting a court-ready PDF</strong> for how to share this record formally.</p>"
   },
   {
     "title": "Can I edit or delete a chore after creating it?",
     "tags": ["chores"],
-    "content": "<p>Yes — you can edit a chore's details at any time, as long as it isn't archived. You can't switch a chore between \"Photo Proof\" and \"Skip Approval\" if that would conflict with how it's currently set up.</p><p>Deleting a chore archives it rather than erasing it — it stops generating new instances, but every past completion and ledger entry stays exactly as it was. You can restore an archived chore later if you change your mind.</p>"
+    "content": "<p>Yes - you can edit a chore's details at any time, as long as it isn't archived. You can't switch a chore between \"Photo Proof\" and \"Skip Approval\" if that would conflict with how it's currently set up.</p><p>Deleting a chore archives it rather than erasing it - it stops generating new instances, but every past completion and ledger entry stays exactly as it was. You can restore an archived chore later if you change your mind.</p>"
   },
   {
     "title": "Does Morechard support recurring chores and streaks?",
     "tags": ["chores"],
-    "content": "<p>Yes, and they're two separate things. <strong>Frequency</strong> (set when you create the chore) controls how often a fresh copy appears — daily, weekly, fortnightly, monthly, or on school days. <strong>Streaks</strong> track how many days in a row your child has kept up with their chores, as a bit of extra motivation — separate from payment and approval.</p>"
+    "content": "<p>Yes, and they're two separate things. <strong>Frequency</strong> (set when you create the chore) controls how often a fresh copy appears - daily, weekly, fortnightly, monthly, or on school days. <strong>Streaks</strong> track how many days in a row your child has kept up with their chores, as a bit of extra motivation - separate from payment and approval.</p>"
   },
   {
     "title": "How does my child create a savings goal?",
@@ -37,17 +37,17 @@
   {
     "title": "Can I contribute money toward my child's goal?",
     "tags": ["goals", "saving"],
-    "content": "<p>Yes, two ways. You can set an ongoing <strong>Parental Match</strong> percentage (0/10/25/50/100%) that effectively lowers how much your child needs to save themselves, or you can send a one-off <strong>gift contribution</strong> of a fixed amount. Either way, it's a real transaction — it's added to their saved total and recorded properly, not just a visual adjustment.</p>"
+    "content": "<p>Yes, two ways. You can set an ongoing <strong>Parental Match</strong> percentage (0/10/25/50/100%) that effectively lowers how much your child needs to save themselves, or you can send a one-off <strong>gift contribution</strong> of a fixed amount. Either way, it's a real transaction - it's added to their saved total and recorded properly, not just a visual adjustment.</p>"
   },
   {
     "title": "What happens when a goal is fully saved up?",
     "tags": ["goals", "saving"],
-    "content": "<p>Once your child has saved enough (including any parent contributions), they'll see a <strong>Mark as Purchased</strong> button on the goal. Confirming it records the spend, closes out the goal as reached, and — if you have jars turned on — takes the amount out of their Save jar.</p>"
+    "content": "<p>Once your child has saved enough (including any parent contributions), they'll see a <strong>Mark as Purchased</strong> button on the goal. Confirming it records the spend, closes out the goal as reached, and - if you have jars turned on - takes the amount out of their Save jar.</p>"
   },
   {
     "title": "What's the \"Impulse Speed Bump\"?",
     "tags": ["goals", "saving"],
-    "content": "<p>It's a short \"just checking\" pause your child sees before logging a spend that's large relative to their balance (15%+ of what they have, and only if they have £5 or more). It doesn't block the spend — they can choose <strong>Wait a bit</strong> or <strong>I'm sure, log it</strong> — but it's designed to interrupt impulse purchases for a moment, and either choice is visible to you afterward.</p>"
+    "content": "<p>It's a short \"just checking\" pause your child sees before logging a spend that's large relative to their balance (15%+ of what they have, and only if they have £5 or more). It doesn't block the spend - they can choose <strong>Wait a bit</strong> or <strong>I'm sure, log it</strong> - but it's designed to interrupt impulse purchases for a moment, and either choice is visible to you afterward.</p>"
   },
   {
     "title": "What is the Rate Guide?",
@@ -57,37 +57,37 @@
   {
     "title": "How do I invite my co-parent to our family account?",
     "tags": ["separated-families", "getting-started"],
-    "content": "<p>As the lead parent, go to your family setup and generate an invite code — it's a short code valid for 72 hours. Share it with your co-parent, and they'll enter it during their own sign-up to link into your family as a co-parent.</p><p>Only the lead parent can generate this code.</p>"
+    "content": "<p>As the lead parent, go to your family setup and generate an invite code - it's a short code valid for 72 hours. Share it with your co-parent, and they'll enter it during their own sign-up to link into your family as a co-parent.</p><p>Only the lead parent can generate this code.</p>"
   },
   {
     "title": "How does the analytics consent veto work between co-parents?",
     "tags": ["separated-families", "privacy"],
-    "content": "<p>For families with more than one parent, analytics on a child's activity only run if <strong>every</strong> parent has opted in and <strong>none</strong> has opted out. In other words, either parent can veto it — if one parent turns analytics off, it's off for the whole family, regardless of what the other parent chose. This is deliberate: neither parent's preference can be overridden by the other.</p>"
+    "content": "<p>For families with more than one parent, analytics on a child's activity only run if <strong>every</strong> parent has opted in and <strong>none</strong> has opted out. In other words, either parent can veto it - if one parent turns analytics off, it's off for the whole family, regardless of what the other parent chose. This is deliberate: neither parent's preference can be overridden by the other.</p>"
   },
   {
     "title": "How do I export a court-ready PDF, and what's the difference between the tiers?",
     "tags": ["separated-families", "export", "billing"],
-    "content": "<p>From <strong>Settings → Data &amp; Exports</strong>, you can generate a PDF record of your child's Ledger. There are three tiers:</p><ul><li><strong>Basic</strong> — the ledger history and family/governance details. Available on every plan.</li><li><strong>Behavioral</strong> — adds status history and a record of which Learning Lab modules your child has unlocked. Requires AI Mentor.</li><li><strong>Forensic</strong> — the full audit trail: completions with GPS/device details, any edits made to chore rewards, and login history. Requires <strong>Shield AI</strong>.</li></ul><p>Every tier includes the cryptographic verification described below, so the document can be independently checked as unaltered.</p>"
+    "content": "<p>From <strong>Settings → Data &amp; Exports</strong>, you can generate a PDF record of your child's Ledger. There are three tiers:</p><ul><li><strong>Basic</strong> - the ledger history and family/governance details. Available on every plan.</li><li><strong>Behavioral</strong> - adds status history and a record of which Learning Lab modules your child has unlocked. Requires AI Mentor.</li><li><strong>Forensic</strong> - the full audit trail: completions with GPS/device details, any edits made to chore rewards, and login history. Requires <strong>Shield AI</strong>.</li></ul><p>Every tier includes the cryptographic verification described below, so the document can be independently checked as unaltered.</p>"
   },
   {
     "title": "How do I verify a ledger hash or exported PDF is authentic?",
     "tags": ["separated-families", "export", "ledger"],
-    "content": "<p>Every exported PDF includes a QR code and a document fingerprint. Scanning the QR code (or visiting the verification link and pasting the fingerprint manually) takes you to a public page that recomputes the entire hash chain and confirms whether it's still intact.</p><p>Anyone can use this — a co-parent, a mediator, or a court — without needing a Morechard account, so the document can be checked independently of you.</p>"
+    "content": "<p>Every exported PDF includes a QR code and a document fingerprint. Scanning the QR code (or visiting the verification link and pasting the fingerprint manually) takes you to a public page that recomputes the entire hash chain and confirms whether it's still intact.</p><p>Anyone can use this - a co-parent, a mediator, or a court - without needing a Morechard account, so the document can be checked independently of you.</p>"
   },
   {
     "title": "How do I remove a co-parent, or leave a family myself?",
     "tags": ["separated-families"],
-    "content": "<p>As the lead parent, you can remove a co-parent from your family at any time — this revokes their access and anonymizes their account details, but doesn't touch your child's ledger history.</p><p>If you're the co-parent and want to leave, you can do that yourself — if you were the only other adult on the account, another co-parent (if any) is automatically promoted to lead.</p>"
+    "content": "<p>As the lead parent, you can remove a co-parent from your family at any time - this revokes their access and anonymizes their account details, but doesn't touch your child's ledger history.</p><p>If you're the co-parent and want to leave, you can do that yourself - if you were the only other adult on the account, another co-parent (if any) is automatically promoted to lead.</p>"
   },
   {
     "title": "Can I delete my Morechard account entirely?",
     "tags": ["separated-families", "privacy", "account"],
-    "content": "<p>Only the lead parent can delete (\"uproot\") a family account, and only once every co-parent has already left — this protects a co-parent from losing access without warning.</p><p>Deleting anonymizes all names, emails, and login details for everyone on the account and revokes every session. Your child's ledger history is <strong>not</strong> deleted — it's kept, anonymized, so financial records aren't lost even after the account closes.</p>"
+    "content": "<p>Only the lead parent can delete (\"uproot\") a family account, and only once every co-parent has already left - this protects a co-parent from losing access without warning.</p><p>Deleting anonymizes all names, emails, and login details for everyone on the account and revokes every session. Your child's ledger history is <strong>not</strong> deleted - it's kept, anonymized, so financial records aren't lost even after the account closes.</p>"
   },
   {
     "title": "What plans does Morechard offer, and what's included?",
     "tags": ["billing", "plans"],
-    "content": "<p>Morechard is sold as a one-time purchase, not a subscription:</p><ul><li><strong>Morechard Core — £44.99</strong>: the full chore tracker and ledger.</li><li><strong>Morechard Core AI — £64.99</strong>: everything in Core, plus AI Mentor and the Learning Lab.</li><li><strong>Morechard Shield AI — £149.99</strong>: everything in Core AI, plus the forensic-tier court-ready PDF export.</li><li><strong>AI Mentor upgrade — £29.99</strong>: adds AI Mentor and Learning Lab to a family that already bought Core.</li></ul><p>If you've already bought Core or the AI upgrade and later decide to get Shield AI, what you already paid is credited toward it — you only pay the difference.</p>"
+    "content": "<p>Morechard is sold as a one-time purchase, not a subscription:</p><ul><li><strong>Morechard Core - £44.99</strong>: the full chore tracker and ledger.</li><li><strong>Morechard Core AI - £64.99</strong>: everything in Core, plus AI Mentor and the Learning Lab.</li><li><strong>Morechard Shield AI - £149.99</strong>: everything in Core AI, plus the forensic-tier court-ready PDF export.</li><li><strong>AI Mentor upgrade - £29.99</strong>: adds AI Mentor and Learning Lab to a family that already bought Core.</li></ul><p>If you've already bought Core or the AI upgrade and later decide to get Shield AI, what you already paid is credited toward it - you only pay the difference.</p>"
   },
   {
     "title": "Are Morechard's plans subscriptions, or one-time payments?",
@@ -102,27 +102,27 @@
   {
     "title": "How does the Payment Bridge work for paying my child?",
     "tags": ["billing", "chores"],
-    "content": "<p>Payment Bridge doesn't move money through Morechard itself — it helps you actually pay your child once you owe them. It opens your banking app (Monzo, Revolut, PayPal, or Venmo) with the amount and reference pre-filled, or gives you your child's bank details to copy for a manual transfer. Once you've sent it, you confirm \"I've sent it\" in the app so it's recorded.</p><p>Any bank details you save for this are kept only on your own device.</p>"
+    "content": "<p>Payment Bridge doesn't move money through Morechard itself - it helps you actually pay your child once you owe them. It opens your banking app (Monzo, Revolut, PayPal, or Venmo) with the amount and reference pre-filled, or gives you your child's bank details to copy for a manual transfer. Once you've sent it, you confirm \"I've sent it\" in the app so it's recorded.</p><p>Any bank details you save for this are kept only on your own device.</p>"
   },
   {
     "title": "What happens when my 14-day trial ends?",
     "tags": ["billing", "getting-started"],
-    "content": "<p>Your trial starts the day your first chore is approved and runs for 14 days, during which every feature — including AI Mentor — is unlocked. If you haven't purchased a plan by the end of it, you'll get a usage summary email, and further use of the app will need a purchase to continue.</p>"
+    "content": "<p>Your trial starts the day your first chore is approved and runs for 14 days, during which every feature - including AI Mentor - is unlocked. If you haven't purchased a plan by the end of it, you'll get a usage summary email, and further use of the app will need a purchase to continue.</p>"
   },
   {
     "title": "How does biometric login (Face ID/Touch ID) work?",
     "tags": ["account", "security"],
-    "content": "<p>When you open the app, Morechard automatically prompts for Face ID or Touch ID if you've set it up — no need to tap anything first. A successful check both unlocks the app and refreshes your sign-in, even if your session had technically expired in the background. If biometrics aren't set up, you'll get a PIN pad instead.</p>"
+    "content": "<p>When you open the app, Morechard automatically prompts for Face ID or Touch ID if you've set it up - no need to tap anything first. A successful check both unlocks the app and refreshes your sign-in, even if your session had technically expired in the background. If biometrics aren't set up, you'll get a PIN pad instead.</p>"
   },
   {
     "title": "What if I get a new phone or lose access to my device?",
     "tags": ["account", "security"],
-    "content": "<p>If your sign-in has fully expired and there's no biometric set up on the new device, you'll see a \"Session expired\" screen with an option to get a new sign-in link sent to your email.</p><p>For a child who's forgotten their PIN, there's no self-service reset — a parent needs to reset it for them from the parent dashboard.</p>"
+    "content": "<p>If your sign-in has fully expired and there's no biometric set up on the new device, you'll see a \"Session expired\" screen with an option to get a new sign-in link sent to your email.</p><p>For a child who's forgotten their PIN, there's no self-service reset - a parent needs to reset it for them from the parent dashboard.</p>"
   },
   {
     "title": "Is my login secure?",
     "tags": ["account", "security", "privacy"],
-    "content": "<p>Yes. On the web, your sign-in token is stored in a browser-protected cookie that JavaScript can never read directly. On the phone app, it's stored in your device's secure Keychain (iPhone) or Keystore (Android) — never in plain, readable app storage.</p>"
+    "content": "<p>Yes. On the web, your sign-in token is stored in a browser-protected cookie that JavaScript can never read directly. On the phone app, it's stored in your device's secure Keychain (iPhone) or Keystore (Android) - never in plain, readable app storage.</p>"
   },
   {
     "title": "How do push notifications work?",
@@ -132,26 +132,26 @@
   {
     "title": "How do I turn on High Contrast mode?",
     "tags": ["account", "accessibility"],
-    "content": "<p>High Contrast mode meets WCAG AA accessibility standards for text and UI contrast. You can turn it on from <strong>Appearance</strong> settings — it's available on both parent and child accounts.</p>"
+    "content": "<p>High Contrast mode meets WCAG AA accessibility standards for text and UI contrast. You can turn it on from <strong>Appearance</strong> settings - it's available on both parent and child accounts.</p>"
   },
   {
     "title": "What is AI Mentor and what does it actually do?",
     "tags": ["ai-mentor"],
-    "content": "<p>AI Mentor watches for patterns in your child's real activity — spending too fast, their balance sitting at zero, chores going overdue, money just piling up unused — and sends them a short, timely nudge when something's worth pointing out. It's behavioral coaching triggered by real events, not a fixed lesson schedule.</p><p>AI Mentor is included with Morechard Core AI, Shield AI, or the AI Mentor upgrade — Core-only families see an upsell instead. Everyone gets full access during their 14-day trial, regardless of plan.</p>"
+    "content": "<p>AI Mentor watches for patterns in your child's real activity - spending too fast, their balance sitting at zero, chores going overdue, money just piling up unused - and sends them a short, timely nudge when something's worth pointing out. It's behavioral coaching triggered by real events, not a fixed lesson schedule.</p><p>AI Mentor is included with Morechard Core AI, Shield AI, or the AI Mentor upgrade - Core-only families see an upsell instead. Everyone gets full access during their 14-day trial, regardless of plan.</p>"
   },
   {
     "title": "What is the weekly Insights briefing?",
     "tags": ["ai-mentor"],
-    "content": "<p>Once a week, per child, you get an AI-written summary of how they've been doing — trends in consistency, responsibility, and planning, compared to the week before. It's generated automatically (with a solid fallback summary if the AI service is briefly unavailable) and only needs to be generated once per week, so it loads instantly after that. It's included with the same plans as AI Mentor.</p>"
+    "content": "<p>Once a week, per child, you get an AI-written summary of how they've been doing - trends in consistency, responsibility, and planning, compared to the week before. It's generated automatically (with a solid fallback summary if the AI service is briefly unavailable) and only needs to be generated once per week, so it loads instantly after that. It's included with the same plans as AI Mentor.</p>"
   },
   {
     "title": "What is Learning Lab, and how does my child unlock modules?",
     "tags": ["ai-mentor", "learning-lab"],
-    "content": "<p>Learning Lab is a set of 25 short financial-literacy modules (each roughly 15–25 minutes, in four parts: a hook, a lesson, a hands-on activity, and a quiz), spread across four age-appropriate levels. Modules aren't unlocked in a fixed order — they open up based on your child's real activity. For example, reaching a £30 balance unlocks one module; going three weeks without a transaction unlocks another; keeping a goal active with a month-long streak unlocks another.</p><p>Learning Lab is included with the same plans as AI Mentor — it isn't available on Core alone.</p>"
+    "content": "<p>Learning Lab is a set of 25 short financial-literacy modules (each roughly 15 - 25 minutes, in four parts: a hook, a lesson, a hands-on activity, and a quiz), spread across four age-appropriate levels. Modules aren't unlocked in a fixed order - they open up based on your child's real activity. For example, reaching a £30 balance unlocks one module; going three weeks without a transaction unlocks another; keeping a goal active with a month-long streak unlocks another.</p><p>Learning Lab is included with the same plans as AI Mentor - it isn't available on Core alone.</p>"
   },
   {
     "title": "Does my child chat directly with an AI?",
     "tags": ["ai-mentor", "privacy"],
-    "content": "<p>Not today. Everything your child sees from AI Mentor is a pre-written, targeted nudge — there's no free-text conversation with an AI in the live app. An open-ended chat feature was built and tested, but we've deliberately kept it switched off while we work through the legal and safety considerations properly, so nothing gets rushed. If that changes, it'll be a clearly separate, opt-in feature — not something turned on silently.</p>"
+    "content": "<p>Not today. Everything your child sees from AI Mentor is a pre-written, targeted nudge - there's no free-text conversation with an AI in the live app. An open-ended chat feature was built and tested, but we've deliberately kept it switched off while we work through the legal and safety considerations properly, so nothing gets rushed. If that changes, it'll be a clearly separate, opt-in feature - not something turned on silently.</p>"
   }
 ]

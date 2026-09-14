@@ -2,31 +2,31 @@
   {
     "title": "Is Morechard safe for my child's data?",
     "tags": ["trust", "privacy"],
-    "content": "<p>Yes — Morechard's position is simple: we sell subscriptions, not data. We never sell your family's data, and we never share it for advertising purposes. The only third parties involved are the infrastructure and service providers needed to run the app (hosting, error monitoring, email, payments, and support), each used strictly for that functional purpose.</p><p>See our <a href=\"https://morechard.com/privacy-policy\">Privacy Policy</a> for the full list of who we work with and why.</p>"
+    "content": "<p>Yes - Morechard's position is simple: we sell subscriptions, not data. We never sell your family's data, and we never share it for advertising purposes. The only third parties involved are the infrastructure and service providers needed to run the app (hosting, error monitoring, email, payments, and support), each used strictly for that functional purpose.</p><p>See our <a href=\"https://morechard.com/privacy-policy\">Privacy Policy</a> for the full list of who we work with and why.</p>"
   },
   {
     "title": "Is Morechard GDPR and COPPA compliant?",
     "tags": ["trust", "privacy", "compliance"],
-    "content": "<p>Morechard is built with GDPR and COPPA principles at its core — data minimisation, never selling data, documented data-sharing practices, and privacy controls designed for families with children. We take this seriously and design deliberately around these frameworks.</p><p>We're not able to claim formal third-party certification, since data protection compliance is an ongoing, evolving responsibility rather than a one-time checkbox — but privacy-by-design is a first-class consideration in how Morechard is built, not an afterthought.</p>"
+    "content": "<p>Morechard is built with GDPR and COPPA principles at its core - data minimisation, never selling data, documented data-sharing practices, and privacy controls designed for families with children. We take this seriously and design deliberately around these frameworks.</p><p>We're not able to claim formal third-party certification, since data protection compliance is an ongoing, evolving responsibility rather than a one-time checkbox - but privacy-by-design is a first-class consideration in how Morechard is built, not an afterthought.</p>"
   },
   {
     "title": "Is there a minimum age to use Morechard?",
     "tags": ["trust", "getting-started"],
-    "content": "<p>Morechard doesn't currently ask for or check a child's age or date of birth during setup — it's designed to work for any child old enough to complete simple chores and understand basic saving, which in practice covers a wide age range. A parent creates and manages every child profile, so there's no independent sign-up step a child needs to pass an age check for.</p>"
+    "content": "<p>Morechard doesn't currently ask for or check a child's age or date of birth during setup - it's designed to work for any child old enough to complete simple chores and understand basic saving, which in practice covers a wide age range. A parent creates and manages every child profile, so there's no independent sign-up step a child needs to pass an age check for.</p>"
   },
   {
     "title": "What currencies does Morechard support?",
     "tags": ["trust", "billing", "getting-started"],
-    "content": "<p>Morechard fully supports <strong>GBP (£), USD ($), and PLN (zł)</strong> today — you choose your family's currency during setup, and it's used throughout the app for chore rewards, goals, and the ledger.</p>"
+    "content": "<p>Morechard fully supports <strong>GBP (£), USD ($), and PLN (zł)</strong> today - you choose your family's currency during setup, and it's used throughout the app for chore rewards, goals, and the ledger.</p>"
   },
   {
     "title": "Can I use Morechard as a single parent, not just for co-parenting?",
     "tags": ["trust", "getting-started"],
-    "content": "<p>Yes — single-parent households are a fully supported, default way to use Morechard, not just an afterthought to the separated-family features. You can always invite a co-parent later if your circumstances change; nothing about single-parent use is a limited or secondary mode.</p>"
+    "content": "<p>Yes - single-parent households are a fully supported, default way to use Morechard, not just an afterthought to the separated-family features. You can always invite a co-parent later if your circumstances change; nothing about single-parent use is a limited or secondary mode.</p>"
   },
   {
     "title": "Does my child need their own email address or device?",
     "tags": ["trust", "getting-started", "account"],
-    "content": "<p>No email address needed — a child joins using a 6-digit invite code you generate for them, not an email sign-up. Morechard is designed with the assumption that each child has their own device (phone, tablet, or a shared family device set up under their own code), so their chores, goals, and Ledger stay clearly theirs.</p>"
+    "content": "<p>No email address needed - a child joins using a 6-digit invite code you generate for them, not an email sign-up. Morechard is designed with the assumption that each child has their own device (phone, tablet, or a shared family device set up under their own code), so their chores, goals, and Ledger stay clearly theirs.</p>"
   }
 ]

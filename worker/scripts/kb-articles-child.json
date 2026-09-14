@@ -2,17 +2,17 @@
   {
     "title": "[For kids] How do I mark my chore as done?",
     "tags": ["child", "chores"],
-    "content": "<p>Tap the chore on your dashboard and hit <strong>Done</strong>. If your parent asked for a photo, take one first — that's your proof it's finished.</p><p>Some chores pay you straight away. Others go to your parent to check first — you'll see it sitting under <strong>Waiting</strong> until they look at it.</p>"
+    "content": "<p>Tap the chore on your dashboard and hit <strong>Done</strong>. If your parent asked for a photo, take one first - that's your proof it's finished.</p><p>Some chores pay you straight away. Others go to your parent to check first - you'll see it sitting under <strong>Waiting</strong> until they look at it.</p>"
   },
   {
     "title": "[For kids] Why is my chore waiting to be checked?",
     "tags": ["child", "chores", "approvals"],
-    "content": "<p>Some chores need your parent to check them before you get paid — that's normal, not a sign anything's wrong. Once they approve it, the money is added straight away.</p>"
+    "content": "<p>Some chores need your parent to check them before you get paid - that's normal, not a sign anything's wrong. Once they approve it, the money is added straight away.</p>"
   },
   {
-    "title": "[For kids] My parent sent my chore back — what now?",
+    "title": "[For kids] My parent sent my chore back - what now?",
     "tags": ["child", "chores", "approvals"],
-    "content": "<p>If a chore comes back to you, your parent wants something fixed or finished before they can pay you for it. There's usually a note explaining what to change. Fix it and send it again — you can go back and forth as many times as you need, and you won't lose anything by trying again.</p>"
+    "content": "<p>If a chore comes back to you, your parent wants something fixed or finished before they can pay you for it. There's usually a note explaining what to change. Fix it and send it again - you can go back and forth as many times as you need, and you won't lose anything by trying again.</p>"
   },
   {
     "title": "[For kids] How do I set up a savings goal?",
@@ -22,32 +22,32 @@
   {
     "title": "[For kids] Can my parent help me save up faster?",
     "tags": ["child", "goals"],
-    "content": "<p>Yes — some parents add extra money toward a goal to help you get there sooner, either as an ongoing top-up or a one-off gift. If that happens, you'll see your saved amount jump — it's real money added to your goal, not just for show.</p>"
+    "content": "<p>Yes - some parents add extra money toward a goal to help you get there sooner, either as an ongoing top-up or a one-off gift. If that happens, you'll see your saved amount jump - it's real money added to your goal, not just for show.</p>"
   },
   {
     "title": "[For kids] Why did the app ask me to wait before I spent money?",
     "tags": ["child", "goals", "spending"],
-    "content": "<p>If you're about to spend a big chunk of what you have, Morechard shows you a quick \"just checking\" screen before you go ahead. It's not stopping you — you can still choose <strong>I'm sure, log it</strong> — it's just a moment to think it over first in case you'd rather wait.</p>"
+    "content": "<p>If you're about to spend a big chunk of what you have, Morechard shows you a quick \"just checking\" screen before you go ahead. It's not stopping you - you can still choose <strong>I'm sure, log it</strong> - it's just a moment to think it over first in case you'd rather wait.</p>"
   },
   {
-    "title": "[For kids] I forgot my code — what do I do?",
+    "title": "[For kids] I forgot my code - what do I do?",
     "tags": ["child", "account"],
-    "content": "<p>You can't reset it yourself — ask a parent to reset your code for you from their dashboard. Once they've done that, you'll be able to get back in with the new code.</p>"
+    "content": "<p>You can't reset it yourself - ask a parent to reset your code for you from their dashboard. Once they've done that, you'll be able to get back in with the new code.</p>"
   },
   {
     "title": "[For kids] Can my parents see everything I do in the app?",
     "tags": ["child", "privacy"],
-    "content": "<p>Your parents can see what you've earned, saved, and spent — that's how they approve chores and help with goals. What they can't see is anything private like your exact location — proof photos are only used to check a chore was actually done, not to track where you are.</p>"
+    "content": "<p>Your parents can see what you've earned, saved, and spent - that's how they approve chores and help with goals. What they can't see is anything private like your exact location - proof photos are only used to check a chore was actually done, not to track where you are.</p>"
   },
   {
     "title": "[For kids] What are the Learning Lab lessons, and why do I get them?",
     "tags": ["child", "learning-lab"],
-    "content": "<p>Learning Lab is a set of short lessons about money — things like saving, spending wisely, and how interest works. You don't do them in order; a new one unlocks when something you've actually done (like reaching a savings goal, or going a while without spending) makes that lesson useful right then. Each one only takes about 15–25 minutes: a quick intro, a short lesson, something to try, and a quiz at the end.</p><p>Not every family has Learning Lab turned on — if you don't see it, that's just how your account is set up, not something broken.</p>"
+    "content": "<p>Learning Lab is a set of short lessons about money - things like saving, spending wisely, and how interest works. You don't do them in order; a new one unlocks when something you've actually done (like reaching a savings goal, or going a while without spending) makes that lesson useful right then. Each one only takes about 15 - 25 minutes: a quick intro, a short lesson, something to try, and a quiz at the end.</p><p>Not every family has Learning Lab turned on - if you don't see it, that's just how your account is set up, not something broken.</p>"
   },
   {
     "title": "[For kids] Can I chat with the AI?",
     "tags": ["child", "ai-mentor", "privacy"],
-    "content": "<p>Not right now. The Mentor sends you helpful messages based on what's happening with your money, but you can't type back and forth with it like a chat. If that ever changes, it'll be something new you'd be told about — not something that quietly turns on.</p>"
+    "content": "<p>Not right now. The Mentor sends you helpful messages based on what's happening with your money, but you can't type back and forth with it like a chat. If that ever changes, it'll be something new you'd be told about - not something that quietly turns on.</p>"
   },
   {
     "title": "[For kids] How do I give money to a good cause?",
@@ -57,6 +57,6 @@
   {
     "title": "[For kids] Why can't things in my history just be deleted?",
     "tags": ["child", "ledger"],
-    "content": "<p>Every chore you get paid for is added to a permanent record that can't be secretly changed or erased later — think of it like a diary nobody's allowed to tear pages out of. If something needs correcting, a new entry is added to fix it, but the original stays visible too. It's there so what you've earned is always fair and never in dispute.</p>"
+    "content": "<p>Every chore you get paid for is added to a permanent record that can't be secretly changed or erased later - think of it like a diary nobody's allowed to tear pages out of. If something needs correcting, a new entry is added to fix it, but the original stays visible too. It's there so what you've earned is always fair and never in dispute.</p>"
   }
 ]

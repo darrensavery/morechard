@@ -4,10 +4,10 @@
     "tags": [
       "billing"
     ],
-    "content": "<p>Yes — Stripe (our payment processor) automatically emails you a receipt when your card is charged. Check the email address you used at checkout, including your spam/promotions folder if it doesn't show up within a few minutes.</p>"
+    "content": "<p>Yes - Stripe (our payment processor) automatically emails you a receipt when your card is charged. Check the email address you used at checkout, including your spam/promotions folder if it doesn't show up within a few minutes.</p>"
   },
   {
-    "title": "I think I was charged twice — what do I do?",
+    "title": "I think I was charged twice - what do I do?",
     "tags": [
       "billing"
     ],
@@ -19,7 +19,7 @@
       "billing",
       "plans"
     ],
-    "content": "<p>Yes. Whether you started on Core or Core AI (or the AI Mentor upgrade), whatever you already paid is credited toward Shield AI's price — you only pay the difference, not the full amount again.</p>"
+    "content": "<p>Yes. Whether you started on Core or Core AI (or the AI Mentor upgrade), whatever you already paid is credited toward Shield AI's price - you only pay the difference, not the full amount again.</p>"
   },
   {
     "title": "What payment methods does Morechard accept?",
@@ -34,7 +34,7 @@
       "billing",
       "account"
     ],
-    "content": "<p>Yes — the lead parent can change the family's currency later from settings; it isn't locked in permanently at sign-up. Past chores, goals, and ledger entries keep the currency they were originally recorded in and aren't converted retroactively — only new activity uses the new currency going forward.</p>"
+    "content": "<p>Yes - the lead parent can change the family's currency later from settings; it isn't locked in permanently at sign-up. Past chores, goals, and ledger entries keep the currency they were originally recorded in and aren't converted retroactively - only new activity uses the new currency going forward.</p>"
   },
   {
     "title": "Can I remove one child from our account without deleting everything?",
@@ -42,14 +42,14 @@
       "billing",
       "account"
     ],
-    "content": "<p>Not currently — there's no way to delete a single child's profile on its own while keeping the rest of the family account. The only account-level deletion available is closing the entire family account, which removes every profile on it. If this is something you need, contact support and we can talk through your options.</p>"
+    "content": "<p>Not currently - there's no way to delete a single child's profile on its own while keeping the rest of the family account. The only account-level deletion available is closing the entire family account, which removes every profile on it. If this is something you need, contact support and we can talk through your options.</p>"
   },
   {
     "title": "Is Morechard free?",
     "tags": [
       "billing"
     ],
-    "content": "<p>Morechard has a full-featured <strong>14-day free trial</strong> — no card required to start, and every feature (including AI Mentor) is unlocked during it. After the trial, continuing to use the app requires a one-time purchase starting at £44.99 — there's no free-forever tier.</p>"
+    "content": "<p>Morechard has a full-featured <strong>14-day free trial</strong> - no card required to start, and every feature (including AI Mentor) is unlocked during it. After the trial, continuing to use the app requires a one-time purchase starting at £44.99 - there's no free-forever tier.</p>"
   },
   {
     "title": "How much does Morechard cost?",

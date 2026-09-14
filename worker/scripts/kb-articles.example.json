@@ -1,12 +1,12 @@
 [
   {
     "title": "How does the 6-digit child invite code work?",
-    "content": "<p>Each child profile gets a unique 6-digit code that links their device to your family account. Share it only with your child — anyone with the code can access that child's profile.</p><p>If a code stops working, a parent can regenerate it from Settings &gt; Children &gt; [child name] &gt; Regenerate Code.</p>",
+    "content": "<p>Each child profile gets a unique 6-digit code that links their device to your family account. Share it only with your child - anyone with the code can access that child's profile.</p><p>If a code stops working, a parent can regenerate it from Settings &gt; Children &gt; [child name] &gt; Regenerate Code.</p>",
     "tags": ["onboarding", "child-code"]
   },
   {
     "title": "Why can't I see my child's completed chores?",
-    "content": "<p>Completed chores need parent approval before they count toward earnings. Check the Approvals tab on your parent dashboard — completed-but-unapproved chores show there first.</p>",
+    "content": "<p>Completed chores need parent approval before they count toward earnings. Check the Approvals tab on your parent dashboard - completed-but-unapproved chores show there first.</p>",
     "tags": ["chores", "approvals"]
   }
 ]
