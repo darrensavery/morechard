@@ -350,22 +350,33 @@ export async function handleStripeWebhook(
     }
   }
 
+  // checkout.session.expired just means a parent abandoned checkout without
+  // paying (Stripe's default session TTL is 24h) — routine cart abandonment,
+  // not a payment failure. Logged at 'info' so it doesn't ride alongside
+  // actual declined-card alerts and desensitize us to real failures.
+  const ROUTINE_EVENT_TYPES = new Set([
+    'checkout.session.expired',
+  ]);
+
   const FAILURE_EVENT_TYPES = new Set([
     'checkout.session.async_payment_failed',
-    'checkout.session.expired',
     'payment_intent.payment_failed',
     'charge.failed',
     'invoice.payment_failed',
   ]);
 
-  if (FAILURE_EVENT_TYPES.has(event.type)) {
+  if (ROUTINE_EVENT_TYPES.has(event.type) || FAILURE_EVENT_TYPES.has(event.type)) {
     const obj = event.data.object as unknown as Record<string, unknown>;
     const lastError = obj['last_payment_error'] as Record<string, unknown> | undefined;
     // Distinct fingerprint so this groups into its own Sentry issue — a
     // dedicated alert rule can fire on this specific fingerprint rather than
     // relying on generic exception-rate alerting to happen to cover it.
+    // A declined card is a routine customer-side outcome (insufficient
+    // funds, expired card, bank decline), not an application error — logged
+    // at 'warning' so it doesn't page as High priority alongside real
+    // system failures.
     Sentry.captureMessage(`Stripe payment failure: ${event.type}`, {
-      level: 'error',
+      level: ROUTINE_EVENT_TYPES.has(event.type) ? 'info' : 'warning',
       fingerprint: ['stripe-payment-failure', event.type],
       extra: {
         stripe_object_id: obj['id'],
