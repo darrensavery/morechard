@@ -23,7 +23,7 @@ import { signJwt } from '../lib/jwt.js';
 import type { JwtPayload } from '../lib/jwt.js';
 import { nanoid } from '../lib/nanoid.js';
 import { sha256, computeRecordHash, GENESIS_HASH, prepareSystemNoteInsert } from '../lib/hash.js';
-import { setAuthCookie, clearAuthCookie, setSessionMarkerCookie, clearSessionMarkerCookie } from '../lib/cookies.js';
+import { setAuthCookie, clearAuthCookie, setSessionMarkerCookie, clearSessionMarkerCookie, setOAuthStateCookie, getOAuthStateCookie, clearOAuthStateCookie } from '../lib/cookies.js';
 import { recordPinFailure, clearPinLockout } from '../lib/pinLockout.js';
 import { z } from 'zod';
 import { parseValidatedBody } from '../lib/validate.js';
@@ -1356,12 +1356,10 @@ export async function handleGoogleAuth(_request: Request, env: Env): Promise<Res
     prompt:        'select_account',
   });
 
-  return new Response(null, {
-    status: 302,
-    headers: {
-      'Location': `https://accounts.google.com/o/oauth2/v2/auth?${params}`,
-    },
-  });
+  const headers = new Headers({ 'Location': `https://accounts.google.com/o/oauth2/v2/auth?${params}` });
+  setOAuthStateCookie(headers, 'google', nonce, '/auth/google/callback');
+
+  return new Response(null, { status: 302, headers });
 }
 
 // ----------------------------------------------------------------
@@ -1388,7 +1386,10 @@ async function _handleGoogleCallback(request: Request, env: Env, appUrl: string)
   const stateParam  = url.searchParams.get('state');
   const redirectUri = `${env.WORKER_URL ?? 'https://api.morechard.com'}/auth/google/callback`;
 
-  // ── Step 1: CSRF validation (HMAC-signed state, no cookie needed) ──
+  // ── Step 1: CSRF validation — HMAC-signed state proves we minted it;
+  // the cookie proves THIS browser is the one that requested it (without
+  // it, a captured/replayed authorize URL from a different browser could
+  // complete login as a login-CSRF attack). ──
   if (!stateParam || !code) {
     return new Response(null, { status: 302, headers: { 'Location': `${appUrl}/auth/login?error=csrf` } });
   }
@@ -1404,6 +1405,10 @@ async function _handleGoogleCallback(request: Request, env: Env, appUrl: string)
     new TextEncoder().encode(expectedSig),
   );
   if (!sigsMatch) {
+    return new Response(null, { status: 302, headers: { 'Location': `${appUrl}/auth/login?error=csrf` } });
+  }
+  const cookieNonce = getOAuthStateCookie(request, 'google');
+  if (!cookieNonce || !timingSafeEqual(new TextEncoder().encode(cookieNonce), new TextEncoder().encode(nonce))) {
     return new Response(null, { status: 302, headers: { 'Location': `${appUrl}/auth/login?error=csrf` } });
   }
 
@@ -1480,10 +1485,9 @@ async function _handleGoogleCallback(request: Request, env: Env, appUrl: string)
     .run();
 
   // ── Step 6: Redirect to frontend ─────────────────────────────
-  return new Response(null, {
-    status: 302,
-    headers: { 'Location': `${appUrl}/auth/callback?slt=${rawSlt}` },
-  });
+  const successHeaders = new Headers({ 'Location': `${appUrl}/auth/callback?slt=${rawSlt}` });
+  clearOAuthStateCookie(successHeaders, 'google', '/auth/google/callback');
+  return new Response(null, { status: 302, headers: successHeaders });
 }
 
 // ----------------------------------------------------------------
@@ -1507,12 +1511,10 @@ export async function handleAppleAuth(_request: Request, env: Env): Promise<Resp
     state,
   });
 
-  return new Response(null, {
-    status: 302,
-    headers: {
-      'Location': `https://appleid.apple.com/auth/authorize?${params}`,
-    },
-  });
+  const headers = new Headers({ 'Location': `https://appleid.apple.com/auth/authorize?${params}` });
+  setOAuthStateCookie(headers, 'apple', nonce, '/auth/apple/callback');
+
+  return new Response(null, { status: 302, headers });
 }
 
 // ----------------------------------------------------------------
@@ -1541,7 +1543,8 @@ async function _handleAppleCallback(request: Request, env: Env, appUrl: string):
   const stateParam  = form.get('state');
   const redirectUri = `${env.WORKER_URL ?? 'https://api.morechard.com'}/auth/apple/callback`;
 
-  // ── Step 1: CSRF validation (HMAC-signed state, no cookie needed) ──
+  // ── Step 1: CSRF validation — HMAC-signed state proves we minted it;
+  // the cookie proves THIS browser is the one that requested it. ──
   if (typeof stateParam !== 'string' || typeof code !== 'string' || !stateParam || !code) {
     return new Response(null, { status: 302, headers: { 'Location': `${appUrl}/auth/login?error=csrf` } });
   }
@@ -1557,6 +1560,10 @@ async function _handleAppleCallback(request: Request, env: Env, appUrl: string):
     new TextEncoder().encode(expectedSig),
   );
   if (!sigsMatch) {
+    return new Response(null, { status: 302, headers: { 'Location': `${appUrl}/auth/login?error=csrf` } });
+  }
+  const cookieNonce = getOAuthStateCookie(request, 'apple');
+  if (!cookieNonce || !timingSafeEqual(new TextEncoder().encode(cookieNonce), new TextEncoder().encode(nonce))) {
     return new Response(null, { status: 302, headers: { 'Location': `${appUrl}/auth/login?error=csrf` } });
   }
 
@@ -1634,10 +1641,9 @@ async function _handleAppleCallback(request: Request, env: Env, appUrl: string):
     .run();
 
   // ── Step 6: Redirect to frontend ─────────────────────────────
-  return new Response(null, {
-    status: 302,
-    headers: { 'Location': `${appUrl}/auth/callback?slt=${rawSlt}` },
-  });
+  const successHeaders = new Headers({ 'Location': `${appUrl}/auth/callback?slt=${rawSlt}` });
+  clearOAuthStateCookie(successHeaders, 'apple', '/auth/apple/callback');
+  return new Response(null, { status: 302, headers: successHeaders });
 }
 
 // ----------------------------------------------------------------
