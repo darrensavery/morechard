@@ -304,30 +304,35 @@ This binds the live `morechard` DB, production env vars, and live Stripe keys.
 Cloudflare Pages auto-builds a preview on every push to a non-`main` branch, for
 **both** `morechard-app` and `morechard-marketing` — this is the frontend's
 equivalent of the Worker's blue/green: `main` is always the live "blue" site
-(`app.morechard.com`, `morechard.com`), and the current branch is always a
-live "green" preview you can open and test before merging.
+(`app.morechard.com`, `morechard.com`), and a branch called **`preview`** is
+always a live "green" preview you can open and test before merging.
 
-**Use the branch-alias URL, not the per-deployment hash URL:**
+**Convention (adopted 2026-09-14): always push in-progress/review work to a
+branch literally named `preview`** (rename/force-push over it as needed —
+don't create new descriptively-named branches for this workflow), so the
+preview URL is a fixed, bookmarkable link:
 ```
-https://<branch-name>.moneysteps.pages.dev            # app preview
-https://<branch-name>.morechard-marketing.pages.dev   # marketing preview
+https://preview.moneysteps.pages.dev            # app preview
+https://preview.morechard-marketing.pages.dev   # marketing preview
 ```
 (`moneysteps` is `morechard-app`'s Pages project's legacy pre-rebrand name —
-the project itself was never renamed, only the domain it serves.)
+the project itself was renamed but the `.pages.dev` subdomain slug is
+permanent; `wrangler pages project` has no rename command, and migrating to
+a new project would require a live-domain DNS cutover for a purely cosmetic
+win. Not worth it since customers only ever see `app.morechard.com`.)
 
 Verified 2026-09-14: on this account, the **per-deployment hash URL** that
 `wrangler pages deployment list` prints in its `Deployment` column (e.g.
 `https://47ec1458.moneysteps.pages.dev`) returns a 404 "nothing is here yet"
 — those unique-deployment aliases are not reachable here, only the
-**branch-alias** URL above is. Branch-slashes/special characters get
-sanitized to hyphens in the subdomain the same way Cloudflare does it
-elsewhere (see the Worker's `pr-<branch>-...` alias below) — if in doubt,
-run `npx wrangler pages deployment list --project-name morechard-app` (or
-`morechard-marketing`) and read the `Branch` column to confirm the exact
-slug, or check the deployment's `Build` link in the Cloudflare dashboard.
+**branch-alias** URL above is.
 
-The branch-alias URL always serves the **latest** push to that branch — no
-need for a new link after each additional commit.
+The branch-alias URL always serves the **latest** push to the `preview`
+branch — no need for a new link after each additional commit. A fresh push
+takes a minute or two to build before the alias updates; a 404 or stale
+content right after pushing usually just means the build is still running
+(check `npx wrangler pages deployment list --project-name morechard-app`
+for status `Idle` = done vs `Active` = still building).
 
 Once you've verified the branch preview looks right, merge/push to `main` to
 promote it live (same mental model as the Worker's `deploy:promote` — except
