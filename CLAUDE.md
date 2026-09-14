@@ -299,6 +299,41 @@ cd worker && npx wrangler deploy --env production
 This binds the live `morechard` DB, production env vars, and live Stripe keys.
 **Never run `wrangler deploy` without `--env production`** — it deploys dev bindings over the production worker.
 
+### Accessing the Pages preview site (green/blue for the frontend)
+
+Cloudflare Pages auto-builds a preview on every push to a non-`main` branch, for
+**both** `morechard-app` and `morechard-marketing` — this is the frontend's
+equivalent of the Worker's blue/green: `main` is always the live "blue" site
+(`app.morechard.com`, `morechard.com`), and the current branch is always a
+live "green" preview you can open and test before merging.
+
+**Use the branch-alias URL, not the per-deployment hash URL:**
+```
+https://<branch-name>.moneysteps.pages.dev            # app preview
+https://<branch-name>.morechard-marketing.pages.dev   # marketing preview
+```
+(`moneysteps` is `morechard-app`'s Pages project's legacy pre-rebrand name —
+the project itself was never renamed, only the domain it serves.)
+
+Verified 2026-09-14: on this account, the **per-deployment hash URL** that
+`wrangler pages deployment list` prints in its `Deployment` column (e.g.
+`https://47ec1458.moneysteps.pages.dev`) returns a 404 "nothing is here yet"
+— those unique-deployment aliases are not reachable here, only the
+**branch-alias** URL above is. Branch-slashes/special characters get
+sanitized to hyphens in the subdomain the same way Cloudflare does it
+elsewhere (see the Worker's `pr-<branch>-...` alias below) — if in doubt,
+run `npx wrangler pages deployment list --project-name morechard-app` (or
+`morechard-marketing`) and read the `Branch` column to confirm the exact
+slug, or check the deployment's `Build` link in the Cloudflare dashboard.
+
+The branch-alias URL always serves the **latest** push to that branch — no
+need for a new link after each additional commit.
+
+Once you've verified the branch preview looks right, merge/push to `main` to
+promote it live (same mental model as the Worker's `deploy:promote` — except
+for Pages this happens automatically on the `main` push, there's no separate
+promote step).
+
 ### Applying a migration to production
 
 Simple migrations (ALTER TABLE, CREATE TABLE, CREATE INDEX — no triggers):
@@ -428,5 +463,5 @@ cd worker && npx wrangler d1 migrations apply morechard --remote --env productio
 ### **Infrastructure**
 - [x] JWT storage model migrated off `localStorage` — web now uses an `HttpOnly; Secure; SameSite=Lax` cookie (`mc_token`) + CSRF header check (`X-Morechard-Client`), native (Capacitor) uses Keychain/Keystore-backed secure storage instead of `localStorage`/Bearer-in-JS. Closes finding #4 from the 2026-07-15 production security audit (Pass 6). Spec: `docs/superpowers/specs/2026-07-15-jwt-cookie-migration-design.md`; plan: `docs/superpowers/plans/2026-07-15-jwt-cookie-migration.md`. Live Playwright verification of the cookie/CSRF flow still outstanding — `wrangler dev --remote` doesn't run in the sandboxed dev environment used to build this (503 on every route, reproduces on unmodified `main`); the spec (`app/e2e/auth-cookie.spec.ts`) is written and statically verified against the route code but never executed.
 - [x] WebAuthn server-side verification shipped — web uses real `@simplewebauthn/server`/`browser` (COSE public key, signature-counter clone-detection with a dedicated Sentry alert fingerprint `webauthn-clone-detected`); native (Capacitor) uses a Web-Crypto ECDSA key pair in IndexedDB gated by a native biometric prompt (`@aparajita/capacitor-biometric-auth`), no custom Swift/Kotlin. Both unlock the device and re-issue a real session on success, unifying the old separate "unlock" and "login" concepts. Closes finding #1 from the 2026-07-15 production security audit (Pass 7) — the other half of the original JWT/WebAuthn handoff. Spec: `docs/superpowers/specs/2026-07-16-webauthn-verification-design.md`; plan: `docs/superpowers/plans/2026-07-16-webauthn-verification.md`. No live device/browser verification was possible in the build environment (no iOS/Android device or emulator, `wrangler dev --remote` 503s here) — ships verified by unit tests + code review only; needs real end-to-end verification on actual hardware.
-- [x] Set up Worker blue/green deploys with GitHub Actions auto-deploy to production on merge to main — implemented via Cloudflare Worker Versions & Gradual Deployments (`.github/workflows/worker-deploy.yml`) instead of a separate staging Worker/D1: every branch/PR gets a live preview version against the real production DB (no separate staging DB to keep in sync), and merging to `main` auto-promotes to 100% traffic. **Blocked on user action**: add `CLOUDFLARE_API_TOKEN` + `CLOUDFLARE_ACCOUNT_ID` repo secrets in GitHub before this runs. The app/Pages side already got this for free — Cloudflare Pages auto-builds a live preview per branch/PR.
+- [x] Set up Worker blue/green deploys with GitHub Actions auto-deploy to production on merge to main — implemented via Cloudflare Worker Versions & Gradual Deployments (`.github/workflows/worker-deploy.yml`) instead of a separate staging Worker/D1: every branch/PR gets a live preview version against the real production DB (no separate staging DB to keep in sync), and merging to `main` auto-promotes to 100% traffic. **Blocked on user action**: add `CLOUDFLARE_API_TOKEN` + `CLOUDFLARE_ACCOUNT_ID` repo secrets in GitHub before this runs. The app/Pages side already got this for free — Cloudflare Pages auto-builds a live preview per branch/PR; see "Accessing the Pages preview site" above for the correct preview URL pattern (the per-deployment hash URL 404s on this account — use the branch-alias URL).
 - [ ] Custom domain for the API worker (`api.morechard.com`) — removes `darren-savery.workers.dev` from the Google OAuth consent screen; requires adding custom domain in Cloudflare Workers dashboard, updating redirect URI in Google Cloud Console, and updating the hard-coded `redirectUri` in `worker/src/routes/auth.ts`
