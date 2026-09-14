@@ -72,28 +72,53 @@
 
 /*
  * Mobile navbar fixes.
- * 1) Infima puts the sidebar toggle BEFORE the brand in source order, so on
- *    mobile the hamburger sits top-left with the logo to its right — the
- *    opposite of the main marketing site (morechard.com), which puts the
- *    logo first and the toggle on the right. Reorder within the existing
- *    flex container (.navbar__items) to match.
+ * 1) Infima puts the sidebar toggle at the START of the LEFT flex group
+ *    (.navbar__items), so on mobile it sits top-left with the logo next to
+ *    it — the opposite of the main marketing site (morechard.com), which
+ *    puts the toggle at the true top-right corner, past the search icon.
+ *    The toggle and the search box live in two DIFFERENT flex containers
+ *    (.navbar__items vs .navbar__items--right), so a same-container `order`
+ *    swap can only move it past the logo, not past the search icon too —
+ *    confirmed by testing that approach live before landing on this one.
+ *    Pin it to the corner with absolute positioning instead — Docusaurus's
+ *    own search container already does exactly this on mobile
+ *    (position: absolute; right: var(--ifm-navbar-padding-horizontal), see
+ *    @docusaurus/theme-classic Navbar/Search/styles.module.css), which is
+ *    exactly why naively giving the toggle that same `right` offset made
+ *    them overlap each other — confirmed via computed-style inspection.
+ *    The search container's own class is build-hashed (CSS module), so it
+ *    can't be targeted directly without depending on an internal name that
+ *    can change on any future build. Instead, override the CSS variable it
+ *    reads for that offset — scoped to only the search's own ancestor
+ *    (.navbar__items--right), which the toggle (a sibling subtree under
+ *    .navbar__items) never inherits from — so this widens the gap the
+ *    search container positions itself against without touching the
+ *    toggle or the navbar's general padding anywhere else.
  * 2) The search-local plugin collapses the input to an icon (width: 2rem)
  *    when unfocused below 576px, but on focus it reverts to Infima's fixed
- *    9rem/12.5rem width regardless of how much room the logo+toggle already
- *    used — on a narrow enough device that overflows and overlaps the logo.
- *    Cap it with calc() against the viewport so it can never exceed the
- *    space actually left after the toggle+brand, however wide those are.
+ *    9rem/12.5rem width regardless of how much room is actually left on the
+ *    LEFT (logo) side — on a narrow enough device that overflows and
+ *    overlaps the logo. Cap it with calc() so it can't exceed that space.
  */
 @media (max-width: 996px) {
+  .navbar__inner {
+    position: relative;
+  }
   .navbar__toggle {
-    order: 2;
+    position: absolute;
+    top: 50%;
+    right: var(--ifm-navbar-padding-horizontal);
+    transform: translateY(-50%);
+    z-index: 1;
   }
-  .navbar__brand {
-    order: 1;
-  }
-  .navbar__items > .navbar__toggle {
-    margin-left: 0.5rem;
-    margin-right: 0;
+  .navbar__items--right {
+    /* NOT calc(var(--ifm-navbar-padding-horizontal) + ...) — a custom property
+       referencing itself on the same selector is a cyclic reference per the
+       CSS spec, which makes the whole declaration invalid (confirmed via
+       computed-style inspection: right fell back to auto/0px). 1rem is
+       Infima's own default for this variable; add the toggle's reserved
+       width to that fixed base instead of self-referencing it. */
+    --ifm-navbar-padding-horizontal: calc(1rem + 2.75rem);
   }
 }
 
