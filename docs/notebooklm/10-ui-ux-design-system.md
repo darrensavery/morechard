@@ -73,8 +73,9 @@ premium shell only), `#d4a017` gold accent.
 - Section labels: `text-[13px] font-extrabold uppercase tracking-wider text-[var(--color-text-muted)]`.
 - Button labels: weight 600, sentence case, no all-caps.
 - iOS Dynamic Type support: `--os-font-scale` CSS var is written by native `AppDelegate.swift`;
-  `html { font-size: calc(16px * var(--os-font-scale, 1)) }` — don't hardcode a root font-size
-  that would fight this.
+  `html { font-size: calc(17px * var(--os-font-scale, 1)) }` — don't hardcode a root font-size
+  that would fight this. (Base bumped 16px → 17px 2026-09-14: 16px Manrope body copy read
+  slightly small next to reference sites.)
 - Android WebView font-boosting fix: `html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }`
   stops Chromium font-boosting from stacking with native `textZoom`. Don't remove this.
 

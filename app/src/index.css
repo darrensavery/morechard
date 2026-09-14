@@ -206,7 +206,10 @@
      own. Web/PWA never sets this var, so it defaults to 1 and the browser's
      own zoom/font-size handling (rem-based, see body below) takes over. */
   html {
-    font-size: calc(16px * var(--os-font-scale, 1));
+    /* Base bumped 16px -> 17px 2026-09-14: user + wife both read the 16px
+       Manrope body copy as slightly small next to reference sites (measured
+       psycholog-online.co.uk body text at 17.6px). */
+    font-size: calc(17px * var(--os-font-scale, 1));
     /* Android WebView auto-boosts font size on narrow viewports (Chromium
        "font boosting"/text autosizing), independent of and additive to the
        explicit textZoom MainActivity.java sets from Configuration.fontScale.
