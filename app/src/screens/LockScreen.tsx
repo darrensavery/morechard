@@ -392,6 +392,7 @@ export function LockScreen() {
           title={`Log out of ${identity.display_name}'s account?`}
           description="Your family's data stays safe — you'll need to log back in to use Morechard on this phone."
           confirmLabel="Log out"
+          destructive={false}
           onConfirm={confirmLogout}
           onCancel={() => setConfirmingLogout(false)}
         />

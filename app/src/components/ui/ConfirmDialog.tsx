@@ -45,10 +45,10 @@ export function ConfirmDialog({
           )}
         </div>
         <div className="flex gap-2.5">
-          <Button variant="outline" size="lg" className="flex-1" onClick={onCancel}>
+          <Button variant="ghost" size="lg" className="flex-1" onClick={onCancel}>
             {cancelLabel}
           </Button>
-          <Button variant={destructive ? 'destructive' : 'default'} size="lg" className="flex-1" onClick={onConfirm}>
+          <Button variant={destructive ? 'destructive' : 'outline'} size="lg" className="flex-1" onClick={onConfirm}>
             {confirmLabel}
           </Button>
         </div>

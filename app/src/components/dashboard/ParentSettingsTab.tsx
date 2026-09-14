@@ -605,6 +605,7 @@ onRelocate={handleRelocate} /></ProfileSection>
           description={pl ? 'Dane rodziny są bezpieczne.' : "Your family's data stays safe."}
           confirmLabel={pl ? 'Wyloguj się' : 'Log out'}
           cancelLabel={pl ? 'Anuluj' : 'Cancel'}
+          destructive={false}
           onConfirm={async () => {
             setConfirmingLogout(false)
             clearDeviceIdentity()
