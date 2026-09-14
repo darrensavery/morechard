@@ -22,8 +22,12 @@ export default defineConfig({
       workbox: {
         globDirectory: path.resolve(__dirname, '../dist'),
         globPatterns: ['**/*.{js,css,html,svg,png,ico,webmanifest,woff2,otf}'],
-        // The main HTML entry is a SPA shell — serve it for all navigation misses
-        navigateFallback: '/index.html',
+        // The main HTML entry is a SPA shell — serve it for all navigation misses.
+        // Must be '/', not '/index.html' — Cloudflare Pages 308-redirects bare
+        // /index.html to /, and Safari refuses to complete a navigation with a
+        // service-worker response that carries a redirect (unlike Chrome), which
+        // is what broke Google/Apple login callbacks on iOS Safari.
+        navigateFallback: '/',
         navigateFallbackDenylist: [/^\/api/, /^\/auth(?!\/(verify|callback))/],
         // Immutable hashed assets — cache-first, no expiry
         runtimeCaching: [
