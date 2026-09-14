@@ -9,10 +9,12 @@ if (!Array.prototype.at) {
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { initAnalytics } from './lib/analytics'
+import { initPwaUpdate } from './lib/pwaUpdate'
 import './index.css'
 import App from './App.tsx'
 
 initAnalytics()
+initPwaUpdate()
 
 // Render the app immediately — no blocking on Sentry
 createRoot(document.getElementById('root')!).render(

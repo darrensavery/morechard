@@ -16,6 +16,11 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
+      // Registration is done in app/src/lib/pwaUpdate.ts via virtual:pwa-register
+      // instead — the auto-injected register script only calls
+      // navigator.serviceWorker.register() with no update detection, which
+      // left the app requiring several force-closes to pick up a new deploy.
+      injectRegister: false,
       // Write SW into dist/ directly (same outDir as the rest of the build)
       outDir: path.resolve(__dirname, '../dist'),
       // Precache all assets emitted by Vite — hashed filenames are safe to cache forever
