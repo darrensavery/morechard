@@ -49,7 +49,7 @@ export function ChoresTab({ familyId, child, children }: Props) {
   const [editingChore, setEditingChore]   = useState<Chore | null>(null)
   const [expandedId, setExpandedId]       = useState<string | null>(null)
   const [choreSort, setChoreSort]         = useState<'default' | 'name-desc' | 'name-asc' | 'amount-desc' | 'amount-asc' | 'due-date'>('default')
-  const [toast, setToast]                 = useState<{ choreId: string; title: string } | null>(null)
+  const [toast, setToast]                 = useState<{ choreId: string; title: string; deleted: boolean } | null>(null)
   const toastTimerRef                     = useRef<ReturnType<typeof setTimeout> | null>(null)
   // One-time swipe-to-archive coachmark — peeks the first card, then never again.
   const [showSwipeHint, setShowSwipeHint] = useState(() => !hasSeenSwipeArchiveHint())
@@ -102,6 +102,10 @@ export function ChoresTab({ familyId, child, children }: Props) {
   async function handleArchive(id: string) {
     const chore = chores.find(c => c.id === id)
     if (!chore) return
+    // A chore with zero real completions has nothing to protect, so the
+    // server hard-deletes it instead of archiving it forever — see
+    // handleChoreArchive. This just decides the toast copy in advance.
+    const willDelete = chore.completion_count === 0
 
     // Optimistic remove
     setChores(prev => prev.filter(c => c.id !== id))
@@ -109,7 +113,7 @@ export function ChoresTab({ familyId, child, children }: Props) {
 
     // Show toast
     if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
-    setToast({ choreId: id, title: chore.title })
+    setToast({ choreId: id, title: chore.title, deleted: willDelete })
     toastTimerRef.current = setTimeout(async () => {
       setToast(null)
       await archiveChore(id)
@@ -120,7 +124,7 @@ export function ChoresTab({ familyId, child, children }: Props) {
   async function handleUndoArchive() {
     if (!toast) return
     if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
-    // Restore chore to list without hitting the server (was never archived)
+    // Restore chore to list without hitting the server (nothing was sent yet)
     setToast(null)
     await load()
   }
@@ -515,7 +519,7 @@ export function ChoresTab({ familyId, child, children }: Props) {
             />
           </svg>
         )}
-        <span>Chore archived.</span>
+        <span>{toast?.deleted ? 'Chore deleted.' : 'Chore archived.'}</span>
         <button
           onClick={handleUndoArchive}
           className="font-bold text-[var(--brand-primary)] hover:opacity-80 transition-opacity cursor-pointer"
@@ -633,6 +637,9 @@ function ChoreCard({ chore, plans, expanded, onToggle, onArchive, onEdit, onTogg
   onPeekComplete?: () => void
 }) {
   const [hovered, setHovered] = useState(false)
+  // Never actually completed/submitted — swiping/tapping this one deletes it
+  // outright instead of archiving (see handleChoreArchive server-side).
+  const canDelete = chore.completion_count === 0
   const dueDateObj = chore.due_date && /^\d{4}-\d{2}-\d{2}$/.test(chore.due_date) ? new Date(chore.due_date + 'T00:00:00') : null
   const isOverdue = !!dueDateObj && chore.due_date! < new Date().toLocaleDateString('sv')
   const plannedDays = plans.map(p => p.day_of_week - 1)
@@ -669,7 +676,7 @@ function ChoreCard({ chore, plans, expanded, onToggle, onArchive, onEdit, onTogg
   }
 
   return (
-    <SwipeRevealCard onAction={onArchive} actionLabel="Archive" className="rounded-xl overflow-hidden" autoPeek={autoPeek} onPeekComplete={onPeekComplete}>
+    <SwipeRevealCard onAction={onArchive} actionLabel={canDelete ? 'Delete' : 'Archive'} className="rounded-xl overflow-hidden" autoPeek={autoPeek} onPeekComplete={onPeekComplete}>
     <div
       className={`rounded-xl ${bgClass} ${accentBorderClass}`}
       style={shadowStyle}
@@ -794,9 +801,9 @@ function ChoreCard({ chore, plans, expanded, onToggle, onArchive, onEdit, onTogg
             </div>
           </div>
 
-          {/* Edit + Archive row — swipe-left is the fast path on touch, but Archive
-              stays reachable here too: swipe is mouse-drag-only on desktop and has
-              no keyboard/assistive-tech path at all. */}
+          {/* Edit + Archive/Delete row — swipe-left is the fast path on touch, but
+              this stays reachable here too: swipe is mouse-drag-only on desktop and
+              has no keyboard/assistive-tech path at all. */}
           <div className="pt-1 flex items-center gap-2">
             <button
               onClick={onEdit}
@@ -809,13 +816,19 @@ function ChoreCard({ chore, plans, expanded, onToggle, onArchive, onEdit, onTogg
             </button>
             <button
               onClick={onArchive}
-              aria-label="Archive chore"
-              title="Archive chore"
+              aria-label={canDelete ? 'Delete chore' : 'Archive chore'}
+              title={canDelete ? 'Delete chore' : 'Archive chore'}
               className="tap-target-44 shrink-0 w-9 h-9 inline-flex items-center justify-center rounded-lg border border-[var(--color-border)] text-[var(--color-text-muted)] hover:border-red-400 hover:text-red-500 transition-colors cursor-pointer"
             >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/>
-              </svg>
+              {canDelete ? (
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/>
+                </svg>
+              ) : (
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/>
+                </svg>
+              )}
             </button>
           </div>
         </div>

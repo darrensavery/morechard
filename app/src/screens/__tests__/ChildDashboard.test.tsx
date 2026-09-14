@@ -135,6 +135,7 @@ const MOCK_CHORE = {
   flash_deadline: null, archived: 0, proof_required: 0, auto_approve: 0,
   icon_key: null,
   child_name: 'Kid', parent_name: 'Parent', created_at: 0, updated_at: 0,
+  completion_count: 0,
 }
 
 describe('ChildDashboard — contextual push-permission prompt', () => {

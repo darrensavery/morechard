@@ -4,7 +4,9 @@
  * POST   /api/chores                  Parent creates a job
  * GET    /api/chores                  List jobs (family_id, child_id?, archived?)
  * PATCH  /api/chores/:id              Parent edits a job
- * DELETE /api/chores/:id              Parent archives a job (soft delete)
+ * DELETE /api/chores/:id              Parent removes a job — hard-deletes if it
+ *                                      has no completion/ledger history, otherwise
+ *                                      soft-archives (see handleChoreArchive)
  * POST   /api/chores/:id/submit       Child marks job done → completion record (or instant settlement if auto_approve)
  * POST   /api/chores/:id/restore      Parent restores an archived job
  */
@@ -157,7 +159,8 @@ export async function handleChoreList(request: Request, env: Env): Promise<Respo
   // BUG-030 fix: exclude expired flash chores so children can't claim tasks they cannot submit.
   if (assigned_to === 'anyone') {
     const { results } = await env.DB.prepare(
-      `SELECT c.*, NULL as child_name, p.display_name as parent_name
+      `SELECT c.*, NULL as child_name, p.display_name as parent_name,
+         (SELECT COUNT(1) FROM completions cc WHERE cc.chore_id = c.id AND cc.status != 'available') as completion_count
        FROM chores c
        LEFT JOIN users p ON p.id = c.created_by
        WHERE c.family_id = ? AND c.assigned_to = 'anyone' AND c.archived = 0
@@ -176,7 +179,8 @@ export async function handleChoreList(request: Request, env: Env): Promise<Respo
     // them, so showing them causes confusing "deadline has passed" 409 errors.
     // Parent view (effectiveChildId=null) still returns all chores for management.
     stmt = env.DB.prepare(
-      `SELECT c.*, u.display_name as child_name, p.display_name as parent_name
+      `SELECT c.*, u.display_name as child_name, p.display_name as parent_name,
+         (SELECT COUNT(1) FROM completions cc WHERE cc.chore_id = c.id AND cc.status != 'available') as completion_count
        FROM chores c
        LEFT JOIN users u ON u.id = c.assigned_to
        JOIN users p ON p.id = c.created_by
@@ -186,7 +190,8 @@ export async function handleChoreList(request: Request, env: Env): Promise<Respo
     ).bind(family_id, effectiveChildId, archived);
   } else {
     stmt = env.DB.prepare(
-      `SELECT c.*, u.display_name as child_name, p.display_name as parent_name
+      `SELECT c.*, u.display_name as child_name, p.display_name as parent_name,
+         (SELECT COUNT(1) FROM completions cc WHERE cc.chore_id = c.id AND cc.status != 'available') as completion_count
        FROM chores c
        LEFT JOIN users u ON u.id = c.assigned_to
        JOIN users p ON p.id = c.created_by
@@ -316,7 +321,17 @@ export async function handleChoreUpdate(request: Request, env: Env, id: string):
 }
 
 // ----------------------------------------------------------------
-// DELETE /api/chores/:id  (soft archive)
+// DELETE /api/chores/:id
+//
+// A chore with any real completion/ledger history (submitted, approved,
+// sent back for redo, rejected, or paid) is soft-archived — its
+// completions/ledger rows carry a chore_id FK, and the ledger is an
+// append-only hash chain, so it can never be hard-deleted.
+//
+// A chore with zero history (created by mistake, never touched) has
+// nothing to protect, so it's hard-deleted outright rather than sitting
+// in the archive list forever. Re-checked server-side on every call —
+// never trust the client's view of the chore's history.
 // ----------------------------------------------------------------
 export async function handleChoreArchive(request: Request, env: Env, id: string): Promise<Response> {
   const auth = (request as AuthedRequest).auth;
@@ -329,12 +344,31 @@ export async function handleChoreArchive(request: Request, env: Env, id: string)
   if (chore.family_id !== auth.family_id) return error('Forbidden', 403);
   if (chore.is_seed) return error('Seed chores cannot be deleted in the demo', 403);
 
+  const history = await env.DB
+    .prepare(
+      `SELECT (
+         EXISTS (SELECT 1 FROM completions WHERE chore_id = ? AND status != 'available')
+         OR EXISTS (SELECT 1 FROM ledger WHERE chore_id = ?)
+       ) as has_history`
+    )
+    .bind(id, id)
+    .first<{ has_history: number }>();
+
+  if (!history?.has_history) {
+    await env.DB.batch([
+      env.DB.prepare('DELETE FROM plans WHERE chore_id = ?').bind(id),
+      env.DB.prepare(`DELETE FROM completions WHERE chore_id = ? AND status = 'available'`).bind(id),
+      env.DB.prepare('DELETE FROM chores WHERE id = ?').bind(id),
+    ]);
+    return json({ ok: true, deleted: true });
+  }
+
   await env.DB
     .prepare('UPDATE chores SET archived = 1, updated_at = ? WHERE id = ?')
     .bind(Math.floor(Date.now() / 1000), id)
     .run();
 
-  return json({ ok: true });
+  return json({ ok: true, deleted: false });
 }
 
 // ----------------------------------------------------------------

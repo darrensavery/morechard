@@ -497,6 +497,10 @@ export interface Chore {
   icon_key: string | null;
   child_name: string; parent_name: string;
   created_at: number; updated_at: number;
+  /** Count of real completions (submitted/approved/redone/rejected — excludes
+   *  the lazily-generated 'available' placeholder). Zero means this chore has
+   *  never actually been touched, so it can be hard-deleted instead of archived. */
+  completion_count: number;
 }
 
 export async function getChores(params: { family_id: string; child_id?: string; archived?: boolean; assigned_to?: string }): Promise<{ chores: Chore[] }> {
@@ -521,8 +525,8 @@ export async function updateChore(id: string, body: Partial<Chore>): Promise<Cho
   return request(`/api/chores/${id}`, { method: 'PATCH', body: JSON.stringify(body) });
 }
 
-export async function archiveChore(id: string): Promise<void> {
-  await request(`/api/chores/${id}`, { method: 'DELETE' });
+export async function archiveChore(id: string): Promise<{ ok: boolean; deleted: boolean }> {
+  return request(`/api/chores/${id}`, { method: 'DELETE' });
 }
 
 export async function restoreChore(id: string): Promise<void> {
