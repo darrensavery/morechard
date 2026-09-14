@@ -21,6 +21,8 @@ const config: Config = {
 
   onBrokenLinks: 'throw',
 
+  clientModules: [require.resolve('./src/clientModules/posthog.js')],
+
   i18n: {
     defaultLocale: 'en',
     locales: ['en'],
