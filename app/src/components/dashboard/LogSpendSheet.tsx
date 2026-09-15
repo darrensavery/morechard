@@ -82,8 +82,8 @@ export function LogSpendSheet({ familyId, childId, currency, onClose, onSaved }:
   const [titleTouched,  setTitleTouched]  = useState(false)
   const [amountTouched, setAmountTouched] = useState(false)
 
-  useAndroidBack(true, onClose)
-  const { sheetRef, handleProps } = useDragToClose(onClose)
+  const { sheetRef, handleProps, close, panelStyle, backdropStyle } = useDragToClose(onClose)
+  useAndroidBack(true, close)
 
   useEffect(() => {
     getGoals(familyId, childId)
@@ -93,11 +93,12 @@ export function LogSpendSheet({ familyId, childId, currency, onClose, onSaved }:
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === 'Escape') onClose()
+      if (e.key === 'Escape') close()
     }
     document.addEventListener('keydown', handleKeyDown)
     return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [onClose])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const amountPence = Math.round(parseFloat(amountStr || '0') * 100)
   const canSubmit   = title.trim().length > 0 && amountPence > 0
@@ -133,14 +134,15 @@ export function LogSpendSheet({ familyId, childId, currency, onClose, onSaved }:
   const selectedGoal = goals.find(g => g.id === goalId)
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60" style={backdropStyle} onClick={close}>
       <div
         ref={sheetRef}
         role="dialog"
         aria-modal="true"
         aria-label="Log a spend"
         tabIndex={-1}
-        className="relative bg-[var(--color-surface)] rounded-t-3xl shadow-2xl w-full max-w-[560px] flex flex-col max-h-[92dvh] transition-transform duration-300"
+        className="relative bg-[var(--color-surface)] rounded-t-3xl shadow-2xl w-full max-w-[560px] flex flex-col max-h-[92dvh]"
+        style={panelStyle}
         onClick={e => e.stopPropagation()}
       >
         {/* Drag handle */}
@@ -159,7 +161,7 @@ export function LogSpendSheet({ familyId, childId, currency, onClose, onSaved }:
             </p>
           </div>
           <button
-            onClick={onClose}
+            onClick={close}
             className="tap-target-44 w-8 h-8 rounded-lg border border-[var(--color-border)] flex items-center justify-center text-[var(--color-text-muted)] hover:bg-[var(--color-surface-alt)] cursor-pointer"
             aria-label="Close"
           >

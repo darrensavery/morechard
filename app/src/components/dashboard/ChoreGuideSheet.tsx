@@ -5,7 +5,6 @@ import { useMarketRates, fuzzyMatch } from '../../hooks/useMarketRates';
 import { ErrorBox } from '../ui/ErrorBox';
 import { useAndroidBack } from '../../hooks/useAndroidBack';
 import { useDragToClose } from '../../hooks/useDragToClose';
-import { tick } from '../../lib/haptics';
 import { blurOnWheel, blockInvalidAmountKeys } from '../../lib/utils';
 import { createSuggestion, suggestChore, getSuggestions } from '../../lib/api';
 import type { MarketRate, Suggestion } from '../../lib/api';
@@ -78,7 +77,22 @@ interface Props {
   appView?: 'ORCHARD' | 'CLEAN';
 }
 
-export function ChoreGuideSheet({ open, onClose, familyId, context = null, currency = 'GBP', appView = 'ORCHARD' }: Props) {
+// The sheet only ever slides in from a fresh mount — it can't replay its
+// entrance if `open` flips true again on an already-mounted instance, and it
+// can't play an exit animation once `open` flips false and the parent stops
+// rendering it. So this wrapper mounts the animated sheet lazily on the
+// rising edge of `open` and keeps it mounted through its own closing
+// animation, rather than being driven by `open` directly.
+export function ChoreGuideSheet(props: Props) {
+  const [mounted, setMounted] = useState(props.open);
+  useEffect(() => {
+    if (props.open) setMounted(true);
+  }, [props.open]);
+  if (!mounted) return null;
+  return <ChoreGuideSheetInner {...props} onClose={() => { props.onClose(); setMounted(false); }} />;
+}
+
+function ChoreGuideSheetInner({ open, onClose, familyId, context = null, currency = 'GBP', appView = 'ORCHARD' }: Props) {
   const { rates, loading, error } = useMarketRates(currency);
 
   const symbol      = currencySymbol(currency);
@@ -130,15 +144,24 @@ export function ChoreGuideSheet({ open, onClose, familyId, context = null, curre
   const [editBusy,   setEditBusy]   = useState(false);
   const [editError,  setEditError]  = useState<string | null>(null);
 
-  useAndroidBack(open && !editRate && !newChoreOpen, onClose);
+  const { close, panelStyle } = useDragToClose(onClose);
+
+  // Defensive: play the close animation if something external flips `open`
+  // to false without going through this sheet's own close() gesture.
+  useEffect(() => {
+    if (!open) close();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
+
+  useAndroidBack(open && !editRate && !newChoreOpen, close);
   useAndroidBack(!!editRate, () => { setEditRate(null); setEditError(null); });
   useAndroidBack(newChoreOpen && !editRate, () => { setNewChoreOpen(false); setNewChoreError(null); });
 
-  const closeNewChore = () => { void tick(); setNewChoreOpen(false); setNewChoreError(null); }
-  const { sheetRef: newChoreSheetRef, handleProps: newChoreHandleProps } = useDragToClose(closeNewChore)
+  const resetNewChore = () => { setNewChoreOpen(false); setNewChoreError(null); }
+  const { sheetRef: newChoreSheetRef, handleProps: newChoreHandleProps, close: closeNewChore, panelStyle: newChorePanelStyle, backdropStyle: newChoreBackdropStyle } = useDragToClose(resetNewChore)
 
-  const closeEditRate = () => { void tick(); setEditRate(null); setEditError(null); }
-  const { sheetRef: editRateSheetRef, handleProps: editRateHandleProps } = useDragToClose(closeEditRate)
+  const resetEditRate = () => { setEditRate(null); setEditError(null); }
+  const { sheetRef: editRateSheetRef, handleProps: editRateHandleProps, close: closeEditRate, panelStyle: editRatePanelStyle, backdropStyle: editRateBackdropStyle } = useDragToClose(resetEditRate)
 
   useEffect(() => {
     if (!newChoreOpen) return;
@@ -147,7 +170,7 @@ export function ChoreGuideSheet({ open, onClose, familyId, context = null, curre
     }
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [newChoreOpen]);
+  }, [newChoreOpen, closeNewChore]);
 
   useEffect(() => {
     if (!editRate) return;
@@ -156,7 +179,7 @@ export function ChoreGuideSheet({ open, onClose, familyId, context = null, curre
     }
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [editRate]);
+  }, [editRate, closeEditRate]);
 
   async function handleNewChoreSuggest() {
     if (!familyId) return;
@@ -237,8 +260,6 @@ export function ChoreGuideSheet({ open, onClose, familyId, context = null, curre
     }
   }
 
-  if (!open) return null;
-
   const noResults = !loading && !error && filtered.length === 0 && search.length > 0;
 
   // Success state
@@ -263,7 +284,7 @@ export function ChoreGuideSheet({ open, onClose, familyId, context = null, curre
             : 'Your parent will review it and add it to your tasks if they approve.'}
         </p>
         <button
-          onClick={() => { setSuccess(false); onClose(); }}
+          onClick={() => { setSuccess(false); close(); }}
           className="rounded-full bg-[var(--brand-primary)] text-[--color-text-on-brand] px-8 py-3 text-sm font-semibold"
         >
           Done
@@ -274,7 +295,7 @@ export function ChoreGuideSheet({ open, onClose, familyId, context = null, curre
   }
 
   return createPortal(
-    <div className="fixed inset-0 z-[100] flex flex-col bg-[var(--color-bg)] overflow-hidden overscroll-none">
+    <div className="fixed inset-0 z-[100] flex flex-col bg-[var(--color-bg)] overflow-hidden overscroll-none" style={panelStyle}>
       {/* ── Sticky top: header + search + category pills ───────────── */}
       <div className="shrink-0 border-b border-[--color-border] px-4 pt-6 pb-0">
         <div className="flex items-center justify-between mb-3">
@@ -282,7 +303,7 @@ export function ChoreGuideSheet({ open, onClose, familyId, context = null, curre
             <h2 className="text-lg font-semibold text-[--color-text]">Chore Guide</h2>
             <p className="text-[0.6875rem] text-[var(--color-text-muted)] mt-0.5">What other families pay</p>
           </div>
-          <button onClick={onClose} className="tap-target-44 w-8 h-8 rounded-lg border border-[var(--color-border)] flex items-center justify-center text-[var(--color-text-muted)] hover:bg-[var(--color-surface-alt)] cursor-pointer" aria-label="Close">
+          <button onClick={close} className="tap-target-44 w-8 h-8 rounded-lg border border-[var(--color-border)] flex items-center justify-center text-[var(--color-text-muted)] hover:bg-[var(--color-surface-alt)] cursor-pointer" aria-label="Close">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
           </button>
         </div>
@@ -461,7 +482,7 @@ export function ChoreGuideSheet({ open, onClose, familyId, context = null, curre
       {/* ── Suggest-a-new-chore bottom sheet (modal) ──────────────── */}
       {newChoreOpen && (
         <div className="absolute inset-0 z-20 flex flex-col justify-end">
-          <div className="absolute inset-0 bg-black/40" onClick={closeNewChore} />
+          <div className="absolute inset-0 bg-black/40" style={newChoreBackdropStyle} onClick={closeNewChore} />
           <div
             ref={newChoreSheetRef}
             role="dialog"
@@ -469,6 +490,7 @@ export function ChoreGuideSheet({ open, onClose, familyId, context = null, curre
             aria-label="Suggest a new chore"
             tabIndex={-1}
             className="relative bg-[var(--color-surface)] rounded-t-2xl px-5 pt-2 pb-8 max-h-[88vh] overflow-y-auto overscroll-contain"
+            style={newChorePanelStyle}
           >
             {/* Drag handle */}
             <div {...newChoreHandleProps}>
@@ -559,7 +581,7 @@ export function ChoreGuideSheet({ open, onClose, familyId, context = null, curre
       {/* Amount-edit bottom sheet */}
       {editRate && (
         <div className="absolute inset-0 z-10 flex flex-col justify-end">
-          <div className="absolute inset-0 bg-black/40" onClick={closeEditRate} />
+          <div className="absolute inset-0 bg-black/40" style={editRateBackdropStyle} onClick={closeEditRate} />
           <div
             ref={editRateSheetRef}
             role="dialog"
@@ -567,6 +589,7 @@ export function ChoreGuideSheet({ open, onClose, familyId, context = null, curre
             aria-label={`Suggest this chore — ${editRate.canonical_name}`}
             tabIndex={-1}
             className="relative bg-[var(--color-surface)] rounded-t-2xl px-5 pt-2 pb-8 space-y-4"
+            style={editRatePanelStyle}
           >
             {/* Drag handle */}
             <div {...editRateHandleProps}>

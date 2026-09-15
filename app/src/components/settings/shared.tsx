@@ -15,7 +15,7 @@ import { Tooltip } from '../ui/Tooltip'
 // the main tabs (swipe left, starting near the right edge) so the gesture
 // feels the same everywhere in the app.
 
-export function useSwipeBack(onBack: (() => void) | undefined) {
+export function useSwipeBack(onBack: (() => void) | undefined, direction: 'left' | 'right' = 'left') {
   const startX = useRef<number | null>(null)
   const startY = useRef<number | null>(null)
 
@@ -32,7 +32,8 @@ export function useSwipeBack(onBack: (() => void) | undefined) {
       if (startX.current === null || startY.current === null) return
       const dx = e.changedTouches[0].clientX - startX.current
       const dy = Math.abs(e.changedTouches[0].clientY - startY.current)
-      if (dx < -40 && dy < 60) back()
+      const triggered = direction === 'left' ? dx < -40 : dx > 40
+      if (triggered && dy < 60) back()
       startX.current = null
       startY.current = null
     }
@@ -43,7 +44,7 @@ export function useSwipeBack(onBack: (() => void) | undefined) {
       document.removeEventListener('touchstart', onTouchStart)
       document.removeEventListener('touchend', onTouchEnd)
     }
-  }, [onBack])
+  }, [onBack, direction])
 }
 
 // ── Toast ─────────────────────────────────────────────────────────────────────

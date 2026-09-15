@@ -99,8 +99,8 @@ export function CreateChoreSheet({
   // Tooltip visibility for Skip Approval card
   const [showTooltip, setShowTooltip] = useState(false)
 
-  useAndroidBack(true, onClose)
-  const { sheetRef, handleProps } = useDragToClose(onClose)
+  const { sheetRef, handleProps, close, panelStyle, backdropStyle } = useDragToClose(onClose)
+  useAndroidBack(true, close)
 
   // ── Assignment state ────────────────────────────────────────────────────────
   const singleChild = children.length === 1 ? children[0] : null
@@ -183,11 +183,12 @@ export function CreateChoreSheet({
   // Escape closes the sheet
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === 'Escape') onClose()
+      if (e.key === 'Escape') close()
     }
     document.addEventListener('keydown', handleKeyDown)
     return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [onClose])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const triggerSpark = useCallback(() => {
     if (sparkTimerRef.current) clearTimeout(sparkTimerRef.current)
@@ -325,9 +326,9 @@ export function CreateChoreSheet({
       aria-label={isEditMode ? 'Edit chore' : 'New chore'}
       tabIndex={-1}
     >
-      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
+      <div className="absolute inset-0 bg-black/50" style={backdropStyle} onClick={close} />
 
-      <div ref={sheetRef} className="relative bg-[var(--color-surface)] rounded-t-3xl shadow-2xl max-w-[560px] w-full mx-auto flex flex-col max-h-[92svh] transition-transform duration-300">
+      <div ref={sheetRef} className="relative bg-[var(--color-surface)] rounded-t-3xl shadow-2xl max-w-[560px] w-full mx-auto flex flex-col max-h-[92svh]" style={panelStyle}>
 
         {/* Drag handle */}
         <div {...handleProps}>
@@ -347,7 +348,7 @@ export function CreateChoreSheet({
             )}
           </div>
           <button
-            onClick={onClose}
+            onClick={close}
             className="tap-target-44 w-8 h-8 rounded-lg border border-[var(--color-border)] flex items-center justify-center text-[var(--color-text-muted)] hover:bg-[var(--color-surface-alt)] cursor-pointer"
             aria-label="Close"
           >

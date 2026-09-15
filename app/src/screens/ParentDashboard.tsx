@@ -91,6 +91,53 @@ export function ParentDashboard() {
     document.addEventListener('keydown', handleKeyDown)
     return () => document.removeEventListener('keydown', handleKeyDown)
   }, [showSettings])
+
+  // Drag-to-close on the settings drawer — follows the finger like
+  // SwipeRevealCard on the Chores tab, then springs open or closed on
+  // release instead of a flat linear slide. Only active on the drawer's
+  // root menu view (sub-sections use their own left-swipe back nav).
+  const [settingsIsRoot, setSettingsIsRoot] = useState(true)
+  const [panelWidth, setPanelWidth] = useState(() => Math.min(360, window.innerWidth))
+  useEffect(() => {
+    function onResize() { setPanelWidth(Math.min(360, window.innerWidth)) }
+    window.addEventListener('resize', onResize)
+    return () => window.removeEventListener('resize', onResize)
+  }, [])
+  const [panelOffsetX, setPanelOffsetX] = useState(panelWidth)
+  const [panelDragging, setPanelDragging] = useState(false)
+  const [panelSnapping, setPanelSnapping] = useState<'open' | 'closed'>('closed')
+  const panelDragStartX = useRef<number | null>(null)
+  const panelDragStartOffset = useRef(0)
+
+  useEffect(() => {
+    setPanelSnapping(showSettings ? 'open' : 'closed')
+    setPanelOffsetX(showSettings ? 0 : panelWidth)
+  }, [showSettings, panelWidth])
+
+  function clampPanelOffset(v: number) {
+    return Math.max(0, Math.min(panelWidth, v))
+  }
+  function panelDragStart(x: number) {
+    if (!settingsIsRoot) return
+    panelDragStartX.current = x
+    panelDragStartOffset.current = panelOffsetX
+    setPanelDragging(true)
+  }
+  function panelDragMove(x: number) {
+    if (panelDragStartX.current === null) return
+    setPanelOffsetX(clampPanelOffset(panelDragStartOffset.current + (x - panelDragStartX.current)))
+  }
+  function panelDragEnd() {
+    if (panelDragStartX.current === null) return
+    panelDragStartX.current = null
+    setPanelDragging(false)
+    setPanelOffsetX(prev => {
+      const shouldClose = prev > Math.min(100, panelWidth * 0.3)
+      setPanelSnapping(shouldClose ? 'closed' : 'open')
+      if (shouldClose) setShowSettings(false)
+      return shouldClose ? panelWidth : 0
+    })
+  }
   const [showAddExpense,  setShowAddExpense]  = useState(false)
   const [showSettlement,  setShowSettlement]  = useState(false)
   const [poolRefreshKey, setPoolRefreshKey] = useState(0)
@@ -438,17 +485,37 @@ export function ParentDashboard() {
       {/* Drawer panel */}
       <div
         ref={settingsPanelRef}
-        className={`fixed top-0 right-0 bottom-0 z-50 w-[min(360px,100vw)] bg-[var(--color-bg)] flex flex-col shadow-2xl transition-transform duration-300 ease-in-out ${showSettings ? 'translate-x-0' : 'translate-x-full'}`}
+        className="fixed top-0 right-0 bottom-0 z-50 w-[min(360px,100vw)] bg-[var(--color-bg)] flex flex-col shadow-2xl"
+        style={{
+          transform: `translateX(${panelOffsetX}px)`,
+          transition: panelDragging
+            ? 'none'
+            : panelSnapping === 'open'
+              // Slight overshoot on the way open gives the drawer some
+              // momentum/weight instead of a linear, mechanical slide.
+              ? 'transform 340ms cubic-bezier(0.34, 1.56, 0.64, 1)'
+              : 'transform 280ms cubic-bezier(0.32, 0, 0.67, 0)',
+          touchAction: 'pan-y',
+        }}
         aria-modal="true"
         role="dialog"
         aria-label="Settings"
         tabIndex={-1}
+        onTouchStart={e => panelDragStart(e.touches[0].clientX)}
+        onTouchMove={e => panelDragMove(e.touches[0].clientX)}
+        onTouchEnd={panelDragEnd}
+        onTouchCancel={panelDragEnd}
+        onMouseDown={e => panelDragStart(e.clientX)}
+        onMouseMove={e => { if (panelDragStartX.current !== null) panelDragMove(e.clientX) }}
+        onMouseUp={panelDragEnd}
+        onMouseLeave={() => { if (panelDragStartX.current !== null) panelDragEnd() }}
       >
         <ParentSettingsTab
           familyId={familyId}
           online={online}
           onChildrenChange={setChildren}
           onClose={() => setShowSettings(false)}
+          onRootViewChange={setSettingsIsRoot}
           settingsJumpView={settingsJump.view}
           settingsJumpToken={settingsJump.token}
         />

@@ -87,7 +87,22 @@ interface Props {
   onUse?: (title: string, amount: number) => void;
 }
 
-export function RateGuideSheet({ open, onClose, currency = 'GBP', onUse }: Props) {
+// The sheet only ever slides in from a fresh mount — it can't replay its
+// entrance if `open` flips true again on an already-mounted instance, and it
+// can't play an exit animation once `open` flips false and the parent stops
+// rendering it. So this wrapper mounts the animated sheet lazily on the
+// rising edge of `open` and keeps it mounted through its own closing
+// animation, rather than being driven by `open` directly.
+export function RateGuideSheet(props: Props) {
+  const [mounted, setMounted] = useState(props.open);
+  useEffect(() => {
+    if (props.open) setMounted(true);
+  }, [props.open]);
+  if (!mounted) return null;
+  return <RateGuideSheetInner {...props} onClose={() => { props.onClose(); setMounted(false); }} />;
+}
+
+function RateGuideSheetInner({ open, onClose, currency = 'GBP', onUse }: Props) {
   const { rates, loading, error } = useMarketRates(currency);
   const symbol = currencySymbol(currency);
 
@@ -95,18 +110,25 @@ export function RateGuideSheet({ open, onClose, currency = 'GBP', onUse }: Props
   const [category, setCategory] = useState('All');
   const [sort,     setSort]     = useState<SortKey>('alpha');
 
-  const { sheetRef, handleProps } = useDragToClose(onClose);
+  const { sheetRef, handleProps, close, panelStyle, backdropStyle } = useDragToClose(onClose);
 
-  useAndroidBack(open, onClose);
+  useAndroidBack(true, close);
+
+  // Defensive: play the close animation if something external flips `open`
+  // to false without going through this sheet's own close() gesture.
+  useEffect(() => {
+    if (!open) close();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
 
   useEffect(() => {
-    if (!open) return;
     function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape') close();
     }
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [open, onClose]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const filtered: MarketRate[] = useMemo(() => {
     const base = rates.filter(r => {
@@ -127,19 +149,18 @@ export function RateGuideSheet({ open, onClose, currency = 'GBP', onUse }: Props
     return eligible.reduce((best, r) => (r.sample_count > best.sample_count ? r : best)).id;
   }, [filtered, search]);
 
-  if (!open) return null;
-
   const noResults = !loading && !error && filtered.length === 0 && search.length > 0;
 
   return createPortal(
-    <div className="fixed inset-0 z-[100] flex items-end justify-center bg-black/50" onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
+    <div className="fixed inset-0 z-[100] flex items-end justify-center bg-black/50" style={backdropStyle} onClick={e => { if (e.target === e.currentTarget) close(); }}>
       <div
         ref={sheetRef}
         role="dialog"
         aria-modal="true"
         aria-label="Rate Guide"
         tabIndex={-1}
-        className="relative bg-[var(--color-bg)] rounded-t-3xl shadow-2xl w-full max-w-[560px] flex flex-col h-[92svh] transition-transform duration-300"
+        className="relative bg-[var(--color-bg)] rounded-t-3xl shadow-2xl w-full max-w-[560px] flex flex-col h-[92svh]"
+        style={panelStyle}
       >
 
         {/* Drag handle */}
@@ -157,7 +178,7 @@ export function RateGuideSheet({ open, onClose, currency = 'GBP', onUse }: Props
               <p className="text-[0.6875rem] text-[var(--color-text-muted)] mt-0.5">What other families pay</p>
             </div>
             <button
-              onClick={onClose}
+              onClick={close}
               className="tap-target-44 w-8 h-8 rounded-lg border border-[var(--color-border)] flex items-center justify-center text-[var(--color-text-muted)] hover:bg-[var(--color-surface-alt)] cursor-pointer"
               aria-label="Close"
             >
@@ -227,7 +248,7 @@ export function RateGuideSheet({ open, onClose, currency = 'GBP', onUse }: Props
                 onClick={() => {
                   // Clear search and close so parent can open CreateChoreSheet with the typed title
                   if (onUse) onUse(search, 0);
-                  else onClose();
+                  else close();
                 }}
                 className="px-4 py-2 rounded-xl border border-[var(--brand-primary)] text-[var(--brand-primary)] text-[0.8125rem] font-semibold hover:bg-[color-mix(in_srgb,var(--brand-primary)_8%,transparent)] transition cursor-pointer"
               >

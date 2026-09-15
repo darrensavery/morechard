@@ -56,16 +56,17 @@ export function SavingsGrove({
   const [saving,     setSaving]     = useState(false)
   const [err,        setErr]        = useState<string | null>(null)
 
-  useAndroidBack(true, onClose)
-  const { sheetRef, handleProps } = useDragToClose(onClose)
+  const { sheetRef, handleProps, close, panelStyle, backdropStyle } = useDragToClose(onClose)
+  useAndroidBack(true, close)
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === 'Escape') onClose()
+      if (e.key === 'Escape') close()
     }
     document.addEventListener('keydown', handleKeyDown)
     return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [onClose])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const targetPence = useMemo(() => {
     const n = parseFloat(amountStr)
@@ -157,10 +158,10 @@ export function SavingsGrove({
       tabIndex={-1}
     >
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
+      <div className="absolute inset-0 bg-black/40" style={backdropStyle} onClick={close} />
 
       {/* Sheet */}
-      <div ref={sheetRef} className="relative bg-[var(--color-surface)] rounded-t-3xl max-h-[92svh] overflow-y-auto transition-transform duration-300">
+      <div ref={sheetRef} className="relative bg-[var(--color-surface)] rounded-t-3xl max-h-[92svh] overflow-y-auto" style={panelStyle}>
         {/* Drag handle */}
         <div {...handleProps}>
           <div className="w-10 h-1 rounded-full bg-[var(--color-border)]" />
@@ -174,7 +175,7 @@ export function SavingsGrove({
             </h2>
             <button
               type="button"
-              onClick={onClose}
+              onClick={close}
               className="tap-target-44 w-8 h-8 rounded-lg border border-[var(--color-border)] flex items-center justify-center text-[var(--color-text-muted)] hover:bg-[var(--color-surface-alt)] cursor-pointer"
               aria-label="Close"
             >

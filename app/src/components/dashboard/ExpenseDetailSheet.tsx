@@ -28,8 +28,8 @@ type Props = {
 type ReceiptState = 'idle' | 'loading' | 'loaded' | 'error';
 
 export function ExpenseDetailSheet({ expense: e, currentUserId, isCoParenting, onClose, onVoid }: Props) {
-  useAndroidBack(true, onClose);
-  const { sheetRef, handleProps } = useDragToClose(onClose);
+  const { sheetRef, handleProps, close, panelStyle, backdropStyle } = useDragToClose(onClose);
+  useAndroidBack(true, close);
 
   const [receiptState, setReceiptState] = useState<ReceiptState>('idle');
   const [receiptUrl, setReceiptUrl] = useState<string | null>(null);
@@ -39,11 +39,12 @@ export function ExpenseDetailSheet({ expense: e, currentUserId, isCoParenting, o
 
   useEffect(() => {
     function handleKeyDown(ev: KeyboardEvent) {
-      if (ev.key === 'Escape') onClose();
+      if (ev.key === 'Escape') close();
     }
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [onClose]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (!hasReceipt) return;
@@ -82,7 +83,8 @@ export function ExpenseDetailSheet({ expense: e, currentUserId, isCoParenting, o
       <button
         type="button"
         className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-        onClick={onClose}
+        style={backdropStyle}
+        onClick={close}
         aria-label="Close"
       />
 
@@ -93,7 +95,8 @@ export function ExpenseDetailSheet({ expense: e, currentUserId, isCoParenting, o
         aria-modal="true"
         aria-label={e.description}
         tabIndex={-1}
-        className="relative mt-auto w-full max-h-[90dvh] bg-[var(--color-surface)] rounded-t-2xl flex flex-col overflow-hidden shadow-2xl transition-transform duration-300"
+        className="relative mt-auto w-full max-h-[90dvh] bg-[var(--color-surface)] rounded-t-2xl flex flex-col overflow-hidden shadow-2xl"
+        style={panelStyle}
       >
 
         {/* Drag handle */}
@@ -113,7 +116,7 @@ export function ExpenseDetailSheet({ expense: e, currentUserId, isCoParenting, o
           </div>
           <button
             type="button"
-            onClick={onClose}
+            onClick={close}
             className="tap-target-44 shrink-0 w-8 h-8 rounded-lg border border-[var(--color-border)] flex items-center justify-center text-[var(--color-text-muted)] hover:bg-[var(--color-surface-alt)] active:bg-[var(--color-border)] transition-colors cursor-pointer"
             aria-label="Close"
           >

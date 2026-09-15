@@ -94,7 +94,7 @@ import { DataSettings }       from '../settings/sections/DataSettings'
 import { ReferralsSettings }  from '../settings/sections/ReferralsSettings'
 import { AboutSettings }      from '../settings/sections/AboutSettings'
 import { AvatarSVG }          from '../../lib/avatars'
-import { SettingsRow, useSwipeBack } from '../settings/shared'
+import { SettingsRow } from '../settings/shared'
 import { ConfirmDialog }      from '../ui/ConfirmDialog'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -120,6 +120,10 @@ interface Props {
   online:            boolean
   onChildrenChange:  (children: ChildRecord[]) => void
   onClose:           () => void
+  /** Reports whether the drawer is on its root menu view, so the parent drawer's
+   *  drag-to-close gesture knows when it's safe to take over (sub-sections use
+   *  their own left-swipe back nav instead). */
+  onRootViewChange?:  (isRoot: boolean) => void
   settingsJumpView?:  View
   settingsJumpToken?: number
 }
@@ -155,7 +159,7 @@ function SectionCard({ children }: { children: React.ReactNode }) {
 
 // ── Main component ────────────────────────────────────────────────────────────
 
-export function ParentSettingsTab({ familyId, online, onChildrenChange, onClose, settingsJumpView, settingsJumpToken }: Props) {
+export function ParentSettingsTab({ familyId, online, onChildrenChange, onClose, onRootViewChange, settingsJumpView, settingsJumpToken }: Props) {
   const identity        = getDeviceIdentity()
   // Treat as co-parent (less privileged) if identity is missing — never default to lead without identity
   const isLead          = identity != null && identity.parenting_role !== 'CO_PARENT'
@@ -176,9 +180,12 @@ export function ParentSettingsTab({ familyId, online, onChildrenChange, onClose,
     if (view.type === 'section') setView({ type: 'menu' })
     else onClose()
   })
-  // Swipe-right-to-close on the root Settings menu — sub-sections already get
-  // this via SectionHeader's onBack; the menu itself only had the X button.
-  useSwipeBack(view.type === 'menu' ? onClose : undefined)
+  // The parent drawer owns the drag-to-close gesture (it controls the panel's
+  // transform), but only when we're on the root menu — sub-sections use their
+  // own left-swipe back nav via SectionHeader's onBack instead.
+  useEffect(() => {
+    onRootViewChange?.(view.type === 'menu')
+  }, [view.type, onRootViewChange])
   const [children,      setChildren]      = useState<ChildRecord[]>([])
   const [family,        setFamily]        = useState<Record<string, unknown>>({})
   const [settings,      setSettings]      = useState<{ avatar_id: string; theme: string; locale: string } | null>(null)

@@ -90,16 +90,17 @@ export function AddExpenseSheet({ defaultSplitBp, currency, parentingMode, regio
   const [searchQuery, setSearchQuery] = useState('');
   const [showCategoryOverride, setShowCategoryOverride] = useState(false);
 
-  useAndroidBack(true, onClose);
-  const { sheetRef, handleProps } = useDragToClose(onClose);
+  const { sheetRef, handleProps, close, panelStyle, backdropStyle } = useDragToClose(onClose);
+  useAndroidBack(true, close);
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape') close();
     }
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [onClose]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const regionPresets = getPresetsForRegion(region);
   const searchResults = searchQuery.trim()
@@ -165,14 +166,15 @@ export function AddExpenseSheet({ defaultSplitBp, currency, parentingMode, regio
   const selectedCategoryLabel = CATEGORIES.find(c => c.value === category)?.label ?? category;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50" style={backdropStyle} onClick={close}>
       <div
         ref={sheetRef}
         role="dialog"
         aria-modal="true"
         aria-label="Log shared expense"
         tabIndex={-1}
-        className="relative bg-[var(--color-surface)] rounded-t-3xl shadow-2xl w-full max-w-[560px] flex flex-col max-h-[92dvh] transition-transform duration-300"
+        className="relative bg-[var(--color-surface)] rounded-t-3xl shadow-2xl w-full max-w-[560px] flex flex-col max-h-[92dvh]"
+        style={panelStyle}
         onClick={e => e.stopPropagation()}
       >
 
@@ -192,7 +194,7 @@ export function AddExpenseSheet({ defaultSplitBp, currency, parentingMode, regio
             </p>
           </div>
           <button
-            onClick={onClose}
+            onClick={close}
             className="tap-target-44 w-8 h-8 rounded-lg border border-[var(--color-border)] flex items-center justify-center text-[var(--color-text-muted)] hover:bg-[var(--color-surface-alt)] cursor-pointer"
             aria-label="Close"
           >

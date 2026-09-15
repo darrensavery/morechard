@@ -11,7 +11,7 @@ import { blurOnWheel, blockInvalidAmountKeys } from '../../lib/utils'
 import { shouldTriggerImpulseSpeedBump } from '../../lib/impulseSpeedBump'
 import { useAndroidBack } from '../../hooks/useAndroidBack'
 import { useDragToClose } from '../../hooks/useDragToClose'
-import { tick, confirm as hapticConfirm } from '../../lib/haptics'
+import { confirm as hapticConfirm } from '../../lib/haptics'
 import { ErrorBox } from '../ui/ErrorBox'
 import { currencySymbol } from '../../lib/locale'
 import { SPEND_CATEGORIES } from '../../lib/spendCategories'
@@ -166,7 +166,22 @@ interface EntryState {
   category:  string
 }
 
-export function SpendGuideSheet({ open, familyId, childId, currency, appView, availableBalancePence, onClose, onSaved }: Props) {
+// The sheet only ever slides in from a fresh mount — it can't replay its
+// entrance if `open` flips true again on an already-mounted instance, and it
+// can't play an exit animation once `open` flips false and the parent stops
+// rendering it. So this wrapper mounts the animated sheet lazily on the
+// rising edge of `open` and keeps it mounted through its own closing
+// animation, rather than being driven by `open` directly.
+export function SpendGuideSheet(props: Props) {
+  const [mounted, setMounted] = useState(props.open)
+  useEffect(() => {
+    if (props.open) setMounted(true)
+  }, [props.open])
+  if (!mounted) return null
+  return <SpendGuideSheetInner {...props} onClose={() => { props.onClose(); setMounted(false) }} />
+}
+
+function SpendGuideSheetInner({ open, familyId, childId, currency, appView, availableBalancePence, onClose, onSaved }: Props) {
   const symbol = currencySymbol(currency)
 
   const [entry,   setEntry]   = useState<EntryState | null>(null)
@@ -179,10 +194,19 @@ export function SpendGuideSheet({ open, familyId, childId, currency, appView, av
   const [search,   setSearch]   = useState('')
   const [category, setCategory] = useState('all')
 
-  const closeEntry = () => { void tick(); setEntry(null); setSaveErr(null); setCooldown(null) }
-  const { sheetRef: entrySheetRef, handleProps: entryHandleProps } = useDragToClose(closeEntry)
+  const { close, panelStyle } = useDragToClose(onClose)
 
-  useAndroidBack(open && !entry, onClose)
+  // Defensive: play the close animation if something external flips `open`
+  // to false without going through this sheet's own close() gesture.
+  useEffect(() => {
+    if (!open) close()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open])
+
+  const resetEntry = () => { setEntry(null); setSaveErr(null); setCooldown(null) }
+  const { sheetRef: entrySheetRef, handleProps: entryHandleProps, close: closeEntry, panelStyle: entryPanelStyle, backdropStyle: entryBackdropStyle } = useDragToClose(resetEntry)
+
+  useAndroidBack(open && !entry, close)
   useAndroidBack(!!entry,        closeEntry)
 
   useEffect(() => {
@@ -284,8 +308,6 @@ export function SpendGuideSheet({ open, familyId, childId, currency, appView, av
     void doSave(amountPence, title)
   }
 
-  if (!open) return null
-
   if (success) {
     return createPortal(
       <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-[var(--color-bg)] px-8 text-center">
@@ -308,7 +330,7 @@ export function SpendGuideSheet({ open, familyId, childId, currency, appView, av
   }
 
   return createPortal(
-    <div className="fixed inset-0 z-[100] flex flex-col bg-[var(--color-bg)] overflow-hidden overscroll-none">
+    <div className="fixed inset-0 z-[100] flex flex-col bg-[var(--color-bg)] overflow-hidden overscroll-none" style={panelStyle}>
 
       {/* ── Sticky top: header + search + category pills ── */}
       <div className="shrink-0 border-b border-[var(--color-border)] px-4 pt-6 pb-0">
@@ -318,7 +340,7 @@ export function SpendGuideSheet({ open, familyId, childId, currency, appView, av
             <p className="text-[0.75rem] text-[var(--color-text-muted)] mt-0.5">What did you buy?</p>
           </div>
           <button
-            onClick={onClose}
+            onClick={close}
             className="tap-target-44 w-8 h-8 rounded-lg border border-[var(--color-border)] flex items-center justify-center text-[var(--color-text-muted)] hover:bg-[var(--color-surface-alt)] cursor-pointer"
             aria-label="Close"
           >
@@ -477,7 +499,7 @@ export function SpendGuideSheet({ open, familyId, childId, currency, appView, av
 
       {entry && !cooldown && (
         <div className="absolute inset-0 z-10 flex flex-col justify-end">
-          <div className="absolute inset-0 bg-black/40" onClick={closeEntry} />
+          <div className="absolute inset-0 bg-black/40" style={entryBackdropStyle} onClick={closeEntry} />
           <div
             ref={entrySheetRef}
             role="dialog"
@@ -485,6 +507,7 @@ export function SpendGuideSheet({ open, familyId, childId, currency, appView, av
             aria-label="Log a spend"
             tabIndex={-1}
             className="relative bg-[var(--color-surface)] rounded-t-2xl px-5 pt-2 pb-8 space-y-4 max-h-[88%] overflow-y-auto"
+            style={entryPanelStyle}
           >
 
             {/* Drag handle */}

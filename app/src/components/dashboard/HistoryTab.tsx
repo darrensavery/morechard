@@ -40,21 +40,22 @@ const STATUS_STYLES: Record<string, { label: string; bg: string; text: string }>
 }
 
 function MiniSheet({ onClose, children }: { onClose: () => void; children: React.ReactNode }) {
-  const { sheetRef, handleProps } = useDragToClose(onClose)
+  const { sheetRef, handleProps, close, panelStyle, backdropStyle } = useDragToClose(onClose)
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === 'Escape') onClose()
+      if (e.key === 'Escape') close()
     }
     document.addEventListener('keydown', handleKeyDown)
     return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [onClose])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   return (
     <div
       className="fixed inset-0 z-50 flex items-end justify-center"
-      style={{ background: 'rgba(0,0,0,0.45)' }}
-      onClick={e => { if (e.target === e.currentTarget) onClose() }}
+      style={{ background: 'rgba(0,0,0,0.45)', ...backdropStyle }}
+      onClick={e => { if (e.target === e.currentTarget) close() }}
     >
       <div
         ref={sheetRef}
@@ -62,7 +63,8 @@ function MiniSheet({ onClose, children }: { onClose: () => void; children: React
         aria-modal="true"
         aria-label="Details"
         tabIndex={-1}
-        className="w-full max-w-lg bg-[var(--color-surface)] rounded-t-2xl transition-transform duration-300 pb-safe"
+        className="w-full max-w-lg bg-[var(--color-surface)] rounded-t-2xl pb-safe"
+        style={panelStyle}
       >
         <div {...handleProps}>
           <div className="w-10 h-1 rounded-full bg-[var(--color-border)]" />
@@ -715,7 +717,7 @@ export function ChoreDetailSheet({ completion: c, onClose, onRate }: {
 }) {
   const [proofUrl, setProofUrl] = useState<string | null>(null)
   const [proofState, setProofState] = useState<'idle' | 'loading' | 'loaded' | 'error'>('idle')
-  const { sheetRef, handleProps } = useDragToClose(onClose)
+  const { sheetRef, handleProps, close, panelStyle, backdropStyle } = useDragToClose(onClose)
 
   useEffect(() => {
     if (!c.proof_url) return
@@ -727,11 +729,12 @@ export function ChoreDetailSheet({ completion: c, onClose, onRate }: {
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === 'Escape') onClose()
+      if (e.key === 'Escape') close()
     }
     document.addEventListener('keydown', handleKeyDown)
     return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [onClose])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const dateStr = new Date(c.submitted_at * 1000).toLocaleDateString('en-GB', {
     day: 'numeric', month: 'long', year: 'numeric',
@@ -747,14 +750,15 @@ export function ChoreDetailSheet({ completion: c, onClose, onRate }: {
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col">
-      <button type="button" className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} aria-label="Close" />
+      <button type="button" className="absolute inset-0 bg-black/40 backdrop-blur-sm" style={backdropStyle} onClick={close} aria-label="Close" />
       <div
         ref={sheetRef}
         role="dialog"
         aria-modal="true"
         aria-label={c.chore_title}
         tabIndex={-1}
-        className="relative mt-auto w-full max-h-[90dvh] bg-[var(--color-surface)] rounded-t-2xl flex flex-col overflow-hidden shadow-2xl transition-transform duration-300"
+        className="relative mt-auto w-full max-h-[90dvh] bg-[var(--color-surface)] rounded-t-2xl flex flex-col overflow-hidden shadow-2xl"
+        style={panelStyle}
       >
 
         {/* Drag handle */}
@@ -770,7 +774,7 @@ export function ChoreDetailSheet({ completion: c, onClose, onRate }: {
           </div>
           <button
             type="button"
-            onClick={onClose}
+            onClick={close}
             className="tap-target-44 shrink-0 w-8 h-8 rounded-lg border border-[var(--color-border)] flex items-center justify-center text-[var(--color-text-muted)] hover:bg-[var(--color-surface-alt)] active:bg-[var(--color-border)] transition-colors cursor-pointer"
             aria-label="Close"
           >

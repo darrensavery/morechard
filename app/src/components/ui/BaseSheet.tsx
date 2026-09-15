@@ -1,9 +1,8 @@
-import { useEffect, useState, type CSSProperties, type ReactNode } from 'react'
+import { useEffect, type CSSProperties, type ReactNode } from 'react'
 import { useAndroidBack } from '../../hooks/useAndroidBack'
 import { useBodyScrollLock } from '../../hooks/useBodyScrollLock'
 import { useDragToClose } from '../../hooks/useDragToClose'
 import { useFocusTrap } from '../../hooks/useFocusTrap'
-import { tick } from '../../lib/haptics'
 
 interface Props {
   onClose: () => void
@@ -15,20 +14,9 @@ interface Props {
   label: string
 }
 
-// iOS-style deceleration curve — matches the "premium" sheet feel referenced
-// in the motion pattern proposal (fast start, gentle settle, no overshoot).
-const SHEET_EASING = 'cubic-bezier(0.32, 0.72, 0, 1)'
-const CLOSE_DURATION_MS = 300
-
 export function BaseSheet({ onClose, children, panelClassName, panelStyle, zIndex = 50, label }: Props) {
-  const [phase, setPhase] = useState<'entering' | 'open' | 'closing'>('entering')
+  const { sheetRef, handleProps, close, phase, panelStyle: dragPanelStyle, backdropStyle } = useDragToClose(onClose)
 
-  function close() {
-    void tick()
-    setPhase('closing')
-  }
-
-  const { sheetRef, handleProps } = useDragToClose(close)
   useAndroidBack(true, close)
   useFocusTrap(sheetRef, true)
   // Underlying page must stay put while the sheet is open — only the sheet
@@ -44,23 +32,6 @@ export function BaseSheet({ onClose, children, panelClassName, panelStyle, zInde
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // Flip to 'open' a frame after mount so the initial 'entering' style is
-  // actually painted first, giving the panel/backdrop something to animate from.
-  // Guarded so a close() fired in that same frame (e.g. an instant Escape/tap)
-  // isn't clobbered back to 'open' once this fires.
-  useEffect(() => {
-    const raf = requestAnimationFrame(() => setPhase(p => (p === 'entering' ? 'open' : p)))
-    return () => cancelAnimationFrame(raf)
-  }, [])
-
-  useEffect(() => {
-    if (phase !== 'closing') return
-    const timeout = setTimeout(onClose, CLOSE_DURATION_MS)
-    return () => clearTimeout(timeout)
-  }, [phase, onClose])
-
-  const isOpen = phase === 'open'
-
   return (
     <div
       data-testid="sheet-backdrop"
@@ -71,8 +42,7 @@ export function BaseSheet({ onClose, children, panelClassName, panelStyle, zInde
         background: 'rgba(0,0,0,0.6)',
         display: 'flex',
         alignItems: 'flex-end',
-        opacity: isOpen ? 1 : 0,
-        transition: `opacity ${CLOSE_DURATION_MS}ms ease-out`,
+        ...backdropStyle,
       }}
       onClick={close}
     >
@@ -82,8 +52,7 @@ export function BaseSheet({ onClose, children, panelClassName, panelStyle, zInde
         className={panelClassName}
         style={{
           width: '100%',
-          transform: `translateY(${isOpen ? '0' : '100%'})`,
-          transition: `transform ${CLOSE_DURATION_MS}ms ${SHEET_EASING}`,
+          ...dragPanelStyle,
           ...panelStyle,
         }}
         role="dialog"
