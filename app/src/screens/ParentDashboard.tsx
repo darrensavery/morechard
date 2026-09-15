@@ -96,47 +96,65 @@ export function ParentDashboard() {
   // SwipeRevealCard on the Chores tab, then springs open or closed on
   // release instead of a flat linear slide. Only active on the drawer's
   // root menu view (sub-sections use their own left-swipe back nav).
+  //
+  // The live drag offset is written straight to the DOM (not React state)
+  // so the panel tracks the finger 1:1 every touchmove — round-tripping
+  // through setState/render made the panel visibly lag behind the finger,
+  // reading as "barely moving".
   const [settingsIsRoot, setSettingsIsRoot] = useState(true)
-  const [panelWidth, setPanelWidth] = useState(() => Math.min(360, window.innerWidth))
-  useEffect(() => {
-    function onResize() { setPanelWidth(Math.min(360, window.innerWidth)) }
-    window.addEventListener('resize', onResize)
-    return () => window.removeEventListener('resize', onResize)
-  }, [])
-  const [panelOffsetX, setPanelOffsetX] = useState(panelWidth)
-  const [panelDragging, setPanelDragging] = useState(false)
-  const [panelSnapping, setPanelSnapping] = useState<'open' | 'closed'>('closed')
   const panelDragStartX = useRef<number | null>(null)
   const panelDragStartOffset = useRef(0)
 
+  // Slight overshoot on the way open gives the drawer some momentum/weight
+  // instead of a linear, mechanical slide; plain deceleration on the way
+  // shut since there's nothing to overshoot into.
+  const OPEN_EASING  = 'cubic-bezier(0.34, 1.56, 0.64, 1)'
+  const CLOSE_EASING = 'cubic-bezier(0.32, 0, 0.67, 0)'
+
+  function panelWidthPx() {
+    return settingsPanelRef.current?.offsetWidth ?? Math.min(360, window.innerWidth)
+  }
+  function currentPanelOffset() {
+    const el = settingsPanelRef.current
+    if (!el) return showSettings ? 0 : panelWidthPx()
+    const match = /translateX\(([-\d.]+)px\)/.exec(el.style.transform)
+    return match ? parseFloat(match[1]) : (showSettings ? 0 : panelWidthPx())
+  }
+
   useEffect(() => {
-    setPanelSnapping(showSettings ? 'open' : 'closed')
-    setPanelOffsetX(showSettings ? 0 : panelWidth)
-  }, [showSettings, panelWidth])
+    const el = settingsPanelRef.current
+    if (!el) return
+    el.style.transition = `transform ${showSettings ? 340 : 280}ms ${showSettings ? OPEN_EASING : CLOSE_EASING}`
+    el.style.transform = `translateX(${showSettings ? 0 : panelWidthPx()}px)`
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showSettings])
 
   function clampPanelOffset(v: number) {
-    return Math.max(0, Math.min(panelWidth, v))
+    return Math.max(0, Math.min(panelWidthPx(), v))
   }
   function panelDragStart(x: number) {
     if (!settingsIsRoot) return
     panelDragStartX.current = x
-    panelDragStartOffset.current = panelOffsetX
-    setPanelDragging(true)
+    panelDragStartOffset.current = currentPanelOffset()
+    if (settingsPanelRef.current) settingsPanelRef.current.style.transition = 'none'
   }
   function panelDragMove(x: number) {
     if (panelDragStartX.current === null) return
-    setPanelOffsetX(clampPanelOffset(panelDragStartOffset.current + (x - panelDragStartX.current)))
+    const next = clampPanelOffset(panelDragStartOffset.current + (x - panelDragStartX.current))
+    if (settingsPanelRef.current) settingsPanelRef.current.style.transform = `translateX(${next}px)`
   }
   function panelDragEnd() {
     if (panelDragStartX.current === null) return
     panelDragStartX.current = null
-    setPanelDragging(false)
-    setPanelOffsetX(prev => {
-      const shouldClose = prev > Math.min(100, panelWidth * 0.3)
-      setPanelSnapping(shouldClose ? 'closed' : 'open')
-      if (shouldClose) setShowSettings(false)
-      return shouldClose ? panelWidth : 0
-    })
+    const el = settingsPanelRef.current
+    const width = panelWidthPx()
+    const offset = currentPanelOffset()
+    const shouldClose = offset > Math.min(100, width * 0.3)
+    if (el) {
+      el.style.transition = `transform ${shouldClose ? 280 : 340}ms ${shouldClose ? CLOSE_EASING : OPEN_EASING}`
+      el.style.transform = `translateX(${shouldClose ? width : 0}px)`
+    }
+    if (shouldClose) setShowSettings(false)
   }
   const [showAddExpense,  setShowAddExpense]  = useState(false)
   const [showSettlement,  setShowSettlement]  = useState(false)
@@ -486,15 +504,14 @@ export function ParentDashboard() {
       <div
         ref={settingsPanelRef}
         className="fixed top-0 right-0 bottom-0 z-50 w-[min(360px,100vw)] bg-[var(--color-bg)] flex flex-col shadow-2xl"
+        // Baseline position for first paint / any non-drag re-render — the
+        // drag handlers and the showSettings effect then drive the live
+        // transform imperatively via the ref (see panelDragStart/Move/End
+        // above), so the panel tracks the finger 1:1 instead of lagging
+        // behind a state-driven re-render on every touchmove.
         style={{
-          transform: `translateX(${panelOffsetX}px)`,
-          transition: panelDragging
-            ? 'none'
-            : panelSnapping === 'open'
-              // Slight overshoot on the way open gives the drawer some
-              // momentum/weight instead of a linear, mechanical slide.
-              ? 'transform 340ms cubic-bezier(0.34, 1.56, 0.64, 1)'
-              : 'transform 280ms cubic-bezier(0.32, 0, 0.67, 0)',
+          transform: `translateX(${showSettings ? 0 : Math.min(360, window.innerWidth)}px)`,
+          transition: 'transform 300ms cubic-bezier(0.32, 0.72, 0, 1)',
           touchAction: 'pan-y',
         }}
         aria-modal="true"
