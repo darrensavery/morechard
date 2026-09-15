@@ -515,7 +515,10 @@ export function FamilySettings({
         <div className="flex items-center justify-between px-1 mb-2">
           <p className="text-[0.6875rem] font-bold text-[var(--color-text-muted)] uppercase tracking-wide">Children</p>
           {isLead && (
-            <button onClick={() => setShowAddChild(v => !v)} className="text-[0.75rem] font-semibold text-[var(--brand-primary)] hover:underline cursor-pointer">
+            <button
+              onClick={() => setShowAddChild(v => !v)}
+              className="tap-target-44 inline-flex items-center gap-1 rounded-full border border-[var(--brand-primary)] bg-[color-mix(in_srgb,var(--brand-primary)_10%,transparent)] px-3 py-1.5 text-[0.75rem] font-semibold text-[var(--brand-primary)] hover:bg-[color-mix(in_srgb,var(--brand-primary)_18%,transparent)] active:scale-[0.97] transition-all cursor-pointer"
+            >
               + Add child
             </button>
           )}
@@ -592,11 +595,11 @@ export function FamilySettings({
               <div className="space-y-1">
                 <p className="text-[0.8125rem] text-[var(--color-text-muted)]">Share this code (expires {inviteExpiry}):</p>
                 <p className="text-[1.375rem] font-extrabold tracking-widest text-[var(--color-text)]">{inviteCode}</p>
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-3 mt-1">
                   <button
                     type="button"
                     onClick={handleShare}
-                    className="text-[0.75rem] font-semibold text-[var(--color-text)] hover:underline cursor-pointer"
+                    className="tap-target-44 rounded-full bg-[var(--brand-primary)] text-white px-4 py-1.5 text-[0.75rem] font-bold hover:opacity-90 active:opacity-80 transition-opacity cursor-pointer"
                   >
                     {copied ? 'Copied!' : 'Share'}
                   </button>

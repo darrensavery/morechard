@@ -19,6 +19,8 @@ import { cn, blurOnWheel, blockInvalidAmountKeys } from '../../../lib/utils'
 import { SettingsRow, SectionCard, SectionHeader } from '../shared'
 import { useTone } from '../../../lib/useTone'
 import { useLocale } from '../../../lib/locale'
+import { useAndroidBack } from '../../../hooks/useAndroidBack'
+import { useDragToClose } from '../../../hooks/useDragToClose'
 import { ChildLoginHistory } from './ChildLoginHistory'
 
 // ── Growth Path config ────────────────────────────────────────────────────────
@@ -63,6 +65,9 @@ function InviteCodeSheet({
   const [error,   setError]   = useState<string | null>(null)
   const [copied,  setCopied]  = useState(false)
 
+  const { sheetRef, handleProps, close, panelStyle, backdropStyle } = useDragToClose(onClose)
+  useAndroidBack(true, close)
+
   useEffect(() => {
     let cancelled = false
     regenerateChildInvite(child.id)
@@ -89,64 +94,79 @@ function InviteCodeSheet({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40" onClick={onClose}>
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/40"
+      style={backdropStyle}
+      onClick={e => { if (e.target === e.currentTarget) close() }}
+    >
       <div
-        className="w-full max-w-lg bg-[var(--color-surface)] rounded-t-2xl p-6 space-y-5"
+        ref={sheetRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label={`${child.display_name}'s Invite Code`}
+        tabIndex={-1}
+        className="w-full max-w-lg bg-[var(--color-surface)] rounded-t-2xl pb-6 space-y-5"
+        style={panelStyle}
         onClick={e => e.stopPropagation()}
       >
-        <div className="text-center space-y-1">
-          <p className="text-[1.0625rem] font-bold text-[var(--color-text)]">
-            {child.display_name}&apos;s Invite Code
-          </p>
-          <p className="text-[0.75rem] text-[var(--color-text-muted)]">
-            Share this code so {child.display_name} can log in on their device
-          </p>
+        <div {...handleProps}>
+          <div className="w-10 h-1 rounded-full bg-[var(--color-border)]" />
         </div>
-
-        {loading && (
-          <p className="text-center text-[0.875rem] text-[var(--color-text-muted)] py-4">Generating…</p>
-        )}
-
-        {error && (
-          <p className="text-center text-[0.8125rem] text-[var(--color-danger)]">{error}</p>
-        )}
-
-        {code && !loading && (
-          <>
-            <div className="flex justify-center">
-              <p className="text-[2.5rem] font-extrabold tracking-[0.25em] text-[var(--brand-primary)] font-mono select-all">
-                {code}
-              </p>
-            </div>
-            <p className="text-[0.6875rem] text-[var(--color-text-muted)] text-center">
-              Valid for 72 hours · Single use · Generating a new code invalidates the old one
+        <div className="px-6 space-y-5">
+          <div className="text-center space-y-1">
+            <p className="text-[1.0625rem] font-bold text-[var(--color-text)]">
+              {child.display_name}&apos;s Invite Code
             </p>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={copyCode}
-                className="flex-1 py-3 rounded-xl text-[0.875rem] font-bold border border-[var(--color-border)] text-[var(--color-text)] hover:bg-[var(--color-surface-alt)] transition-colors cursor-pointer"
-              >
-                {copied ? '✓ Copied' : 'Copy Code'}
-              </button>
-              <button
-                type="button"
-                onClick={shareCode}
-                className="flex-1 py-3 rounded-xl text-[0.875rem] font-bold bg-[var(--brand-primary)] text-white hover:opacity-90 transition-opacity cursor-pointer"
-              >
-                Share
-              </button>
-            </div>
-          </>
-        )}
+            <p className="text-[0.75rem] text-[var(--color-text-muted)]">
+              Share this code so {child.display_name} can log in on their device
+            </p>
+          </div>
 
-        <button
-          type="button"
-          onClick={onClose}
-          className="w-full text-[0.8125rem] text-[var(--color-text-muted)] hover:underline cursor-pointer pt-1"
-        >
-          Close
-        </button>
+          {loading && (
+            <p className="text-center text-[0.875rem] text-[var(--color-text-muted)] py-4">Generating…</p>
+          )}
+
+          {error && (
+            <p className="text-center text-[0.8125rem] text-[var(--color-danger)]">{error}</p>
+          )}
+
+          {code && !loading && (
+            <>
+              <div className="flex justify-center">
+                <p className="text-[2.5rem] font-extrabold tracking-[0.25em] text-[var(--brand-primary)] font-mono select-all">
+                  {code}
+                </p>
+              </div>
+              <p className="text-[0.6875rem] text-[var(--color-text-muted)] text-center">
+                Valid for 72 hours · Single use · Generating a new code invalidates the old one
+              </p>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={copyCode}
+                  className="flex-1 py-3 rounded-xl text-[0.875rem] font-bold border border-[var(--color-border)] text-[var(--color-text)] hover:bg-[var(--color-surface-alt)] transition-colors cursor-pointer"
+                >
+                  {copied ? '✓ Copied' : 'Copy Code'}
+                </button>
+                <button
+                  type="button"
+                  onClick={shareCode}
+                  className="flex-1 py-3 rounded-xl text-[0.875rem] font-bold bg-[var(--brand-primary)] text-white hover:opacity-90 transition-opacity cursor-pointer"
+                >
+                  Share
+                </button>
+              </div>
+            </>
+          )}
+
+          <button
+            type="button"
+            onClick={close}
+            className="w-full text-[0.8125rem] text-[var(--color-text-muted)] hover:underline cursor-pointer pt-1"
+          >
+            Close
+          </button>
+        </div>
       </div>
     </div>
   )

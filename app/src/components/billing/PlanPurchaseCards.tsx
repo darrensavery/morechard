@@ -8,8 +8,10 @@
  * so a Stripe price change only requires updating the products table.
  */
 
-import { useState, useEffect, useRef, useCallback } from 'react'
-import { Zap, Shield, Star, X, Check } from 'lucide-react'
+import { useState, useEffect, useCallback } from 'react'
+import { Zap, Shield, Star, Check } from 'lucide-react'
+import { useAndroidBack } from '../../hooks/useAndroidBack'
+import { useDragToClose } from '../../hooks/useDragToClose'
 import { useFocusTrap } from '../../hooks/useFocusTrap'
 import {
   createCheckoutSession, getShieldUpgradePrice, getProducts,
@@ -36,7 +38,7 @@ const COMPARE_ROWS: {
   { feature: 'Unlimited children',                  complete: true,  completeAi: true,  shieldAi: true  },
   { feature: 'Parent Insights AI',                  complete: false, completeAi: true,  shieldAi: true  },
   { feature: 'AI Mentor (financial coaching)',      complete: false, completeAi: true,  shieldAi: true  },
-  { feature: 'Learning Lab (20-module curriculum)', complete: false, completeAi: true,  shieldAi: true  },
+  { feature: 'Learning Lab (25-module curriculum)', complete: false, completeAi: true,  shieldAi: true  },
   { feature: 'Tamper-evident PDF exports',          complete: false, completeAi: false, shieldAi: true  },
   { feature: 'Digital tamper-seal per export',      complete: false, completeAi: false, shieldAi: true  },
   { feature: 'Co-parent verified sharing',          complete: false, completeAi: false, shieldAi: true  },
@@ -58,44 +60,51 @@ interface ComparePlansModalProps {
 function ComparePlansModal({
   prices, hasBase, hasAi, buying, shieldDelta, shieldIsUpgrade, shieldPriceUnknown, onPurchase, onClose,
 }: ComparePlansModalProps) {
-  const panelRef = useRef<HTMLDivElement>(null)
-  useFocusTrap(panelRef, true)
+  const { sheetRef, handleProps, close, panelStyle, backdropStyle } = useDragToClose(onClose)
+  useFocusTrap(sheetRef, true)
+  useAndroidBack(true, close)
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === 'Escape') onClose()
+      if (e.key === 'Escape') close()
     }
     document.addEventListener('keydown', handleKeyDown)
     return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [onClose])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   return (
     <div
       className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 backdrop-blur-sm"
-      onClick={onClose}
+      style={backdropStyle}
+      onClick={e => { if (e.target === e.currentTarget) close() }}
     >
       <div
-        ref={panelRef}
+        ref={sheetRef}
         role="dialog"
         aria-modal="true"
         aria-label="Compare plans"
         tabIndex={-1}
-        className="w-full max-w-lg bg-[var(--color-surface)] rounded-t-2xl pb-safe overflow-hidden shadow-2xl"
+        className="w-full max-w-lg bg-[var(--color-surface)] rounded-t-2xl pb-safe overflow-hidden shadow-2xl flex flex-col"
         onClick={e => e.stopPropagation()}
-        style={{ maxHeight: '85vh' }}
+        style={{ ...panelStyle, maxHeight: '85vh' }}
       >
-        <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-[var(--color-border)]">
+        <div {...handleProps}>
+          <div className="w-10 h-1 rounded-full bg-[var(--color-border)]" />
+        </div>
+
+        <div className="flex items-center justify-between px-5 pb-4 border-b border-[var(--color-border)]">
           <div>
             <p className="text-[1rem] font-bold text-[var(--color-text)]">Compare Plans</p>
             <p className="text-[0.75rem] text-[var(--color-text-muted)] mt-0.5">All plans are one-time purchases — no renewals.</p>
           </div>
           <button
             type="button"
-            onClick={onClose}
+            onClick={close}
             aria-label="Close"
-            className="tap-target-44 w-8 h-8 rounded-full flex items-center justify-center bg-[var(--color-surface-alt)] text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors"
+            className="tap-target-44 w-8 h-8 rounded-lg border border-[var(--color-border)] flex items-center justify-center text-[var(--color-text-muted)] hover:bg-[var(--color-surface-alt)] cursor-pointer"
           >
-            <X size={15} aria-hidden="true" />
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
           </button>
         </div>
 
@@ -388,12 +397,12 @@ export function PlanPurchaseCards({ trial, shieldUpgradePrice, onBuyError }: Pro
               <ul className="mt-3 space-y-1.5">
                 {(hasBase ? [
                   'AI Mentor — personalised financial coaching for your children',
-                  'Learning Lab — 20-module financial literacy curriculum',
+                  'Learning Lab — 25-module financial literacy curriculum',
                   'Lessons grounded in your children\'s real earnings data',
                 ] : [
                   'Everything in Morechard Core',
                   'AI Mentor — personalised financial coaching for your children',
-                  'Learning Lab — 20-module financial literacy curriculum',
+                  'Learning Lab — 25-module financial literacy curriculum',
                   'Lessons grounded in your children\'s real earnings data',
                 ]).map(item => (
                   <li key={item} className="flex items-start gap-2">
