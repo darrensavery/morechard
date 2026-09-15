@@ -182,7 +182,7 @@ export function ParentSettingsTab({ familyId, online, onChildrenChange, onClose,
   })
   // The parent drawer owns the drag-to-close gesture (it controls the panel's
   // transform), but only when we're on the root menu — sub-sections use their
-  // own left-swipe back nav via SectionHeader's onBack instead.
+  // own right-swipe back nav via SectionHeader's onBack instead.
   useEffect(() => {
     onRootViewChange?.(view.type === 'menu')
   }, [view.type, onRootViewChange])

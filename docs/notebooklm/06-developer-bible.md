@@ -71,6 +71,9 @@ The underlying ledger uses cryptographic SHA-256 verification and can produce PD
 - **Requirement:** Handshake logic (mutual consent) for all governance changes.
 - **Schema rule:** `families` is the single source of truth for governance, region, and licensing state.
 
+#### Per-child overrides (added 2026-09-15)
+Three settings on the `users` row for a child can override the family-wide default for that child only — `verify_mode_override` (Approval Mode), `overdraft_enabled_override` / `overdraft_limit_pence_override` (Safety Net), and `allowance_paused` (Pocket Money Status). All three default to "inherit the family value" (`NULL` for the first two, `0` for pause). Changing Approval Mode or Safety Net goes through the same mutual-consent handshake as a family-wide `governance_mode` change — mirrored into a parallel `child_governance_log` table (same shape as the family log, plus a `child_id` and a `setting` column) rather than overloading `family_governance_log`, since that table's `old_mode`/`new_mode` columns are constrained to the two `verify_mode` values only. A solo parent's change self-confirms immediately (nothing to reach consensus with); a co-parenting family's change is `pending` until the other parent confirms or rejects it, same 72-hour expiry as the family-wide flow. Pocket Money Status is deliberately *not* governance-gated — it's reversible and carries no debt/dispute exposure, so either parent can flip it instantly. Implementation: `worker/src/routes/childControls.ts`, `worker/src/lib/verifyMode.ts` (resolves the effective mode for a given child, override-first), migration `0098_child_governance_controls.sql`.
+
 ### Entity: Children (Linked to `families`)
 - `child_id`, `display_name` (Mandatory — nicknames encouraged), `family_invite_code` (6-digit String).
 - `age_tier` (Enum: `SEED` (reserved Phase 2) | `SPROUT` | `SAPLING` | `OAK` — see §19).

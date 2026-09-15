@@ -23,6 +23,7 @@ import { Env } from '../types.js';
 import { writeLedgerEntry } from '../lib/hash.js';
 import { json, error, clientIp } from '../lib/response.js';
 import type { JwtPayload } from '../lib/jwt.js';
+import { resolveVerifyMode } from '../lib/verifyMode.js';
 
 type AuthedRequest = Request & { auth: JwtPayload };
 
@@ -50,11 +51,11 @@ export async function handleLedgerPost(request: Request, env: Env): Promise<Resp
 
   const ip = clientIp(request);
 
-  // --- Fetch family to determine verify_mode ---
+  // --- Fetch family to confirm it exists ---
   const family = await env.DB
-    .prepare('SELECT verify_mode FROM families WHERE id = ?')
+    .prepare('SELECT id FROM families WHERE id = ?')
     .bind(family_id)
-    .first<{ verify_mode: string }>();
+    .first();
 
   if (!family) return error('Family not found', 404);
 
@@ -65,7 +66,9 @@ export async function handleLedgerPost(request: Request, env: Env): Promise<Resp
     .first();
   if (!childMember) return error('child_id not found in this family', 404);
 
-  const verificationStatus = family.verify_mode === 'amicable' ? 'verified_auto' : 'pending';
+  // --- Determine verify_mode (per-child override, else family default) ---
+  const verifyMode = await resolveVerifyMode(env, family_id as string, child_id as string);
+  const verificationStatus = verifyMode === 'amicable' ? 'verified_auto' : 'pending';
   const now = Math.floor(Date.now() / 1000);
   const disputeBefore = verificationStatus === 'verified_auto' ? now + 172800 : null; // 48h window
 

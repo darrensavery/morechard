@@ -47,6 +47,7 @@ DROP TABLE IF EXISTS push_subscriptions;
 DROP TABLE IF EXISTS parent_messages;
 DROP TABLE IF EXISTS shared_expenses;
 DROP TABLE IF EXISTS family_governance_log;
+DROP TABLE IF EXISTS child_governance_log;
 DROP TABLE IF EXISTS payment_audit_log;
 DROP TABLE IF EXISTS promo_code_redemptions;
 DROP TABLE IF EXISTS promo_codes;
@@ -145,7 +146,11 @@ CREATE TABLE IF NOT EXISTS users (
   monzo_handle        TEXT,
   revolut_handle      TEXT,
   paypal_handle       TEXT,
-  venmo_handle        TEXT
+  venmo_handle        TEXT,
+  verify_mode_override           TEXT    CHECK(verify_mode_override IN ('amicable', 'standard')),
+  allowance_paused                INTEGER NOT NULL DEFAULT 0 CHECK(allowance_paused IN (0, 1)),
+  overdraft_enabled_override      INTEGER CHECK(overdraft_enabled_override IN (0, 1)),
+  overdraft_limit_pence_override  INTEGER CHECK(overdraft_limit_pence_override >= 0)
 );
 
 CREATE TABLE IF NOT EXISTS sessions (
@@ -636,6 +641,25 @@ CREATE TABLE IF NOT EXISTS family_governance_log (
   request_ip   TEXT,
   confirm_ip   TEXT
 );
+
+CREATE TABLE IF NOT EXISTS child_governance_log (
+  id           INTEGER PRIMARY KEY AUTOINCREMENT,
+  family_id    TEXT    NOT NULL REFERENCES families(id),
+  child_id     TEXT    NOT NULL REFERENCES users(id),
+  requested_by TEXT    NOT NULL REFERENCES users(id),
+  confirmed_by TEXT    REFERENCES users(id),
+  setting      TEXT    NOT NULL CHECK(setting IN ('verify_mode', 'overdraft')),
+  old_value    TEXT    NOT NULL,
+  new_value    TEXT    NOT NULL,
+  status       TEXT    NOT NULL DEFAULT 'pending' CHECK(status IN ('pending', 'confirmed', 'rejected', 'expired')),
+  requested_at INTEGER NOT NULL,
+  expires_at   INTEGER NOT NULL,
+  confirmed_at INTEGER,
+  request_ip   TEXT,
+  confirm_ip   TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_child_governance_log_family ON child_governance_log(family_id);
+CREATE INDEX IF NOT EXISTS idx_child_governance_log_child  ON child_governance_log(child_id);
 
 CREATE TABLE IF NOT EXISTS market_rates (
   id               TEXT    PRIMARY KEY,

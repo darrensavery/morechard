@@ -19,6 +19,7 @@ import { Env } from '../types.js';
 import { json, error, clientIp } from '../lib/response.js';
 import { nanoid } from '../lib/nanoid.js';
 import { computeRecordHash, GENESIS_HASH } from '../lib/hash.js';
+import { resolveVerifyMode } from '../lib/verifyMode.js';
 import { JwtPayload } from '../lib/jwt.js';
 import { getStreakState, buildMissEvent, saveStreakEvent, hadScheduledChores, todayUTC, previousDay } from '../lib/streaks.js';
 import { getBadgeStats, badgesToAward, insertBadges } from '../lib/badges.js';
@@ -248,12 +249,13 @@ export async function handleBonusCreate(request: Request, env: Env): Promise<Res
   const { family_id, child_id, amount, currency, reason } = parsed;
   if (!family_id || family_id !== auth.family_id) return error('Forbidden', 403);
 
-  const family = await env.DB
-    .prepare('SELECT verify_mode FROM families WHERE id = ?')
-    .bind(family_id).first<{ verify_mode: string }>();
-  if (!family) return error('Family not found', 404);
+  const familyExists = await env.DB
+    .prepare('SELECT id FROM families WHERE id = ?')
+    .bind(family_id).first();
+  if (!familyExists) return error('Family not found', 404);
 
-  const verificationStatus = family.verify_mode === 'amicable' ? 'verified_auto' : 'verified_manual';
+  const verifyMode = await resolveVerifyMode(env, family_id as string, child_id as string);
+  const verificationStatus = verifyMode === 'amicable' ? 'verified_auto' : 'verified_manual';
   const now = Math.floor(Date.now() / 1000);
   const disputeBefore = verificationStatus === 'verified_auto' ? now + 172800 : null;
 

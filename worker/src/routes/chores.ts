@@ -522,9 +522,9 @@ export async function handleChoreSubmit(request: Request, env: Env, ctx: Executi
     const ip = clientIp(request);
 
     const family = await env.DB
-      .prepare('SELECT verify_mode FROM families WHERE id = ?')
+      .prepare('SELECT id FROM families WHERE id = ?')
       .bind(chore.family_id)
-      .first<{ verify_mode: string }>();
+      .first();
     if (!family) return error('Family not found', 404);
 
     const prevRow = await env.DB

@@ -888,6 +888,74 @@ export async function rejectGovernanceRequest(id: number): Promise<{ status: str
 }
 
 // ----------------------------------------------------------------
+// Per-child controls — Approval Mode, Pocket Money Status, Safety Net
+// ----------------------------------------------------------------
+export interface ChildControls {
+  family_verify_mode:     'amicable' | 'standard';
+  verify_mode_override:   'amicable' | 'standard' | null;
+  effective_verify_mode:  'amicable' | 'standard';
+
+  allowance_paused: boolean;
+
+  family_overdraft_enabled:      boolean;
+  family_overdraft_limit_pence:  number;
+  overdraft_enabled_override:    boolean | null;
+  overdraft_limit_pence_override: number | null;
+  effective_overdraft_enabled:      boolean;
+  effective_overdraft_limit_pence:  number;
+
+  has_pending_request: boolean;
+}
+
+export async function getChildControls(childId: string): Promise<ChildControls> {
+  return request(`/api/child-controls/${encodeURIComponent(childId)}`);
+}
+
+export async function updateChildAllowancePause(childId: string, paused: boolean): Promise<void> {
+  await request(`/api/child-controls/${encodeURIComponent(childId)}/pause`, {
+    method: 'PATCH', body: JSON.stringify({ paused }),
+  });
+}
+
+export interface ChildGovernanceLogRow {
+  id:           number;
+  family_id:    string;
+  child_id:     string;
+  requested_by: string;
+  confirmed_by: string | null;
+  setting:      'verify_mode' | 'overdraft';
+  old_value:    string;
+  new_value:    string;
+  status:       'pending' | 'confirmed' | 'rejected' | 'expired';
+  requested_at: number;
+  expires_at:   number;
+  confirmed_at: number | null;
+}
+
+export async function getChildGovernanceLog(childId: string): Promise<{ log: ChildGovernanceLogRow[] }> {
+  return request(`/api/child-governance?child_id=${encodeURIComponent(childId)}`);
+}
+
+export type ChildGovernanceNewValue = 'amicable' | 'standard' | 'inherit' | { enabled: boolean; limit_pence: number };
+
+export async function requestChildGovernanceChange(
+  childId: string, setting: 'verify_mode' | 'overdraft', newValue: ChildGovernanceNewValue,
+): Promise<{ status: 'confirmed' } | { governance_request_id: number; expires_at: number }> {
+  return request('/api/child-governance/request', {
+    method: 'POST',
+    body: JSON.stringify({ child_id: childId, setting, new_value: newValue }),
+  });
+}
+
+export async function confirmChildGovernanceRequest(id: number): Promise<{ status: string }> {
+  return request(`/api/child-governance/${id}/confirm`, { method: 'POST' });
+}
+
+export async function rejectChildGovernanceRequest(id: number): Promise<{ status: string }> {
+  return request(`/api/child-governance/${id}/reject`, { method: 'POST' });
+}
+
+// ----------------------------------------------------------------
 // Goals
 // ----------------------------------------------------------------
 export interface Goal {

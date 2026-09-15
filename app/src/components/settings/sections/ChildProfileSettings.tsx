@@ -9,11 +9,14 @@
 import { useState, useEffect } from 'react'
 import type { FormEvent } from 'react'
 import {
-  Shield, Calendar, AlertTriangle, Check,
-  TreePine, Lock, CreditCard,
+  Shield, AlertTriangle, Check,
+  TreePine, Lock, CreditCard, PauseCircle,
 } from 'lucide-react'
-import type { ChildRecord, ChildGrowthSettings } from '../../../lib/api'
-import { renameChild, setChildPin as apiSetChildPin, setPaymentHandles, getFamilyId, regenerateChildInvite } from '../../../lib/api'
+import type { ChildRecord, ChildGrowthSettings, ChildControls } from '../../../lib/api'
+import {
+  renameChild, setChildPin as apiSetChildPin, setPaymentHandles, getFamilyId, regenerateChildInvite,
+  getChildControls, updateChildAllowancePause, requestChildGovernanceChange,
+} from '../../../lib/api'
 import { getDetails, setDetails, clearDetails } from '../../../lib/localBankDetails'
 import { cn, blurOnWheel, blockInvalidAmountKeys } from '../../../lib/utils'
 import { SettingsRow, SectionCard, SectionHeader } from '../shared'
@@ -21,7 +24,10 @@ import { useTone } from '../../../lib/useTone'
 import { useLocale } from '../../../lib/locale'
 import { useAndroidBack } from '../../../hooks/useAndroidBack'
 import { useDragToClose } from '../../../hooks/useDragToClose'
+import { CurrencyAmountInput } from '../../ui/CurrencyAmountInput'
+import { Toggle } from '../../ui/Toggle'
 import { ChildLoginHistory } from './ChildLoginHistory'
+import { ChildGovernanceBanner } from './ChildGovernanceBanner'
 
 // ── Growth Path config ────────────────────────────────────────────────────────
 
@@ -46,6 +52,7 @@ interface Props {
   growth:           ChildGrowthSettings | undefined
   growthBusy:       string | null
   isLead:           boolean
+  userId:           string
   onAppViewToggle:  (childId: string, next: 'ORCHARD' | 'CLEAN') => void
   onGrowthUpdate:   (childId: string, patch: Partial<Pick<ChildGrowthSettings, 'earnings_mode' | 'allowance_amount' | 'allowance_frequency'>>) => void
   onRenameChild:    (childId: string, newName: string) => void
@@ -443,12 +450,306 @@ function PaymentSettingsView({
   )
 }
 
+// ── Approval Mode ─────────────────────────────────────────────────────────────
+
+const VERIFY_MODE_LABELS: Record<'amicable' | 'standard', string> = {
+  amicable: 'Auto-Verify (Amicable)',
+  standard: 'Manual Approval (Standard)',
+}
+
+function formatVerifyModeValue(raw: string): string {
+  if (raw === 'inherit') return 'the family default'
+  return VERIFY_MODE_LABELS[raw as 'amicable' | 'standard'] ?? raw
+}
+
+function ApprovalModeView({
+  child, userId, onBack,
+}: { child: ChildRecord; userId: string; onBack: () => void }) {
+  const [controls,  setControls]  = useState<ChildControls | null>(null)
+  const [saving,    setSaving]    = useState<string | null>(null)
+  const [error,     setError]     = useState<string | null>(null)
+  const [savedMsg,  setSavedMsg]  = useState<string | null>(null)
+  const [reloadKey, setReloadKey] = useState(0)
+
+  useEffect(() => {
+    let cancelled = false
+    getChildControls(child.id)
+      .then(c => { if (!cancelled) setControls(c) })
+      .catch(() => { if (!cancelled) setError('Could not load — please try again.') })
+    return () => { cancelled = true }
+  }, [child.id, reloadKey])
+
+  const current = controls?.verify_mode_override ?? 'inherit'
+
+  async function select(value: 'inherit' | 'amicable' | 'standard') {
+    if (value === current || saving) return
+    setSaving(value)
+    setError(null)
+    setSavedMsg(null)
+    try {
+      const result = await requestChildGovernanceChange(child.id, 'verify_mode', value)
+      setSavedMsg('status' in result ? 'Updated' : 'Requested — waiting for co-parent confirmation')
+      if ('status' in result) setTimeout(() => setSavedMsg(null), 2500)
+      setReloadKey(k => k + 1)
+    } catch (err: unknown) {
+      setError((err as Error).message ?? 'Could not update — please try again.')
+    } finally {
+      setSaving(null)
+    }
+  }
+
+  const options: { value: 'inherit' | 'amicable' | 'standard'; title: string; description: string }[] = [
+    {
+      value: 'inherit',
+      title: `Use family default${controls ? ` (${VERIFY_MODE_LABELS[controls.family_verify_mode]})` : ''}`,
+      description: 'Follow whatever the whole family is set to',
+    },
+    { value: 'amicable', title: VERIFY_MODE_LABELS.amicable, description: 'Chore completions are trusted and paid automatically — no review needed' },
+    { value: 'standard', title: VERIFY_MODE_LABELS.standard, description: 'A parent must review and approve before this child is paid' },
+  ]
+
+  return (
+    <div className="space-y-4">
+      <SectionHeader title="Approval Mode" subtitle={child.display_name} onBack={onBack} />
+      <ChildGovernanceBanner
+        key={reloadKey}
+        childId={child.id}
+        userId={userId}
+        setting="verify_mode"
+        formatValue={formatVerifyModeValue}
+        onResolved={() => setReloadKey(k => k + 1)}
+      />
+      <SectionCard>
+        {options.map(opt => {
+          const active = opt.value === current
+          return (
+            <button
+              key={opt.value}
+              type="button"
+              disabled={saving !== null}
+              onClick={() => select(opt.value)}
+              className="w-full flex items-start gap-3 px-4 py-3.5 border-b border-[var(--color-border)] last:border-0 text-left hover:bg-[var(--color-surface-alt)] disabled:opacity-60 cursor-pointer"
+            >
+              <span className={cn('shrink-0 w-5 h-5 rounded-full border-2 mt-0.5 flex items-center justify-center', active ? 'border-[var(--brand-primary)]' : 'border-[var(--color-border)]')}>
+                {active && <span className="w-2.5 h-2.5 rounded-full bg-[var(--brand-primary)]" />}
+              </span>
+              <div className="flex-1 min-w-0">
+                <p className="text-[0.8125rem] font-semibold text-[var(--color-text)]">{opt.title}</p>
+                <p className="text-[0.75rem] text-[var(--color-text-muted)] leading-snug mt-0.5">{opt.description}</p>
+              </div>
+              {saving === opt.value && <span className="text-[0.75rem] text-[var(--color-text-muted)] shrink-0">…</span>}
+            </button>
+          )
+        })}
+      </SectionCard>
+      {error && <p className="text-[0.75rem] text-[var(--color-danger)] px-1">{error}</p>}
+      {savedMsg && <p className="text-[0.75rem] text-[var(--brand-primary)] px-1 font-semibold">{savedMsg}</p>}
+    </div>
+  )
+}
+
+// ── Pocket Money Status ───────────────────────────────────────────────────────
+
+function PocketMoneyStatusView({
+  child, allowanceLabel, onBack,
+}: { child: ChildRecord; allowanceLabel: string; onBack: () => void }) {
+  const [controls, setControls] = useState<ChildControls | null>(null)
+  const [busy,      setBusy]     = useState(false)
+  const [error,     setError]    = useState<string | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    getChildControls(child.id)
+      .then(c => { if (!cancelled) setControls(c) })
+      .catch(() => { if (!cancelled) setError('Could not load — please try again.') })
+    return () => { cancelled = true }
+  }, [child.id])
+
+  async function toggle() {
+    if (!controls || busy) return
+    const next = !controls.allowance_paused
+    setBusy(true)
+    setError(null)
+    try {
+      await updateChildAllowancePause(child.id, next)
+      setControls(c => (c ? { ...c, allowance_paused: next } : c))
+    } catch {
+      setError('Could not update — please try again.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const label = allowanceLabel.toLowerCase()
+
+  return (
+    <div className="space-y-4">
+      <SectionHeader title={`${allowanceLabel} Status`} subtitle={child.display_name} onBack={onBack} />
+      <SectionCard>
+        <div className="flex items-center justify-between px-4 py-3.5">
+          <div className="flex-1 min-w-0 pr-4">
+            <p className="text-[0.8125rem] font-semibold text-[var(--color-text)]">
+              {controls?.allowance_paused ? 'Paused' : 'Active'}
+            </p>
+            <p className="text-[0.75rem] text-[var(--color-text-muted)] leading-snug mt-0.5">
+              {controls?.allowance_paused
+                ? `Scheduled ${label} won't be paid until you resume it.`
+                : `Scheduled ${label} pays out as normal.`}
+            </p>
+          </div>
+          <Toggle
+            checked={!!controls?.allowance_paused}
+            onChange={toggle}
+            label={`Pause ${allowanceLabel}`}
+            pending={busy}
+            disabled={!controls}
+          />
+        </div>
+      </SectionCard>
+      <p className="text-[0.75rem] text-[var(--color-text-muted)] px-1 leading-snug">
+        Chores this child completes are unaffected — pausing only stops the scheduled {label} payment.
+      </p>
+      {error && <p className="text-[0.75rem] text-[var(--color-danger)] px-1">{error}</p>}
+    </div>
+  )
+}
+
+// ── Safety Net ────────────────────────────────────────────────────────────────
+
+function formatOverdraftValue(raw: string, currencySymbol: string): string {
+  if (raw === 'inherit') return 'the family default'
+  try {
+    const { enabled, limit_pence } = JSON.parse(raw) as { enabled: boolean; limit_pence: number }
+    return enabled ? `an overdraft up to ${currencySymbol}${(limit_pence / 100).toFixed(2)}` : 'no overdraft'
+  } catch {
+    return raw
+  }
+}
+
+function SafetyNetView({
+  child, userId, currencySymbol, onBack,
+}: { child: ChildRecord; userId: string; currencySymbol: string; onBack: () => void }) {
+  const [controls,   setControls]   = useState<ChildControls | null>(null)
+  const [mode,        setMode]      = useState<'inherit' | 'custom'>('inherit')
+  const [enabled,     setEnabled]   = useState(false)
+  const [limitPence,  setLimitPence] = useState(0)
+  const [saving,      setSaving]    = useState(false)
+  const [error,       setError]     = useState<string | null>(null)
+  const [savedMsg,    setSavedMsg]  = useState<string | null>(null)
+  const [reloadKey,   setReloadKey] = useState(0)
+
+  useEffect(() => {
+    let cancelled = false
+    getChildControls(child.id)
+      .then(c => {
+        if (cancelled) return
+        setControls(c)
+        const hasOverride = c.overdraft_enabled_override !== null
+        setMode(hasOverride ? 'custom' : 'inherit')
+        setEnabled(hasOverride ? !!c.overdraft_enabled_override : c.family_overdraft_enabled)
+        setLimitPence(hasOverride ? (c.overdraft_limit_pence_override ?? 0) : c.family_overdraft_limit_pence)
+      })
+      .catch(() => { if (!cancelled) setError('Could not load — please try again.') })
+    return () => { cancelled = true }
+  }, [child.id, reloadKey])
+
+  async function save() {
+    setSaving(true)
+    setError(null)
+    setSavedMsg(null)
+    try {
+      const newValue: 'inherit' | { enabled: boolean; limit_pence: number } =
+        mode === 'inherit' ? 'inherit' : { enabled, limit_pence: limitPence }
+      const result = await requestChildGovernanceChange(child.id, 'overdraft', newValue)
+      setSavedMsg('status' in result ? 'Updated' : 'Requested — waiting for co-parent confirmation')
+      if ('status' in result) setTimeout(() => setSavedMsg(null), 2500)
+      setReloadKey(k => k + 1)
+    } catch (err: unknown) {
+      setError((err as Error).message ?? 'Could not update — please try again.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div className="space-y-4">
+      <SectionHeader title="Safety Net" subtitle={child.display_name} onBack={onBack} />
+      <ChildGovernanceBanner
+        key={reloadKey}
+        childId={child.id}
+        userId={userId}
+        setting="overdraft"
+        formatValue={v => formatOverdraftValue(v, currencySymbol)}
+        onResolved={() => setReloadKey(k => k + 1)}
+      />
+      <SectionCard>
+        <button
+          type="button"
+          onClick={() => setMode('inherit')}
+          className="w-full flex items-start gap-3 px-4 py-3.5 border-b border-[var(--color-border)] text-left hover:bg-[var(--color-surface-alt)] cursor-pointer"
+        >
+          <span className={cn('shrink-0 w-5 h-5 rounded-full border-2 mt-0.5 flex items-center justify-center', mode === 'inherit' ? 'border-[var(--brand-primary)]' : 'border-[var(--color-border)]')}>
+            {mode === 'inherit' && <span className="w-2.5 h-2.5 rounded-full bg-[var(--brand-primary)]" />}
+          </span>
+          <div className="flex-1 min-w-0">
+            <p className="text-[0.8125rem] font-semibold text-[var(--color-text)]">
+              Use family default ({controls ? (controls.family_overdraft_enabled ? `${currencySymbol}${(controls.family_overdraft_limit_pence / 100).toFixed(2)}` : 'Off') : '…'})
+            </p>
+            <p className="text-[0.75rem] text-[var(--color-text-muted)] leading-snug mt-0.5">Follow the family-wide Global Overdraft Policy</p>
+          </div>
+        </button>
+        <button
+          type="button"
+          onClick={() => setMode('custom')}
+          className="w-full flex items-start gap-3 px-4 py-3.5 text-left hover:bg-[var(--color-surface-alt)] cursor-pointer"
+        >
+          <span className={cn('shrink-0 w-5 h-5 rounded-full border-2 mt-0.5 flex items-center justify-center', mode === 'custom' ? 'border-[var(--brand-primary)]' : 'border-[var(--color-border)]')}>
+            {mode === 'custom' && <span className="w-2.5 h-2.5 rounded-full bg-[var(--brand-primary)]" />}
+          </span>
+          <div className="flex-1 min-w-0">
+            <p className="text-[0.8125rem] font-semibold text-[var(--color-text)]">Custom limit for {child.display_name}</p>
+            <p className="text-[0.75rem] text-[var(--color-text-muted)] leading-snug mt-0.5">Set a different overdraft limit just for this child</p>
+          </div>
+        </button>
+
+        {mode === 'custom' && (
+          <div className="px-4 py-3.5 border-t border-[var(--color-border)] space-y-3">
+            <div className="flex items-center justify-between">
+              <p className="text-[0.8125rem] font-semibold text-[var(--color-text)]">Allow Overdraft</p>
+              <Toggle checked={enabled} onChange={() => setEnabled(v => !v)} label="Allow overdraft for this child" />
+            </div>
+            {enabled && (
+              <div>
+                <label htmlFor="child-overdraft-limit" className="text-[0.6875rem] font-semibold text-[var(--color-text-muted)] uppercase tracking-wide">Overdraft Limit</label>
+                <div className="mt-1">
+                  <CurrencyAmountInput id="child-overdraft-limit" symbol={currencySymbol} valuePence={limitPence} onChangePence={setLimitPence} />
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </SectionCard>
+
+      <button
+        type="button"
+        onClick={save}
+        disabled={saving}
+        className="w-full py-3 rounded-xl text-[0.875rem] font-bold bg-[var(--brand-primary)] text-white disabled:opacity-50 cursor-pointer"
+      >
+        {saving ? 'Saving…' : 'Save Changes'}
+      </button>
+      {error && <p className="text-[0.75rem] text-[var(--color-danger)] px-1">{error}</p>}
+      {savedMsg && <p className="text-[0.75rem] text-[var(--brand-primary)] px-1 font-semibold">{savedMsg}</p>}
+    </div>
+  )
+}
+
 // ── Component ─────────────────────────────────────────────────────────────────
 
-type ActiveView = 'root' | 'login-history' | 'payment-settings'
+type ActiveView = 'root' | 'login-history' | 'payment-settings' | 'approval-mode' | 'pocket-money-status' | 'safety-net'
 
 export function ChildProfileSettings({
-  child, appView, appViewBusy, growth, growthBusy, isLead,
+  child, appView, appViewBusy, growth, growthBusy, isLead, userId,
   onAppViewToggle, onGrowthUpdate, onRenameChild, onPinResetSuccess, onComingSoon, onBack,
 }: Props) {
   const { terminology } = useTone(0)
@@ -522,6 +823,18 @@ export function ChildProfileSettings({
       saveBankDetails={saveBankDetails}
       onBack={() => setActiveView('root')}
     />
+  }
+
+  if (activeView === 'approval-mode') {
+    return <ApprovalModeView child={child} userId={userId} onBack={() => setActiveView('root')} />
+  }
+
+  if (activeView === 'pocket-money-status') {
+    return <PocketMoneyStatusView child={child} allowanceLabel={terminology.allowanceLabel} onBack={() => setActiveView('root')} />
+  }
+
+  if (activeView === 'safety-net') {
+    return <SafetyNetView child={child} userId={userId} currencySymbol={currencySymbol} onBack={() => setActiveView('root')} />
   }
 
   async function handleSaveName(e: FormEvent) {
@@ -680,9 +993,9 @@ export function ChildProfileSettings({
                 ))}
               </div>
             </div>
-            <SettingsRow icon={<Check size={15} />} label="Approval Mode" description="Parental sign-off or self-reported (trust-based)" onClick={onComingSoon} />
-            <SettingsRow icon={<Calendar size={15} />} label={`${terminology.allowanceLabel} Status`} description="Pause or resume the flow of funds to this account" onClick={onComingSoon} />
-            <SettingsRow icon={<Shield size={15} />} label="Safety Net" description="Overdraft limit for this child — currently £0" onClick={onComingSoon} />
+            <SettingsRow icon={<Check size={15} />} label="Approval Mode" description="Parental sign-off or self-reported (trust-based)" onClick={() => setActiveView('approval-mode')} />
+            <SettingsRow icon={<PauseCircle size={15} />} label={`${terminology.allowanceLabel} Status`} description="Pause or resume the flow of funds to this account" onClick={() => setActiveView('pocket-money-status')} />
+            <SettingsRow icon={<Shield size={15} />} label="Safety Net" description="Overdraft limit for this child" onClick={() => setActiveView('safety-net')} />
 
             {/* Growth Path */}
             <div className="px-4 py-3.5">

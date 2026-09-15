@@ -122,6 +122,14 @@ import {
   handleGovernanceGet,
 } from './routes/governance.js';
 import {
+  handleChildControlsGet,
+  handleChildAllowancePauseUpdate,
+  handleChildGovernanceRequest,
+  handleChildGovernanceConfirm,
+  handleChildGovernanceReject,
+  handleChildGovernanceGet,
+} from './routes/childControls.js';
+import {
   handleCreateFamily,
   handleRegister,
   handleLogin,
@@ -207,6 +215,7 @@ import { handleRegisterDeviceToken, handleUnregisterDeviceToken, handleGetPendin
 import { handleGetFamilyAudit } from './routes/family-audit.js';
 import { handlePostGiveRequest, handleGetGiveRequests, handlePatchGiveRequest } from './routes/give-requests.js';
 import { json, error } from './lib/response.js';
+import { isTransientD1Error } from './lib/transientD1Error.js';
 import { JwtPayload } from './lib/jwt.js';
 import {
   handleCreateSharedExpense,
@@ -271,9 +280,15 @@ export default Sentry.withSentry<Env, IncidentQueueMessage>(
       try {
         response = await route(request, env, ctx, method, path);
       } catch (err) {
-        // D1 Durable Object reset — transient platform error, not a code bug.
-        // Return 503 so clients can retry; suppress from Sentry to avoid noise.
-        if (err instanceof Error && err.message.includes('D1 DB storage operation exceeded timeout')) {
+        // Transient D1 platform conditions — not a code bug. Return 503 so
+        // clients retry (see api.ts request()'s 503 retry branch); suppress
+        // from Sentry to avoid noise. Covers both a Durable Object reset
+        // ("exceeded timeout") and Cloudflare's account-wide D1 throughput
+        // cap being hit for a moment ("too much load on D1 DBs") — the
+        // second one previously fell through to the generic 500 branch
+        // below, so every occurrence paged Sentry as a real error and the
+        // client never retried it.
+        if (isTransientD1Error(err)) {
           response = new Response(
             JSON.stringify({ error: 'Database temporarily unavailable — please retry' }),
             { status: 503, headers: { 'Content-Type': 'application/json', 'Retry-After': '2' } },
@@ -486,19 +501,22 @@ async function runPaydaySweep(env: Env, nowEpoch: number): Promise<void> {
   const weekStart = monday.toISOString().slice(0, 10); // YYYY-MM-DD
 
   // Fetch all children eligible for an allowance payment this run.
-  // Skip earnings_mode = 'CHORES' (task-based only — no automatic deposit).
+  // Skip earnings_mode = 'CHORES' (task-based only — no automatic deposit)
+  // and any child whose Pocket Money Status has been paused by a parent.
   const { results: children } = await env.DB.prepare(`
     SELECT u.id AS child_id, u.family_id, u.display_name,
-           u.allowance_amount, u.allowance_frequency, f.currency, f.verify_mode
+           u.allowance_amount, u.allowance_frequency, f.currency, f.verify_mode,
+           u.verify_mode_override
     FROM users u
     JOIN family_roles fr ON fr.user_id = u.id AND fr.role = 'child'
     JOIN families f ON f.id = u.family_id
     WHERE u.allowance_amount > 0
       AND u.earnings_mode IN ('ALLOWANCE', 'HYBRID')
+      AND u.allowance_paused = 0
   `).all<{
     child_id: string; family_id: string; display_name: string;
     allowance_amount: number; allowance_frequency: string;
-    currency: string; verify_mode: string;
+    currency: string; verify_mode: string; verify_mode_override: string | null;
   }>();
 
   for (const child of children) {
@@ -530,7 +548,8 @@ async function runPaydaySweep(env: Env, nowEpoch: number): Promise<void> {
       continue; // skip this child; do not write a corrupt row
     }
 
-    const verificationStatus = child.verify_mode === 'amicable' ? 'verified_auto' : 'verified_manual';
+    const effectiveVerifyMode = child.verify_mode_override ?? child.verify_mode;
+    const verificationStatus = effectiveVerifyMode === 'amicable' ? 'verified_auto' : 'verified_manual';
 
     const recordHash = await computeRecordHash(
       newLedgerId, child.family_id, child.child_id,
@@ -713,6 +732,22 @@ async function route(request: Request, env: Env, ctx: ExecutionContext, method: 
   const childGrowthMatch = path.match(/^\/api\/child-growth\/([^/]+)$/);
   if (childGrowthMatch && method === 'GET')   return withAuth(request, auth, env, ctx, (req, e) => handleChildGrowthGet(req, e, childGrowthMatch[1]));
   if (childGrowthMatch && method === 'PATCH') return withAuth(request, auth, env, ctx, (req, e) => handleChildGrowthUpdate(req, e, childGrowthMatch[1]));
+
+  if (path === '/api/child-governance/request' && method === 'POST') return withAuth(request, auth, env, ctx, handleChildGovernanceRequest);
+  if (path === '/api/child-governance'         && method === 'GET')  return withAuth(request, auth, env, ctx, handleChildGovernanceGet);
+
+  const childGovActionMatch = path.match(/^\/api\/child-governance\/(\d+)\/(confirm|reject)$/);
+  if (childGovActionMatch && method === 'POST') {
+    const [, id, action] = childGovActionMatch;
+    if (action === 'confirm') return withAuth(request, auth, env, ctx, (req, e) => handleChildGovernanceConfirm(req, e, id));
+    if (action === 'reject')  return withAuth(request, auth, env, ctx, (req, e) => handleChildGovernanceReject(req, e, id));
+  }
+
+  const childControlsMatch = path.match(/^\/api\/child-controls\/([^/]+)$/);
+  if (childControlsMatch && method === 'GET') return withAuth(request, auth, env, ctx, (req, e) => handleChildControlsGet(req, e, childControlsMatch[1]));
+
+  const childPauseMatch = path.match(/^\/api\/child-controls\/([^/]+)\/pause$/);
+  if (childPauseMatch && method === 'PATCH') return withAuth(request, auth, env, ctx, (req, e) => handleChildAllowancePauseUpdate(req, e, childPauseMatch[1]));
 
   // Child settings via /api/child/:id/settings — parent only, family-ownership verified
   const childSettingsMatch = path.match(/^\/api\/child\/([^/]+)\/settings$/);

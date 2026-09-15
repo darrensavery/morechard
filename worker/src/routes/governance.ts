@@ -27,6 +27,7 @@ const EXPIRY_SECONDS = 72 * 60 * 60; // 72 hours
 // ----------------------------------------------------------------
 export async function handleGovernanceRequest(request: Request, env: Env): Promise<Response> {
   const auth = (request as AuthedRequest).auth;
+  if (auth.role !== 'parent') return error('Only parents can request this', 403);
 
   let body: Record<string, unknown>;
   try {
@@ -83,6 +84,7 @@ export async function handleGovernanceConfirm(
   requestId: string,
 ): Promise<Response> {
   const auth = (request as AuthedRequest).auth;
+  if (auth.role !== 'parent') return error('Only parents can confirm this', 403);
   const confirmed_by = auth.sub;
 
   const now = Math.floor(Date.now() / 1000);
@@ -131,6 +133,7 @@ export async function handleGovernanceReject(
   requestId: string,
 ): Promise<Response> {
   const auth = (request as AuthedRequest).auth;
+  if (auth.role !== 'parent') return error('Only parents can reject this', 403);
   const rejected_by = auth.sub;
 
   const now = Math.floor(Date.now() / 1000);
@@ -185,6 +188,7 @@ export async function handleGovernanceExpire(_request: Request, env: Env): Promi
 // ----------------------------------------------------------------
 export async function handleGovernanceGet(request: Request, env: Env): Promise<Response> {
   const auth = (request as AuthedRequest).auth;
+  if (auth.role !== 'parent') return error('Only parents can read this', 403);
   const url = new URL(request.url);
   const family_id = url.searchParams.get('family_id');
   if (!family_id) return error('family_id required');

@@ -494,6 +494,7 @@ export function FamilySettings({
           growth={growthSettings[activeChild.id]}
           growthBusy={growthBusy}
           isLead={isLead}
+          userId={userId}
           onAppViewToggle={onAppViewToggle}
           onGrowthUpdate={onGrowthUpdate}
           onRenameChild={onRenameChild}

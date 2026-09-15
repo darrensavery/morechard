@@ -95,7 +95,7 @@ export function ParentDashboard() {
   // Drag-to-close on the settings drawer — follows the finger like
   // SwipeRevealCard on the Chores tab, then springs open or closed on
   // release instead of a flat linear slide. Only active on the drawer's
-  // root menu view (sub-sections use their own left-swipe back nav).
+  // root menu view (sub-sections use their own right-swipe back nav).
   //
   // The live drag offset is written straight to the DOM (not React state)
   // so the panel tracks the finger 1:1 every touchmove — round-tripping
